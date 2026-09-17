@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carregando… — VB Espaço</title>
+<link rel="stylesheet" href="/assets/css/styles.css?v=1">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/index.html">VB <em>Espaço</em></a>
+  </header>
+
+  <div id="carregando" class="container" style="padding-top:2rem;">
+    <div class="skeleton" style="height:2.4rem; width:60%; margin-bottom:0.8rem;"></div>
+    <div class="skeleton" style="height:1rem; width:35%;"></div>
+  </div>
+
+  <div id="naoEncontrado" class="container oculto" style="padding-top:3rem; text-align:center;">
+    <h1>Não encontramos esse estabelecimento</h1>
+    <p style="color:var(--tinta-suave);">Confira o link ou fale com quem te enviou.</p>
+    <a class="btn btn-primario" href="/index.html">Voltar pro VB Espaço</a>
+  </div>
+
+  <div id="perfil" class="oculto">
+    <div class="perfil-header" id="perfilHeader">
+      <span class="selo" id="perfilSegmento"></span>
+      <h1 id="perfilNome"></h1>
+      <span class="cidade" id="perfilCidade"></span>
+    </div>
+    <div class="container" style="padding-top:1.5rem; padding-bottom:2.5rem;">
+      <div class="card">
+        <h2>Agendar</h2>
+        <p style="color:var(--tinta-suave); margin:0 0 1rem;">A agenda online desse estabelecimento ainda está sendo configurada.</p>
+        <a class="btn btn-primario oculto" id="whatsappBtn" href="#" target="_blank" rel="noopener" style="width:100%;">Chamar no WhatsApp →</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/js/supabase-client.js?v=1"></script>
+  <script src="/assets/js/perfil.js?v=1"></script>
+</body>
+</html>

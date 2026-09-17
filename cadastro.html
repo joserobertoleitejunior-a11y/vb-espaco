@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastre seu estabelecimento — VB Espaço</title>
+<meta name="description" content="Crie sua conta e cadastre seu salão, barbearia ou estúdio no VB Espaço.">
+<link rel="stylesheet" href="assets/css/styles.css?v=1">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">VB <em>Espaço</em></a>
+    <button class="btn btn-ghost oculto" id="sairBtn" type="button" style="padding:0.5rem 1rem; font-size:0.9rem;">Sair</button>
+  </header>
+
+  <div class="container" style="padding-top:1.75rem; padding-bottom:3rem;">
+
+    <!-- Login / cadastro de conta -->
+    <section id="authBox">
+      <div class="card">
+        <h2>Entrar ou criar conta</h2>
+        <button class="btn btn-google" id="googleBtn" type="button">Continuar com Google</button>
+        <div class="divisor">ou por e-mail</div>
+        <form id="emailForm">
+          <div class="field">
+            <label for="authEmail">E-mail</label>
+            <input type="email" id="authEmail" required autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="authSenha">Senha</label>
+            <input type="password" id="authSenha" required minlength="6" autocomplete="current-password">
+          </div>
+          <button class="btn btn-primario" id="entrarBtn" type="submit" style="width:100%;">Entrar</button>
+        </form>
+        <p style="text-align:center; margin:0.9rem 0 0; font-size:0.9rem;">
+          Não tem conta? <a href="#" id="criarContaLink">Criar agora</a>
+        </p>
+        <p class="msg" id="authMsg"></p>
+      </div>
+    </section>
+
+    <!-- Área logada -->
+    <section id="painelBox" class="oculto">
+      <div class="card" id="listaCard">
+        <h2>Seus estabelecimentos</h2>
+        <ul class="lista-estabelecimentos" id="listaEstabelecimentos"></ul>
+        <p class="msg" id="listaMsg" style="margin-top:0.8rem;"></p>
+      </div>
+
+      <div class="card">
+        <h2>Cadastrar novo estabelecimento</h2>
+        <form id="estabForm">
+          <div class="field">
+            <label for="estabNome">Nome do estabelecimento</label>
+            <input type="text" id="estabNome" required placeholder="Ex: Rafael Cabeleireiros">
+          </div>
+          <div class="field">
+            <label for="estabSlug">Link (gerado a partir do nome, pode editar)</label>
+            <div class="prefixo">
+              <span>vbespaco.com.br/</span>
+              <input type="text" id="estabSlug" required pattern="[a-z0-9\-]+" placeholder="rafael-cabeleireiros">
+            </div>
+          </div>
+          <div class="field">
+            <label for="estabCidade">Cidade</label>
+            <input type="text" id="estabCidade" required value="Itapetininga">
+          </div>
+          <div class="field">
+            <label for="estabSegmento">Segmento</label>
+            <select id="estabSegmento" required>
+              <option value="barbearia">Barbearia</option>
+              <option value="salao">Salão de beleza</option>
+              <option value="manicure_pedicure">Manicure e pedicure</option>
+              <option value="estetica">Estética</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="estabWhatsapp">WhatsApp (com DDD)</label>
+            <input type="tel" id="estabWhatsapp" placeholder="15999999999">
+          </div>
+          <button class="btn btn-primario" id="criarEstabBtn" type="submit" style="width:100%;">Criar estabelecimento</button>
+          <p class="msg" id="estabMsg"></p>
+        </form>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-client.js?v=1"></script>
+  <script src="assets/js/cadastro.js?v=1"></script>
+</body>
+</html>
