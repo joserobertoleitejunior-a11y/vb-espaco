@@ -5,34 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VB Espaço — salões, barbearias e estúdios em Itapetininga</title>
 <meta name="description" content="Encontre e agende num clique: barbearias, salões de beleza, manicure e pedicure, e estética em Itapetininga.">
-<link rel="stylesheet" href="assets/css/styles.css?v=2">
+<link rel="stylesheet" href="assets/css/styles.css?v=3">
 </head>
-<body>
+<body class="com-tabbar">
   <header class="topbar">
     <a class="brand" href="index.html">VB <em>Espaço</em></a>
-    <a class="btn btn-ghost" href="cadastro.html" style="padding:0.5rem 1rem; font-size:0.85rem;">Cadastrar meu estabelecimento</a>
+    <span class="topbar-local">📍 Itapetininga</span>
   </header>
 
-  <div class="container" style="padding-top:1.5rem;">
-    <h1 style="font-size:1.5rem; margin:0 0 0.2rem;">O que você procura hoje?</h1>
-    <p style="color:var(--tinta-suave); margin:0 0 1.1rem;">Itapetininga/SP</p>
+  <div class="container" style="padding-top:1.25rem;">
+    <div class="busca-wrap">
+      <span class="busca-icone">🔎</span>
+      <input class="busca-input" id="buscaInput" type="search" placeholder="Busque pelo nome do estabelecimento">
+    </div>
 
     <div class="filtros" id="filtros">
       <button class="chip is-ativo" data-segmento="">Tudo</button>
-      <button class="chip" data-segmento="barbearia">Barbearia</button>
-      <button class="chip" data-segmento="salao">Salão</button>
-      <button class="chip" data-segmento="manicure_pedicure">Manicure e pedicure</button>
-      <button class="chip" data-segmento="estetica">Estética</button>
+      <button class="chip" data-segmento="barbearia">💈 Barbearia</button>
+      <button class="chip" data-segmento="salao">💇 Salão</button>
+      <button class="chip" data-segmento="manicure_pedicure">💅 Manicure e pedicure</button>
+      <button class="chip" data-segmento="estetica">✨ Estética</button>
     </div>
 
-    <div id="listaCatalogo" style="padding-bottom:2.5rem;">
+    <div id="listaCatalogo" style="padding-bottom:1rem;">
       <div class="card"><div class="skeleton" style="height:1.4rem; width:60%; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:1rem; width:35%;"></div></div>
       <div class="card"><div class="skeleton" style="height:1.4rem; width:50%; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:1rem; width:30%;"></div></div>
     </div>
   </div>
 
+  <nav class="tabbar">
+    <a class="tabbar-item is-ativo" href="index.html"><span class="tabbar-icone">🏠</span>Catálogo</a>
+    <a class="tabbar-item" href="cadastro.html"><span class="tabbar-icone">🏪</span>Cadastrar</a>
+  </nav>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
-  <script src="assets/js/catalogo.js?v=1"></script>
+  <script src="assets/js/catalogo.js?v=2"></script>
 </body>
 </html>

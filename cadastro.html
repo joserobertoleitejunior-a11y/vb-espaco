@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cadastre seu estabelecimento — VB Espaço</title>
 <meta name="description" content="Crie sua conta e cadastre seu salão, barbearia ou estúdio no VB Espaço.">
-<link rel="stylesheet" href="assets/css/styles.css?v=2">
+<link rel="stylesheet" href="assets/css/styles.css?v=3">
 </head>
-<body>
+<body class="com-tabbar">
   <header class="topbar">
     <a class="brand" href="index.html">VB <em>Espaço</em></a>
     <button class="btn btn-ghost oculto" id="sairBtn" type="button" style="padding:0.5rem 1rem; font-size:0.9rem;">Sair</button>
@@ -86,6 +86,11 @@
     </section>
 
   </div>
+
+  <nav class="tabbar">
+    <a class="tabbar-item" href="index.html"><span class="tabbar-icone">🏠</span>Catálogo</a>
+    <a class="tabbar-item is-ativo" href="cadastro.html"><span class="tabbar-icone">🏪</span>Cadastrar</a>
+  </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>

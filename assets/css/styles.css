@@ -1,12 +1,14 @@
 :root {
-  --tinta: #1c1a17;
-  --tinta-suave: #4a453e;
-  --linho: #faf7f2;
-  --linho-fundo: #f1ebe0;
+  --tinta: #1f2024;
+  --tinta-suave: #6b6d76;
+  --linho: #f4f4f6;
+  --linho-fundo: #eceaea;
   --branco: #ffffff;
   --destaque: #C9A227;
-  --erro: #b3261e;
-  --borda: #e4dbc9;
+  --vermelho: #EA1D2C;
+  --vermelho-escuro: #C11722;
+  --erro: #c0392b;
+  --borda: #e7e7ea;
   --raio: 14px;
 }
 
@@ -29,7 +31,10 @@ img { max-width: 100%; display: block; }
 }
 
 .topbar {
-  padding: 1.1rem 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 1rem 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -37,12 +42,21 @@ img { max-width: 100%; display: block; }
   background: var(--branco);
 }
 .brand {
-  font-weight: 700;
+  font-weight: 800;
   font-size: 1.15rem;
   text-decoration: none;
   letter-spacing: -0.01em;
 }
-.brand em { color: var(--destaque); font-style: normal; }
+.brand em { color: var(--vermelho); font-style: normal; }
+
+.topbar-local {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
 
 .hero {
   padding: 3rem 1.25rem 2.5rem;
@@ -68,7 +82,7 @@ img { max-width: 100%; display: block; }
   padding: 0.9rem 1.6rem;
   border-radius: 999px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   border: none;
   cursor: pointer;
   text-decoration: none;
@@ -77,7 +91,7 @@ img { max-width: 100%; display: block; }
 }
 .btn:active { transform: scale(0.98); }
 .btn:disabled { opacity: 0.6; cursor: default; }
-.btn-primario { background: var(--tinta); color: var(--branco); }
+.btn-primario { background: var(--vermelho); color: var(--branco); }
 .btn-google { background: var(--branco); color: var(--tinta); border: 1px solid var(--borda); width: 100%; }
 .btn-ghost { background: transparent; color: var(--tinta-suave); border: 1px solid var(--borda); }
 
@@ -109,7 +123,7 @@ img { max-width: 100%; display: block; }
   background: var(--linho);
 }
 .field input:focus,
-.field select:focus { outline: 2px solid var(--destaque); outline-offset: 1px; }
+.field select:focus { outline: 2px solid var(--vermelho); outline-offset: 1px; }
 .field .prefixo {
   display: flex;
   align-items: stretch;
@@ -196,10 +210,32 @@ img { max-width: 100%; display: block; }
 
 .oculto { display: none !important; }
 
-/* Catálogo estilo iFood (home) */
+/* ---------- Catálogo estilo iFood (home) ---------- */
+
+.busca-wrap { position: relative; margin: 0 0 1rem; }
+.busca-wrap .busca-icone {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.busca-input {
+  width: 100%;
+  padding: 0.85rem 1rem 0.85rem 2.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+.busca-input:focus { outline: 2px solid var(--vermelho); outline-offset: 1px; }
+
 .filtros {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   overflow-x: auto;
   padding-bottom: 0.3rem;
   margin: 0 0 1.25rem;
@@ -208,48 +244,72 @@ img { max-width: 100%; display: block; }
 .filtros::-webkit-scrollbar { display: none; }
 .chip {
   flex: 0 0 auto;
-  padding: 0.5rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
   border-radius: 999px;
   border: 1px solid var(--borda);
   background: var(--branco);
-  color: var(--tinta-suave);
+  color: var(--tinta);
   font-family: inherit;
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
 }
-.chip.is-ativo { background: var(--tinta); color: var(--branco); border-color: var(--tinta); }
+.chip.is-ativo { background: var(--vermelho); color: var(--branco); border-color: var(--vermelho); }
 
 .catalogo-card {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
+  display: block;
   background: var(--branco);
   border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  padding: 1rem;
-  margin: 0 0 0.75rem;
+  border-radius: 16px;
+  overflow: hidden;
+  margin: 0 0 1rem;
   text-decoration: none;
   color: inherit;
+  box-shadow: 0 1px 2px rgba(20,20,30,0.04);
 }
 .catalogo-card:active { transform: scale(0.99); }
+.catalogo-capa {
+  height: 76px;
+  position: relative;
+}
 .catalogo-avatar {
-  flex: 0 0 auto;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  position: absolute;
+  left: 1rem;
+  bottom: -22px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--branco);
-  font-weight: 700;
-  font-size: 1.05rem;
+  font-weight: 800;
+  font-size: 1.15rem;
+  border: 3px solid var(--branco);
+  box-shadow: 0 1px 3px rgba(20,20,30,0.15);
 }
-.catalogo-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
-.catalogo-nome { font-weight: 700; }
-.catalogo-segmento { font-size: 0.85rem; color: var(--tinta-suave); }
-.catalogo-seta { color: var(--tinta-suave); font-size: 1.1rem; }
+.catalogo-corpo {
+  padding: 1.75rem 1rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.catalogo-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.catalogo-nome { font-weight: 800; font-size: 1.02rem; }
+.catalogo-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.catalogo-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--tinta-suave);
+  background: var(--linho);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+.catalogo-seta { color: var(--tinta-suave); font-size: 1.2rem; }
 
 /* Link "voltar ao catálogo" — usado no perfil genérico e nos sites
    próprios dos estabelecimentos (ex: Rafael Cabeleireiros). */
@@ -261,7 +321,7 @@ img { max-width: 100%; display: block; }
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  background: rgba(28,26,23,0.82);
+  background: rgba(20,20,24,0.82);
   color: #fff;
   text-decoration: none;
   font-size: 0.82rem;
@@ -271,3 +331,31 @@ img { max-width: 100%; display: block; }
   backdrop-filter: blur(2px);
 }
 .voltar-catalogo:active { transform: scale(0.97); }
+
+/* ---------- Barra inferior fixa (tabbar), como app de delivery ---------- */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  background: var(--branco);
+  border-top: 1px solid var(--borda);
+  padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom));
+}
+.tabbar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.35rem 0;
+  text-decoration: none;
+  color: var(--tinta-suave);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.tabbar-icone { font-size: 1.25rem; line-height: 1; }
+.tabbar-item.is-ativo { color: var(--vermelho); }
+.com-tabbar { padding-bottom: 4.5rem; }
