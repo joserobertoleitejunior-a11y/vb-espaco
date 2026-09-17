@@ -195,3 +195,79 @@ img { max-width: 100%; display: block; }
 }
 
 .oculto { display: none !important; }
+
+/* Catálogo estilo iFood (home) */
+.filtros {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
+  margin: 0 0 1.25rem;
+  -webkit-overflow-scrolling: touch;
+}
+.filtros::-webkit-scrollbar { display: none; }
+.chip {
+  flex: 0 0 auto;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  color: var(--tinta-suave);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip.is-ativo { background: var(--tinta); color: var(--branco); border-color: var(--tinta); }
+
+.catalogo-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 1rem;
+  margin: 0 0 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+.catalogo-card:active { transform: scale(0.99); }
+.catalogo-avatar {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--branco);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.catalogo-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.catalogo-nome { font-weight: 700; }
+.catalogo-segmento { font-size: 0.85rem; color: var(--tinta-suave); }
+.catalogo-seta { color: var(--tinta-suave); font-size: 1.1rem; }
+
+/* Link "voltar ao catálogo" — usado no perfil genérico e nos sites
+   próprios dos estabelecimentos (ex: Rafael Cabeleireiros). */
+.voltar-catalogo {
+  position: fixed;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(28,26,23,0.82);
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  backdrop-filter: blur(2px);
+}
+.voltar-catalogo:active { transform: scale(0.97); }
