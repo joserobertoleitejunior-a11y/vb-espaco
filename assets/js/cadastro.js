@@ -4,6 +4,11 @@
 (function () {
   if (!window.db) return;
 
+  // TEMPORÁRIO — testando o motor de criação de estabelecimento sem
+  // exigir login (Google/e-mail ainda não configurados de verdade).
+  // Trocar pra false assim que o login estiver pronto pra valer.
+  var TESTE_SEM_LOGIN = true;
+
   var authBox = document.getElementById('authBox');
   var painelBox = document.getElementById('painelBox');
   var sairBtn = document.getElementById('sairBtn');
@@ -175,7 +180,12 @@
     carregarEstabelecimentos();
   }
 
-  db.auth.getSession().then(function (res) {
-    if (res.data && res.data.session) mostrarPainel();
-  });
+  if (TESTE_SEM_LOGIN) {
+    mostrarPainel();
+    sairBtn.classList.add('oculto');
+  } else {
+    db.auth.getSession().then(function (res) {
+      if (res.data && res.data.session) mostrarPainel();
+    });
+  }
 })();

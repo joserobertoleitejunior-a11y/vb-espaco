@@ -276,13 +276,11 @@ img { max-width: 100%; display: block; }
   margin: 0 0 1rem;
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 10px 22px -14px rgba(20,20,30,0.28);
+  /* sombra colorida com a cor do próprio estabelecimento — vem inline
+     de catalogo.js (testando esse efeito no lugar da sombra neutra) */
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
-.catalogo-card:active {
-  transform: scale(0.99) translateY(1px);
-  box-shadow: 0 1px 2px rgba(20,20,30,0.05), 0 4px 10px -6px rgba(20,20,30,0.25);
-}
+.catalogo-card:active { transform: scale(0.98) translateY(2px); }
 .catalogo-capa {
   height: 92px;
   position: relative;
@@ -410,5 +408,10 @@ img { max-width: 100%; display: block; }
   height: 30px;
   flex-shrink: 0;
   touch-action: none;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 #cube3d canvas { display: block; width: 100%; height: 100%; }

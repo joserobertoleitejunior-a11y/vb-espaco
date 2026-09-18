@@ -43,6 +43,15 @@
     return ((partes[0] || '')[0] || '').toUpperCase() + ((partes[1] || '')[0] || '').toUpperCase();
   }
 
+  function hexParaRgba(hex, alpha) {
+    var h = (hex || '').replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var r = parseInt(h.substr(0, 2), 16) || 0;
+    var g = parseInt(h.substr(2, 2), 16) || 0;
+    var b = parseInt(h.substr(4, 2), 16) || 0;
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
   var CTA_CADASTRO =
     '<div class="catalogo-cta">' +
     '<span class="catalogo-cta-emoji" aria-hidden="true">' + SVG_FOGUETE + '</span>' +
@@ -66,7 +75,8 @@
       var link = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade);
       var cor = e.cor_destaque || '#C9A227';
       var icone = ICONES[e.segmento] || SVG_LOJA;
-      return '<a class="catalogo-card" href="' + link + '">' +
+      var sombra = '0 1px 2px rgba(20,20,30,.05), 0 16px 26px -14px ' + hexParaRgba(cor, 0.45);
+      return '<a class="catalogo-card" href="' + link + '" style="box-shadow:' + sombra + ';">' +
         '<div class="catalogo-capa" style="background:linear-gradient(135deg,' + cor + ',' + cor + 'cc);">' +
         '<span class="catalogo-capa-icone" aria-hidden="true">' + icone + '</span>' +
         '<span class="catalogo-avatar" style="background:' + cor + ';">' + escapeHtml(iniciais(e.nome)) + '</span>' +
