@@ -430,3 +430,97 @@ img { max-width: 100%; display: block; }
   -webkit-user-select: none;
 }
 #cube3d canvas { display: block; width: 100%; height: 100%; }
+
+/* ---- modo admin: PIN + edição inline no site do estabelecimento ---- */
+.admin-pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 16, 10, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+.admin-pin-overlay.oculto { display: none; }
+.admin-pin-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.75rem;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+}
+.admin-pin-box input {
+  width: 100%;
+  text-align: center;
+  font-size: 1.6rem;
+  letter-spacing: 0.5rem;
+  padding: 0.6rem;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  margin: 0.9rem 0;
+  font-family: inherit;
+}
+.admin-modo-barra {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #1c1710;
+  color: #f3e6c8;
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  z-index: 150;
+  font-size: 0.82rem;
+}
+.admin-modo-barra.oculto { display: none; }
+.admin-modo-barra button {
+  background: none;
+  border: 1px solid #f3e6c8;
+  color: #f3e6c8;
+  border-radius: 8px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+body.vb-modo-admin [data-vb-editavel] {
+  outline: 1.5px dashed #c9a227;
+  outline-offset: 3px;
+  cursor: text;
+  border-radius: 4px;
+}
+body.vb-modo-admin [data-vb-editavel]:focus { outline-style: solid; }
+body.vb-modo-admin { padding-bottom: 3rem; }
+.vb-add-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border: 1.5px dashed var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--tinta-suave);
+  font-size: 1.8rem;
+  background: none;
+  font-family: inherit;
+}
+.vb-remover-x {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.vb-foto-wrap { position: relative; }
