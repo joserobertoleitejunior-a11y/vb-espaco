@@ -522,6 +522,24 @@ img { max-width: 100%; display: block; }
   cursor: pointer;
   font-family: inherit;
 }
+.admin-cor-swatch {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #f3e6c8;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.admin-cor-swatch input[type="color"] {
+  width: 140%;
+  height: 140%;
+  margin: -20%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
 body.vb-modo-admin [data-vb-editavel] {
   outline: 1.5px dashed #c9a227;
   outline-offset: 3px;

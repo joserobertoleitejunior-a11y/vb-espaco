@@ -26,10 +26,46 @@
   };
   function aplicarTemplateCss(templateKey) {
     var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
-    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=1';
-    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=1';
+    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=2';
+    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=2';
     var widget = document.getElementById('tplWidget');
-    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=1';
+    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=2';
+  }
+
+  // ---- cor de destaque (sobrescreve --dourado/--dourado-escuro/--dourado-claro
+  // do template, hoje só implementado de verdade no tpl-classico — nos outros
+  // templates a variável ainda não é usada em nenhum seletor, então isso não
+  // muda nada visualmente até serem migrados também). ----
+  function hexParaRgbNums(hex) {
+    var h = (hex || '').replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    return [parseInt(h.substr(0, 2), 16) || 0, parseInt(h.substr(2, 2), 16) || 0, parseInt(h.substr(4, 2), 16) || 0];
+  }
+  function misturarRgb(rgb, alvo, quantidade) {
+    return rgb.map(function (c, i) { return Math.round(c + (alvo[i] - c) * quantidade); });
+  }
+  function rgbParaHex(rgb) {
+    return '#' + rgb.map(function (c) {
+      return Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0');
+    }).join('');
+  }
+  function aplicarCorDinamica(cor) {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(cor || '')) return;
+    var rgb = hexParaRgbNums(cor);
+    var escuro = rgbParaHex(misturarRgb(rgb, [0, 0, 0], 0.28));
+    var claro = rgbParaHex(misturarRgb(rgb, [255, 255, 255], 0.42));
+    var estilo = document.getElementById('tplCorDinamica');
+    if (!estilo) {
+      estilo = document.createElement('style');
+      estilo.id = 'tplCorDinamica';
+      document.head.appendChild(estilo);
+    }
+    estilo.textContent = ':root{--dourado:' + cor + '; --dourado-escuro:' + escuro + '; --dourado-claro:' + claro + '; --dourado-rgb:' + rgb.join(',') + ';}';
+  }
+  function salvarCor(cor) {
+    linhaAtual.cor_destaque = cor;
+    aplicarCorDinamica(cor);
+    db.rpc('tenant_admin_atualizar_cor', { p_estabelecimento_id: estabId, p_cor_destaque: cor });
   }
 
   if (!slug || !cidade) {
@@ -227,23 +263,24 @@
 
   function salvarEndereco() {
     var endereco = document.getElementById('tplEnderecoRodape').textContent.trim();
+    // salva o texto na hora — geocodificar é só um extra pra deixar o mapa
+    // preciso, e não pode travar a ação principal se o serviço demorar/falhar.
     linhaAtual.endereco = endereco;
-    if (!endereco) {
-      linhaAtual.endereco_lat = null;
-      linhaAtual.endereco_lng = null;
-      atualizarMapaLink();
-      db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: null, p_lng: null });
-      return;
-    }
+    linhaAtual.endereco_lat = null;
+    linhaAtual.endereco_lng = null;
+    atualizarMapaLink();
+    db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: null, p_lng: null });
+    if (!endereco) return;
     geocodificarEndereco(endereco, linhaAtual.cidade).then(function (coord) {
-      linhaAtual.endereco_lat = coord ? coord.lat : null;
-      linhaAtual.endereco_lng = coord ? coord.lng : null;
+      if (!coord) return;
+      linhaAtual.endereco_lat = coord.lat;
+      linhaAtual.endereco_lng = coord.lng;
       atualizarMapaLink();
       db.rpc('tenant_admin_atualizar_endereco', {
         p_estabelecimento_id: estabId,
         p_endereco: endereco,
-        p_lat: linhaAtual.endereco_lat,
-        p_lng: linhaAtual.endereco_lng
+        p_lat: coord.lat,
+        p_lng: coord.lng
       });
     });
   }
@@ -372,6 +409,9 @@
     document.getElementById('adminPinConfirmar').addEventListener('click', confirmarPin);
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter') confirmarPin(); });
     document.getElementById('adminSairBtn').addEventListener('click', desativarModoAdmin);
+    var corInput = document.getElementById('adminCorInput');
+    corInput.addEventListener('input', function () { aplicarCorDinamica(corInput.value); });
+    corInput.addEventListener('change', function () { salvarCor(corInput.value); });
   }
 
   function aplicarGenero(g) {
@@ -911,6 +951,9 @@
     estabId = linha.id;
     linhaAtual = linha;
     aplicarTemplateCss(linha.template);
+    aplicarCorDinamica(linha.cor_destaque);
+    var adminCorInput = document.getElementById('adminCorInput');
+    if (adminCorInput) adminCorInput.value = linha.cor_destaque || '#C9A227';
 
     document.title = linha.nome + ' — VB Agenda';
     document.getElementById('tplNomeTopo').textContent = linha.nome;

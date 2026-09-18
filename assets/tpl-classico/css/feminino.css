@@ -9,16 +9,16 @@
   --linen:#F8E7E1;
   --linen-deep:#EFD1C7;
   --white:#FBEEE9;
-  --line-accent:rgba(201,162,39,0.55);
-  --line-accent-dark:rgba(201,162,39,0.8);
-  --stone:rgba(201,162,39,0.32);
+  --line-accent:rgba(var(--dourado-rgb),0.55);
+  --line-accent-dark:rgba(var(--dourado-rgb),0.8);
+  --stone:rgba(var(--dourado-rgb),0.32);
   --terracotta:#7A4A54;
   --terracotta-deep:#5E3841;
   --lavender-pale:#F3DAD3;
   --gloss:linear-gradient(160deg,#8A5560 0%,#5E3841 55%,#6E4650 100%);
   --gloss-hover:linear-gradient(160deg,#6E4650,#4A2D34);
 }
-.eyebrow, .wizard-eyebrow{color:#B08D2F;}
-.corner-mark{color:#C9A227;}
+.eyebrow, .wizard-eyebrow{color:var(--dourado-escuro);}
+.corner-mark{color:var(--dourado);}
 footer.site-footer{background:#6E4650;}
 footer.site-footer .foot-brand{color:#F8E7E1;}
