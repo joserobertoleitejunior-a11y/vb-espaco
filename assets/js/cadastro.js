@@ -126,6 +126,7 @@
           '<span style="display:flex; gap:0.5rem;">' +
           '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="editar.html?id=' + encodeURIComponent(e.id) + '">Editar</a>' +
           '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '" target="_blank" rel="noopener">Ver →</a>' +
+          '<button class="btn btn-ghost" type="button" style="padding:0.5rem 0.9rem; font-size:0.85rem; color:var(--erro); border-color:var(--erro);" data-apagar-id="' + e.id + '" data-apagar-nome="' + escapeHtml(e.nome) + '">Apagar</button>' +
           '</span>' +
           '</li>';
       }).join('');
@@ -141,6 +142,27 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+
+  // Botão de apagar site — só pro admin por enquanto (sem senha ainda,
+  // fica pra depois). Apaga de verdade, sem volta.
+  listaEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-apagar-id]');
+    if (!btn) return;
+    var nome = btn.getAttribute('data-apagar-nome');
+    if (!window.confirm('Apagar "' + nome + '" de vez? Não tem como desfazer — some o site, os serviços, a equipe e a agenda dele.')) return;
+    btn.disabled = true;
+    db.rpc('admin_apagar_estabelecimento', { p_id: btn.getAttribute('data-apagar-id') }).then(function (res) {
+      if (res.error) {
+        btn.disabled = false;
+        window.alert('Não deu pra apagar: ' + res.error.message);
+        return;
+      }
+      carregarEstabelecimentos();
+    }, function () {
+      btn.disabled = false;
+      window.alert('Sem conexão agora — tenta de novo em instantes.');
+    });
+  });
 
   document.getElementById('estabForm').addEventListener('submit', function (e) {
     e.preventDefault();
