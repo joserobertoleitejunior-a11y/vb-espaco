@@ -93,6 +93,7 @@
     salao: 'Salão de beleza',
     manicure_pedicure: 'Manicure e pedicure',
     estetica: 'Estética',
+    estetica_automotiva: 'Estética automotiva',
     outro: 'Estabelecimento'
   };
 

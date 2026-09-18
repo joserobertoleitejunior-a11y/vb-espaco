@@ -14,6 +14,7 @@
     salao: 'Salão de beleza',
     manicure_pedicure: 'Manicure e pedicure',
     estetica: 'Estética',
+    estetica_automotiva: 'Estética automotiva',
     outro: 'Estabelecimento'
   };
   var SVG_TESOURA = '<svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><line x1="8.1" y1="7.5" x2="20" y2="19"/><line x1="8.1" y1="16.5" x2="20" y2="5"/></svg>';
@@ -21,6 +22,7 @@
   var SVG_ESMALTE = '<svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v3l1.5 2v13a1 1 0 01-1 1h-7a1 1 0 01-1-1V7L9 5V2z"/><path d="M9 2h6"/></svg>';
   var SVG_SPARKLE = '<svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor"><path d="M12 2L14.3 7.7L20 10L14.3 12.3L12 18L9.7 12.3L4 10L9.7 7.7z"/></svg>';
   var SVG_LOJA = '<svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>';
+  var SVG_CARRO = '<svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l1.5-4.5A2 2 0 0 1 6.4 6h11.2a2 2 0 0 1 1.9 1.5L21 12"/><path d="M3 12h18v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/></svg>';
   var SVG_PIN = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z"/></svg>';
   var SVG_FOGUETE = '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c2.5 2 4 5.5 4 9 0 2-.5 3.5-1 4.5l-3 3-3-3c-.5-1-1-2.5-1-4.5 0-3.5 1.5-7 4-9z"/><circle cx="12" cy="9" r="1.6"/><path d="M8.5 15.5L6 18M15.5 15.5L18 18M9 21l1-2M15 21l-1-2"/></svg>';
 
@@ -29,6 +31,7 @@
     salao: SVG_CABELO,
     manicure_pedicure: SVG_ESMALTE,
     estetica: SVG_SPARKLE,
+    estetica_automotiva: SVG_CARRO,
     outro: SVG_LOJA
   };
 
