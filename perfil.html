@@ -9,8 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/css/styles.css?v=11">
-<link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=2" id="tplBase">
+<link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=3" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
+<link rel="stylesheet" href="/assets/tpl-classico/css/widget.css?v=1">
 </head>
 <body>
   <div id="carregando" class="container" style="padding-top:3rem;">
@@ -43,9 +44,9 @@
         <button class="site-menu-close" id="menuCloseBtn" type="button" aria-label="Fechar menu">×</button>
         <ul class="site-menu-list">
           <li><a href="#" class="is-current"><span>Início</span><span class="num">01</span></a></li>
-          <li><a href="#agendarSecao"><span>Agenda</span><span class="num">02</span></a></li>
+          <li><button type="button" data-open-widget><span>Agenda</span><span class="num">02</span></button></li>
           <li><a href="#servicosSecao"><span>Serviços</span><span class="num">03</span></a></li>
-          <li><a href="#" id="menuAdminLink"><span>Admin</span><span class="num">◆</span></a></li>
+          <li><a href="#" class="vb-admin-trigger"><span>Admin</span><span class="num">◆</span></a></li>
         </ul>
         <div class="site-menu-contact">
           <p id="tplEnderecoMenu"></p>
@@ -62,7 +63,7 @@
           <h1 id="tplHeadline" data-vb-editavel="titulo"></h1>
           <p id="tplSubcopy" data-vb-editavel="subtitulo"></p>
           <div class="hero-cta">
-            <a class="btn" href="#agendarSecao">Agendar horário →</a>
+            <button class="btn" type="button" data-open-widget>Agendar horário →</button>
           </div>
         </div>
         <div class="hero-split-photo" id="tplHeroFoto" role="img" aria-label="Foto do estabelecimento" data-vb-editavel="hero" style="position:relative;"></div>
@@ -80,54 +81,102 @@
         <div id="tplGrid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; margin-top:1rem;"></div>
       </section>
 
-      <section id="agendarSecao" class="container" style="padding:0 0 3.5rem;">
-        <p class="eyebrow">Agendar</p>
-        <h2 style="margin-top:0.5rem; font-size:1.8rem;">Marque seu horário</h2>
-        <form id="formAgendar" style="max-width:420px; margin-top:1.5rem;">
-          <div class="field">
-            <label for="agNome">Seu nome</label>
-            <input type="text" id="agNome" required>
-          </div>
-          <div class="field">
-            <label for="agTelefone">WhatsApp (com DDD)</label>
-            <input type="tel" id="agTelefone" required placeholder="15999999999">
-          </div>
-          <div class="field">
-            <label for="agServico">Serviço</label>
-            <select id="agServico" required></select>
-          </div>
-          <div class="field">
-            <label for="agDia">Dia</label>
-            <input type="date" id="agDia" required>
-          </div>
-          <div class="field">
-            <label for="agHorario">Horário</label>
-            <input type="time" id="agHorario" required>
-          </div>
-          <button class="btn btn-block" type="submit">Confirmar agendamento</button>
-          <p class="msg" id="agendarMsg"></p>
-        </form>
-        <a class="btn btn-ghost oculto" id="whatsappBtn" href="#" target="_blank" rel="noopener" style="margin-top:1rem;">Chamar no WhatsApp →</a>
-      </section>
     </main>
 
     <footer class="site-footer">
       <div class="foot-top">
         <div class="foot-col">
           <p class="foot-brand"><span class="brand-mark">❧</span> <span id="tplNomeRodape"></span></p>
+          <p id="tplEnderecoRodape" data-vb-editavel="endereco">Endereço não informado</p>
           <p id="tplCidadeRodape"></p>
+          <a class="foot-social" id="tplMapaLink" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s7-7.5 7-12a7 7 0 0 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.3"/></svg> Ver no mapa</a>
         </div>
         <div class="foot-col">
           <p class="foot-label">Contato</p>
           <a id="tplTelefoneRodape" href="#"></a>
+          <div class="social-strip" id="tplRedesSociais" data-vb-editavel="redes"></div>
         </div>
         <div class="foot-col">
-          <p class="foot-label">Redes sociais</p>
-          <div class="social-strip" id="tplRedesSociais" data-vb-editavel="redes"></div>
+          <p class="foot-label">Horário</p>
+          <div id="tplHorarioRodape"></div>
+        </div>
+        <div class="foot-col">
+          <p class="foot-label">Navegação</p>
+          <button type="button" class="foot-nav-link vb-admin-trigger">Admin</button>
         </div>
       </div>
       <div class="foot-bottom" id="tplCopyright"></div>
     </footer>
+  </div>
+
+  <div class="wizard-overlay" id="wizardOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Agendar horário">
+    <span class="corner-mark tl" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M4,32 L4,10 Q4,4 10,4 L32,4" stroke="currentColor" stroke-width="2"/><circle cx="4" cy="4" r="3" fill="currentColor"/></svg></span>
+    <span class="corner-mark tr" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M4,32 L4,10 Q4,4 10,4 L32,4" stroke="currentColor" stroke-width="2"/><circle cx="4" cy="4" r="3" fill="currentColor"/></svg></span>
+    <span class="corner-mark br" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M4,32 L4,10 Q4,4 10,4 L32,4" stroke="currentColor" stroke-width="2"/><circle cx="4" cy="4" r="3" fill="currentColor"/></svg></span>
+    <span class="corner-mark bl" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M4,32 L4,10 Q4,4 10,4 L32,4" stroke="currentColor" stroke-width="2"/><circle cx="4" cy="4" r="3" fill="currentColor"/></svg></span>
+    <div class="wizard-box">
+      <div class="wizard-topline">
+        <p class="eyebrow wizard-eyebrow">Agenda</p>
+        <button class="wizard-close" id="wizardClose" type="button" aria-label="Fechar agendamento">×</button>
+      </div>
+      <p class="welcome-back-hint" id="welcomeBackHint" style="display:none;"></p>
+      <div class="wizard-steps-dots">
+        <span class="active" data-dot="1"></span><span data-dot="2"></span><span data-dot="3"></span><span data-dot="4"></span><span data-dot="5"></span>
+      </div>
+
+      <div class="wizard-step active" data-step="1">
+        <h2>Antes de começar</h2>
+        <p class="hint">Seus dados pra gente já te reconhecer nas próximas vezes.</p>
+        <div class="field-group">
+          <label class="field-label" for="wizNome">Nome</label>
+          <input class="field-input" type="text" id="wizNome" name="wizNome" placeholder="Seu nome" autocomplete="name" required>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="wizTelefone">WhatsApp</label>
+          <input class="field-input" type="tel" id="wizTelefone" name="wizTelefone" placeholder="(15) 90000-0000" autocomplete="tel" inputmode="tel" required>
+        </div>
+      </div>
+
+      <div class="wizard-step" data-step="2">
+        <h2>Quem vai te atender?</h2>
+        <p class="hint">Toque no profissional que você prefere.</p>
+        <div class="pick-list" data-group="profissional"></div>
+      </div>
+
+      <div class="wizard-step" data-step="3">
+        <h2>Qual serviço?</h2>
+        <p class="hint">Escolha uma opção.</p>
+        <div class="pick-grid" data-group="servico"></div>
+      </div>
+
+      <div class="wizard-step" data-step="4">
+        <h2>Dia e horário</h2>
+        <p class="hint">Toque no dia e depois no horário.</p>
+        <div class="day-row" data-group="dia"></div>
+        <div class="time-grid" data-group="horario"></div>
+      </div>
+
+      <div class="wizard-step" data-step="5">
+        <h2>Confirmar</h2>
+        <p class="hint">Confira e toque em confirmar.</p>
+        <div class="summary-box boiserie" id="wizSummaryBox"></div>
+        <div class="whatsapp-note">Ao confirmar, o horário já entra na agenda e abrimos o WhatsApp com sua solicitação pronta pra enviar.</div>
+      </div>
+
+      <div class="wizard-success" id="wizardSuccess" style="display:none;">
+        <div class="wizard-success-check">✓</div>
+        <h2>Agendamento confirmado!</h2>
+        <p class="hint">Já está guardado no nosso sistema — pode ficar tranquilo(a).</p>
+        <div class="summary-box boiserie" id="wizSummarySuccessBox"></div>
+        <a class="wizard-whatsapp-btn" id="wizardWhatsappLink" href="#" target="_blank" rel="noopener">Enviar confirmação no WhatsApp →</a>
+        <button type="button" class="wizard-success-ghost" id="wizardSuccessClose">Fechar</button>
+      </div>
+
+      <div class="wizard-nav">
+        <button type="button" id="wizardBack">Voltar</button>
+        <button type="button" id="wizardNext">Continuar</button>
+      </div>
+    </div>
   </div>
 
   <div class="admin-pin-overlay oculto" id="adminPinOverlay">
@@ -162,6 +211,6 @@
   <script src="/assets/js/supabase-client.js?v=1"></script>
   <script src="/assets/tpl-classico/js/menu.js?v=1"></script>
   <script src="/assets/js/upload-fotos.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=6"></script>
+  <script src="/assets/js/perfil.js?v=7"></script>
 </body>
 </html>

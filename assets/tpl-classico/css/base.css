@@ -545,6 +545,14 @@ footer.site-footer .foot-col{display:flex; flex-direction:column; gap:0.4rem; mi
 }
 .social-badge:hover, .social-badge:focus-visible{background:rgba(201,162,39,0.14); border-color:#C9A227;}
 .social-badge svg{width:17px; height:17px;}
+
+/* link de navegação no rodapé que é um <button> (ex: Admin), pra ficar
+   idêntico visualmente aos links de verdade (<a>) ao lado. */
+.foot-nav-link{
+  background:none; border:none; padding:0; margin:0;
+  font:inherit; text-align:left; cursor:pointer; color:var(--white);
+}
+.foot-nav-link:hover{color:#C9A227;}
 .foot-bottom{
   border-top:1px solid rgba(255,255,255,0.12); padding:1.3rem 0;
   font-size:0.74rem; color:rgba(250,247,241,0.42); text-align:center;

@@ -49,6 +49,52 @@
     feminino: { headline: 'Sua beleza merece hora marcada.', sub: 'Agende seu horário com poucos toques — escolha o serviço e o dia que preferir.' }
   };
 
+  // ---------- horário de funcionamento (rodapé), agrupando dias
+  // consecutivos com o mesmo horário — igual "Segunda a sábado: 8h às
+  // 18h" do Rafael, só que calculado a partir do que o dono cadastrou ----------
+  var DIAS_PLENO = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+  function formatarHora(h) {
+    var hm = String(h || '').slice(0, 5).replace(/^0/, '');
+    return hm.replace(/:00$/, '');
+  }
+
+  function formatarHorarios(linhas) {
+    var porDia = {};
+    (linhas || []).forEach(function (h) { porDia[h.dia_semana] = h; });
+    var dias = [];
+    for (var i = 0; i < 7; i++) {
+      var h = porDia[i] || { abre: '08:00', fecha: '18:00', fechado: i === 0 };
+      dias.push({ dia: i, abre: formatarHora(h.abre), fecha: formatarHora(h.fecha), fechado: h.fechado });
+    }
+    var grupos = [];
+    dias.forEach(function (d) {
+      var ultimo = grupos[grupos.length - 1];
+      if (ultimo && ultimo.abre === d.abre && ultimo.fecha === d.fecha && ultimo.fechado === d.fechado) {
+        ultimo.fim = d.dia;
+      } else {
+        grupos.push({ inicio: d.dia, fim: d.dia, abre: d.abre, fecha: d.fecha, fechado: d.fechado });
+      }
+    });
+    return grupos.filter(function (g) { return !g.fechado; }).map(function (g) {
+      var label = g.inicio === g.fim ? DIAS_PLENO[g.inicio] : DIAS_PLENO[g.inicio] + ' a ' + DIAS_PLENO[g.fim];
+      return label + ': ' + g.abre + 'h às ' + g.fecha + 'h';
+    });
+  }
+
+  function carregarHorarioRodape() {
+    var wrap = document.getElementById('tplHorarioRodape');
+    if (!wrap) return;
+    db.rpc('tenant_listar_horarios', { p_estabelecimento_id: estabId }).then(function (res) {
+      var linhas = formatarHorarios(res.data || []);
+      wrap.innerHTML = linhas.length
+        ? linhas.map(function (l) { return '<p>' + escapeHtml(l) + '</p>'; }).join('')
+        : '<p>Consulte os horários pelo WhatsApp</p>';
+    }, function () {
+      wrap.innerHTML = '<p>Consulte os horários pelo WhatsApp</p>';
+    });
+  }
+
   // ---------- gênero: fixo (masculino/feminino) ou "ambos" (com gate) ----------
   var SESSION_KEY = 'vbGeneroSessao_' + slug + '_' + cidade;
 
@@ -128,6 +174,20 @@
     });
   }
 
+  function atualizarMapaLink() {
+    var link = document.getElementById('tplMapaLink');
+    if (!link) return;
+    var consulta = [linhaAtual.nome, linhaAtual.endereco, linhaAtual.cidade].filter(Boolean).join(' ');
+    link.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(consulta);
+  }
+
+  function salvarEndereco() {
+    var endereco = document.getElementById('tplEnderecoRodape').textContent.trim();
+    linhaAtual.endereco = endereco;
+    atualizarMapaLink();
+    db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco });
+  }
+
   function ativarModoAdmin() {
     if (modoAdmin) return;
     modoAdmin = true;
@@ -135,10 +195,13 @@
     document.getElementById('adminModoBarra').classList.remove('oculto');
     var titulo = document.getElementById('tplHeadline');
     var sub = document.getElementById('tplSubcopy');
+    var endereco = document.getElementById('tplEnderecoRodape');
     titulo.setAttribute('contenteditable', 'true');
     sub.setAttribute('contenteditable', 'true');
+    endereco.setAttribute('contenteditable', 'true');
     titulo.addEventListener('blur', salvarTextoHero);
     sub.addEventListener('blur', salvarTextoHero);
+    endereco.addEventListener('blur', salvarEndereco);
     document.getElementById('tplHeroFoto').addEventListener('click', abrirEditorHero);
     carregarServicos();
     carregarGaleria();
@@ -151,6 +214,7 @@
     document.getElementById('adminModoBarra').classList.add('oculto');
     document.getElementById('tplHeadline').removeAttribute('contenteditable');
     document.getElementById('tplSubcopy').removeAttribute('contenteditable');
+    document.getElementById('tplEnderecoRodape').removeAttribute('contenteditable');
     try { localStorage.removeItem(chaveAdmin()); } catch (e) {}
     carregarServicos();
     carregarGaleria();
@@ -162,7 +226,9 @@
     var input = document.getElementById('adminPinInput');
     var msg = document.getElementById('adminPinMsg');
 
-    document.getElementById('menuAdminLink').addEventListener('click', function (e) {
+    document.addEventListener('click', function (e) {
+      var trigger = e.target.closest('.vb-admin-trigger');
+      if (!trigger) return;
       e.preventDefault();
       if (window.RafaelMenu) window.RafaelMenu.close();
       var jaDesbloqueado = false;
@@ -318,20 +384,20 @@
     });
   }
 
+  var servicosCache = [];
+
   function carregarServicos() {
     var lista = document.getElementById('tplListaServicos');
-    var select = document.getElementById('agServico');
     var strip = document.getElementById('tplServiceStrip');
     db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }).then(function (res) {
       var linhas = res.data || [];
+      servicosCache = linhas;
       strip.innerHTML =
-        '<button type="button" class="service-badge" onclick="document.getElementById(\'agendarSecao\').scrollIntoView({behavior:\'smooth\'})"><span class="mark">' + ICONE_TESOURA + '</span><strong>Ver</strong><span>Serviços</span></button>' +
-        '<a href="#agendarSecao" class="service-badge"><span class="mark">' + ICONE_AGENDA + '</span><strong>Agendar</strong><span>Horário</span></a>';
+        '<button type="button" class="service-badge" onclick="document.getElementById(\'servicosSecao\').scrollIntoView({behavior:\'smooth\'})"><span class="mark">' + ICONE_TESOURA + '</span><strong>Ver</strong><span>Serviços</span></button>' +
+        '<button type="button" class="service-badge" data-open-widget><span class="mark">' + ICONE_AGENDA + '</span><strong>Agendar</strong><span>Horário</span></button>';
 
       if (!linhas.length && !modoAdmin) {
         lista.innerHTML = '<li style="border:none; color:var(--ink-soft);">Serviços em breve.</li>';
-        select.innerHTML = '<option value="">Nenhum serviço cadastrado ainda</option>';
-        select.disabled = true;
         return;
       }
 
@@ -371,11 +437,6 @@
           db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome, p_preco: preco, p_categoria: 'unissex' }).then(carregarServicos);
         });
       }
-
-      select.innerHTML = linhas.length ? linhas.map(function (s) {
-        return '<option value="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + ' — ' + formatarPreco(s.preco) + '</option>';
-      }).join('') : '<option value="">Nenhum serviço cadastrado ainda</option>';
-      select.disabled = !linhas.length;
     });
   }
 
@@ -413,44 +474,313 @@
     });
   }
 
-  document.getElementById('formAgendar').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var msg = document.getElementById('agendarMsg');
-    var btn = e.target.querySelector('button[type="submit"]');
-    btn.disabled = true;
-    msg.className = 'msg';
-    msg.textContent = 'Agendando…';
+  // ---------- agenda em passo a passo (mesmo fluxo do Rafael, com dados
+  // de verdade por estabelecimento e horários que respeitam quem já
+  // marcou) ----------
+  var WIZ_STORAGE_PREFIX = 'vbClienteContato_';
+  var DIAS_ABREV = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
-    var dia = document.getElementById('agDia').value;
-    var dataObj = dia ? new Date(dia + 'T00:00:00') : null;
-    var diaLabel = dataObj ? dataObj.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }) : dia;
+  function iniciarWizard() {
+    var overlay = document.getElementById('wizardOverlay');
+    if (!overlay) return;
 
-    db.rpc('tenant_criar_agendamento', {
-      p_estabelecimento_id: estabId,
-      p_cliente_nome: document.getElementById('agNome').value.trim(),
-      p_cliente_telefone: document.getElementById('agTelefone').value.trim(),
-      p_staff_id: null,
-      p_staff_nome: null,
-      p_servico: document.getElementById('agServico').value || null,
-      p_dia: dia,
-      p_dia_label: diaLabel,
-      p_horario: document.getElementById('agHorario').value
-    }).then(function (res) {
-      btn.disabled = false;
-      if (res.error) {
-        msg.className = 'msg msg-erro';
-        msg.textContent = res.error.message;
+    var closeBtn = document.getElementById('wizardClose');
+    var backBtn = document.getElementById('wizardBack');
+    var nextBtn = document.getElementById('wizardNext');
+    var wizardNav = overlay.querySelector('.wizard-nav');
+    var successEl = document.getElementById('wizardSuccess');
+    var successCloseBtn = document.getElementById('wizardSuccessClose');
+    var whatsappLink = document.getElementById('wizardWhatsappLink');
+    var welcomeHint = document.getElementById('welcomeBackHint');
+    var nomeInput = document.getElementById('wizNome');
+    var telefoneInput = document.getElementById('wizTelefone');
+    var profissionalList = overlay.querySelector('[data-group="profissional"]');
+    var servicoGrid = overlay.querySelector('[data-group="servico"]');
+    var diaRow = overlay.querySelector('[data-group="dia"]');
+    var horarioGrid = overlay.querySelector('[data-group="horario"]');
+    var steps = Array.prototype.slice.call(overlay.querySelectorAll('.wizard-step'));
+    var dots = Array.prototype.slice.call(overlay.querySelectorAll('.wizard-steps-dots span'));
+    var totalSteps = steps.length;
+    var current = 1;
+    var choices = {};
+    var staffList = [];
+    var diasDisponiveis = [];
+    var lastFocused = null;
+
+    function storageKey() { return WIZ_STORAGE_PREFIX + estabId; }
+
+    function isoDate(d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function carregarProfissionais() {
+      db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }).then(function (res) {
+        staffList = res.data || [];
+        if (!staffList.length) {
+          profissionalList.innerHTML = '<button type="button" class="pick-card" data-value="Qualquer profissional">Qualquer profissional disponível</button>';
+          return;
+        }
+        profissionalList.innerHTML = staffList.map(function (p) {
+          return '<button type="button" class="pick-card" data-value="' + escapeHtml(p.nome) + '" data-staff-id="' + p.id + '">' +
+            '<img src="' + (p.foto_url ? escapeHtml(p.foto_url) : '/assets/tpl-classico/img/placeholder-portrait.svg') + '" alt="">' +
+            escapeHtml(p.nome) + (p.especialidade ? ' — ' + escapeHtml(p.especialidade) : '') +
+            '</button>';
+        }).join('');
+      });
+    }
+
+    function carregarServicosWizard() {
+      var genero = generoAtual;
+      var lista = servicosCache.filter(function (s) { return s.categoria === genero || s.categoria === 'unissex'; });
+      if (!lista.length) lista = servicosCache;
+      servicoGrid.innerHTML = lista.map(function (s) {
+        return '<button type="button" class="pick-btn" data-value="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
+      }).join('');
+    }
+
+    function gerarDiasUteis(n) {
+      var dias = [];
+      var hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      for (var i = 1; dias.length < n; i++) {
+        var d = new Date(hoje);
+        d.setDate(hoje.getDate() + i);
+        dias.push(d);
+      }
+      return dias;
+    }
+
+    function renderDias() {
+      diasDisponiveis = gerarDiasUteis(6);
+      diaRow.innerHTML = diasDisponiveis.map(function (d) {
+        var label = DIAS_ABREV[d.getDay()] + ' ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+        return '<button type="button" class="day-btn" data-value="' + label + '" data-iso="' + isoDate(d) + '">' +
+          DIAS_ABREV[d.getDay()] + '<br>' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '</button>';
+      }).join('');
+    }
+
+    function renderHorarios(slots) {
+      if (!slots || !slots.length) {
+        horarioGrid.innerHTML = '<p style="grid-column:1/-1; color:var(--ink-soft); font-size:0.9rem;">Sem horários livres nesse dia.</p>';
         return;
       }
-      msg.className = 'msg msg-ok';
-      msg.textContent = 'Agendamento confirmado! ✓';
-      document.getElementById('formAgendar').reset();
-    }, function () {
-      btn.disabled = false;
-      msg.className = 'msg msg-erro';
-      msg.textContent = 'Sem conexão agora — tenta de novo em instantes.';
+      horarioGrid.innerHTML = slots.map(function (s) {
+        return '<button type="button" class="time-btn" data-value="' + s.horario + '"' + (s.disponivel ? '' : ' disabled style="opacity:.35;"') + '>' + s.horario + (s.disponivel ? '' : ' (ocupado)') + '</button>';
+      }).join('');
+    }
+
+    function atualizarHorarios() {
+      var diaBtn = diaRow.querySelector('.day-btn.selected');
+      if (!diaBtn) return;
+      var iso = diaBtn.getAttribute('data-iso');
+      var profBtn = profissionalList.querySelector('.pick-card.selected');
+      var staffId = profBtn ? profBtn.getAttribute('data-staff-id') : null;
+      horarioGrid.innerHTML = '<p style="grid-column:1/-1; color:var(--ink-soft); font-size:0.9rem;">Carregando…</p>';
+      db.rpc('tenant_public_agenda_slots', { p_estabelecimento_id: estabId, p_dia: iso, p_staff_id: staffId || null }).then(function (res) {
+        renderHorarios(res.data || []);
+      }, function () {
+        renderHorarios([]);
+      });
+    }
+
+    function isStepValid(step) {
+      var stepEl = steps[step - 1];
+      var requiredInputs = stepEl.querySelectorAll('.field-input[required]');
+      if (requiredInputs.length) {
+        return Array.prototype.every.call(requiredInputs, function (inp) { return inp.value.trim().length > 0; });
+      }
+      var group = stepEl.querySelector('[data-group]');
+      if (!group) return true;
+      return Boolean(choices[group.getAttribute('data-group')]);
+    }
+
+    function render() {
+      steps.forEach(function (s) { s.classList.toggle('active', Number(s.dataset.step) === current); });
+      dots.forEach(function (d) {
+        var n = Number(d.dataset.dot);
+        d.classList.toggle('active', n === current);
+        d.classList.toggle('done', n < current);
+      });
+      nextBtn.textContent = current === totalSteps ? 'Confirmar' : 'Continuar';
+      nextBtn.classList.toggle('is-disabled', !isStepValid(current));
+      if (current === totalSteps) {
+        document.getElementById('wizSummaryBox').innerHTML =
+          'Nome: <strong>' + escapeHtml(choices.nome || '—') + '</strong><br>' +
+          'Profissional: <strong>' + escapeHtml(choices.profissional || '—') + '</strong><br>' +
+          'Serviço: <strong>' + escapeHtml(choices.servico || '—') + '</strong><br>' +
+          'Dia: <strong>' + escapeHtml(choices.dia || '—') + '</strong><br>' +
+          'Horário: <strong>' + escapeHtml(choices.horario || '—') + '</strong>';
+      }
+    }
+
+    function selectChoice(groupName, value) {
+      choices[groupName] = value;
+      var group = overlay.querySelector('[data-group="' + groupName + '"]');
+      if (group) {
+        group.querySelectorAll('[data-value]').forEach(function (b) {
+          b.classList.toggle('selected', b.getAttribute('data-value') === value);
+        });
+      }
+      if (groupName === 'profissional' || groupName === 'dia') atualizarHorarios();
+      render();
+    }
+
+    [profissionalList, servicoGrid, diaRow, horarioGrid].forEach(function (group) {
+      group.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-value]');
+        if (!btn || btn.disabled) return;
+        selectChoice(group.getAttribute('data-group'), btn.getAttribute('data-value'));
+      });
     });
-  });
+
+    function syncContato() {
+      choices.nome = nomeInput.value.trim();
+      choices.telefone = telefoneInput.value.trim();
+    }
+    ['input', 'change', 'blur'].forEach(function (evt) {
+      nomeInput.addEventListener(evt, function () { syncContato(); render(); });
+      telefoneInput.addEventListener(evt, function () { syncContato(); render(); });
+    });
+
+    function lockScroll() {
+      document.body.classList.add('scroll-locked');
+    }
+    function unlockScroll() {
+      document.body.classList.remove('scroll-locked');
+    }
+
+    function open() {
+      lastFocused = document.activeElement;
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      lockScroll();
+      carregarProfissionais();
+      carregarServicosWizard();
+      renderDias();
+
+      var saved = null;
+      try {
+        var raw = localStorage.getItem(storageKey());
+        if (raw) saved = JSON.parse(raw);
+      } catch (e) {}
+
+      current = 1;
+      choices = {};
+      if (saved && saved.nome && saved.telefone) {
+        choices.nome = saved.nome;
+        choices.telefone = saved.telefone;
+        nomeInput.value = saved.nome;
+        telefoneInput.value = saved.telefone;
+        welcomeHint.textContent = 'Bem-vindo de volta, ' + saved.nome.split(' ')[0] + '! Já preenchemos seus dados — é só conferir.';
+        welcomeHint.style.display = '';
+        db.rpc('tenant_registrar_cliente', { p_estabelecimento_id: estabId, p_nome: saved.nome, p_telefone: saved.telefone });
+        current = 2;
+      } else {
+        welcomeHint.style.display = 'none';
+        nomeInput.value = '';
+        telefoneInput.value = '';
+      }
+      render();
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function mostrarSucesso(whatsappUrl) {
+      whatsappLink.href = whatsappUrl;
+      document.getElementById('wizSummarySuccessBox').innerHTML = document.getElementById('wizSummaryBox').innerHTML;
+      steps.forEach(function (s) { s.classList.remove('active'); });
+      wizardNav.style.display = 'none';
+      successEl.style.display = '';
+      overlay.scrollTop = 0;
+      if (successCloseBtn) successCloseBtn.focus();
+    }
+
+    function close() {
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      unlockScroll();
+      current = 1;
+      choices = {};
+      nextBtn.disabled = false;
+      wizardNav.style.display = '';
+      successEl.style.display = 'none';
+      overlay.querySelectorAll('.selected').forEach(function (b) { b.classList.remove('selected'); });
+      if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    }
+
+    if (successCloseBtn) successCloseBtn.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+
+    backBtn.addEventListener('click', function () {
+      if (current > 1) { current--; render(); overlay.scrollTop = 0; } else { close(); }
+    });
+
+    nextBtn.addEventListener('click', function () {
+      syncContato();
+      if (!isStepValid(current)) {
+        var stepEl = steps[current - 1];
+        var vazio = stepEl.querySelector('.field-input[required]');
+        if (vazio) { if (vazio.reportValidity) vazio.reportValidity(); else vazio.focus(); }
+        return;
+      }
+
+      var eraContato = current === 1;
+      if (eraContato) {
+        try { localStorage.setItem(storageKey(), JSON.stringify({ nome: choices.nome, telefone: choices.telefone })); } catch (e) {}
+      }
+
+      if (current < totalSteps) {
+        current++;
+        render();
+        overlay.scrollTop = 0;
+        if (eraContato) db.rpc('tenant_registrar_cliente', { p_estabelecimento_id: estabId, p_nome: choices.nome || '', p_telefone: choices.telefone || '' });
+        return;
+      }
+
+      nextBtn.disabled = true;
+      var diaBtn = diaRow.querySelector('.day-btn.selected');
+      var profBtn = profissionalList.querySelector('.pick-card.selected');
+      db.rpc('tenant_criar_agendamento', {
+        p_estabelecimento_id: estabId,
+        p_cliente_nome: choices.nome || '',
+        p_cliente_telefone: choices.telefone || '',
+        p_staff_id: profBtn ? profBtn.getAttribute('data-staff-id') : null,
+        p_staff_nome: choices.profissional || null,
+        p_servico: choices.servico || null,
+        p_dia: diaBtn ? diaBtn.getAttribute('data-iso') : null,
+        p_dia_label: choices.dia || null,
+        p_horario: choices.horario || ''
+      }).then(function (res) {
+        nextBtn.disabled = false;
+        if (res.error) {
+          window.alert(res.error.message);
+          current = 4;
+          render();
+          atualizarHorarios();
+          return;
+        }
+        var tel = (linhaAtual.telefone_whatsapp || '').replace(/\D/g, '');
+        var msg = 'Olá! Quero agendar um horário:%0A' +
+          '• Nome: ' + encodeURIComponent(choices.nome || '') + '%0A' +
+          '• Profissional: ' + encodeURIComponent(choices.profissional || '') + '%0A' +
+          '• Serviço: ' + encodeURIComponent(choices.servico || '') + '%0A' +
+          '• Dia: ' + encodeURIComponent(choices.dia || '') + '%0A' +
+          '• Horário: ' + encodeURIComponent(choices.horario || '');
+        var url = tel ? ('https://wa.me/55' + tel + '?text=' + msg) : '#';
+        mostrarSucesso(url);
+      }, function () {
+        nextBtn.disabled = false;
+        window.alert('Sem conexão agora — tenta de novo em instantes.');
+      });
+    });
+
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-open-widget]')) {
+        if (window.RafaelMenu) window.RafaelMenu.close();
+        open();
+      }
+    });
+  }
 
   function renderizar(linha) {
     carregando.classList.add('oculto');
@@ -471,12 +801,14 @@
         a.href = 'tel:+55' + tel;
         a.textContent = linha.telefone_whatsapp;
       });
-      var wa = document.getElementById('whatsappBtn');
-      wa.href = 'https://wa.me/55' + tel;
-      wa.classList.remove('oculto');
     } else {
       document.getElementById('tplTelefoneMenu').closest('p').style.display = 'none';
+      document.getElementById('tplTelefoneRodape').style.display = 'none';
     }
+
+    document.getElementById('tplEnderecoRodape').textContent = linha.endereco || 'Endereço não informado';
+    atualizarMapaLink();
+    carregarHorarioRodape();
 
     tpl.classList.remove('oculto');
     iniciarGenero();
@@ -484,6 +816,7 @@
     carregarGaleria();
     carregarRedesSociais();
     iniciarModoAdmin();
+    iniciarWizard();
     var jaDesbloqueado = false;
     try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}
     if (jaDesbloqueado) ativarModoAdmin();

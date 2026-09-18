@@ -37,9 +37,9 @@
 
   // ---- foto principal (hero) ----
   var ESTOQUE_FOTOS = [
-    { url: 'assets/tpl-classico/img/estoque/hero-masculino-1.jpg', legenda: 'Studio dourado' },
-    { url: 'assets/tpl-classico/img/estoque/hero-feminino-1.jpg', legenda: 'Salão rosé' },
-    { url: 'assets/tpl-classico/img/estoque/fachada-1.jpg', legenda: 'Fachada clássica' }
+    { url: '/assets/tpl-classico/img/estoque/hero-masculino-1.jpg', legenda: 'Studio dourado' },
+    { url: '/assets/tpl-classico/img/estoque/hero-feminino-1.jpg', legenda: 'Salão rosé' },
+    { url: '/assets/tpl-classico/img/estoque/fachada-1.jpg', legenda: 'Fachada clássica' }
   ];
   document.getElementById('heroEstoque').innerHTML = ESTOQUE_FOTOS.map(function (f) {
     return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" alt="' + f.legenda + '" style="width:72px; height:72px; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent;">';

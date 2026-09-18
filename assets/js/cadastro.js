@@ -55,9 +55,9 @@
   var heroEscolhidoUrl = null;
   var pastaFotoTemporaria = window.VBUpload ? window.VBUpload.novaPastaTemporaria() : 'novo-' + Date.now();
   var ESTOQUE_FOTOS_CADASTRO = [
-    { url: 'assets/tpl-classico/img/estoque/hero-masculino-1.jpg', legenda: 'Studio dourado' },
-    { url: 'assets/tpl-classico/img/estoque/hero-feminino-1.jpg', legenda: 'Salão rosé' },
-    { url: 'assets/tpl-classico/img/estoque/fachada-1.jpg', legenda: 'Fachada clássica' }
+    { url: '/assets/tpl-classico/img/estoque/hero-masculino-1.jpg', legenda: 'Studio dourado' },
+    { url: '/assets/tpl-classico/img/estoque/hero-feminino-1.jpg', legenda: 'Salão rosé' },
+    { url: '/assets/tpl-classico/img/estoque/fachada-1.jpg', legenda: 'Fachada clássica' }
   ];
   var estoqueEl = document.getElementById('estabHeroEstoque');
   if (estoqueEl) {
