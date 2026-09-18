@@ -31,6 +31,72 @@
     }
     document.getElementById('tituloEstab').textContent = 'Editando: ' + linha.nome;
     document.getElementById('verPerfilBtn').href = '/' + encodeURIComponent(linha.slug) + '/' + encodeURIComponent(linha.cidade);
+    aplicarHeroPreview(linha.foto_hero_url);
+    document.getElementById('heroFemininoWrap').style.display = linha.genero_atendimento === 'ambos' ? '' : 'none';
+  });
+
+  // ---- foto principal (hero) ----
+  var ESTOQUE_FOTOS = [
+    { url: 'assets/tpl-classico/img/estoque/hero-masculino-1.jpg', legenda: 'Studio dourado' },
+    { url: 'assets/tpl-classico/img/estoque/hero-feminino-1.jpg', legenda: 'Salão rosé' },
+    { url: 'assets/tpl-classico/img/estoque/fachada-1.jpg', legenda: 'Fachada clássica' }
+  ];
+  document.getElementById('heroEstoque').innerHTML = ESTOQUE_FOTOS.map(function (f) {
+    return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" alt="' + f.legenda + '" style="width:72px; height:72px; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent;">';
+  }).join('');
+
+  function aplicarHeroPreview(url) {
+    document.getElementById('heroPreview').style.backgroundImage = url ? "url('" + url + "')" : 'none';
+  }
+
+  function salvarHero(params) {
+    var msg = document.getElementById('heroMsg');
+    msg.className = 'msg';
+    msg.textContent = 'Salvando…';
+    var payload = { p_estabelecimento_id: estabId, p_foto_hero_url: null, p_foto_hero_feminino_url: null };
+    Object.assign(payload, params);
+    return db.rpc('tenant_admin_atualizar_hero', payload).then(function (res) {
+      msg.className = res.error ? 'msg msg-erro' : 'msg msg-ok';
+      msg.textContent = res.error ? res.error.message : 'Foto atualizada!';
+      if (!res.error && payload.p_foto_hero_url) aplicarHeroPreview(payload.p_foto_hero_url);
+    }, function () {
+      msg.className = 'msg msg-erro';
+      msg.textContent = 'Sem conexão agora.';
+    });
+  }
+
+  document.getElementById('heroEstoque').addEventListener('click', function (e) {
+    var img = e.target.closest('[data-estoque-url]');
+    if (!img) return;
+    salvarHero({ p_foto_hero_url: img.getAttribute('data-estoque-url') });
+  });
+
+  document.getElementById('heroUpload').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var msg = document.getElementById('heroMsg');
+    msg.className = 'msg';
+    msg.textContent = 'Enviando…';
+    window.VBUpload.uploadFoto(file, estabId, 'hero').then(function (url) {
+      salvarHero({ p_foto_hero_url: url });
+    }, function (err) {
+      msg.className = 'msg msg-erro';
+      msg.textContent = err.message || 'Falha ao enviar a foto.';
+    });
+  });
+
+  document.getElementById('heroFemininoUpload').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var msg = document.getElementById('heroMsg');
+    msg.className = 'msg';
+    msg.textContent = 'Enviando…';
+    window.VBUpload.uploadFoto(file, estabId, 'hero-feminino').then(function (url) {
+      salvarHero({ p_foto_hero_feminino_url: url });
+    }, function (err) {
+      msg.className = 'msg msg-erro';
+      msg.textContent = err.message || 'Falha ao enviar a foto.';
+    });
   });
 
   // ---- serviços ----
@@ -88,17 +154,21 @@
     e.preventDefault();
     var msg = document.getElementById('eqMsg');
     msg.textContent = 'Salvando…'; msg.className = 'msg';
-    db.rpc('tenant_admin_salvar_membro', {
-      p_estabelecimento_id: estabId, p_id: null,
-      p_nome: document.getElementById('eqNome').value.trim(),
-      p_especialidade: document.getElementById('eqEspecialidade').value.trim() || null,
-      p_foto_url: document.getElementById('eqFoto').value.trim() || null
+    var arquivo = document.getElementById('eqFoto').files[0];
+    var comFoto = arquivo ? window.VBUpload.uploadFoto(arquivo, estabId, 'equipe') : Promise.resolve(null);
+    comFoto.then(function (fotoUrl) {
+      return db.rpc('tenant_admin_salvar_membro', {
+        p_estabelecimento_id: estabId, p_id: null,
+        p_nome: document.getElementById('eqNome').value.trim(),
+        p_especialidade: document.getElementById('eqEspecialidade').value.trim() || null,
+        p_foto_url: fotoUrl
+      });
     }).then(function (res) {
       if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
       msg.className = 'msg msg-ok'; msg.textContent = 'Adicionado à equipe!';
       document.getElementById('formEquipe').reset();
       carregarEquipe();
-    }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Sem conexão agora.'; });
+    }, function (err) { msg.className = 'msg msg-erro'; msg.textContent = (err && err.message) || 'Sem conexão agora.'; });
   });
   document.getElementById('listaEquipe').addEventListener('click', function (e) {
     var btn = e.target.closest('[data-remover-membro]');
@@ -151,7 +221,9 @@
       var linhas = (res.data || []);
       if (!linhas.length) { lista.innerHTML = '<li style="border:none;">Nenhuma foto ainda.</li>'; return; }
       lista.innerHTML = linhas.map(function (g) {
-        return '<li><span class="nome" style="word-break:break-all; max-width:70%;">' + escapeHtml(g.foto_url) + '</span>' +
+        return '<li><span style="display:flex; align-items:center; gap:0.6rem;">' +
+          '<img src="' + escapeHtml(g.foto_url) + '" alt="" style="width:44px; height:44px; object-fit:cover; border-radius:6px;">' +
+          '<span class="nome">Foto da galeria</span></span>' +
           '<button class="btn btn-ghost" type="button" style="padding:0.4rem 0.7rem; font-size:0.8rem;" data-remover-foto="' + g.id + '">Remover</button></li>';
       }).join('');
     }, function () { lista.innerHTML = '<li style="border:none;">Sem conexão agora.</li>'; });
@@ -159,13 +231,21 @@
   document.getElementById('formGaleria').addEventListener('submit', function (e) {
     e.preventDefault();
     var msg = document.getElementById('galMsg');
-    msg.textContent = 'Salvando…'; msg.className = 'msg';
-    db.rpc('tenant_admin_adicionar_foto', { p_estabelecimento_id: estabId, p_foto_url: document.getElementById('galFoto').value.trim(), p_staff_id: null }).then(function (res) {
-      if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
-      msg.className = 'msg msg-ok'; msg.textContent = 'Foto adicionada!';
+    var arquivos = Array.prototype.slice.call(document.getElementById('galFoto').files);
+    if (!arquivos.length) return;
+    msg.textContent = 'Enviando ' + arquivos.length + ' foto(s)…'; msg.className = 'msg';
+    Promise.all(arquivos.map(function (arquivo) {
+      return window.VBUpload.uploadFoto(arquivo, estabId, 'galeria').then(function (url) {
+        return db.rpc('tenant_admin_adicionar_foto', { p_estabelecimento_id: estabId, p_foto_url: url, p_staff_id: null });
+      });
+    })).then(function (resultados) {
+      var comErro = resultados.filter(function (r) { return r.error; });
+      if (comErro.length) { msg.className = 'msg msg-erro'; msg.textContent = comErro[0].error.message; } else {
+        msg.className = 'msg msg-ok'; msg.textContent = 'Foto(s) adicionada(s)!';
+      }
       document.getElementById('formGaleria').reset();
       carregarGaleria();
-    }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Sem conexão agora.'; });
+    }, function (err) { msg.className = 'msg msg-erro'; msg.textContent = (err && err.message) || 'Sem conexão agora.'; });
   });
   document.getElementById('listaGaleria').addEventListener('click', function (e) {
     var btn = e.target.closest('[data-remover-foto]');

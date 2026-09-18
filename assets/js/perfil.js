@@ -52,6 +52,11 @@
   // ---------- gênero: fixo (masculino/feminino) ou "ambos" (com gate) ----------
   var SESSION_KEY = 'vbGeneroSessao_' + slug + '_' + cidade;
 
+  function boiseriePlaceholder(corHex) {
+    var cor = (corHex || '#C9A227').replace('#', '');
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72'%3E%3Crect x='9' y='9' width='54' height='54' rx='6' fill='none' stroke='%23" + cor + "' stroke-opacity='0.4' stroke-width='1.6'/%3E%3Crect x='18' y='18' width='36' height='36' rx='3' fill='none' stroke='%23" + cor + "' stroke-opacity='0.4' stroke-width='1.1'/%3E%3C/svg%3E";
+  }
+
   function aplicarGenero(g) {
     generoAtual = g;
     var femCss = document.getElementById('tplFeminino');
@@ -61,6 +66,11 @@
     document.getElementById('tplEyebrow').textContent = (SEGMENTOS[linhaAtual.segmento] || 'Estabelecimento') + ' · ' + linhaAtual.cidade;
     document.getElementById('tplHeadline').textContent = COPY[g].headline;
     document.getElementById('tplSubcopy').textContent = COPY[g].sub;
+
+    var fotoHero = (g === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
+    var heroFoto = document.getElementById('tplHeroFoto');
+    heroFoto.style.backgroundColor = 'var(--linen-deep)';
+    heroFoto.style.backgroundImage = 'url("' + (fotoHero || boiseriePlaceholder(linhaAtual.cor_destaque)) + '")';
 
     var trocaBtn = document.getElementById('tplTrocaGenero');
     if (linhaAtual.genero_atendimento === 'ambos') {
@@ -209,11 +219,6 @@
     } else {
       document.getElementById('tplTelefoneMenu').closest('p').style.display = 'none';
     }
-
-    var cor = (linha.cor_destaque || '#C9A227').replace('#', '');
-    var padraoSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72'%3E%3Crect x='9' y='9' width='54' height='54' rx='6' fill='none' stroke='%23" + cor + "' stroke-opacity='0.4' stroke-width='1.6'/%3E%3Crect x='18' y='18' width='36' height='36' rx='3' fill='none' stroke='%23" + cor + "' stroke-opacity='0.4' stroke-width='1.1'/%3E%3C/svg%3E";
-    document.getElementById('tplHeroFoto').style.background =
-      'var(--linen-deep) url("' + padraoSvg + '")';
 
     tpl.classList.remove('oculto');
     iniciarGenero();

@@ -51,6 +51,41 @@
     document.getElementById('estabSlug').value = slugificar(this.value);
   });
 
+  // ---- foto principal (hero) na hora de criar: upload ou estoque ----
+  var heroEscolhidoUrl = null;
+  var pastaFotoTemporaria = window.VBUpload ? window.VBUpload.novaPastaTemporaria() : 'novo-' + Date.now();
+  var ESTOQUE_FOTOS_CADASTRO = [
+    { url: 'assets/tpl-classico/img/estoque/hero-masculino-1.jpg', legenda: 'Studio dourado' },
+    { url: 'assets/tpl-classico/img/estoque/hero-feminino-1.jpg', legenda: 'Salão rosé' },
+    { url: 'assets/tpl-classico/img/estoque/fachada-1.jpg', legenda: 'Fachada clássica' }
+  ];
+  var estoqueEl = document.getElementById('estabHeroEstoque');
+  if (estoqueEl) {
+    estoqueEl.innerHTML = ESTOQUE_FOTOS_CADASTRO.map(function (f) {
+      return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" alt="' + f.legenda + '" style="width:72px; height:72px; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid transparent;">';
+    }).join('');
+    estoqueEl.addEventListener('click', function (e) {
+      var img = e.target.closest('[data-estoque-url]');
+      if (!img) return;
+      heroEscolhidoUrl = img.getAttribute('data-estoque-url');
+      document.getElementById('heroPreviewCadastro').style.backgroundImage = "url('" + heroEscolhidoUrl + "')";
+    });
+    document.getElementById('estabHeroUpload').addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file || !window.VBUpload) return;
+      estabMsg.className = 'msg';
+      estabMsg.textContent = 'Enviando foto…';
+      window.VBUpload.uploadFoto(file, pastaFotoTemporaria, 'hero').then(function (url) {
+        heroEscolhidoUrl = url;
+        document.getElementById('heroPreviewCadastro').style.backgroundImage = "url('" + url + "')";
+        estabMsg.textContent = '';
+      }, function (err) {
+        estabMsg.className = 'msg msg-erro';
+        estabMsg.textContent = err.message || 'Falha ao enviar a foto.';
+      });
+    });
+  }
+
   document.getElementById('criarContaLink').addEventListener('click', function (e) {
     e.preventDefault();
     modoCriarConta = !modoCriarConta;
@@ -181,7 +216,8 @@
       p_cidade: document.getElementById('estabCidade').value.trim(),
       p_segmento: document.getElementById('estabSegmento').value,
       p_telefone_whatsapp: document.getElementById('estabWhatsapp').value.trim() || null,
-      p_template: templateEscolhido
+      p_template: templateEscolhido,
+      p_foto_hero_url: heroEscolhidoUrl
     }).then(function (res) {
       btn.disabled = false;
       if (res.error) {
@@ -195,6 +231,9 @@
       estabMsg.textContent = 'Estabelecimento criado! Já aparece na lista acima.';
       document.getElementById('estabForm').reset();
       document.getElementById('estabCidade').value = 'Itapetininga';
+      heroEscolhidoUrl = null;
+      document.getElementById('heroPreviewCadastro').style.backgroundImage = 'none';
+      pastaFotoTemporaria = window.VBUpload ? window.VBUpload.novaPastaTemporaria() : 'novo-' + Date.now();
       carregarEstabelecimentos();
     }, function () {
       btn.disabled = false;

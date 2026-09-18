@@ -82,6 +82,13 @@
             <label for="estabWhatsapp">WhatsApp (com DDD)</label>
             <input type="tel" id="estabWhatsapp" placeholder="15999999999">
           </div>
+          <div class="field">
+            <label>Foto principal do site</label>
+            <div id="heroPreviewCadastro" style="width:100%; max-width:260px; aspect-ratio:4/5; border-radius:10px; background-size:cover; background-position:center; background-color:#eee; border:1px solid var(--borda); margin-bottom:0.75rem;"></div>
+            <input type="file" id="estabHeroUpload" accept="image/*" style="margin-bottom:0.75rem;">
+            <p class="cidade" style="margin:0 0 0.5rem;">ou escolha uma pronta:</p>
+            <div id="estabHeroEstoque" style="display:flex; gap:0.6rem; flex-wrap:wrap;"></div>
+          </div>
           <button class="btn btn-primario" id="criarEstabBtn" type="submit" style="width:100%;">Criar estabelecimento</button>
           <p class="msg" id="estabMsg"></p>
         </form>
@@ -97,6 +104,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
-  <script src="assets/js/cadastro.js?v=1"></script>
+  <script src="assets/js/upload-fotos.js?v=1"></script>
+  <script src="assets/js/cadastro.js?v=2"></script>
 </body>
 </html>

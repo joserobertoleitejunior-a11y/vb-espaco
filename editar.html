@@ -20,6 +20,24 @@
   <div class="container" style="padding-top:1.5rem; padding-bottom:3rem;">
     <h1 id="tituloEstab" style="font-size:1.4rem; margin:0 0 1.25rem;">Carregando…</h1>
 
+    <!-- Foto principal (hero) -->
+    <div class="card">
+      <h2>Foto principal do site</h2>
+      <p class="cidade" style="margin:-0.4rem 0 1rem;">Aparece de fundo no topo do site. Envie uma foto do celular ou escolha uma das nossas prontas.</p>
+      <div id="heroPreview" style="width:100%; max-width:300px; aspect-ratio:4/5; border-radius:10px; background-size:cover; background-position:center; background-color:#eee; border:1px solid var(--borda); margin-bottom:1rem;"></div>
+      <div class="field" style="margin:0 0 1rem;">
+        <label>Enviar foto do celular</label>
+        <input type="file" id="heroUpload" accept="image/*">
+      </div>
+      <p class="cidade" style="margin:0 0 0.5rem;">ou escolha uma pronta:</p>
+      <div id="heroEstoque" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:1rem;"></div>
+      <div class="field" id="heroFemininoWrap" style="margin:0;">
+        <label>Foto pro lado feminino (opcional, quando o site atende os dois)</label>
+        <input type="file" id="heroFemininoUpload" accept="image/*">
+      </div>
+      <p class="msg" id="heroMsg"></p>
+    </div>
+
     <!-- Serviços -->
     <div class="card">
       <h2>Serviços e valores</h2>
@@ -60,8 +78,8 @@
           <input type="text" id="eqEspecialidade" placeholder="Ex: Cortes e barba">
         </div>
         <div class="field" style="margin:0; grid-column:1/3;">
-          <label>Link da foto (opcional)</label>
-          <input type="url" id="eqFoto" placeholder="https://...">
+          <label>Foto (opcional)</label>
+          <input type="file" id="eqFoto" accept="image/*">
         </div>
         <button class="btn btn-primario" type="submit" style="grid-column:1/3;">Adicionar à equipe</button>
       </form>
@@ -79,8 +97,8 @@
     <div class="card">
       <h2>Galeria de fotos</h2>
       <ul class="lista-estabelecimentos" id="listaGaleria"></ul>
-      <form id="formGaleria" style="margin-top:1rem; display:flex; gap:0.6rem;">
-        <input type="url" id="galFoto" required placeholder="Link da foto (https://...)" style="flex:1; padding:0.75rem 0.9rem; border:1px solid var(--borda); border-radius:10px; font-family:inherit;">
+      <form id="formGaleria" style="margin-top:1rem; display:flex; gap:0.6rem; flex-wrap:wrap;">
+        <input type="file" id="galFoto" accept="image/*" multiple required style="flex:1; min-width:200px;">
         <button class="btn btn-primario" type="submit">Adicionar</button>
       </form>
       <p class="msg" id="galMsg"></p>
@@ -97,6 +115,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
   <script type="module" src="assets/js/vb-cube3d.js?v=3"></script>
-  <script src="assets/js/editar.js?v=1"></script>
+  <script src="assets/js/upload-fotos.js?v=1"></script>
+  <script src="assets/js/editar.js?v=2"></script>
 </body>
 </html>
