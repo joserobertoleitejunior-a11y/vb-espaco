@@ -317,6 +317,16 @@
     linhaAtual.sobre_texto = texto;
     db.rpc('tenant_admin_atualizar_sobre', { p_estabelecimento_id: estabId, p_sobre_texto: texto });
   }
+  function salvarTituloInstitucional() {
+    var el = document.getElementById('tplTituloInstitucional');
+    var titulo = el.textContent.trim();
+    if (!titulo) {
+      el.textContent = linhaAtual.titulo_institucional || ('Conheça a ' + linhaAtual.nome);
+      return;
+    }
+    linhaAtual.titulo_institucional = titulo;
+    db.rpc('tenant_admin_atualizar_titulo_institucional', { p_estabelecimento_id: estabId, p_titulo: titulo });
+  }
   function salvarEndereco() {
     var endereco = document.getElementById('tplEnderecoRodape').textContent.trim();
     linhaAtual.endereco = endereco;
@@ -347,12 +357,15 @@
     var sobre = document.getElementById('tplSobreTexto');
     var endereco = document.getElementById('tplEnderecoRodape');
     var nomeTopo = document.getElementById('tplNomeTopo');
+    var tituloInst = document.getElementById('tplTituloInstitucional');
     sobre.setAttribute('contenteditable', 'true');
     endereco.setAttribute('contenteditable', 'true');
     nomeTopo.setAttribute('contenteditable', 'true');
+    tituloInst.setAttribute('contenteditable', 'true');
     sobre.addEventListener('blur', salvarSobre);
     endereco.addEventListener('blur', salvarEndereco);
     nomeTopo.addEventListener('blur', salvarNome);
+    tituloInst.addEventListener('blur', salvarTituloInstitucional);
     carregarEquipe();
     carregarGaleria();
     carregarServicos();
@@ -365,6 +378,7 @@
     document.getElementById('tplSobreTexto').removeAttribute('contenteditable');
     document.getElementById('tplEnderecoRodape').removeAttribute('contenteditable');
     document.getElementById('tplNomeTopo').removeAttribute('contenteditable');
+    document.getElementById('tplTituloInstitucional').removeAttribute('contenteditable');
     try { localStorage.removeItem(chaveAdmin()); } catch (e) {}
     carregarEquipe();
     carregarGaleria();
@@ -422,7 +436,7 @@
     document.title = linha.nome + ' — Site institucional — VB Agenda';
     document.getElementById('tplNomeTopo').textContent = linha.nome;
     document.getElementById('tplNomeRodape').textContent = linha.nome;
-    document.getElementById('tplTituloInstitucional').textContent = 'Conheça a ' + linha.nome;
+    document.getElementById('tplTituloInstitucional').textContent = linha.titulo_institucional || ('Conheça a ' + linha.nome);
     document.getElementById('tplSobreTexto').textContent = linha.sobre_texto || 'Ainda não escrevemos nossa história aqui — em breve.';
     document.getElementById('tplCidadeRodape').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';
     document.getElementById('tplEnderecoMenu').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';
