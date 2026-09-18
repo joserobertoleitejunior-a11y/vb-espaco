@@ -171,12 +171,22 @@
         var topoStyle = e.foto_hero_url
           ? "background-image:url('" + e.foto_hero_url + "');"
           : 'background-image:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
+        var trialData = e.trial_termina_em ? new Date(e.trial_termina_em + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+        var pagamentoHtml = e.forma_pagamento
+          ? '<div class="dash-card-pagamento">Forma de pagamento: <strong>' + (e.forma_pagamento === 'pix' ? 'Pix' : 'Cartão de crédito') + '</strong> — cobrança automática ainda será ativada, por enquanto seu acesso segue liberado.</div>'
+          : '<div class="dash-card-pagamento dash-card-pagamento-pendente">' +
+            '<p>1º mês grátis' + (trialData ? ' até ' + trialData : '') + '. Depois, R$ 39,90/mês. Escolha como prefere pagar:</p>' +
+            '<div class="dash-card-acoes">' +
+            '<button type="button" class="btn btn-ghost" data-forma-pagamento-id="' + e.id + '" data-forma="pix" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Pix</button>' +
+            '<button type="button" class="btn btn-ghost" data-forma-pagamento-id="' + e.id + '" data-forma="cartao" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Cartão de crédito</button>' +
+            '</div></div>';
         return '<li class="dash-card">' +
           '<div class="dash-card-topo" style="' + topoStyle + '"><span class="dash-card-segmento">' + escapeHtml(SEGMENTOS_LABEL[e.segmento] || 'Estabelecimento') + '</span></div>' +
           '<div class="dash-card-corpo">' +
           '<span class="nome">' + escapeHtml(e.nome) + '</span><br><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +
           '<div class="dash-card-stats"><span><strong>' + (e.total_agendamentos || 0) + '</strong> agendamento(s)</span><span><strong>' + (e.total_servicos || 0) + '</strong> serviço(s)</span></div>' +
           '<div class="dash-card-pin">PIN de admin do site: <strong>' + escapeHtml(e.admin_pin || '----') + '</strong></div>' +
+          pagamentoHtml +
           '<div class="dash-card-acoes">' +
           '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '" target="_blank" rel="noopener">Ver site →</a>' +
           '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="editar.html?id=' + encodeURIComponent(e.id) + '">Editar</a>' +
@@ -191,6 +201,16 @@
       listaMsg.textContent = 'Sem conexão agora — tenta de novo em instantes.';
     });
   }
+
+  listaEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-forma-pagamento-id]');
+    if (!btn) return;
+    btn.closest('.dash-card-acoes').querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+    db.rpc('tenant_cadastrar_forma_pagamento', {
+      p_estabelecimento_id: btn.getAttribute('data-forma-pagamento-id'),
+      p_forma_pagamento: btn.getAttribute('data-forma')
+    }).then(carregarEstabelecimentos);
+  });
 
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, function (c) {

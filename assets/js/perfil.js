@@ -142,6 +142,7 @@
     document.getElementById('tplHeroFoto').addEventListener('click', abrirEditorHero);
     carregarServicos();
     carregarGaleria();
+    carregarRedesSociais();
   }
 
   function desativarModoAdmin() {
@@ -153,6 +154,7 @@
     try { localStorage.removeItem(chaveAdmin()); } catch (e) {}
     carregarServicos();
     carregarGaleria();
+    carregarRedesSociais();
   }
 
   function iniciarModoAdmin() {
@@ -264,6 +266,57 @@
   // ---------- serviços, galeria, agenda ----------
   var ICONE_TESOURA = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="23" r="3.2"/><circle cx="9" cy="9" r="3.2"/><line x1="11.5" y1="11" x2="26" y2="23"/><line x1="11.5" y1="21" x2="26" y2="9"/></svg>';
   var ICONE_AGENDA = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="9" width="20" height="16" rx="2"/><line x1="6" y1="14" x2="26" y2="14"/><line x1="11" y1="6" x2="11" y2="11"/><line x1="21" y1="6" x2="21" y2="11"/></svg>';
+
+  // ---------- redes sociais (mesmo padrão em todas as réplicas) ----------
+  var ICONE_WHATSAPP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c4.97 0 9-3.8 9-8.5S16.97 4 12 4s-9 3.8-9 8.5c0 1.7.5 3.2 1.4 4.5L3 21l4.3-1.3c1.3.8 2.9 1.3 4.7 1.3z"/><path d="M8.7 9.3c.2-.5.4-.5.6-.5h.5c.2 0 .4 0 .5.4l.6 1.5c.1.2 0 .4-.1.5l-.5.5c-.1.1-.2.3-.1.5.3.6 1.4 1.7 2 2 .2.1.4 0 .5-.1l.5-.5c.1-.1.3-.2.5-.1l1.5.6c.4.1.4.3.4.5v.5c0 .2 0 .4-.5.6-1.6.6-3.7-.5-5.1-1.9-1.4-1.4-2.5-3.5-1.9-5.1z" fill="currentColor" stroke="none"/></svg>';
+  var ICONE_INSTAGRAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><circle cx="12" cy="12" r="4.3"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>';
+  var ICONE_FACEBOOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M14 8.5h-1.3c-.9 0-1.7.7-1.7 1.6v2h3l-.4 2.6h-2.6V19"/></svg>';
+  var ICONE_TIKTOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.5a3.5 3.5 0 1 1-3-3.46"/><path d="M14 4c.3 2.2 1.8 3.8 4 4.2"/></svg>';
+
+  var REDES = [
+    { chave: 'whatsapp', label: 'WhatsApp', icone: ICONE_WHATSAPP },
+    { chave: 'instagram_url', label: 'Instagram', icone: ICONE_INSTAGRAM },
+    { chave: 'facebook_url', label: 'Facebook', icone: ICONE_FACEBOOK },
+    { chave: 'tiktok_url', label: 'TikTok', icone: ICONE_TIKTOK }
+  ];
+
+  function carregarRedesSociais() {
+    var strip = document.getElementById('tplRedesSociais');
+    if (!strip) return;
+    var linksVisiveis = REDES.filter(function (r) {
+      if (r.chave === 'whatsapp') return !!linhaAtual.telefone_whatsapp;
+      return modoAdmin || linhaAtual[r.chave];
+    });
+    strip.innerHTML = linksVisiveis.map(function (r) {
+      var url = r.chave === 'whatsapp'
+        ? 'https://wa.me/55' + linhaAtual.telefone_whatsapp.replace(/\D/g, '')
+        : linhaAtual[r.chave];
+      var vazio = r.chave !== 'whatsapp' && !url;
+      var estiloVazio = vazio ? ' style="opacity:0.4;"' : '';
+      if (modoAdmin && r.chave !== 'whatsapp') {
+        return '<button type="button" class="social-badge" data-rede="' + r.chave + '" title="' + r.label + '"' + estiloVazio + '>' + r.icone + '</button>';
+      }
+      return '<a class="social-badge" href="' + escapeHtml(url) + '" target="_blank" rel="noopener" title="' + r.label + '">' + r.icone + '</a>';
+    }).join('');
+
+    if (!modoAdmin) return;
+    strip.querySelectorAll('[data-rede]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var chave = btn.getAttribute('data-rede');
+        var atual = linhaAtual[chave] || '';
+        var novo = window.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', atual);
+        if (novo === null) return;
+        novo = novo.trim() || null;
+        linhaAtual[chave] = novo;
+        db.rpc('tenant_admin_atualizar_redes', {
+          p_estabelecimento_id: estabId,
+          p_instagram_url: linhaAtual.instagram_url,
+          p_facebook_url: linhaAtual.facebook_url,
+          p_tiktok_url: linhaAtual.tiktok_url
+        }).then(carregarRedesSociais);
+      });
+    });
+  }
 
   function carregarServicos() {
     var lista = document.getElementById('tplListaServicos');
@@ -429,6 +482,7 @@
     iniciarGenero();
     carregarServicos();
     carregarGaleria();
+    carregarRedesSociais();
     iniciarModoAdmin();
     var jaDesbloqueado = false;
     try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}

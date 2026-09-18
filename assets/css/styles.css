@@ -576,3 +576,15 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 }
 .dash-card-pin strong { letter-spacing: 0.15rem; color: var(--tinta); }
 .dash-card-acoes { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.dash-card-pagamento {
+  font-size: 0.8rem;
+  color: var(--tinta-suave);
+  margin-bottom: 0.8rem;
+}
+.dash-card-pagamento-pendente {
+  background: #fdf3e0;
+  color: #8a5a00;
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+}
+.dash-card-pagamento-pendente p { margin: 0 0 0.5rem; }
