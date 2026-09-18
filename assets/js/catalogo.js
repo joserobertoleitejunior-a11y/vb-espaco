@@ -1,4 +1,4 @@
-/* Home do VB Espaço = catálogo estilo iFood: busca por nome + filtro
+/* Home do VB Agenda = catálogo estilo iFood: busca por nome + filtro
    por segmento, cada card levando pro link público (/:slug/:cidade). */
 (function () {
   if (!window.db) return;

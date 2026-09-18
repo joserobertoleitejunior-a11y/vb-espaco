@@ -9,13 +9,13 @@
 ## 0. Contexto do projeto (preencher a cada novo projeto)
 
 ```
-Nome do projeto: VB Espaço
+Nome do projeto: VB Agenda
 Cliente: Agência própria (José) — plataforma white-label multi-tenant
 Modelo de negócio: R$40/mês por estabelecimento (assinatura da plataforma) + 5% de comissão sobre toda transação dentro do app, via split automático (Mercado Pago Marketplace, cada dono conecta a própria conta MP)
 Stack principal: Site estático (HTML/JS puro, sem build/bundler) + Supabase (banco/auth/RLS) + Mercado Pago (pagamento + split) + Netlify (hospedagem)
 Repositório: github.com/joserobertoleitejunior-a11y/vb-espaco
 Ambiente de produção: Netlify
-Domínio(s) de produção: vbespaco.com.br (a confirmar registro) — link de cada estabelecimento no formato /:slug/:cidade
+Domínio(s) de produção: vbagenda.com.br (a confirmar registro) — link de cada estabelecimento no formato /:slug/:cidade
 Responsável técnico: José
 Escopo inicial: barbearias, salões de beleza, manicure e pedicure, estética — só Itapetininga/SP por enquanto
 Data de início: 2026-09-17

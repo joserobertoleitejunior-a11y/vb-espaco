@@ -35,7 +35,7 @@
       outro: 'Estabelecimento'
     };
 
-    document.title = linha.nome + ' — VB Espaço';
+    document.title = linha.nome + ' — VB Agenda';
     document.getElementById('perfilSegmento').textContent = segmentos[linha.segmento] || 'Estabelecimento';
     document.getElementById('perfilNome').textContent = linha.nome;
     document.getElementById('perfilCidade').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1);

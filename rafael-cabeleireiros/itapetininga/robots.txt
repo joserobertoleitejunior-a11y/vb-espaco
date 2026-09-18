@@ -2,4 +2,4 @@ User-agent: *
 Disallow: /admin.html
 Allow: /
 
-Sitemap: https://vbespaco.com.br/rafael-cabeleireiros/itapetininga/sitemap.xml
+Sitemap: https://vbagenda.com.br/rafael-cabeleireiros/itapetininga/sitemap.xml

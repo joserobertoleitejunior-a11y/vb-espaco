@@ -1,10 +1,10 @@
-# VB Espaço
+# VB Agenda
 
 Plataforma white-label de agendamento e pagamento pra salões, barbearias, manicure/pedicure e estética — começando por Itapetininga/SP. Ver `PADROES-AGENCIA.md` pros padrões fixos da agência.
 
 ## Como funciona o link de cada estabelecimento
 
-`vbespaco.com.br/:slug/:cidade` — ex: `vbespaco.com.br/rafael-cabeleireiros/itapetininga`. O roteamento é feito pelo `_redirects` (Netlify), que reescreve qualquer caminho de dois segmentos pra `perfil.html`, e o JS lê o caminho real da URL pra saber qual estabelecimento buscar.
+`vbagenda.com.br/:slug/:cidade` — ex: `vbagenda.com.br/rafael-cabeleireiros/itapetininga`. O roteamento é feito pelo `_redirects` (Netlify), que reescreve qualquer caminho de dois segmentos pra `perfil.html`, e o JS lê o caminho real da URL pra saber qual estabelecimento buscar.
 
 ## Páginas
 
