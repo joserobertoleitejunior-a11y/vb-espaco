@@ -28,6 +28,8 @@ img { max-width: 100%; display: block; }
   max-width: 640px;
   margin: 0 auto;
   padding: 0 1.25rem;
+  position: relative;
+  z-index: 1;
 }
 
 .topbar {
@@ -389,3 +391,14 @@ img { max-width: 100%; display: block; }
 /* Ícones SVG inline (substituem os emojis de teclado) */
 .icone-inline { display: inline-block; vertical-align: -3px; flex-shrink: 0; }
 .busca-icone svg { display: block; }
+
+/* Logo 3D de fundo — fixo, atrás de tudo, transparente (o site
+   continua claro e legível; ele só aparece nos vãos entre os
+   elementos opacos, que ficam por cima normalmente). */
+#cube3d {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: auto;
+}
+#cube3d canvas { display: block; width: 100%; height: 100%; }
