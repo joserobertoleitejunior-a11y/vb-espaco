@@ -275,6 +275,16 @@ img { max-width: 100%; display: block; }
 .catalogo-capa {
   height: 76px;
   position: relative;
+  overflow: hidden;
+}
+.catalogo-capa-icone {
+  position: absolute;
+  right: -0.4rem;
+  top: 50%;
+  transform: translateY(-50%) rotate(-12deg);
+  font-size: 3.6rem;
+  opacity: 0.28;
+  line-height: 1;
 }
 .catalogo-avatar {
   position: absolute;
@@ -310,6 +320,18 @@ img { max-width: 100%; display: block; }
   border-radius: 999px;
 }
 .catalogo-seta { color: var(--tinta-suave); font-size: 1.2rem; }
+
+.catalogo-cta {
+  text-align: center;
+  padding: 2rem 1.25rem;
+  margin-top: 0.5rem;
+  border: 1px dashed var(--borda);
+  border-radius: 16px;
+  background: var(--branco);
+}
+.catalogo-cta-emoji { font-size: 1.8rem; display: block; margin-bottom: 0.4rem; }
+.catalogo-cta-titulo { font-weight: 800; margin: 0 0 0.3rem; }
+.catalogo-cta-texto { color: var(--tinta-suave); font-size: 0.88rem; margin: 0 0 1.1rem; }
 
 /* Link "voltar ao catálogo" — usado no perfil genérico e nos sites
    próprios dos estabelecimentos (ex: Rafael Cabeleireiros). */

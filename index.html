@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VB Agenda — salões, barbearias e estúdios em Itapetininga</title>
 <meta name="description" content="Encontre e agende num clique: barbearias, salões de beleza, manicure e pedicure, e estética em Itapetininga.">
-<link rel="stylesheet" href="assets/css/styles.css?v=3">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="apple-touch-icon" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="assets/css/styles.css?v=4">
 </head>
 <body class="com-tabbar">
   <header class="topbar">
@@ -19,12 +21,12 @@
       <input class="busca-input" id="buscaInput" type="search" placeholder="Busque pelo nome do estabelecimento">
     </div>
 
-    <div class="filtros" id="filtros">
-      <button class="chip is-ativo" data-segmento="">Tudo</button>
-      <button class="chip" data-segmento="barbearia">💈 Barbearia</button>
-      <button class="chip" data-segmento="salao">💇 Salão</button>
-      <button class="chip" data-segmento="manicure_pedicure">💅 Manicure e pedicure</button>
-      <button class="chip" data-segmento="estetica">✨ Estética</button>
+    <div class="filtros" id="filtros" role="group" aria-label="Filtrar por segmento">
+      <button class="chip is-ativo" type="button" data-segmento="" aria-pressed="true">Tudo</button>
+      <button class="chip" type="button" data-segmento="barbearia" aria-pressed="false">💈 Barbearia</button>
+      <button class="chip" type="button" data-segmento="salao" aria-pressed="false">💇 Salão</button>
+      <button class="chip" type="button" data-segmento="manicure_pedicure" aria-pressed="false">💅 Manicure e pedicure</button>
+      <button class="chip" type="button" data-segmento="estetica" aria-pressed="false">✨ Estética</button>
     </div>
 
     <div id="listaCatalogo" style="padding-bottom:1rem;">
@@ -40,6 +42,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
-  <script src="assets/js/catalogo.js?v=2"></script>
+  <script src="assets/js/catalogo.js?v=3"></script>
 </body>
 </html>

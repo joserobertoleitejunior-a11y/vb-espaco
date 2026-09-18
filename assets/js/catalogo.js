@@ -16,6 +16,13 @@
     estetica: 'Estética',
     outro: 'Estabelecimento'
   };
+  var ICONES = {
+    barbearia: '💈',
+    salao: '💇',
+    manicure_pedicure: '💅',
+    estetica: '✨',
+    outro: '🏪'
+  };
 
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, function (c) {
@@ -28,6 +35,14 @@
     return ((partes[0] || '')[0] || '').toUpperCase() + ((partes[1] || '')[0] || '').toUpperCase();
   }
 
+  var CTA_CADASTRO =
+    '<div class="catalogo-cta">' +
+    '<span class="catalogo-cta-emoji">🚀</span>' +
+    '<p class="catalogo-cta-titulo">Mais estabelecimentos chegando em breve</p>' +
+    '<p class="catalogo-cta-texto">Tem um salão, barbearia ou estúdio? Seja um dos primeiros no VB Agenda.</p>' +
+    '<a class="btn btn-primario" href="cadastro.html">Quero cadastrar o meu →</a>' +
+    '</div>';
+
   function renderizar() {
     var termo = (buscaEl.value || '').trim().toLowerCase();
     var linhas = todos.filter(function (e) {
@@ -35,15 +50,17 @@
     });
 
     if (!linhas.length) {
-      listaEl.innerHTML = '<p style="color:var(--tinta-suave); text-align:center; padding:2rem 0;">Nenhum estabelecimento encontrado.</p>';
+      listaEl.innerHTML = '<p style="color:var(--tinta-suave); text-align:center; padding:2rem 0;">Nenhum estabelecimento encontrado.</p>' + CTA_CADASTRO;
       return;
     }
 
     listaEl.innerHTML = linhas.map(function (e) {
       var link = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade);
       var cor = e.cor_destaque || '#C9A227';
+      var icone = ICONES[e.segmento] || '🏪';
       return '<a class="catalogo-card" href="' + link + '">' +
         '<div class="catalogo-capa" style="background:linear-gradient(135deg,' + cor + ',' + cor + 'cc);">' +
+        '<span class="catalogo-capa-icone" aria-hidden="true">' + icone + '</span>' +
         '<span class="catalogo-avatar" style="background:' + cor + ';">' + escapeHtml(iniciais(e.nome)) + '</span>' +
         '</div>' +
         '<div class="catalogo-corpo">' +
@@ -57,7 +74,7 @@
         '<span class="catalogo-seta" aria-hidden="true">→</span>' +
         '</div>' +
         '</a>';
-    }).join('');
+    }).join('') + CTA_CADASTRO;
   }
 
   function carregar() {
@@ -77,8 +94,12 @@
 
   filtrosEl.querySelectorAll('.chip').forEach(function (chip) {
     chip.addEventListener('click', function () {
-      filtrosEl.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('is-ativo'); });
+      filtrosEl.querySelectorAll('.chip').forEach(function (c) {
+        c.classList.remove('is-ativo');
+        c.setAttribute('aria-pressed', 'false');
+      });
       chip.classList.add('is-ativo');
+      chip.setAttribute('aria-pressed', 'true');
       segmentoAtual = chip.getAttribute('data-segmento') || '';
       carregar();
     });
