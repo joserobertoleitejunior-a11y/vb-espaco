@@ -177,6 +177,17 @@
     db.rpc('tenant_admin_atualizar_nome', { p_estabelecimento_id: estabId, p_nome: nome });
   }
 
+  function salvarCta() {
+    var el = document.getElementById('tplCtaTexto');
+    var texto = el.textContent.trim();
+    if (!texto) {
+      el.textContent = linhaAtual.texto_cta || 'Agendar horário';
+      return;
+    }
+    linhaAtual.texto_cta = texto;
+    db.rpc('tenant_admin_atualizar_cta', { p_estabelecimento_id: estabId, p_texto_cta: texto });
+  }
+
   function salvarTextoHero() {
     var titulo = document.getElementById('tplHeadline').textContent.trim();
     var subtitulo = document.getElementById('tplSubcopy').textContent.trim();
@@ -323,14 +334,17 @@
     var sub = document.getElementById('tplSubcopy');
     var endereco = document.getElementById('tplEnderecoRodape');
     var nomeTopo = document.getElementById('tplNomeTopo');
+    var ctaTexto = document.getElementById('tplCtaTexto');
     titulo.setAttribute('contenteditable', 'true');
     sub.setAttribute('contenteditable', 'true');
     endereco.setAttribute('contenteditable', 'true');
     nomeTopo.setAttribute('contenteditable', 'true');
+    ctaTexto.setAttribute('contenteditable', 'true');
     titulo.addEventListener('blur', salvarTextoHero);
     sub.addEventListener('blur', salvarTextoHero);
     endereco.addEventListener('blur', salvarEndereco);
     nomeTopo.addEventListener('blur', salvarNome);
+    ctaTexto.addEventListener('blur', salvarCta);
     document.getElementById('tplHeroFoto').addEventListener('click', abrirEditorHero);
     carregarServicos();
     carregarGaleria();
@@ -345,6 +359,7 @@
     document.getElementById('tplSubcopy').removeAttribute('contenteditable');
     document.getElementById('tplEnderecoRodape').removeAttribute('contenteditable');
     document.getElementById('tplNomeTopo').removeAttribute('contenteditable');
+    document.getElementById('tplCtaTexto').removeAttribute('contenteditable');
     try { localStorage.removeItem(chaveAdmin()); } catch (e) {}
     // reconfere se já tem serviço/equipe (pode ter completado agora) antes
     // de decidir se o portão "em preparação" volta a aparecer pra visita.
@@ -939,6 +954,7 @@
     });
 
     document.addEventListener('click', function (e) {
+      if (modoAdmin && e.target.closest('[contenteditable="true"]')) return;
       if (e.target.closest('[data-open-widget]')) {
         if (window.RafaelMenu) window.RafaelMenu.close();
         open();
@@ -958,6 +974,7 @@
     document.title = linha.nome + ' — VB Agenda';
     document.getElementById('tplNomeTopo').textContent = linha.nome;
     document.getElementById('tplNomeRodape').textContent = linha.nome;
+    document.getElementById('tplCtaTexto').textContent = linha.texto_cta || 'Agendar horário';
     document.getElementById('tplCidadeRodape').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';
     document.getElementById('tplEnderecoMenu').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';
     document.getElementById('tplCopyright').textContent = '© ' + new Date().getFullYear() + ' ' + linha.nome + ' — todos os direitos reservados';

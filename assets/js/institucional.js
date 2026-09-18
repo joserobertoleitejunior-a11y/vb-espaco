@@ -431,6 +431,7 @@
     document.getElementById('tplLinkInicio').href = base;
     document.getElementById('tplLinkAgenda').href = base + '#agendar';
     document.getElementById('tplBotaoAgendar').href = base + '#agendar';
+    document.getElementById('tplBotaoAgendar').textContent = (linha.texto_cta || 'Agendar horário') + ' →';
 
     if (linha.telefone_whatsapp) {
       var tel = linha.telefone_whatsapp.replace(/\D/g, '');
