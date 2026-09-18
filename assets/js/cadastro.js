@@ -123,7 +123,10 @@
         return '<li>' +
           '<span><span class="nome">' + escapeHtml(e.nome) + '</span><br>' +
           '<span class="cidade">' + escapeHtml(e.cidade) + '</span></span>' +
-          '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '" target="_blank" rel="noopener">Ver perfil →</a>' +
+          '<span style="display:flex; gap:0.5rem;">' +
+          '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="editar.html?id=' + encodeURIComponent(e.id) + '">Editar</a>' +
+          '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '" target="_blank" rel="noopener">Ver →</a>' +
+          '</span>' +
           '</li>';
       }).join('');
     }, function () {

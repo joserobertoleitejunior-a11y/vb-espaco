@@ -32,16 +32,49 @@
       <span class="cidade" id="perfilCidade"></span>
     </div>
     <div class="container" style="padding-top:1.5rem; padding-bottom:2.5rem;">
+      <div class="card" id="cardServicos">
+        <h2>Serviços</h2>
+        <ul class="lista-estabelecimentos" id="listaServicosPerfil"></ul>
+      </div>
+
+      <div class="card oculto" id="cardGaleria">
+        <h2>Galeria</h2>
+        <div id="gradeGaleria" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem;"></div>
+      </div>
+
       <div class="card">
         <h2>Agendar</h2>
-        <p style="color:var(--tinta-suave); margin:0 0 1rem;">A agenda online desse estabelecimento ainda está sendo configurada.</p>
-        <a class="btn btn-primario oculto" id="whatsappBtn" href="#" target="_blank" rel="noopener" style="width:100%;">Chamar no WhatsApp →</a>
+        <form id="formAgendar">
+          <div class="field">
+            <label for="agNome">Seu nome</label>
+            <input type="text" id="agNome" required>
+          </div>
+          <div class="field">
+            <label for="agTelefone">WhatsApp (com DDD)</label>
+            <input type="tel" id="agTelefone" required placeholder="15999999999">
+          </div>
+          <div class="field">
+            <label for="agServico">Serviço</label>
+            <select id="agServico" required></select>
+          </div>
+          <div class="field">
+            <label for="agDia">Dia</label>
+            <input type="date" id="agDia" required>
+          </div>
+          <div class="field">
+            <label for="agHorario">Horário</label>
+            <input type="time" id="agHorario" required>
+          </div>
+          <button class="btn btn-primario" type="submit" style="width:100%;">Confirmar agendamento</button>
+          <p class="msg" id="agendarMsg"></p>
+        </form>
+        <a class="btn btn-ghost oculto" id="whatsappBtn" href="#" target="_blank" rel="noopener" style="width:100%; margin-top:0.8rem;">Chamar no WhatsApp →</a>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/js/supabase-client.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=1"></script>
+  <script src="/assets/js/perfil.js?v=2"></script>
 </body>
 </html>
