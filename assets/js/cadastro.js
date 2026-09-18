@@ -9,6 +9,10 @@
   // Trocar pra false assim que o login estiver pronto pra valer.
   var TESTE_SEM_LOGIN = true;
 
+  // veio do botão "Criar uma loja assim" no catálogo? guarda pra usar
+  // na hora de criar o estabelecimento.
+  var templateEscolhido = new URLSearchParams(window.location.search).get('template') || 'classico-boiserie';
+
   var authBox = document.getElementById('authBox');
   var painelBox = document.getElementById('painelBox');
   var sairBtn = document.getElementById('sairBtn');
@@ -176,7 +180,8 @@
       p_slug: document.getElementById('estabSlug').value.trim(),
       p_cidade: document.getElementById('estabCidade').value.trim(),
       p_segmento: document.getElementById('estabSegmento').value,
-      p_telefone_whatsapp: document.getElementById('estabWhatsapp').value.trim() || null
+      p_telefone_whatsapp: document.getElementById('estabWhatsapp').value.trim() || null,
+      p_template: templateEscolhido
     }).then(function (res) {
       btn.disabled = false;
       if (res.error) {

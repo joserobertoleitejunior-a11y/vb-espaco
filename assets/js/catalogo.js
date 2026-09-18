@@ -91,7 +91,8 @@
         '</span>' +
         '<span class="catalogo-seta" aria-hidden="true">→</span>' +
         '</div>' +
-        '</a>';
+        '</a>' +
+        '<a class="catalogo-criar-assim" href="cadastro.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') + '">+ Criar uma loja assim →</a>';
     }).join('') + CTA_CADASTRO;
   }
 

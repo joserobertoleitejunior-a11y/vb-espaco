@@ -333,6 +333,16 @@ img { max-width: 100%; display: block; }
 }
 .catalogo-tag svg { flex-shrink: 0; }
 .catalogo-seta { color: var(--tinta-suave); font-size: 1.2rem; }
+.catalogo-criar-assim {
+  display: block;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--vermelho);
+  text-decoration: none;
+  margin: -0.5rem 0 1.25rem;
+  padding: 0.5rem;
+}
 
 .catalogo-cta {
   text-align: center;
