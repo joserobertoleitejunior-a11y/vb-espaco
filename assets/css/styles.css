@@ -377,10 +377,35 @@ img { max-width: 100%; display: block; }
 }
 .voltar-catalogo:active { transform: scale(0.97); }
 
-/* No template classico-boiserie o topbar do Rafael fica sobreposto na
-   hero (position:absolute) e ocupa a faixa do topo inteira — o pill de
-   voltar desce pra não bater no nome da marca. */
-#tplClassico .voltar-catalogo { top: auto; bottom: 0.9rem; }
+/* Faixa fina fixa no topo (site do estabelecimento) pra voltar pro
+   VB Agenda, sem atrapalhar o cabeçalho do template por baixo — some
+   quando desce o scroll e volta quando sobe. */
+.faixa-voltar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 140;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 1rem;
+  background: rgba(20, 20, 24, 0.92);
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: transform 0.25s ease;
+}
+.faixa-voltar.escondida { transform: translateY(-100%); }
+/* position:relative pra virar o "containing block" do topbar absoluto
+   (.site-topbar.on-hero usa inset:0) — só padding-top não bastava,
+   porque posicionamento absoluto ignora padding do ancestral e usa a
+   caixa dele inteira; margin-top desloca a caixa de verdade. */
+#tplClassico { position: relative; margin-top: 34px; }
+#tplClassico .site-topbar:not(.on-hero) { top: 34px; }
 
 /* ---------- Barra inferior fixa (tabbar), como app de delivery ---------- */
 .tabbar {

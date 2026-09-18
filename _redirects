@@ -1,4 +1,5 @@
 # Arquivos reais (index.html, cadastro.html, assets/...) são servidos
-# direto pelo Netlify antes de chegar aqui. Só o padrão /:slug/:cidade
-# (o link público de cada estabelecimento) cai nessa regra.
-/:slug/:cidade   /perfil.html   200
+# direto pelo Netlify antes de chegar aqui. Só os padrões abaixo (link
+# público de cada estabelecimento e suas subpáginas) caem nessas regras.
+/:slug/:cidade/institucional   /institucional.html   200
+/:slug/:cidade                 /perfil.html           200

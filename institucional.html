@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carregando… — VB Agenda</title>
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="apple-touch-icon" href="/assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/styles.css?v=12">
+<link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=3" id="tplBase">
+<link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
+</head>
+<body>
+  <div id="carregando" class="container" style="padding-top:3rem;">
+    <div class="skeleton" style="height:2.4rem; width:60%; margin-bottom:0.8rem;"></div>
+    <div class="skeleton" style="height:1rem; width:35%;"></div>
+  </div>
+
+  <div id="naoEncontrado" class="container oculto" style="padding-top:3rem; text-align:center;">
+    <h1>Não encontramos esse estabelecimento</h1>
+    <p style="color:var(--tinta-suave);">Confira o link ou fale com quem te enviou.</p>
+    <a class="btn btn-primario" href="/index.html">Voltar pro VB Agenda</a>
+  </div>
+
+  <div id="tplClassico" class="oculto">
+    <a class="faixa-voltar" id="faixaVoltar" href="/index.html">&larr; Voltar pro VB Agenda</a>
+
+    <header class="site-topbar">
+      <a class="brand" id="tplLinkPerfil" href="#"><span class="brand-mark">❧</span> <span id="tplNomeTopo"></span></a>
+      <div class="topbar-actions">
+        <a class="gender-switch oculto" id="tplTrocaGenero" href="#"><span class="gender-switch-glyph" id="tplTrocaGlifo" aria-hidden="true"></span><span class="gender-switch-label" id="tplTrocaLabel"></span></a>
+        <button class="hamburger" id="menuOpenBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="siteMenu" aria-label="Abrir menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <nav class="site-menu" id="siteMenu" aria-hidden="true" aria-label="Menu principal">
+      <div class="site-menu-inner">
+        <button class="site-menu-close" id="menuCloseBtn" type="button" aria-label="Fechar menu">×</button>
+        <ul class="site-menu-list">
+          <li><a id="tplLinkInicio" href="#"><span>Início</span><span class="num">01</span></a></li>
+          <li><a id="tplLinkAgenda" href="#"><span>Agenda</span><span class="num">02</span></a></li>
+          <li><a href="#equipeSecao" class="is-current"><span>Site institucional</span><span class="num">03</span></a></li>
+          <li><a href="#" class="vb-admin-trigger"><span>Admin</span><span class="num">◆</span></a></li>
+        </ul>
+        <div class="site-menu-contact">
+          <p id="tplEnderecoMenu"></p>
+          <p><a id="tplTelefoneMenu" href="#"></a></p>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container" style="padding-top:2.5rem;">
+      <p class="eyebrow">Site institucional</p>
+      <h1 id="tplTituloInstitucional" style="margin-top:0.5rem;">Conheça a nossa casa</h1>
+      <p id="tplSobreTexto" data-vb-editavel="sobre" style="max-width:640px; color:var(--ink-soft); font-size:1.05rem; line-height:1.7; margin-top:1rem;"></p>
+      <div style="margin-top:1.5rem;">
+        <a class="btn" id="tplBotaoAgendar" href="#">Agendar horário →</a>
+      </div>
+
+      <section id="equipeSecao" style="padding:3rem 0 1rem;">
+        <p class="eyebrow">Nossa equipe</p>
+        <div id="tplEquipeGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1.2rem; margin-top:1.2rem;"></div>
+      </section>
+
+      <section id="tplGaleriaSecaoInst" class="oculto" style="padding:1rem 0 2.5rem;">
+        <p class="eyebrow">Galeria</p>
+        <div id="tplGridInst" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; margin-top:1rem;"></div>
+      </section>
+
+      <section style="padding:0 0 3rem;">
+        <p class="eyebrow">Serviços</p>
+        <ul class="lista-estabelecimentos" id="tplListaServicosInst" style="margin-top:1rem;"></ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="foot-top">
+        <div class="foot-col">
+          <p class="foot-brand"><span class="brand-mark">❧</span> <span id="tplNomeRodape"></span></p>
+          <p id="tplEnderecoRodape" data-vb-editavel="endereco">Endereço não informado</p>
+          <p id="tplCidadeRodape"></p>
+          <a class="foot-social" id="tplMapaLink" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s7-7.5 7-12a7 7 0 0 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.3"/></svg> Ver no mapa</a>
+        </div>
+        <div class="foot-col">
+          <p class="foot-label">Contato</p>
+          <a id="tplTelefoneRodape" href="#"></a>
+          <div class="social-strip" id="tplRedesSociais" data-vb-editavel="redes"></div>
+        </div>
+        <div class="foot-col">
+          <p class="foot-label">Horário</p>
+          <div id="tplHorarioRodape"></div>
+        </div>
+        <div class="foot-col">
+          <p class="foot-label">Navegação</p>
+          <button type="button" class="foot-nav-link vb-admin-trigger">Admin</button>
+        </div>
+      </div>
+      <div class="foot-bottom" id="tplCopyright"></div>
+    </footer>
+  </div>
+
+  <div class="admin-pin-overlay oculto" id="adminPinOverlay">
+    <div class="admin-pin-box">
+      <p class="eyebrow">Acesso do dono</p>
+      <h2 style="margin:0.3rem 0;">Digite o PIN de admin</h2>
+      <input type="text" id="adminPinInput" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
+      <button class="btn btn-primario" id="adminPinConfirmar" type="button" style="width:100%;">Entrar</button>
+      <button class="btn btn-ghost" id="adminPinCancelar" type="button" style="width:100%; margin-top:0.5rem;">Cancelar</button>
+      <p class="msg" id="adminPinMsg"></p>
+    </div>
+  </div>
+
+  <div class="admin-modo-barra oculto" id="adminModoBarra">
+    <span>✎ Modo admin — clique nos campos marcados pra editar</span>
+    <button type="button" id="adminSairBtn">Sair</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/js/supabase-client.js?v=1"></script>
+  <script src="/assets/tpl-classico/js/menu.js?v=1"></script>
+  <script src="/assets/js/upload-fotos.js?v=1"></script>
+  <script src="/assets/js/faixa-voltar.js?v=1"></script>
+  <script src="/assets/js/institucional.js?v=1"></script>
+</body>
+</html>

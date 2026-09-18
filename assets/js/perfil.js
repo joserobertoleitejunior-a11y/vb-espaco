@@ -809,6 +809,8 @@
     document.getElementById('tplEnderecoRodape').textContent = linha.endereco || 'Endereço não informado';
     atualizarMapaLink();
     carregarHorarioRodape();
+    var linkInst = document.getElementById('tplLinkInstitucional');
+    if (linkInst) linkInst.href = '/' + encodeURIComponent(slug) + '/' + encodeURIComponent(cidade) + '/institucional';
 
     tpl.classList.remove('oculto');
     iniciarGenero();
@@ -820,6 +822,13 @@
     var jaDesbloqueado = false;
     try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}
     if (jaDesbloqueado) ativarModoAdmin();
+
+    // veio de outra página do site (ex: institucional.html) com
+    // #agendar na URL? abre a agenda direto.
+    if (window.location.hash === '#agendar') {
+      var gatilho = document.querySelector('[data-open-widget]');
+      if (gatilho) gatilho.click();
+    }
   }
 
   db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }).then(function (res) {

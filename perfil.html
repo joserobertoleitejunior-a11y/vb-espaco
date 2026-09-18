@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=11">
+<link rel="stylesheet" href="/assets/css/styles.css?v=12">
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=3" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
 <link rel="stylesheet" href="/assets/tpl-classico/css/widget.css?v=1">
@@ -27,7 +27,7 @@
 
   <!-- ===== Template "classico-boiserie" (idêntico ao Rafael Cabeleireiros) ===== -->
   <div id="tplClassico" class="oculto">
-    <a class="voltar-catalogo" href="/index.html">&larr; Catálogo</a>
+    <a class="faixa-voltar" id="faixaVoltar" href="/index.html">&larr; Voltar pro VB Agenda</a>
 
     <header class="site-topbar on-hero">
       <a class="brand" href="#"><span class="brand-mark">❧</span> <span id="tplNomeTopo"></span></a>
@@ -46,6 +46,7 @@
           <li><a href="#" class="is-current"><span>Início</span><span class="num">01</span></a></li>
           <li><button type="button" data-open-widget><span>Agenda</span><span class="num">02</span></button></li>
           <li><a href="#servicosSecao"><span>Serviços</span><span class="num">03</span></a></li>
+          <li><a id="tplLinkInstitucional" href="#"><span>Site institucional</span><span class="num">04</span></a></li>
           <li><a href="#" class="vb-admin-trigger"><span>Admin</span><span class="num">◆</span></a></li>
         </ul>
         <div class="site-menu-contact">
@@ -211,6 +212,7 @@
   <script src="/assets/js/supabase-client.js?v=1"></script>
   <script src="/assets/tpl-classico/js/menu.js?v=1"></script>
   <script src="/assets/js/upload-fotos.js?v=1"></script>
+  <script src="/assets/js/faixa-voltar.js?v=1"></script>
   <script src="/assets/js/perfil.js?v=7"></script>
 </body>
 </html>
