@@ -129,6 +129,18 @@
 
   function chaveAdmin() { return 'vbAdminUnlocked_' + estabId; }
 
+  function salvarNome() {
+    var el = document.getElementById('tplNomeTopo');
+    var nome = el.textContent.trim();
+    if (!nome) {
+      el.textContent = linhaAtual.nome;
+      return;
+    }
+    linhaAtual.nome = nome;
+    document.getElementById('tplNomeRodape').textContent = nome;
+    db.rpc('tenant_admin_atualizar_nome', { p_estabelecimento_id: estabId, p_nome: nome });
+  }
+
   function salvarTextoHero() {
     var titulo = document.getElementById('tplHeadline').textContent.trim();
     var subtitulo = document.getElementById('tplSubcopy').textContent.trim();
@@ -273,12 +285,15 @@
     var titulo = document.getElementById('tplHeadline');
     var sub = document.getElementById('tplSubcopy');
     var endereco = document.getElementById('tplEnderecoRodape');
+    var nomeTopo = document.getElementById('tplNomeTopo');
     titulo.setAttribute('contenteditable', 'true');
     sub.setAttribute('contenteditable', 'true');
     endereco.setAttribute('contenteditable', 'true');
+    nomeTopo.setAttribute('contenteditable', 'true');
     titulo.addEventListener('blur', salvarTextoHero);
     sub.addEventListener('blur', salvarTextoHero);
     endereco.addEventListener('blur', salvarEndereco);
+    nomeTopo.addEventListener('blur', salvarNome);
     document.getElementById('tplHeroFoto').addEventListener('click', abrirEditorHero);
     carregarServicos();
     carregarGaleria();
@@ -292,6 +307,7 @@
     document.getElementById('tplHeadline').removeAttribute('contenteditable');
     document.getElementById('tplSubcopy').removeAttribute('contenteditable');
     document.getElementById('tplEnderecoRodape').removeAttribute('contenteditable');
+    document.getElementById('tplNomeTopo').removeAttribute('contenteditable');
     try { localStorage.removeItem(chaveAdmin()); } catch (e) {}
     // reconfere se já tem serviço/equipe (pode ter completado agora) antes
     // de decidir se o portão "em preparação" volta a aparecer pra visita.

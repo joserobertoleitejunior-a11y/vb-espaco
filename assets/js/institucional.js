@@ -268,6 +268,18 @@
   // ---------- modo admin ----------
   function chaveAdmin() { return 'vbAdminUnlocked_' + estabId; }
 
+  function salvarNome() {
+    var el = document.getElementById('tplNomeTopo');
+    var nome = el.textContent.trim();
+    if (!nome) {
+      el.textContent = linhaAtual.nome;
+      return;
+    }
+    linhaAtual.nome = nome;
+    document.getElementById('tplNomeRodape').textContent = nome;
+    db.rpc('tenant_admin_atualizar_nome', { p_estabelecimento_id: estabId, p_nome: nome });
+  }
+
   function salvarSobre() {
     var texto = document.getElementById('tplSobreTexto').textContent.trim();
     linhaAtual.sobre_texto = texto;
@@ -303,10 +315,13 @@
     document.getElementById('adminModoBarra').classList.remove('oculto');
     var sobre = document.getElementById('tplSobreTexto');
     var endereco = document.getElementById('tplEnderecoRodape');
+    var nomeTopo = document.getElementById('tplNomeTopo');
     sobre.setAttribute('contenteditable', 'true');
     endereco.setAttribute('contenteditable', 'true');
+    nomeTopo.setAttribute('contenteditable', 'true');
     sobre.addEventListener('blur', salvarSobre);
     endereco.addEventListener('blur', salvarEndereco);
+    nomeTopo.addEventListener('blur', salvarNome);
     carregarEquipe();
     carregarGaleria();
     carregarServicos();
@@ -318,6 +333,7 @@
     document.getElementById('adminModoBarra').classList.add('oculto');
     document.getElementById('tplSobreTexto').removeAttribute('contenteditable');
     document.getElementById('tplEnderecoRodape').removeAttribute('contenteditable');
+    document.getElementById('tplNomeTopo').removeAttribute('contenteditable');
     try { localStorage.removeItem(chaveAdmin()); } catch (e) {}
     carregarEquipe();
     carregarGaleria();
