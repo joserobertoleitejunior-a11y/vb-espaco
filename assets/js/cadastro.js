@@ -141,9 +141,17 @@
     });
   });
 
+  var SEGMENTOS_LABEL = {
+    barbearia: 'Barbearia',
+    salao: 'Salão de beleza',
+    manicure_pedicure: 'Manicure e pedicure',
+    estetica: 'Estética',
+    outro: 'Estabelecimento'
+  };
+
   function carregarEstabelecimentos() {
     listaEl.innerHTML = '<li><span class="skeleton" style="width:70%;"></span></li>';
-    db.rpc('meus_estabelecimentos').then(function (res) {
+    db.rpc('meus_estabelecimentos_com_stats').then(function (res) {
       if (res.error) {
         listaMsg.className = 'msg msg-erro';
         listaMsg.textContent = res.error.message;
@@ -159,14 +167,22 @@
       listaMsg.textContent = '';
       listaEl.innerHTML = linhas.map(function (e) {
         var link = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade);
-        return '<li>' +
-          '<span><span class="nome">' + escapeHtml(e.nome) + '</span><br>' +
-          '<span class="cidade">' + escapeHtml(e.cidade) + '</span></span>' +
-          '<span style="display:flex; gap:0.5rem;">' +
+        var cor = e.cor_destaque || '#C9A227';
+        var topoStyle = e.foto_hero_url
+          ? "background-image:url('" + e.foto_hero_url + "');"
+          : 'background-image:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
+        return '<li class="dash-card">' +
+          '<div class="dash-card-topo" style="' + topoStyle + '"><span class="dash-card-segmento">' + escapeHtml(SEGMENTOS_LABEL[e.segmento] || 'Estabelecimento') + '</span></div>' +
+          '<div class="dash-card-corpo">' +
+          '<span class="nome">' + escapeHtml(e.nome) + '</span><br><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +
+          '<div class="dash-card-stats"><span><strong>' + (e.total_agendamentos || 0) + '</strong> agendamento(s)</span><span><strong>' + (e.total_servicos || 0) + '</strong> serviço(s)</span></div>' +
+          '<div class="dash-card-pin">PIN de admin do site: <strong>' + escapeHtml(e.admin_pin || '----') + '</strong></div>' +
+          '<div class="dash-card-acoes">' +
+          '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '" target="_blank" rel="noopener">Ver site →</a>' +
           '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="editar.html?id=' + encodeURIComponent(e.id) + '">Editar</a>' +
-          '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '" target="_blank" rel="noopener">Ver →</a>' +
           '<button class="btn btn-ghost" type="button" style="padding:0.5rem 0.9rem; font-size:0.85rem; color:var(--erro); border-color:var(--erro);" data-apagar-id="' + e.id + '" data-apagar-nome="' + escapeHtml(e.nome) + '">Apagar</button>' +
-          '</span>' +
+          '</div>' +
+          '</div>' +
           '</li>';
       }).join('');
     }, function () {
@@ -227,8 +243,11 @@
           : res.error.message;
         return;
       }
+      var pin = res.data && res.data.admin_pin;
       estabMsg.className = 'msg msg-ok';
-      estabMsg.textContent = 'Estabelecimento criado! Já aparece na lista acima.';
+      estabMsg.textContent = pin
+        ? 'Estabelecimento criado! Seu PIN de admin é ' + pin + ' — guarde bem, é ele que abre o modo de edição no site (menu ☰ → Admin).'
+        : 'Estabelecimento criado! Já aparece na lista acima.';
       document.getElementById('estabForm').reset();
       document.getElementById('estabCidade').value = 'Itapetininga';
       heroEscolhidoUrl = null;

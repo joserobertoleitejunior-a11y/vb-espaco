@@ -524,3 +524,55 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   line-height: 1;
 }
 .vb-foto-wrap { position: relative; }
+
+/* ---- dashboard "Seus estabelecimentos" (cadastro.html) ---- */
+.dash-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.dash-card {
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+.dash-card-topo {
+  height: 110px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 0.6rem;
+}
+.dash-card-segmento {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--tinta);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+.dash-card-corpo { padding: 1rem 1.1rem 1.1rem; }
+.dash-card-corpo .nome { font-size: 1.05rem; font-weight: 700; }
+.dash-card-stats {
+  display: flex;
+  gap: 1.2rem;
+  margin: 0.6rem 0;
+  font-size: 0.82rem;
+  color: var(--tinta-suave);
+}
+.dash-card-stats strong { color: var(--tinta); }
+.dash-card-pin {
+  font-size: 0.78rem;
+  color: var(--tinta-suave);
+  background: var(--linho);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.8rem;
+}
+.dash-card-pin strong { letter-spacing: 0.15rem; color: var(--tinta); }
+.dash-card-acoes { display: flex; gap: 0.5rem; flex-wrap: wrap; }
