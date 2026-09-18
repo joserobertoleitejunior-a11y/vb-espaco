@@ -1,10 +1,9 @@
-/* Logo 3D do VB Agenda — cubo giratório em vidro preto/dourado, fino e
-   transparente, fixo atrás do conteúdo (o site continua 100% legível
-   por cima, cards/topbar/tabbar são opacos e cobrem ele normalmente).
-   Gira sozinho devagar e responde a arrastar o dedo/mouse, igual o
-   mecanismo do site da Vibe Coding Process — carregado via import()
-   dinâmico: se o CDN falhar ou o navegador não suportar, o site
-   continua funcionando normalmente, só sem o fundo decorativo. */
+/* Logo 3D do VB Agenda — selo pequeno ao lado do nome, cubo de aresta
+   fina dourada. Gira sozinho bem devagar mostrando todos os ângulos, e
+   responde a arrastar o dedo/mouse — mas fica contido no próprio
+   tamanho (30x30px), nunca cobre nem atrapalha o resto do app.
+   Carregado via import() dinâmico: se o CDN falhar, o elemento some
+   sozinho e o site segue normal. */
 (function () {
   var container = document.getElementById('cube3d');
   if (!container || !window.requestAnimationFrame) return;
@@ -15,106 +14,74 @@
     .then(iniciar)
     .catch(function () { container.remove(); });
 
-  function texturaFace(linha1, linha2) {
-    var tam = 512;
-    var canvas = document.createElement('canvas');
-    canvas.width = tam;
-    canvas.height = tam;
-    var ctx = canvas.getContext('2d');
-
-    // painel de "vidro" bem sutil — quase transparente, só uma borda dourada fina
-    ctx.fillStyle = 'rgba(10,9,8,0.16)';
-    ctx.fillRect(0, 0, tam, tam);
-    ctx.strokeStyle = 'rgba(201,162,39,0.85)';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(10, 10, tam - 20, tam - 20);
-
-    ctx.fillStyle = 'rgba(201,162,39,0.92)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    if (linha2) {
-      ctx.font = '700 64px -apple-system, Arial, sans-serif';
-      ctx.fillText(linha1, tam / 2, tam / 2 - 34);
-      ctx.font = '600 34px -apple-system, Arial, sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.78)';
-      ctx.fillText(linha2, tam / 2, tam / 2 + 34);
-    } else {
-      ctx.font = '700 72px -apple-system, Arial, sans-serif';
-      ctx.fillText(linha1, tam / 2, tam / 2);
-    }
-    return canvas;
-  }
-
   function iniciar(THREE) {
-    var largura = container.clientWidth;
-    var altura = container.clientHeight;
+    var largura = container.clientWidth || 30;
+    var altura = container.clientHeight || 30;
 
     var canvas = document.createElement('canvas');
     container.appendChild(canvas);
 
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(42, largura / altura, 0.1, 100);
-    camera.position.set(0, 0, 7.5);
+    var camera = new THREE.PerspectiveCamera(38, largura / altura, 0.1, 100);
+    camera.position.set(0, 0, 6.2);
 
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(largura, altura);
     renderer.setClearColor(0x000000, 0);
 
-    var faces = [
-      texturaFace('VB', 'AGENDA'),
-      texturaFace('AGENDA', null),
-      texturaFace('ITAPETININGA', 'SP'),
-      texturaFace('SALÕES', null),
-      texturaFace('BARBEARIAS', null),
-      texturaFace('VB', 'AGENDA')
-    ];
-    var materiais = faces.map(function (canvasFace) {
-      var tex = new THREE.CanvasTexture(canvasFace);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      return new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9 });
-    });
-
-    var tamanhoCubo = 3.4;
-    var geometria = new THREE.BoxGeometry(tamanhoCubo, tamanhoCubo, tamanhoCubo);
-    var cubo = new THREE.Mesh(geometria, materiais);
+    var geometria = new THREE.BoxGeometry(2.6, 2.6, 2.6);
+    var material = new THREE.MeshBasicMaterial({ color: 0x14120f, transparent: true, opacity: 0.18 });
+    var cubo = new THREE.Mesh(geometria, material);
     scene.add(cubo);
 
     var arestas = new THREE.EdgesGeometry(geometria);
-    var linhas = new THREE.LineSegments(arestas, new THREE.LineBasicMaterial({ color: 0xC9A227, transparent: true, opacity: 0.9 }));
+    var linhas = new THREE.LineSegments(arestas, new THREE.LineBasicMaterial({ color: 0xC9A227 }));
     cubo.add(linhas);
 
     cubo.rotation.x = 0.5;
     cubo.rotation.y = 0.7;
 
     var arrastando = false;
+    var moveu = false;
     var ultimoX = 0, ultimoY = 0;
-    var velX = 0.0022, velY = 0.0032;
+    var velX = 0.0016, velY = 0.0026;
 
     function aoPressionar(e) {
       arrastando = true;
+      moveu = false;
       ultimoX = e.clientX;
       ultimoY = e.clientY;
+      // segura o clique do link (o selo fica dentro de <a class="brand">)
+      // só quando a pessoa de fato arrastar, não quando for só um toque/clique normal
+      container.setPointerCapture && container.setPointerCapture(e.pointerId);
     }
     function aoMover(e) {
       if (!arrastando) return;
       var dx = e.clientX - ultimoX;
       var dy = e.clientY - ultimoY;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moveu = true;
       ultimoX = e.clientX;
       ultimoY = e.clientY;
-      cubo.rotation.y += dx * 0.008;
-      cubo.rotation.x += dy * 0.008;
+      cubo.rotation.y += dx * 0.012;
+      cubo.rotation.x += dy * 0.012;
     }
-    function aoSoltar() { arrastando = false; }
+    function aoSoltar(e) {
+      arrastando = false;
+      if (moveu) {
+        // foi arrasto de verdade: evita que o clique navegue pro link do logo
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
 
-    container.style.touchAction = 'pan-y';
     container.addEventListener('pointerdown', aoPressionar);
-    window.addEventListener('pointermove', aoMover);
-    window.addEventListener('pointerup', aoSoltar);
-    window.addEventListener('pointercancel', aoSoltar);
+    container.addEventListener('pointermove', aoMover);
+    container.addEventListener('pointerup', aoSoltar);
+    container.addEventListener('pointercancel', function () { arrastando = false; });
 
     window.addEventListener('resize', function () {
-      var w = container.clientWidth, h = container.clientHeight;
+      var w = container.clientWidth || 30, h = container.clientHeight || 30;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
