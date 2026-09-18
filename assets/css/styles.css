@@ -613,3 +613,20 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   padding: 0.6rem 0.7rem;
 }
 .dash-card-pagamento-pendente p { margin: 0 0 0.5rem; }
+
+/* ---- seletor de estilo (template) na criação do estabelecimento ---- */
+.tpl-swatch-card {
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 0.7rem;
+  cursor: pointer;
+  background: #fff;
+  text-align: left;
+}
+.tpl-swatch-card.is-selecionado { border-color: var(--vermelho); }
+.tpl-swatch-preview {
+  height: 44px;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+.tpl-swatch-nome { font-size: 0.82rem; font-weight: 700; }

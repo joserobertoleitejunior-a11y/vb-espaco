@@ -15,6 +15,18 @@
   var linhaAtual = null;
   var modoAdmin = false;
 
+  var TEMPLATE_PASTAS = {
+    'classico-boiserie': 'tpl-classico',
+    'claro-minimal': 'tpl-claro',
+    'escuro-premium': 'tpl-escuro',
+    'automotivo-carbono': 'tpl-automotivo'
+  };
+  function aplicarTemplateCss(templateKey) {
+    var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
+    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=1';
+    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=1';
+  }
+
   if (!slug || !cidade) {
     carregando.classList.add('oculto');
     naoEncontrado.classList.remove('oculto');
@@ -322,6 +334,7 @@
     carregando.classList.add('oculto');
     estabId = linha.id;
     linhaAtual = linha;
+    aplicarTemplateCss(linha.template);
 
     var base = '/' + encodeURIComponent(slug) + '/' + encodeURIComponent(cidade);
     document.title = linha.nome + ' — Site institucional — VB Agenda';

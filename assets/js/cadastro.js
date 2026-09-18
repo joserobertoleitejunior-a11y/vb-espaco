@@ -13,6 +13,29 @@
   // na hora de criar o estabelecimento.
   var templateEscolhido = new URLSearchParams(window.location.search).get('template') || 'classico-boiserie';
 
+  var TEMPLATES_DISPONIVEIS = [
+    { chave: 'classico-boiserie', nome: 'Clássico', preview: 'linear-gradient(135deg,#FAF7F1,#C9A227)' },
+    { chave: 'claro-minimal', nome: 'Claro', preview: 'linear-gradient(135deg,#FFFFFF,#1F8A6E)' },
+    { chave: 'escuro-premium', nome: 'Escuro', preview: 'linear-gradient(135deg,#121212,#D9AE55)' },
+    { chave: 'automotivo-carbono', nome: 'Automotivo', preview: 'linear-gradient(135deg,#15161A,#D8342A)' }
+  ];
+  var templateEscolhaEl = document.getElementById('estabTemplateEscolha');
+  function renderizarTemplateEscolha() {
+    templateEscolhaEl.innerHTML = TEMPLATES_DISPONIVEIS.map(function (t) {
+      return '<button type="button" class="tpl-swatch-card' + (t.chave === templateEscolhido ? ' is-selecionado' : '') + '" data-template="' + t.chave + '">' +
+        '<div class="tpl-swatch-preview" style="background:' + t.preview + ';"></div>' +
+        '<span class="tpl-swatch-nome">' + t.nome + '</span>' +
+        '</button>';
+    }).join('');
+  }
+  renderizarTemplateEscolha();
+  templateEscolhaEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-template]');
+    if (!btn) return;
+    templateEscolhido = btn.getAttribute('data-template');
+    renderizarTemplateEscolha();
+  });
+
   var authBox = document.getElementById('authBox');
   var painelBox = document.getElementById('painelBox');
   var sairBtn = document.getElementById('sairBtn');

@@ -1,0 +1,22 @@
+/* ==========================================================================
+   Trilha feminina do template escuro-premium — mesma estrutura de
+   sempre, só troca o dourado por um rosé-dourado sobre um fundo
+   "vinho escuro" em vez do preto neutro do masculino.
+   ========================================================================== */
+:root{
+  --linen:#1A1013;
+  --linen-deep:#241318;
+  --white:#F6ECE9;
+  --line-accent:rgba(217,149,143,0.4);
+  --line-accent-dark:rgba(217,149,143,0.6);
+  --stone:rgba(217,149,143,0.22);
+  --terracotta:#D9958F;
+  --terracotta-deep:#B96F6A;
+  --lavender-pale:rgba(217,149,143,0.14);
+  --gloss:linear-gradient(160deg,#E7ABA5 0%,#B96F6A 55%,#A85C58 100%);
+  --gloss-hover:linear-gradient(160deg,#EFBDB8,#B96F6A);
+}
+.eyebrow, .wizard-eyebrow{color:#D9958F;}
+.corner-mark{color:#D9958F;}
+footer.site-footer{background:#120A0C;}
+footer.site-footer .foot-brand{color:#F6ECE9;}

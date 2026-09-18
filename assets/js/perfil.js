@@ -16,6 +16,22 @@
   var generoAtual = null;
   var linhaAtual = null;
 
+  // ---------- template visual: cada estabelecimento escolhe uma pasta
+  // de CSS (mesma estrutura de HTML/classes, só trocam tokens/fonte) ----------
+  var TEMPLATE_PASTAS = {
+    'classico-boiserie': 'tpl-classico',
+    'claro-minimal': 'tpl-claro',
+    'escuro-premium': 'tpl-escuro',
+    'automotivo-carbono': 'tpl-automotivo'
+  };
+  function aplicarTemplateCss(templateKey) {
+    var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
+    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=1';
+    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=1';
+    var widget = document.getElementById('tplWidget');
+    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=1';
+  }
+
   if (!slug || !cidade) {
     carregando.classList.add('oculto');
     naoEncontrado.classList.remove('oculto');
@@ -284,7 +300,15 @@
     var fotoHero = (g === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
     var heroFoto = document.getElementById('tplHeroFoto');
     heroFoto.style.backgroundColor = 'var(--linen-deep)';
-    heroFoto.style.backgroundImage = 'url("' + (fotoHero || boiseriePlaceholder(linhaAtual.cor_destaque)) + '")';
+    if (fotoHero) {
+      heroFoto.style.backgroundImage = 'url("' + fotoHero + '")';
+      heroFoto.style.backgroundSize = 'cover';
+    } else {
+      // o padrão boiserie é um ladrilho pequeno (72x72) pra repetir, não
+      // uma foto — "cover" esticava ele até virar um único quadrado gigante.
+      heroFoto.style.backgroundImage = 'url("' + boiseriePlaceholder(linhaAtual.cor_destaque) + '")';
+      heroFoto.style.backgroundSize = '72px 72px';
+    }
 
     var trocaBtn = document.getElementById('tplTrocaGenero');
     if (linhaAtual.genero_atendimento === 'ambos') {
@@ -786,6 +810,7 @@
     carregando.classList.add('oculto');
     estabId = linha.id;
     linhaAtual = linha;
+    aplicarTemplateCss(linha.template);
 
     document.title = linha.nome + ' — VB Agenda';
     document.getElementById('tplNomeTopo').textContent = linha.nome;

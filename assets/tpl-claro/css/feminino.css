@@ -1,0 +1,24 @@
+/* ==========================================================================
+   Trilha feminina — mesma estrutura de sempre (inclusive o hero de duas
+   colunas com moldura dourada, compartilhado com o masculino em
+   styles.css), só com um rosado bem suave de fundo e um vinho discreto nos
+   botões/rodapé (referência que o Rafael mandou). Carregado só nas páginas
+   -feminino, depois de styles.css — por isso só sobrescreve cor.
+   ========================================================================== */
+:root{
+  --linen:#FFF8F7;
+  --linen-deep:#FBE9E6;
+  --white:#FFFFFF;
+  --line-accent:rgba(214,110,102,0.4);
+  --line-accent-dark:rgba(214,110,102,0.6);
+  --stone:rgba(214,110,102,0.22);
+  --terracotta:#D66E66;
+  --terracotta-deep:#B85248;
+  --lavender-pale:#FBE4E1;
+  --gloss:linear-gradient(160deg,rgba(255,255,255,0.12),rgba(255,255,255,0));
+  --gloss-hover:linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0));
+}
+.eyebrow, .wizard-eyebrow{color:#B85248;}
+.corner-mark{color:#D66E66;}
+footer.site-footer{background:#2A1210;}
+footer.site-footer .foot-brand{color:#FFF8F7;}
