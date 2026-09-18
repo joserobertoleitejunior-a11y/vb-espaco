@@ -6,7 +6,7 @@
 <title>Editar estabelecimento — VB Agenda</title>
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="assets/img/favicon.svg">
-<link rel="stylesheet" href="assets/css/styles.css?v=14">
+<link rel="stylesheet" href="assets/css/styles.css?v=15">
 </head>
 <body>
   <header class="topbar">
@@ -36,6 +36,29 @@
         <input type="file" id="heroFemininoUpload" accept="image/*">
       </div>
       <p class="msg" id="heroMsg"></p>
+    </div>
+
+    <!-- Foto de perfil e capa (card do catálogo) -->
+    <div class="card">
+      <h2>Foto do card no catálogo</h2>
+      <p class="cidade" style="margin:-0.4rem 0 1rem;">É como seu estabelecimento aparece na busca do VB Agenda, antes do cliente entrar no site.</p>
+      <div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem;">
+        <div>
+          <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.4rem;">Foto de perfil</label>
+          <div id="perfilPreview" style="width:72px; height:72px; border-radius:14px; background-size:cover; background-position:center; background-color:#eee; border:1px solid var(--borda);"></div>
+          <div class="field" style="margin:0.6rem 0 0; max-width:220px;">
+            <input type="file" id="perfilUpload" accept="image/*">
+          </div>
+        </div>
+        <div style="flex:1; min-width:220px;">
+          <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.4rem;">Foto de capa</label>
+          <div id="capaPreview" style="width:100%; max-width:320px; aspect-ratio:16/6; border-radius:10px; background-size:cover; background-position:center; background-color:#eee; border:1px solid var(--borda);"></div>
+          <div class="field" style="margin:0.6rem 0 0; max-width:220px;">
+            <input type="file" id="capaUpload" accept="image/*">
+          </div>
+        </div>
+      </div>
+      <p class="msg" id="perfilCapaMsg"></p>
     </div>
 
     <!-- Serviços -->
@@ -116,6 +139,6 @@
   <script src="assets/js/supabase-client.js?v=1"></script>
   <script type="module" src="assets/js/vb-cube3d.js?v=3"></script>
   <script src="assets/js/upload-fotos.js?v=1"></script>
-  <script src="assets/js/editar.js?v=2"></script>
+  <script src="assets/js/editar.js?v=3"></script>
 </body>
 </html>

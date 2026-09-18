@@ -193,15 +193,47 @@
   function atualizarMapaLink() {
     var link = document.getElementById('tplMapaLink');
     if (!link) return;
+    if (linhaAtual.endereco_lat != null && linhaAtual.endereco_lng != null) {
+      link.href = 'https://www.google.com/maps/search/?api=1&query=' + linhaAtual.endereco_lat + ',' + linhaAtual.endereco_lng;
+      return;
+    }
     var consulta = [linhaAtual.nome, linhaAtual.endereco, linhaAtual.cidade].filter(Boolean).join(' ');
     link.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(consulta);
+  }
+
+  // Reconhece o endereço digitado num par de coordenadas reais (OpenStreetMap
+  // Nominatim, gratuito e sem chave) pra deixar o link do mapa preciso — se
+  // não achar nada, o endereço em texto continua salvo normalmente.
+  function geocodificarEndereco(endereco, cidade) {
+    var consulta = [endereco, cidade, 'Brasil'].filter(Boolean).join(', ');
+    var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(consulta);
+    return fetch(url).then(function (res) { return res.json(); }).then(function (dados) {
+      var achado = dados && dados[0];
+      return achado ? { lat: parseFloat(achado.lat), lng: parseFloat(achado.lon) } : null;
+    }, function () { return null; });
   }
 
   function salvarEndereco() {
     var endereco = document.getElementById('tplEnderecoRodape').textContent.trim();
     linhaAtual.endereco = endereco;
-    atualizarMapaLink();
-    db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco });
+    if (!endereco) {
+      linhaAtual.endereco_lat = null;
+      linhaAtual.endereco_lng = null;
+      atualizarMapaLink();
+      db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: null, p_lng: null });
+      return;
+    }
+    geocodificarEndereco(endereco, linhaAtual.cidade).then(function (coord) {
+      linhaAtual.endereco_lat = coord ? coord.lat : null;
+      linhaAtual.endereco_lng = coord ? coord.lng : null;
+      atualizarMapaLink();
+      db.rpc('tenant_admin_atualizar_endereco', {
+        p_estabelecimento_id: estabId,
+        p_endereco: endereco,
+        p_lat: linhaAtual.endereco_lat,
+        p_lng: linhaAtual.endereco_lng
+      });
+    });
   }
 
   // esconde o site de quem visita enquanto faltar serviço ou equipe

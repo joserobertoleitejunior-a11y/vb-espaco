@@ -191,9 +191,13 @@
       listaEl.innerHTML = linhas.map(function (e) {
         var link = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade);
         var cor = e.cor_destaque || '#C9A227';
-        var topoStyle = e.foto_hero_url
-          ? "background-image:url('" + e.foto_hero_url + "');"
+        var fotoTopo = e.foto_capa_url || e.foto_hero_url;
+        var topoStyle = fotoTopo
+          ? "background-image:linear-gradient(0deg, rgba(0,0,0,.25), rgba(0,0,0,.05)), url('" + fotoTopo + "');"
           : 'background-image:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
+        var avatarConteudo = e.foto_perfil_url
+          ? '<span class="dash-card-avatar-foto" style="background-image:url(\'' + e.foto_perfil_url + '\');"></span>'
+          : escapeHtml(iniciais(e.nome));
         var trialData = e.trial_termina_em ? new Date(e.trial_termina_em + 'T00:00:00').toLocaleDateString('pt-BR') : '';
         var faltando = [];
         if (!e.total_servicos) faltando.push('nenhum serviço');
@@ -212,7 +216,10 @@
             '<button type="button" class="btn btn-ghost" data-forma-pagamento-id="' + e.id + '" data-forma="cartao" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Cartão de crédito</button>' +
             '</div></div>';
         return '<li class="dash-card">' +
-          '<div class="dash-card-topo" style="' + topoStyle + '"><span class="dash-card-segmento">' + escapeHtml(SEGMENTOS_LABEL[e.segmento] || 'Estabelecimento') + '</span></div>' +
+          '<div class="dash-card-topo" style="' + topoStyle + '">' +
+          '<span class="dash-card-segmento">' + escapeHtml(SEGMENTOS_LABEL[e.segmento] || 'Estabelecimento') + '</span>' +
+          '<span class="dash-card-avatar" style="background:' + cor + ';">' + avatarConteudo + '</span>' +
+          '</div>' +
           '<div class="dash-card-corpo">' +
           '<span class="nome">' + escapeHtml(e.nome) + '</span><br><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +
           '<div class="dash-card-stats"><span><strong>' + (e.total_agendamentos || 0) + '</strong> agendamento(s)</span><span><strong>' + (e.total_servicos || 0) + '</strong> serviço(s)</span><span><strong>' + (e.total_equipe || 0) + '</strong> profissional(is)</span></div>' +
@@ -248,6 +255,10 @@
     return String(str || '').replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
+  }
+  function iniciais(nome) {
+    var partes = (nome || '').trim().split(/\s+/);
+    return ((partes[0] || '')[0] || '').toUpperCase() + ((partes[1] || '')[0] || '').toUpperCase();
   }
 
   // Botão de apagar site — só pro admin por enquanto (sem senha ainda,

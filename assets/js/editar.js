@@ -33,6 +33,7 @@
     document.getElementById('verPerfilBtn').href = '/' + encodeURIComponent(linha.slug) + '/' + encodeURIComponent(linha.cidade);
     aplicarHeroPreview(linha.foto_hero_url);
     document.getElementById('heroFemininoWrap').style.display = linha.genero_atendimento === 'ambos' ? '' : 'none';
+    aplicarPerfilCapaPreview(linha.foto_perfil_url, linha.foto_capa_url);
   });
 
   // ---- foto principal (hero) ----
@@ -93,6 +94,56 @@
     msg.textContent = 'Enviando…';
     window.VBUpload.uploadFoto(file, estabId, 'hero-feminino').then(function (url) {
       salvarHero({ p_foto_hero_feminino_url: url });
+    }, function (err) {
+      msg.className = 'msg msg-erro';
+      msg.textContent = err.message || 'Falha ao enviar a foto.';
+    });
+  });
+
+  // ---- foto de perfil e capa (card do catálogo) ----
+  function aplicarPerfilCapaPreview(fotoPerfilUrl, fotoCapaUrl) {
+    document.getElementById('perfilPreview').style.backgroundImage = fotoPerfilUrl ? "url('" + fotoPerfilUrl + "')" : 'none';
+    document.getElementById('capaPreview').style.backgroundImage = fotoCapaUrl ? "url('" + fotoCapaUrl + "')" : 'none';
+  }
+
+  function salvarPerfilCapa(params) {
+    var msg = document.getElementById('perfilCapaMsg');
+    msg.className = 'msg';
+    msg.textContent = 'Salvando…';
+    var payload = { p_estabelecimento_id: estabId, p_foto_perfil_url: null, p_foto_capa_url: null };
+    Object.assign(payload, params);
+    return db.rpc('tenant_admin_atualizar_perfil_capa', payload).then(function (res) {
+      msg.className = res.error ? 'msg msg-erro' : 'msg msg-ok';
+      msg.textContent = res.error ? res.error.message : 'Foto atualizada!';
+      if (!res.error) aplicarPerfilCapaPreview(payload.p_foto_perfil_url, payload.p_foto_capa_url);
+    }, function () {
+      msg.className = 'msg msg-erro';
+      msg.textContent = 'Sem conexão agora.';
+    });
+  }
+
+  document.getElementById('perfilUpload').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var msg = document.getElementById('perfilCapaMsg');
+    msg.className = 'msg';
+    msg.textContent = 'Enviando…';
+    window.VBUpload.uploadFoto(file, estabId, 'perfil').then(function (url) {
+      salvarPerfilCapa({ p_foto_perfil_url: url });
+    }, function (err) {
+      msg.className = 'msg msg-erro';
+      msg.textContent = err.message || 'Falha ao enviar a foto.';
+    });
+  });
+
+  document.getElementById('capaUpload').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var msg = document.getElementById('perfilCapaMsg');
+    msg.className = 'msg';
+    msg.textContent = 'Enviando…';
+    window.VBUpload.uploadFoto(file, estabId, 'capa').then(function (url) {
+      salvarPerfilCapa({ p_foto_capa_url: url });
     }, function (err) {
       msg.className = 'msg msg-erro';
       msg.textContent = err.message || 'Falha ao enviar a foto.';
