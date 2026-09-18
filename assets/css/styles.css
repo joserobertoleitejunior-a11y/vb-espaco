@@ -367,6 +367,11 @@ img { max-width: 100%; display: block; }
 }
 .voltar-catalogo:active { transform: scale(0.97); }
 
+/* No template classico-boiserie o topbar do Rafael fica sobreposto na
+   hero (position:absolute) e ocupa a faixa do topo inteira — o pill de
+   voltar desce pra não bater no nome da marca. */
+#tplClassico .voltar-catalogo { top: auto; bottom: 0.9rem; }
+
 /* ---------- Barra inferior fixa (tabbar), como app de delivery ---------- */
 .tabbar {
   position: fixed;

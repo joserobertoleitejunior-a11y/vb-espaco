@@ -6,15 +6,14 @@
 <title>Carregando… — VB Agenda</title>
 <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/css/styles.css?v=10">
+<link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=1" id="tplBase">
+<link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
 </head>
 <body>
-  <a class="voltar-catalogo" href="/index.html">&larr; Catálogo</a>
-  <header class="topbar">
-    <a class="brand" href="/index.html">VB <em>Agenda</em></a>
-  </header>
-
-  <div id="carregando" class="container" style="padding-top:2rem;">
+  <div id="carregando" class="container" style="padding-top:3rem;">
     <div class="skeleton" style="height:2.4rem; width:60%; margin-bottom:0.8rem;"></div>
     <div class="skeleton" style="height:1rem; width:35%;"></div>
   </div>
@@ -25,26 +24,65 @@
     <a class="btn btn-primario" href="/index.html">Voltar pro VB Agenda</a>
   </div>
 
-  <div id="perfil" class="oculto">
-    <div class="perfil-header" id="perfilHeader">
-      <span class="selo" id="perfilSegmento"></span>
-      <h1 id="perfilNome"></h1>
-      <span class="cidade" id="perfilCidade"></span>
-    </div>
-    <div class="container" style="padding-top:1.5rem; padding-bottom:2.5rem;">
-      <div class="card" id="cardServicos">
-        <h2>Serviços</h2>
-        <ul class="lista-estabelecimentos" id="listaServicosPerfil"></ul>
-      </div>
+  <!-- ===== Template "classico-boiserie" (idêntico ao Rafael Cabeleireiros) ===== -->
+  <div id="tplClassico" class="oculto">
+    <a class="voltar-catalogo" href="/index.html">&larr; Catálogo</a>
 
-      <div class="card oculto" id="cardGaleria">
-        <h2>Galeria</h2>
-        <div id="gradeGaleria" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem;"></div>
+    <header class="site-topbar on-hero">
+      <a class="brand" href="#"><span class="brand-mark">❧</span> <span id="tplNomeTopo"></span></a>
+      <div class="topbar-actions">
+        <a class="gender-switch oculto" id="tplTrocaGenero" href="#"><span class="gender-switch-glyph" id="tplTrocaGlifo" aria-hidden="true"></span><span class="gender-switch-label" id="tplTrocaLabel"></span></a>
+        <button class="hamburger" id="menuOpenBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="siteMenu" aria-label="Abrir menu">
+          <span></span><span></span><span></span>
+        </button>
       </div>
+    </header>
 
-      <div class="card">
-        <h2>Agendar</h2>
-        <form id="formAgendar">
+    <nav class="site-menu" id="siteMenu" aria-hidden="true" aria-label="Menu principal">
+      <div class="site-menu-inner">
+        <button class="site-menu-close" id="menuCloseBtn" type="button" aria-label="Fechar menu">×</button>
+        <ul class="site-menu-list">
+          <li><a href="#" class="is-current"><span>Início</span><span class="num">01</span></a></li>
+          <li><a href="#agendarSecao"><span>Agenda</span><span class="num">02</span></a></li>
+          <li><a href="#servicosSecao"><span>Serviços</span><span class="num">03</span></a></li>
+        </ul>
+        <div class="site-menu-contact">
+          <p id="tplEnderecoMenu"></p>
+          <p><a id="tplTelefoneMenu" href="#"></a></p>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <section class="hero-split">
+        <div class="hero-split-frame" aria-hidden="true"></div>
+        <div class="hero-split-copy">
+          <p class="eyebrow" id="tplEyebrow"></p>
+          <h1 id="tplHeadline"></h1>
+          <p id="tplSubcopy"></p>
+          <div class="hero-cta">
+            <a class="btn" href="#agendarSecao">Agendar horário →</a>
+          </div>
+        </div>
+        <div class="hero-split-photo" id="tplHeroFoto" role="img" aria-label="Foto do estabelecimento"></div>
+      </section>
+
+      <div class="service-strip" id="tplServiceStrip"></div>
+
+      <section id="servicosSecao" class="container" style="padding:2.5rem 0;">
+        <p class="eyebrow">Serviços</p>
+        <ul class="lista-estabelecimentos" id="tplListaServicos" style="margin-top:1rem;"></ul>
+      </section>
+
+      <section id="tplGaleriaSecao" class="container oculto" style="padding:0 0 2.5rem;">
+        <p class="eyebrow">Galeria</p>
+        <div id="tplGrid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; margin-top:1rem;"></div>
+      </section>
+
+      <section id="agendarSecao" class="container" style="padding:0 0 3.5rem;">
+        <p class="eyebrow">Agendar</p>
+        <h2 style="margin-top:0.5rem; font-size:1.8rem;">Marque seu horário</h2>
+        <form id="formAgendar" style="max-width:420px; margin-top:1.5rem;">
           <div class="field">
             <label for="agNome">Seu nome</label>
             <input type="text" id="agNome" required>
@@ -65,16 +103,43 @@
             <label for="agHorario">Horário</label>
             <input type="time" id="agHorario" required>
           </div>
-          <button class="btn btn-primario" type="submit" style="width:100%;">Confirmar agendamento</button>
+          <button class="btn btn-block" type="submit">Confirmar agendamento</button>
           <p class="msg" id="agendarMsg"></p>
         </form>
-        <a class="btn btn-ghost oculto" id="whatsappBtn" href="#" target="_blank" rel="noopener" style="width:100%; margin-top:0.8rem;">Chamar no WhatsApp →</a>
+        <a class="btn btn-ghost oculto" id="whatsappBtn" href="#" target="_blank" rel="noopener" style="margin-top:1rem;">Chamar no WhatsApp →</a>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="foot-top">
+        <div class="foot-col">
+          <p class="foot-brand"><span class="brand-mark">❧</span> <span id="tplNomeRodape"></span></p>
+          <p id="tplCidadeRodape"></p>
+        </div>
+        <div class="foot-col">
+          <p class="foot-label">Contato</p>
+          <a id="tplTelefoneRodape" href="#"></a>
+        </div>
+      </div>
+      <div class="foot-bottom" id="tplCopyright"></div>
+    </footer>
+  </div>
+
+  <div class="gender-gate" id="genderGate">
+    <div class="gender-gate-box">
+      <p class="eyebrow">Antes de começar</p>
+      <h2>Corte feminino ou masculino?</h2>
+      <p>Separamos a agenda e os serviços pra facilitar — dá pra trocar quando quiser, é só tocar no botão do topo.</p>
+      <div class="gender-gate-options">
+        <button type="button" class="gender-gate-option" data-gender-escolha="masculino"><span class="gender-switch-glyph" aria-hidden="true">M</span> Masculino</button>
+        <button type="button" class="gender-gate-option" data-gender-escolha="feminino"><span class="gender-switch-glyph" aria-hidden="true">F</span> Feminino</button>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/js/supabase-client.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=2"></script>
+  <script src="/assets/tpl-classico/js/menu.js?v=1"></script>
+  <script src="/assets/js/perfil.js?v=3"></script>
 </body>
 </html>
