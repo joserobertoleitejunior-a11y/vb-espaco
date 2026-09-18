@@ -204,11 +204,40 @@
     db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco });
   }
 
+  // esconde o site de quem visita enquanto faltar serviço ou equipe
+  // (ninguém deveria cair numa agenda vazia sem profissional/serviço pra
+  // escolher) — o dono ainda enxerga tudo normal assim que entra no modo
+  // admin, pra poder completar o cadastro.
+  function atualizarGateIncompleto() {
+    var gate = document.getElementById('incompletoGate');
+    if (!gate || !linhaAtual) return;
+    var incompleto = !linhaAtual.tem_servico || !linhaAtual.tem_equipe;
+    if (incompleto && !modoAdmin) {
+      document.getElementById('incompletoTitulo').textContent = linhaAtual.nome + ' está quase pronto';
+      gate.classList.add('open');
+      document.body.classList.add('scroll-locked');
+    } else {
+      gate.classList.remove('open');
+      if (!document.getElementById('genderGate') || !document.getElementById('genderGate').classList.contains('open')) {
+        document.body.classList.remove('scroll-locked');
+      }
+    }
+  }
+
   function ativarModoAdmin() {
     if (modoAdmin) return;
     modoAdmin = true;
     document.body.classList.add('vb-modo-admin');
     document.getElementById('adminModoBarra').classList.remove('oculto');
+    // o dono não deveria ficar travado atrás do gate de gênero (ainda sem
+    // resposta) pra poder editar — resolve com o padrão e segue.
+    var gate = document.getElementById('genderGate');
+    if (gate && gate.classList.contains('open')) {
+      gate.classList.remove('open');
+      document.body.classList.remove('scroll-locked');
+      aplicarGenero(generoAtual || 'masculino');
+    }
+    atualizarGateIncompleto();
     var titulo = document.getElementById('tplHeadline');
     var sub = document.getElementById('tplSubcopy');
     var endereco = document.getElementById('tplEnderecoRodape');
@@ -232,6 +261,16 @@
     document.getElementById('tplSubcopy').removeAttribute('contenteditable');
     document.getElementById('tplEnderecoRodape').removeAttribute('contenteditable');
     try { localStorage.removeItem(chaveAdmin()); } catch (e) {}
+    // reconfere se já tem serviço/equipe (pode ter completado agora) antes
+    // de decidir se o portão "em preparação" volta a aparecer pra visita.
+    db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }).then(function (res) {
+      var linha = res.data && res.data[0];
+      if (linha) {
+        linhaAtual.tem_servico = linha.tem_servico;
+        linhaAtual.tem_equipe = linha.tem_equipe;
+      }
+      atualizarGateIncompleto();
+    });
     carregarServicos();
     carregarGaleria();
     carregarRedesSociais();
@@ -326,9 +365,22 @@
     }
   }
 
+  function mostrarSplashSeNecessario() {
+    var chave = 'vbSplashVisto_' + estabId;
+    var jaViu = false;
+    try { jaViu = sessionStorage.getItem(chave) === '1'; } catch (e) {}
+    if (jaViu) return;
+    try { sessionStorage.setItem(chave, '1'); } catch (e) {}
+    var splash = document.getElementById('vbSplash');
+    if (!splash) return;
+    splash.classList.remove('oculto');
+    setTimeout(function () { splash.classList.add('oculto'); }, 1500);
+  }
+
   function iniciarGenero() {
     if (linhaAtual.genero_atendimento !== 'ambos') {
       document.getElementById('genderGate').remove();
+      mostrarSplashSeNecessario();
       aplicarGenero(linhaAtual.genero_atendimento);
       return;
     }
@@ -847,6 +899,13 @@
     var jaDesbloqueado = false;
     try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}
     if (jaDesbloqueado) ativarModoAdmin();
+
+    // site incompleto (sem serviço ou sem equipe) pra quem visita? mostra
+    // "em preparação" por cima de tudo (inclusive do gate de gênero, que
+    // não faz sentido perguntar pra um site ainda vazio) — o conteúdo por
+    // baixo continua sendo montado normal, então o admin edita tudo assim
+    // que desbloqueia (linha acima já chama isso de novo).
+    atualizarGateIncompleto();
 
     // veio de outra página do site (ex: institucional.html) com
     // #agendar na URL? abre a agenda direto.

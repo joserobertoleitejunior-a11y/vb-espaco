@@ -464,7 +464,7 @@ img { max-width: 100%; display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200;
+  z-index: 300;
   padding: 1rem;
 }
 .admin-pin-overlay.oculto { display: none; }
@@ -613,6 +613,14 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   padding: 0.6rem 0.7rem;
 }
 .dash-card-pagamento-pendente p { margin: 0 0 0.5rem; }
+.dash-card-config-pendente {
+  background: #fdeaea;
+  color: #9a2b2b;
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.8rem;
+}
+.dash-card-config-pendente p { margin: 0; }
 
 /* ---- seletor de estilo (template) na criação do estabelecimento ---- */
 .tpl-swatch-card {
@@ -630,3 +638,42 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   margin-bottom: 0.5rem;
 }
 .tpl-swatch-nome { font-size: 0.82rem; font-weight: 700; }
+
+/* fica acima do gate de gênero (z-index 200 no base.css do template) —
+   não faz sentido perguntar M/F pra um site ainda sem serviço/equipe. */
+#incompletoGate.open { z-index: 260 !important; }
+
+/* ---- splash de 1,5s pra estabelecimentos só masculino ou só feminino
+   (sem gate de gênero pra escolher) — logotipo circular que aparece,
+   segura e esmaece saindo. ---- */
+.vb-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--linen, #faf7f1);
+}
+.vb-splash-circulo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  background: var(--white, #fff);
+  border: 1.5px solid var(--terracotta, #c9a227);
+  box-shadow: 0 0 40px 10px rgba(201, 162, 39, 0.25);
+  animation: vbSplashPulse 1.5s ease forwards;
+}
+@keyframes vbSplashPulse {
+  0% { opacity: 0; transform: scale(0.8); }
+  22% { opacity: 1; transform: scale(1); }
+  78% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.18); filter: blur(8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vb-splash-circulo { animation: none; opacity: 1; }
+}

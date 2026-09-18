@@ -195,6 +195,14 @@
           ? "background-image:url('" + e.foto_hero_url + "');"
           : 'background-image:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
         var trialData = e.trial_termina_em ? new Date(e.trial_termina_em + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+        var faltando = [];
+        if (!e.total_servicos) faltando.push('nenhum serviço');
+        if (!e.total_equipe) faltando.push('nenhum profissional');
+        var configPendenteHtml = faltando.length
+          ? '<div class="dash-card-config-pendente">' +
+            '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Entre no site (Ver site →) e use o menu ☰ → Admin com o PIN acima pra completar.</p>' +
+            '</div>'
+          : '';
         var pagamentoHtml = e.forma_pagamento
           ? '<div class="dash-card-pagamento">Forma de pagamento: <strong>' + (e.forma_pagamento === 'pix' ? 'Pix' : 'Cartão de crédito') + '</strong> — cobrança automática ainda será ativada, por enquanto seu acesso segue liberado.</div>'
           : '<div class="dash-card-pagamento dash-card-pagamento-pendente">' +
@@ -207,8 +215,9 @@
           '<div class="dash-card-topo" style="' + topoStyle + '"><span class="dash-card-segmento">' + escapeHtml(SEGMENTOS_LABEL[e.segmento] || 'Estabelecimento') + '</span></div>' +
           '<div class="dash-card-corpo">' +
           '<span class="nome">' + escapeHtml(e.nome) + '</span><br><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +
-          '<div class="dash-card-stats"><span><strong>' + (e.total_agendamentos || 0) + '</strong> agendamento(s)</span><span><strong>' + (e.total_servicos || 0) + '</strong> serviço(s)</span></div>' +
+          '<div class="dash-card-stats"><span><strong>' + (e.total_agendamentos || 0) + '</strong> agendamento(s)</span><span><strong>' + (e.total_servicos || 0) + '</strong> serviço(s)</span><span><strong>' + (e.total_equipe || 0) + '</strong> profissional(is)</span></div>' +
           '<div class="dash-card-pin">PIN de admin do site: <strong>' + escapeHtml(e.admin_pin || '----') + '</strong></div>' +
+          configPendenteHtml +
           pagamentoHtml +
           '<div class="dash-card-acoes">' +
           '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '" target="_blank" rel="noopener">Ver site →</a>' +
