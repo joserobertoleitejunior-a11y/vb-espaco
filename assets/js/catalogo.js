@@ -62,12 +62,20 @@
       return;
     }
 
-    listaEl.innerHTML = linhas.map(function (e) {
+    listaEl.innerHTML = linhas.map(function (e, i) {
       var link = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade);
       var cor = e.cor_destaque || '#C9A227';
       var icone = ICONES[e.segmento] || SVG_LOJA;
+      var padraoId = 'boiserie-' + i;
       return '<a class="catalogo-card" href="' + link + '">' +
         '<div class="catalogo-capa" style="background:linear-gradient(135deg,' + cor + ',' + cor + 'cc);">' +
+        '<svg class="catalogo-capa-boiserie" aria-hidden="true" preserveAspectRatio="none">' +
+        '<defs><pattern id="' + padraoId + '" width="46" height="46" patternUnits="userSpaceOnUse">' +
+        '<rect x="5" y="5" width="36" height="36" rx="4" fill="none" stroke="#fff" stroke-opacity="0.32" stroke-width="1.3"/>' +
+        '<rect x="11" y="11" width="24" height="24" rx="2" fill="none" stroke="#fff" stroke-opacity="0.32" stroke-width="1"/>' +
+        '</pattern></defs>' +
+        '<rect width="100%" height="100%" fill="url(#' + padraoId + ')"/>' +
+        '</svg>' +
         '<span class="catalogo-capa-icone" aria-hidden="true">' + icone + '</span>' +
         '<span class="catalogo-avatar" style="background:' + cor + ';">' + escapeHtml(iniciais(e.nome)) + '</span>' +
         '</div>' +
