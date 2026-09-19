@@ -4,10 +4,10 @@
 (function () {
   if (!window.db) return;
 
-  // TEMPORÁRIO — testando o motor de criação de estabelecimento sem
-  // exigir login (Google/e-mail ainda não configurados de verdade).
-  // Trocar pra false assim que o login estiver pronto pra valer.
-  var TESTE_SEM_LOGIN = true;
+  // Login de verdade: precisa criar conta ou entrar (e-mail+senha, ou
+  // Google) pra ver e criar estabelecimentos — a conta é o que decide
+  // quem é dono de cada site (ver tenant_reivindicar_estabelecimento).
+  var TESTE_SEM_LOGIN = false;
 
   var authBox = document.getElementById('authBox');
   var painelBox = document.getElementById('painelBox');
@@ -218,6 +218,12 @@
   } else {
     db.auth.getSession().then(function (res) {
       if (res.data && res.data.session) mostrarPainel();
+    });
+    // cobre o retorno do login do Google (a sessão só fica pronta
+    // depois que o supabase-js processa o redirect) e o logout.
+    db.auth.onAuthStateChange(function (evento, session) {
+      if (session) mostrarPainel();
+      else if (evento === 'SIGNED_OUT') window.location.reload();
     });
   }
 })();

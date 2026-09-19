@@ -49,10 +49,11 @@
       return Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0');
     }).join('');
   }
-  function aplicarCorDinamica(cor) {
+  function aplicarCorDinamica(cor, corSecundaria) {
     if (!/^#[0-9A-Fa-f]{6}$/.test(cor || '')) return;
     var rgb = hexParaRgbNums(cor);
-    var escuro = rgbParaHex(misturarRgb(rgb, [0, 0, 0], 0.28));
+    var corSecundariaValida = /^#[0-9A-Fa-f]{6}$/.test(corSecundaria || '');
+    var escuro = corSecundariaValida ? corSecundaria : rgbParaHex(misturarRgb(rgb, [0, 0, 0], 0.28));
     var claro = rgbParaHex(misturarRgb(rgb, [255, 255, 255], 0.42));
     var estilo = document.getElementById('tplCorDinamica');
     if (!estilo) {
@@ -94,7 +95,7 @@
     document.getElementById('tplCtaTexto').textContent = estado.texto_cta || 'Agendar horário';
 
     var cor = estado.cor_destaque || '#C9A227';
-    aplicarCorDinamica(cor);
+    aplicarCorDinamica(cor, estado.cor_secundaria);
 
     var heroFoto = document.getElementById('tplHeroFoto');
     var fotoHero = genero === 'feminino' ? (estado.foto_hero_feminino_url || estado.foto_hero_url) : estado.foto_hero_url;

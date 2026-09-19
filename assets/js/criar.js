@@ -6,6 +6,20 @@
 (function () {
   if (!window.db) return;
 
+  // precisa estar logado (e-mail/senha ou Google) pra criar um site — a
+  // conta é quem vira dona do estabelecimento (criar_estabelecimento usa
+  // auth.uid()), e é ela que depois abre o modo admin sem PIN no site.
+  db.auth.getSession().then(function (res) {
+    if (!res.data || !res.data.session) {
+      window.location.href = 'cadastro.html';
+      return;
+    }
+    iniciarPassoAPasso();
+  }, function () {
+    window.location.href = 'cadastro.html';
+  });
+
+  function iniciarPassoAPasso() {
   var params = new URLSearchParams(window.location.search);
 
   var SEGMENTOS_LABEL = {
@@ -48,6 +62,19 @@
   function formatarPreco(v) {
     return 'R$ ' + Number(v).toFixed(2).replace('.', ',');
   }
+  function hexParaRgbNums(hex) {
+    var h = (hex || '').replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    return [parseInt(h.substr(0, 2), 16) || 0, parseInt(h.substr(2, 2), 16) || 0, parseInt(h.substr(4, 2), 16) || 0];
+  }
+  function misturarRgb(rgb, alvo, quantidade) {
+    return rgb.map(function (c, i) { return Math.round(c + (alvo[i] - c) * quantidade); });
+  }
+  function rgbParaHex(rgb) {
+    return '#' + rgb.map(function (c) {
+      return Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0');
+    }).join('');
+  }
 
   var estado = {
     template: params.get('template') || 'classico-boiserie',
@@ -55,7 +82,7 @@
     nome: '', slug: '', cidade: 'Itapetininga', segmento: 'barbearia', telefone_whatsapp: '',
     foto_perfil_url: null,
     foto_hero_url: null, foto_hero_feminino_url: null,
-    cor_destaque: '#C9A227',
+    cor_destaque: '#C9A227', cor_secundaria: null,
     texto_cta: 'Agendar horário',
     instagram_url: '', facebook_url: '', tiktok_url: '',
     total_servicos: 0, total_equipe: 0
@@ -338,32 +365,49 @@
     }).then(function (res) { if (res.error) throw new Error(res.error.message); });
   }
 
-  // ---- passo 6: paleta de cores ----
-  var CORES_SUGESTOES = ['#C9A227', '#1F8A6E', '#D9AE55', '#D8342A', '#B5638C', '#4A90A4'];
+  // ---- passo 6: paleta de cores (2 cores predominantes) ----
+  var PALETAS_SUGERIDAS = [
+    ['#C9A227', '#8a6d1c'], ['#1F8A6E', '#124d3e'], ['#D9AE55', '#8a5a1f'],
+    ['#D8342A', '#7d1a14'], ['#B5638C', '#6e3457'], ['#4A90A4', '#255866']
+  ];
   function renderPassoCor(container) {
+    if (!estado.cor_secundaria) {
+      estado.cor_secundaria = rgbParaHex(misturarRgb(hexParaRgbNums(estado.cor_destaque), [0, 0, 0], 0.28));
+    }
     container.innerHTML =
-      '<p class="criar-passo-intro">Escolha a cor de destaque do seu site — usada em botões, bordas e detalhes.</p>' +
-      '<input type="color" id="criarCorInput" value="' + estado.cor_destaque + '" class="criar-cor-input">' +
+      '<p class="criar-passo-intro">Escolha as duas cores predominantes do seu site — a principal (botões e detalhes) e a secundária (degradês e contraste).</p>' +
+      '<div class="criar-cor-duas">' +
+      '<label>Principal<input type="color" id="criarCorInput" value="' + estado.cor_destaque + '" class="criar-cor-input"></label>' +
+      '<label>Secundária<input type="color" id="criarCorSecundariaInput" value="' + estado.cor_secundaria + '" class="criar-cor-input"></label>' +
+      '</div>' +
+      '<p class="cidade" style="margin:0.8rem 0 0.5rem;">ou escolha uma paleta pronta:</p>' +
       '<div id="criarCorSugestoes" class="criar-cor-sugestoes"></div>';
-    document.getElementById('criarCorSugestoes').innerHTML = CORES_SUGESTOES.map(function (c) {
-      return '<button type="button" class="criar-cor-swatch" data-cor="' + c + '" style="background:' + c + ';" aria-label="Usar essa cor"></button>';
+    document.getElementById('criarCorSugestoes').innerHTML = PALETAS_SUGERIDAS.map(function (par) {
+      return '<button type="button" class="criar-cor-swatch" data-cor="' + par[0] + '" data-cor-secundaria="' + par[1] + '" style="background:linear-gradient(135deg,' + par[0] + ',' + par[1] + ');" aria-label="Usar essa paleta"></button>';
     }).join('');
     document.getElementById('criarCorInput').addEventListener('input', function () {
       estado.cor_destaque = this.value;
+      postEstado();
+    });
+    document.getElementById('criarCorSecundariaInput').addEventListener('input', function () {
+      estado.cor_secundaria = this.value;
       postEstado();
     });
     document.getElementById('criarCorSugestoes').addEventListener('click', function (e) {
       var btn = e.target.closest('[data-cor]');
       if (!btn) return;
       estado.cor_destaque = btn.getAttribute('data-cor');
+      estado.cor_secundaria = btn.getAttribute('data-cor-secundaria');
       document.getElementById('criarCorInput').value = estado.cor_destaque;
+      document.getElementById('criarCorSecundariaInput').value = estado.cor_secundaria;
       postEstado();
     });
   }
   function aoAvancarCor() {
     return db.rpc('tenant_admin_atualizar_cor', {
       p_estabelecimento_id: estabId,
-      p_cor_destaque: estado.cor_destaque
+      p_cor_destaque: estado.cor_destaque,
+      p_cor_secundaria: estado.cor_secundaria
     }).then(function (res) { if (res.error) throw new Error(res.error.message); });
   }
 
@@ -633,4 +677,5 @@
   });
 
   mostrarPasso(0);
+  }
 })();

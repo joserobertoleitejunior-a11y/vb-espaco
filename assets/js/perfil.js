@@ -51,10 +51,14 @@
       return Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0');
     }).join('');
   }
-  function aplicarCorDinamica(cor) {
+  // segunda cor da paleta: quando o dono escolhe uma, ela vira o tom
+  // "profundo" usado nos degradês (botões, hero) no lugar do escurecimento
+  // automático — as duas cores predominantes do site ficam nas mãos dele.
+  function aplicarCorDinamica(cor, corSecundaria) {
     if (!/^#[0-9A-Fa-f]{6}$/.test(cor || '')) return;
     var rgb = hexParaRgbNums(cor);
-    var escuro = rgbParaHex(misturarRgb(rgb, [0, 0, 0], 0.28));
+    var corSecundariaValida = /^#[0-9A-Fa-f]{6}$/.test(corSecundaria || '');
+    var escuro = corSecundariaValida ? corSecundaria : rgbParaHex(misturarRgb(rgb, [0, 0, 0], 0.28));
     var claro = rgbParaHex(misturarRgb(rgb, [255, 255, 255], 0.42));
     var estilo = document.getElementById('tplCorDinamica');
     if (!estilo) {
@@ -68,10 +72,11 @@
       estilo.textContent = ':root{--dourado:' + cor + '; --dourado-escuro:' + escuro + '; --dourado-claro:' + claro + '; --dourado-rgb:' + rgb.join(',') + ';}';
     }
   }
-  function salvarCor(cor) {
+  function salvarCor(cor, corSecundaria) {
     linhaAtual.cor_destaque = cor;
-    aplicarCorDinamica(cor);
-    db.rpc('tenant_admin_atualizar_cor', { p_estabelecimento_id: estabId, p_cor_destaque: cor });
+    linhaAtual.cor_secundaria = corSecundaria;
+    aplicarCorDinamica(cor, corSecundaria);
+    db.rpc('tenant_admin_atualizar_cor', { p_estabelecimento_id: estabId, p_cor_destaque: cor, p_cor_secundaria: corSecundaria || null });
   }
 
   if (!slug || !cidade) {
@@ -282,12 +287,37 @@
     db.rpc('tenant_registrar_acesso', { p_estabelecimento_id: estabId });
   }
 
+  var periodoContadorAtual = null;
+  function consultarAcessosPorPeriodo(dias) {
+    var totalEl = document.getElementById('tplContadorTotal');
+    var botoes = document.getElementById('tplContadorPeriodos');
+    if (!totalEl) return;
+    periodoContadorAtual = dias;
+    if (botoes) {
+      botoes.querySelectorAll('button').forEach(function (b) {
+        b.classList.toggle('is-ativo', Number(b.getAttribute('data-periodo')) === dias);
+      });
+    }
+    db.rpc('tenant_publico_acessos_por_periodo', { p_estabelecimento_id: estabId, p_dias: dias }).then(function (res) {
+      if (periodoContadorAtual !== dias) return;
+      totalEl.textContent = (res.data != null ? res.data : 0);
+    });
+  }
   function atualizarContadorPublico() {
     var el = document.getElementById('tplContadorPublico');
     if (!el) return;
     if (linhaAtual.mostrar_contador_publico) {
-      el.textContent = '👁 ' + (linhaAtual.total_acessos || 0) + ' acesso(s) ao site';
       el.classList.remove('oculto');
+      consultarAcessosPorPeriodo(5);
+      var botoes = document.getElementById('tplContadorPeriodos');
+      if (botoes && !botoes.dataset.ligado) {
+        botoes.dataset.ligado = '1';
+        botoes.addEventListener('click', function (e) {
+          var btn = e.target.closest('[data-periodo]');
+          if (!btn) return;
+          consultarAcessosPorPeriodo(Number(btn.getAttribute('data-periodo')));
+        });
+      }
     } else {
       el.classList.add('oculto');
     }
@@ -418,6 +448,17 @@
     { chave: 'dinheiro', nome: 'Dinheiro' },
     { chave: 'cartao', nome: 'Cartão' }
   ];
+
+  // conta de verdade logada e dona deste estabelecimento? liga o modo
+  // admin direto, sem pedir PIN nenhum (a conta já é a prova de dono).
+  function verificarSessaoDono() {
+    db.auth.getSession().then(function (res) {
+      var session = res.data && res.data.session;
+      if (session && linhaAtual && session.user.id === linhaAtual.dono_user_id) {
+        ativarModoAdmin();
+      }
+    });
+  }
 
   function abrirPainelAdmin() {
     document.getElementById('adminPainelOverlay').classList.remove('oculto');
@@ -565,6 +606,12 @@
         try { localStorage.setItem(chaveAdmin(), '1'); } catch (e) {}
         overlay.classList.add('oculto');
         ativarModoAdmin();
+        // logado numa conta de verdade? vincula esse site a ela agora —
+        // da próxima vez o dono nem precisa mais digitar o PIN.
+        db.auth.getSession().then(function (sessRes) {
+          var session = sessRes.data && sessRes.data.session;
+          if (session) db.rpc('tenant_reivindicar_estabelecimento', { p_estabelecimento_id: estabId, p_pin: pin });
+        });
       }, function () {
         msg.className = 'msg msg-erro';
         msg.textContent = 'Sem conexão agora.';
@@ -574,8 +621,11 @@
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter') confirmarPin(); });
     document.getElementById('adminSairBtn').addEventListener('click', desativarModoAdmin);
     var corInput = document.getElementById('adminCorInput');
-    corInput.addEventListener('input', function () { aplicarCorDinamica(corInput.value); });
-    corInput.addEventListener('change', function () { salvarCor(corInput.value); });
+    var corSecundariaInput = document.getElementById('adminCorSecundariaInput');
+    corInput.addEventListener('input', function () { aplicarCorDinamica(corInput.value, corSecundariaInput.value); });
+    corInput.addEventListener('change', function () { salvarCor(corInput.value, corSecundariaInput.value); });
+    corSecundariaInput.addEventListener('input', function () { aplicarCorDinamica(corInput.value, corSecundariaInput.value); });
+    corSecundariaInput.addEventListener('change', function () { salvarCor(corInput.value, corSecundariaInput.value); });
 
     document.getElementById('adminPainelBtn').addEventListener('click', abrirPainelAdmin);
     document.getElementById('adminPainelFechar').addEventListener('click', fecharPainelAdmin);
@@ -1124,9 +1174,13 @@
     estabId = linha.id;
     linhaAtual = linha;
     aplicarTemplateCss(linha.template);
-    aplicarCorDinamica(linha.cor_destaque);
+    aplicarCorDinamica(linha.cor_destaque, linha.cor_secundaria);
     var adminCorInput = document.getElementById('adminCorInput');
     if (adminCorInput) adminCorInput.value = linha.cor_destaque || '#C9A227';
+    var adminCorSecundariaInput = document.getElementById('adminCorSecundariaInput');
+    if (adminCorSecundariaInput) {
+      adminCorSecundariaInput.value = linha.cor_secundaria || rgbParaHex(misturarRgb(hexParaRgbNums(linha.cor_destaque || '#C9A227'), [0, 0, 0], 0.28));
+    }
 
     document.title = linha.nome + ' — VB Agenda';
     document.getElementById('tplNomeTopo').textContent = linha.nome;
@@ -1166,6 +1220,7 @@
     var jaDesbloqueado = false;
     try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}
     if (jaDesbloqueado) ativarModoAdmin();
+    verificarSessaoDono();
 
     // site incompleto (sem serviço ou sem equipe) pra quem visita? mostra
     // "em preparação" por cima de tudo (inclusive do gate de gênero, que
