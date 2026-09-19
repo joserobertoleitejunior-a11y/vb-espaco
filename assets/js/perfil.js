@@ -24,18 +24,20 @@
     'escuro-premium': 'tpl-escuro',
     'automotivo-carbono': 'tpl-automotivo'
   };
+  var templateAtualParaCor = 'classico-boiserie';
+  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono'];
   function aplicarTemplateCss(templateKey) {
+    templateAtualParaCor = templateKey || 'classico-boiserie';
     var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
-    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=2';
-    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=2';
+    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=3';
+    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
     var widget = document.getElementById('tplWidget');
     if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=2';
   }
 
-  // ---- cor de destaque (sobrescreve --dourado/--dourado-escuro/--dourado-claro
-  // do template, hoje só implementado de verdade no tpl-classico — nos outros
-  // templates a variável ainda não é usada em nenhum seletor, então isso não
-  // muda nada visualmente até serem migrados também). ----
+  // ---- cor de destaque: sobrescreve os tokens de acento do template ativo
+  // (--dourado* no classico-boiserie, --terracotta* nos outros 3, que já
+  // usavam essa variável como cor única de marca). ----
   function hexParaRgbNums(hex) {
     var h = (hex || '').replace('#', '');
     if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
@@ -60,7 +62,11 @@
       estilo.id = 'tplCorDinamica';
       document.head.appendChild(estilo);
     }
-    estilo.textContent = ':root{--dourado:' + cor + '; --dourado-escuro:' + escuro + '; --dourado-claro:' + claro + '; --dourado-rgb:' + rgb.join(',') + ';}';
+    if (TEMPLATES_COM_TERRACOTTA.indexOf(templateAtualParaCor) > -1) {
+      estilo.textContent = ':root{--terracotta:' + cor + '; --terracotta-deep:' + escuro + '; --terracotta-claro:' + claro + '; --terracotta-rgb:' + rgb.join(',') + ';}';
+    } else {
+      estilo.textContent = ':root{--dourado:' + cor + '; --dourado-escuro:' + escuro + '; --dourado-claro:' + claro + '; --dourado-rgb:' + rgb.join(',') + ';}';
+    }
   }
   function salvarCor(cor) {
     linhaAtual.cor_destaque = cor;

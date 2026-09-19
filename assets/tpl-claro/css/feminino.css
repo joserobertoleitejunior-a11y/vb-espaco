@@ -14,11 +14,12 @@
   --stone:rgba(214,110,102,0.22);
   --terracotta:#D66E66;
   --terracotta-deep:#B85248;
+  --terracotta-rgb:214,110,102;
   --lavender-pale:#FBE4E1;
   --gloss:linear-gradient(160deg,rgba(255,255,255,0.12),rgba(255,255,255,0));
   --gloss-hover:linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0));
 }
-.eyebrow, .wizard-eyebrow{color:#B85248;}
-.corner-mark{color:#D66E66;}
+.eyebrow, .wizard-eyebrow{color:var(--terracotta-deep);}
+.corner-mark{color:var(--terracotta);}
 footer.site-footer{background:#2A1210;}
 footer.site-footer .foot-brand{color:#FFF8F7;}

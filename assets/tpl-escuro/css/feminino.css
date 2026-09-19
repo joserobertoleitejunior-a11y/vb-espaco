@@ -12,11 +12,12 @@
   --stone:rgba(217,149,143,0.22);
   --terracotta:#D9958F;
   --terracotta-deep:#B96F6A;
+  --terracotta-rgb:217,149,143;
   --lavender-pale:rgba(217,149,143,0.14);
-  --gloss:linear-gradient(160deg,#E7ABA5 0%,#B96F6A 55%,#A85C58 100%);
-  --gloss-hover:linear-gradient(160deg,#EFBDB8,#B96F6A);
+  --gloss:linear-gradient(160deg,rgba(255,255,255,0.22),rgba(255,255,255,0));
+  --gloss-hover:linear-gradient(160deg,rgba(255,255,255,0.12),rgba(255,255,255,0));
 }
-.eyebrow, .wizard-eyebrow{color:#D9958F;}
-.corner-mark{color:#D9958F;}
+.eyebrow, .wizard-eyebrow{color:var(--terracotta);}
+.corner-mark{color:var(--terracotta);}
 footer.site-footer{background:#120A0C;}
 footer.site-footer .foot-brand{color:#F6ECE9;}

@@ -60,16 +60,21 @@
       estilo.id = 'tplCorDinamica';
       document.head.appendChild(estilo);
     }
-    estilo.textContent = ':root{--dourado:' + cor + '; --dourado-escuro:' + escuro + '; --dourado-claro:' + claro + '; --dourado-rgb:' + rgb.join(',') + ';}';
+    if (TEMPLATES_COM_TERRACOTTA.indexOf(templateAtual) > -1) {
+      estilo.textContent = ':root{--terracotta:' + cor + '; --terracotta-deep:' + escuro + '; --terracotta-claro:' + claro + '; --terracotta-rgb:' + rgb.join(',') + ';}';
+    } else {
+      estilo.textContent = ':root{--dourado:' + cor + '; --dourado-escuro:' + escuro + '; --dourado-claro:' + claro + '; --dourado-rgb:' + rgb.join(',') + ';}';
+    }
   }
 
+  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono'];
   var templateAtual = null;
   function aplicarTemplateCss(templateKey) {
     if (templateKey === templateAtual) return;
     templateAtual = templateKey;
     var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
-    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=2';
-    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=2';
+    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=3';
+    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
   }
 
   function renderizar(estado) {
