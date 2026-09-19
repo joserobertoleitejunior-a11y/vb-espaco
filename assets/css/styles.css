@@ -723,3 +723,143 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 @media (prefers-reduced-motion: reduce) {
   .vb-splash-circulo { animation: none; opacity: 1; }
 }
+
+/* ================= Passo a passo de criação do site (criar.html) ================= */
+.criar-body { margin: 0; background: var(--linho); min-height: 100vh; }
+.criar-topo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.2rem;
+  background: #fff;
+  border-bottom: 1px solid var(--borda);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.criar-progresso { flex: 1; min-width: 0; }
+.criar-progresso span {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--tinta-suave);
+  margin-bottom: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.criar-progresso-barra { height: 6px; border-radius: 999px; background: var(--borda); overflow: hidden; }
+.criar-progresso-fill { height: 100%; background: var(--vermelho); border-radius: 999px; transition: width 0.3s ease; }
+.criar-preview-toggle-topo {
+  border: 1px solid var(--borda);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.criar-layout { display: flex; gap: 0; align-items: flex-start; }
+.criar-form-area { flex: 1; min-width: 0; padding: 1.5rem 1.2rem 4rem; max-width: 620px; margin: 0 auto; }
+.criar-titulo-passo { font-size: 1.35rem; margin: 0 0 0.9rem; }
+.criar-passo-intro { color: var(--tinta-suave); font-size: 0.92rem; margin: 0 0 1.1rem; line-height: 1.5; }
+.criar-nav { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 1.5rem; }
+
+.criar-preview-area {
+  width: 420px;
+  flex-shrink: 0;
+  padding: 1.5rem 1.5rem 1.5rem 0;
+  position: sticky;
+  top: 68px;
+  display: none;
+}
+.criar-preview-legenda { font-size: 0.8rem; font-weight: 700; color: var(--tinta-suave); margin: 0 0 0.6rem; text-align: center; }
+.criar-preview-frame {
+  width: 390px;
+  max-width: 100%;
+  height: 700px;
+  margin: 0 auto;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 8px solid #1c1c1e;
+  box-shadow: 0 24px 50px -20px rgba(20, 20, 30, 0.35);
+  background: #fff;
+}
+.criar-preview-frame iframe { width: 100%; height: 100%; border: 0; }
+
+@media (min-width: 1020px) {
+  .criar-preview-toggle-topo { display: none; }
+  .criar-preview-area { display: block; }
+  .criar-form-area { margin: 0; padding-left: 4vw; }
+  .criar-layout { justify-content: center; }
+}
+@media (max-width: 1019px) {
+  .criar-preview-area {
+    position: fixed;
+    inset: 0;
+    width: auto;
+    z-index: 300;
+    background: rgba(20, 20, 24, 0.72);
+    padding: 2rem 1rem;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+  }
+  .criar-preview-area.aberta { display: flex; flex-direction: column; }
+  .criar-preview-frame { height: 640px; }
+}
+
+.criar-template-grid, .criar-opcoes-genero { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+.criar-opcao-card {
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 0.9rem;
+  cursor: pointer;
+  background: #fff;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.criar-opcao-card.is-selecionado { border-color: var(--vermelho); }
+.criar-opcao-nome { font-weight: 700; font-size: 0.92rem; }
+.criar-opcao-desc { font-size: 0.78rem; color: var(--tinta-suave); }
+
+.criar-logo-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-color: #eee;
+  border: 1px solid var(--borda);
+  margin-bottom: 0.75rem;
+}
+.criar-personagens { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.criar-capa-preview {
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 4/5;
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  background-color: #eee;
+  border: 1px solid var(--borda);
+  margin-bottom: 0.75rem;
+}
+.criar-capa-estoque { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+.criar-cor-input { width: 100px; height: 56px; border: none; cursor: pointer; padding: 0; background: none; margin-bottom: 1rem; display: block; }
+.criar-cor-sugestoes { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.criar-cor-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--borda);
+  cursor: pointer;
+  padding: 0;
+}

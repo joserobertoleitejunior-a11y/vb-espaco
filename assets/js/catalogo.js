@@ -71,7 +71,7 @@
     '<span class="catalogo-cta-emoji" aria-hidden="true">' + SVG_FOGUETE + '</span>' +
     '<p class="catalogo-cta-titulo">Mais estabelecimentos chegando em breve</p>' +
     '<p class="catalogo-cta-texto">Tem um salão, barbearia ou estúdio? Seja um dos primeiros no VB Agenda.</p>' +
-    '<a class="btn btn-primario" href="cadastro.html">Quero cadastrar o meu →</a>' +
+    '<a class="btn btn-primario" href="criar.html">Quero cadastrar o meu →</a>' +
     '</div>';
 
   function renderizar() {
@@ -117,7 +117,7 @@
         '<span class="catalogo-seta" aria-hidden="true">→</span>' +
         '</div>' +
         '</a>' +
-        '<a class="catalogo-criar-assim" href="cadastro.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') + '">+ Criar uma loja assim →</a>';
+        '<a class="catalogo-criar-assim" href="criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') + '">+ Criar uma loja assim →</a>';
     }).join('') + CTA_CADASTRO;
   }
 

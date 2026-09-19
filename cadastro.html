@@ -7,7 +7,7 @@
 <meta name="description" content="Crie sua conta e cadastre seu salão, barbearia ou estúdio no VB Agenda.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="assets/img/favicon.svg">
-<link rel="stylesheet" href="assets/css/styles.css?v=15">
+<link rel="stylesheet" href="assets/css/styles.css?v=16">
 </head>
 <body class="com-tabbar">
   <header class="topbar">
@@ -50,53 +50,10 @@
         <p class="msg" id="listaMsg" style="margin-top:0.8rem;"></p>
       </div>
 
-      <div class="card">
-        <h2>Cadastrar novo estabelecimento</h2>
-        <form id="estabForm">
-          <div class="field">
-            <label for="estabNome">Nome do estabelecimento</label>
-            <input type="text" id="estabNome" required placeholder="Ex: Rafael Cabeleireiros">
-          </div>
-          <div class="field">
-            <label for="estabSlug">Link (gerado a partir do nome, pode editar)</label>
-            <div class="prefixo">
-              <span>vbagenda.com.br/</span>
-              <input type="text" id="estabSlug" required pattern="[a-z0-9\-]+" placeholder="rafael-cabeleireiros">
-            </div>
-          </div>
-          <div class="field">
-            <label for="estabCidade">Cidade</label>
-            <input type="text" id="estabCidade" required value="Itapetininga">
-          </div>
-          <div class="field">
-            <label for="estabSegmento">Segmento</label>
-            <select id="estabSegmento" required>
-              <option value="barbearia">Barbearia</option>
-              <option value="salao">Salão de beleza</option>
-              <option value="manicure_pedicure">Manicure e pedicure</option>
-              <option value="estetica">Estética</option>
-              <option value="estetica_automotiva">Estética automotiva</option>
-              <option value="outro">Outro</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="estabWhatsapp">WhatsApp (com DDD)</label>
-            <input type="tel" id="estabWhatsapp" placeholder="15999999999">
-          </div>
-          <div class="field">
-            <label>Estilo do site</label>
-            <div id="estabTemplateEscolha" style="display:grid; grid-template-columns:repeat(2,1fr); gap:0.6rem;"></div>
-          </div>
-          <div class="field">
-            <label>Foto principal do site</label>
-            <div id="heroPreviewCadastro" style="width:100%; max-width:260px; aspect-ratio:4/5; border-radius:10px; background-size:cover; background-position:center; background-color:#eee; border:1px solid var(--borda); margin-bottom:0.75rem;"></div>
-            <input type="file" id="estabHeroUpload" accept="image/*" style="margin-bottom:0.75rem;">
-            <p class="cidade" style="margin:0 0 0.5rem;">ou escolha uma pronta:</p>
-            <div id="estabHeroEstoque" style="display:flex; gap:0.6rem; flex-wrap:wrap;"></div>
-          </div>
-          <button class="btn btn-primario" id="criarEstabBtn" type="submit" style="width:100%;">Criar estabelecimento</button>
-          <p class="msg" id="estabMsg"></p>
-        </form>
+      <div class="card criar-cta-card">
+        <h2>Criar novo estabelecimento</h2>
+        <p class="cidade" style="margin:-0.4rem 0 1rem;">Passo a passo guiado, com pré-visualização do site em tempo real — estilo, nome, fotos, cores, serviços, equipe e horários.</p>
+        <a class="btn btn-primario" href="criar.html" style="width:100%; display:flex; justify-content:center;">+ Criar meu site →</a>
       </div>
     </section>
 
@@ -109,7 +66,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
-  <script src="assets/js/upload-fotos.js?v=1"></script>
-  <script src="assets/js/cadastro.js?v=8"></script>
+  <script src="assets/js/cadastro.js?v=9"></script>
 </body>
 </html>
