@@ -1,5 +1,7 @@
 name = "vb-espaco"
+main = "_worker.js"
 compatibility_date = "2024-09-19"
 
 [assets]
 directory = "."
+binding = "ASSETS"
