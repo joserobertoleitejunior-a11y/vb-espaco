@@ -465,11 +465,15 @@ img { max-width: 100%; display: block; }
 }
 #cube3d canvas { display: block; width: 100%; height: 100%; }
 
-/* ---- modo admin: PIN + edição inline no site do estabelecimento ---- */
+/* ---- modo admin: PIN + edição inline no site do estabelecimento ----
+   Visual "vidro" (glassmorphism): fundo translúcido com desfoque, cantos
+   bem arredondados, sombra suave — sem parecer um formulário de sistema. */
 .admin-pin-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(20, 16, 10, 0.55);
+  background: rgba(10, 10, 14, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -478,57 +482,71 @@ img { max-width: 100%; display: block; }
 }
 .admin-pin-overlay.oculto { display: none; }
 .admin-pin-box {
-  background: #fff;
-  border-radius: 14px;
-  padding: 1.75rem;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 22px;
+  padding: 1.9rem;
   max-width: 320px;
   width: 100%;
   text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
 .admin-pin-box input {
   width: 100%;
   text-align: center;
   font-size: 1.6rem;
   letter-spacing: 0.5rem;
-  padding: 0.6rem;
-  border: 1px solid var(--borda);
-  border-radius: 10px;
+  padding: 0.7rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
   margin: 0.9rem 0;
   font-family: inherit;
 }
 .admin-modo-barra {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #1c1710;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  background: rgba(24, 20, 14, 0.72);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
   color: #f3e6c8;
-  padding: 0.6rem 1rem;
+  padding: 0.65rem 1.1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   z-index: 150;
   font-size: 0.82rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  max-width: 640px;
+  margin: 0 auto;
 }
 .admin-modo-barra.oculto { display: none; }
 .admin-modo-barra button {
-  background: none;
-  border: 1px solid #f3e6c8;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(243, 230, 200, 0.5);
   color: #f3e6c8;
-  border-radius: 8px;
-  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
   font-size: 0.78rem;
   cursor: pointer;
   font-family: inherit;
+  transition: background 0.15s ease;
 }
+.admin-modo-barra button:hover { background: rgba(255, 255, 255, 0.18); }
 .admin-cor-swatch {
   display: inline-flex;
   width: 28px;
   height: 28px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid #f3e6c8;
+  border: 2px solid rgba(243, 230, 200, 0.7);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -540,6 +558,88 @@ img { max-width: 100%; display: block; }
   padding: 0;
   cursor: pointer;
 }
+
+/* ---- botão de upload customizado — some com o "Escolher arquivo /
+   Nenhum arquivo escolhido" nativo do navegador em todo o site. ---- */
+.vb-btn-upload {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1.5px dashed rgba(0, 0, 0, 0.18);
+  border-radius: 14px;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink, #222);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.vb-btn-upload:hover { background: rgba(0, 0, 0, 0.07); border-color: rgba(0, 0, 0, 0.3); }
+.vb-btn-upload input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.vb-btn-upload .vb-btn-upload-icone { font-size: 1.05rem; line-height: 1; }
+
+/* ---- tutorial guiado de criação: janela em destaque (spotlight) +
+   bolha explicativa, visual "vidro" premium ---- */
+.vb-tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  pointer-events: none;
+}
+.vb-tutorial-overlay.oculto { display: none; }
+.vb-tutorial-spot {
+  position: absolute;
+  border-radius: 18px;
+  box-shadow: 0 0 0 9999px rgba(8, 8, 12, 0.62), 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 40px rgba(255, 255, 255, 0.25);
+  transition: top 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1), width 0.35s cubic-bezier(.4,0,.2,1), height 0.35s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+.vb-tutorial-bolha {
+  /* fixo na base da tela — mais previsível que perseguir o elemento
+     destacado (que pode ser maior que a própria janela, tipo a foto de
+     capa) e sempre alcançável no celular, com o polegar. */
+  position: fixed;
+  left: 50%;
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: min(92vw, 340px);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+}
+.vb-tutorial-contador {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--terracotta, var(--dourado, #C9A227));
+}
+.vb-tutorial-bolha h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+.vb-tutorial-bolha p:not(.vb-tutorial-contador) { margin: 0 0 1rem; font-size: 0.88rem; line-height: 1.5; color: var(--ink-soft, #555); }
+.vb-tutorial-acoes { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.vb-tutorial-pular {
+  background: none;
+  border: none;
+  color: var(--ink-soft, #555);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.4rem 0;
+  text-decoration: underline;
+}
+.vb-tutorial-acoes .btn { padding: 0.55rem 1.1rem; font-size: 0.85rem; }
 body.vb-modo-admin [data-vb-editavel] {
   outline: 1.5px dashed #c9a227;
   outline-offset: 3px;

@@ -217,10 +217,10 @@
     if (existente) { existente.remove(); return; }
     var caixa = document.createElement('div');
     caixa.id = 'vbHeroEditor';
-    caixa.style.cssText = 'position:absolute; z-index:20; bottom:1rem; left:1rem; right:1rem; background:#fff; border-radius:10px; padding:0.9rem; box-shadow:0 10px 30px rgba(0,0,0,.25);';
+    caixa.style.cssText = 'position:absolute; z-index:20; bottom:1rem; left:1rem; right:1rem; background:rgba(255,255,255,.92); backdrop-filter:blur(16px); border-radius:16px; padding:0.9rem; box-shadow:0 15px 40px rgba(0,0,0,.3);';
     caixa.innerHTML =
-      '<p style="margin:0 0 0.5rem; font-size:0.85rem; font-weight:700;">Trocar foto principal</p>' +
-      '<input type="file" id="vbHeroEditorUpload" accept="image/*" style="margin-bottom:0.6rem; width:100%;">' +
+      '<p style="margin:0 0 0.6rem; font-size:0.85rem; font-weight:700;">Trocar foto principal</p>' +
+      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.7rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">📷</span> Escolher foto do celular<input type="file" id="vbHeroEditorUpload" accept="image/*"></label>' +
       '<div style="display:flex; gap:0.4rem;">' +
       ESTOQUE_FOTOS_ADMIN.map(function (f) {
         return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" style="width:52px; height:52px; object-fit:cover; border-radius:6px; cursor:pointer;">';
@@ -258,6 +258,51 @@
         document.getElementById('vbHeroEditorMsg').className = 'msg msg-erro';
         document.getElementById('vbHeroEditorMsg').textContent = err.message || 'Falha ao enviar.';
       });
+    });
+  }
+
+  // ---- foto de perfil/capa do card no catálogo (fora do site em si) ----
+  function abrirEditorFotoCard() {
+    var existente = document.getElementById('vbFotoCardEditor');
+    if (existente) { existente.remove(); return; }
+    var caixa = document.createElement('div');
+    caixa.id = 'vbFotoCardEditor';
+    caixa.className = 'admin-pin-overlay';
+    caixa.innerHTML =
+      '<div class="admin-pin-box" style="max-width:360px; text-align:left;">' +
+      '<p class="eyebrow">Como aparece no catálogo</p>' +
+      '<h2 style="margin:0.3rem 0 1rem; font-size:1.1rem;">Foto do card</h2>' +
+      '<p style="font-size:0.85rem; font-weight:700; margin:0 0 0.4rem;">Foto de perfil</p>' +
+      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:1rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">👤</span> Escolher foto<input type="file" id="vbFotoCardPerfilUpload" accept="image/*"></label>' +
+      '<p style="font-size:0.85rem; font-weight:700; margin:0 0 0.4rem;">Foto de capa</p>' +
+      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:1rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">🖼</span> Escolher foto<input type="file" id="vbFotoCardCapaUpload" accept="image/*"></label>' +
+      '<p class="msg" id="vbFotoCardMsg"></p>' +
+      '<button type="button" class="btn btn-ghost" id="vbFotoCardFechar" style="width:100%;">Fechar</button>' +
+      '</div>';
+    document.body.appendChild(caixa);
+    document.getElementById('vbFotoCardFechar').addEventListener('click', function () { caixa.remove(); });
+    function salvar(campo, url) {
+      var msg = document.getElementById('vbFotoCardMsg');
+      msg.textContent = 'Salvando…';
+      var payload = { p_estabelecimento_id: estabId, p_foto_perfil_url: null, p_foto_capa_url: null };
+      payload[campo] = url;
+      db.rpc('tenant_admin_atualizar_perfil_capa', payload).then(function (res) {
+        if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
+        msg.className = 'msg msg-ok';
+        msg.textContent = 'Salvo!';
+      });
+    }
+    document.getElementById('vbFotoCardPerfilUpload').addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file || !window.VBUpload) return;
+      document.getElementById('vbFotoCardMsg').textContent = 'Enviando…';
+      window.VBUpload.uploadFoto(file, estabId, 'perfil').then(function (url) { salvar('p_foto_perfil_url', url); });
+    });
+    document.getElementById('vbFotoCardCapaUpload').addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file || !window.VBUpload) return;
+      document.getElementById('vbFotoCardMsg').textContent = 'Enviando…';
+      window.VBUpload.uploadFoto(file, estabId, 'capa').then(function (url) { salvar('p_foto_capa_url', url); });
     });
   }
 
@@ -409,9 +454,81 @@
     nomeTopo.addEventListener('blur', salvarNome);
     ctaTexto.addEventListener('blur', salvarCta);
     document.getElementById('tplHeroFoto').addEventListener('click', abrirEditorHero);
+    ativarEdicaoTelefone();
     carregarServicos();
+    carregarEquipeAdmin();
     carregarGaleria();
     carregarRedesSociais();
+    iniciarTutorialSeNecessario();
+  }
+
+  // ---- tutorial guiado de criação: aponta pros mesmos controles de admin
+  // que já existem no site (não é uma tela separada) — só aparece uma vez,
+  // logo depois que o site nasce no passo a passo curto (criar.html), com
+  // ?tutorial=1 na URL. ----
+  var PASSOS_TUTORIAL = [
+    { seletor: '#tplNomeTopo', titulo: 'O nome da sua loja', texto: 'Esse é o nome do seu estabelecimento. Toque nele a qualquer momento pra editar.' },
+    { seletor: '#tplHeroFoto', titulo: 'Foto principal', texto: 'Essa é a primeira coisa que os clientes veem. Toque na foto pra trocar por uma sua.' },
+    { seletor: '.admin-cor-swatch', titulo: 'Cores da sua marca', texto: 'Escolha as duas cores que mais combinam com sua loja — principal e secundária.' },
+    { seletor: '#vbAddServico', titulo: 'Serviços e preços', texto: 'Toque aqui pra adicionar cada serviço que você oferece, com o preço.' },
+    { seletor: '#vbAddMembro', titulo: 'Sua equipe', texto: 'Adicione os profissionais que atendem na sua loja.' },
+    { seletor: '#tplTelefoneMenu', titulo: 'Seu WhatsApp', texto: 'Toque aqui pra colocar o número que os clientes vão usar pra falar com você.' },
+    { seletor: '#tplRedesSociais', titulo: 'Redes sociais', texto: 'Toque nos ícones pra linkar seu Instagram, Facebook ou TikTok.' },
+    { seletor: '#vbAddFoto', titulo: 'Galeria de fotos', texto: 'Mostre fotos do seu espaço e dos seus trabalhos aqui.' }
+  ];
+  var passoTutorialAtual = 0;
+
+  function iniciarTutorialSeNecessario() {
+    var querTutorial = new URLSearchParams(window.location.search).get('tutorial') === '1';
+    if (!querTutorial || !linhaAtual || linhaAtual.onboarding_concluido) return;
+    passoTutorialAtual = 0;
+    document.getElementById('vbTutorialOverlay').classList.remove('oculto');
+    document.getElementById('vbTutorialPular').addEventListener('click', concluirTutorial);
+    document.getElementById('vbTutorialProximo').addEventListener('click', function () {
+      if (passoTutorialAtual >= PASSOS_TUTORIAL.length - 1) { concluirTutorial(); return; }
+      passoTutorialAtual++;
+      mostrarPassoTutorial(passoTutorialAtual);
+    });
+    mostrarPassoTutorial(0);
+  }
+
+  function posicionarSpotlight(alvo) {
+    // o overlay é position:fixed (cobre sempre a janela visível), então o
+    // anel de destaque posiciona relativo à JANELA, não ao documento
+    // inteiro — nada de somar window.scrollY/scrollX aqui. A bolha de
+    // texto fica fixa na base da tela (ver CSS) — nem precisa reposicionar,
+    // só o anel persegue o elemento em destaque, mesmo que ele seja maior
+    // que a própria tela (ex: foto de capa em tela cheia).
+    var rect = alvo.getBoundingClientRect();
+    var spot = document.getElementById('vbTutorialSpot');
+    var pad = 8;
+    spot.style.top = (rect.top - pad) + 'px';
+    spot.style.left = (rect.left - pad) + 'px';
+    spot.style.width = (rect.width + pad * 2) + 'px';
+    spot.style.height = (rect.height + pad * 2) + 'px';
+  }
+
+  function mostrarPassoTutorial(indice, tentativas) {
+    var passo = PASSOS_TUTORIAL[indice];
+    var alvo = document.querySelector(passo.seletor);
+    if (!alvo) {
+      tentativas = (tentativas || 0) + 1;
+      if (tentativas > 10) { passoTutorialAtual++; if (passoTutorialAtual < PASSOS_TUTORIAL.length) mostrarPassoTutorial(passoTutorialAtual); else concluirTutorial(); return; }
+      setTimeout(function () { mostrarPassoTutorial(indice, tentativas); }, 200);
+      return;
+    }
+    document.getElementById('vbTutorialContador').textContent = 'Passo ' + (indice + 1) + ' de ' + PASSOS_TUTORIAL.length;
+    document.getElementById('vbTutorialTitulo').textContent = passo.titulo;
+    document.getElementById('vbTutorialTexto').textContent = passo.texto;
+    document.getElementById('vbTutorialProximo').textContent = indice === PASSOS_TUTORIAL.length - 1 ? 'Concluir ✓' : 'Próximo →';
+    alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(function () { posicionarSpotlight(alvo); }, 300);
+  }
+
+  function concluirTutorial() {
+    document.getElementById('vbTutorialOverlay').classList.add('oculto');
+    if (linhaAtual) linhaAtual.onboarding_concluido = true;
+    db.rpc('tenant_admin_concluir_onboarding', { p_estabelecimento_id: estabId });
   }
 
   function desativarModoAdmin() {
@@ -436,6 +553,7 @@
       atualizarGateIncompleto();
     });
     carregarServicos();
+    carregarEquipeAdmin();
     carregarGaleria();
     carregarRedesSociais();
   }
@@ -627,6 +745,7 @@
     corSecundariaInput.addEventListener('input', function () { aplicarCorDinamica(corInput.value, corSecundariaInput.value); });
     corSecundariaInput.addEventListener('change', function () { salvarCor(corInput.value, corSecundariaInput.value); });
 
+    document.getElementById('adminFotoCardBtn').addEventListener('click', abrirEditorFotoCard);
     document.getElementById('adminPainelBtn').addEventListener('click', abrirPainelAdmin);
     document.getElementById('adminPainelFechar').addEventListener('click', fecharPainelAdmin);
     document.querySelector('.admin-painel-abas').addEventListener('click', function (e) {
@@ -823,6 +942,81 @@
           db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome, p_preco: preco, p_categoria: 'unissex' }).then(carregarServicos);
         });
       }
+    });
+  }
+
+  // ---- equipe (aparece só pro admin nesta página — o público vê a
+  // equipe no site institucional, mas o dono gerencia direto por aqui) ----
+  function carregarEquipeAdmin() {
+    if (!modoAdmin) return;
+    var secao = document.getElementById('equipeSecaoAdmin');
+    var lista = document.getElementById('tplListaEquipeAdmin');
+    if (!secao || !lista) return;
+    secao.classList.remove('oculto');
+    db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }).then(function (res) {
+      var linhas = res.data || [];
+      lista.innerHTML = linhas.map(function (p) {
+        return '<li style="position:relative; padding-right:2.2rem;">' +
+          '<span class="nome" contenteditable="true" data-membro-id="' + p.id + '" data-campo="nome" data-vb-editavel="membro">' + escapeHtml(p.nome) + '</span>' +
+          '<span class="cidade" contenteditable="true" data-membro-id="' + p.id + '" data-campo="especialidade" data-vb-editavel="membro">' + escapeHtml(p.especialidade || 'Especialidade') + '</span>' +
+          '<button type="button" class="vb-remover-x" data-remover-membro="' + p.id + '">×</button>' +
+          '</li>';
+      }).join('') + '<li style="border:none;"><button type="button" class="btn btn-ghost" id="vbAddMembro" style="padding:0.4rem 0.8rem; font-size:0.82rem;">+ Novo profissional</button></li>';
+
+      lista.querySelectorAll('[data-membro-id]').forEach(function (el) {
+        el.addEventListener('blur', function () {
+          var item = el.parentNode;
+          var novoNome = item.querySelector('[data-campo="nome"]').textContent.trim();
+          var novaEspecialidade = item.querySelector('[data-campo="especialidade"]').textContent.trim();
+          db.rpc('tenant_admin_salvar_membro', {
+            p_estabelecimento_id: estabId, p_id: el.getAttribute('data-membro-id'),
+            p_nome: novoNome, p_especialidade: novaEspecialidade, p_foto_url: null
+          });
+        });
+      });
+      lista.querySelectorAll('[data-remover-membro]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          db.rpc('tenant_admin_remover_membro', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-membro') }).then(carregarEquipeAdmin);
+        });
+      });
+      var addBtn = document.getElementById('vbAddMembro');
+      if (addBtn) addBtn.addEventListener('click', function () {
+        var nome = window.prompt('Nome do profissional:');
+        if (!nome) return;
+        var especialidade = window.prompt('Especialidade (ex: Cortes e barba):') || '';
+        db.rpc('tenant_admin_salvar_membro', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome, p_especialidade: especialidade, p_foto_url: null }).then(carregarEquipeAdmin);
+      });
+    });
+  }
+
+  // ---- telefone/WhatsApp editável inline (reaproveita a mesma RPC de
+  // identidade — os outros campos ficam intactos porque ela só troca o
+  // que vier preenchido) ----
+  function ativarEdicaoTelefone() {
+    [document.getElementById('tplTelefoneMenu'), document.getElementById('tplTelefoneRodape')].forEach(function (el) {
+      if (!el || el.dataset.vbTelefoneLigado) return;
+      el.dataset.vbTelefoneLigado = '1';
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        var atual = linhaAtual.telefone_whatsapp || '';
+        var novo = window.prompt('WhatsApp com DDD (ex: 15999999999):', atual);
+        if (novo === null) return;
+        novo = novo.trim();
+        if (!novo || novo === atual) return;
+        db.rpc('tenant_admin_atualizar_identidade', {
+          p_estabelecimento_id: estabId, p_nome: null, p_slug: null, p_cidade: null, p_segmento: null, p_telefone_whatsapp: novo
+        }).then(function (res) {
+          if (res.error) return;
+          linhaAtual.telefone_whatsapp = novo;
+          var tel = novo.replace(/\D/g, '');
+          [document.getElementById('tplTelefoneMenu'), document.getElementById('tplTelefoneRodape')].forEach(function (a) {
+            a.style.display = '';
+            a.href = 'tel:+55' + tel;
+            a.textContent = novo;
+          });
+          carregarRedesSociais();
+        });
+      });
     });
   }
 

@@ -142,7 +142,7 @@
           pagamentoHtml +
           '<div class="dash-card-acoes">' +
           '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '" target="_blank" rel="noopener">Ver site →</a>' +
-          '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="editar.html?id=' + encodeURIComponent(e.id) + '">Editar</a>' +
+          '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '">Editar meu site →</a>' +
           '<button class="btn btn-ghost" type="button" style="padding:0.5rem 0.9rem; font-size:0.85rem; color:var(--erro); border-color:var(--erro);" data-apagar-id="' + e.id + '" data-apagar-nome="' + escapeHtml(e.nome) + '">Apagar</button>' +
           '</div>' +
           '</div>' +

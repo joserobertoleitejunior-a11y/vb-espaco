@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=19">
+<link rel="stylesheet" href="/assets/css/styles.css?v=20">
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=4" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
 <link rel="stylesheet" href="/assets/tpl-classico/css/widget.css?v=1" id="tplWidget">
@@ -75,6 +75,11 @@
       <section id="servicosSecao" class="container" style="padding:2.5rem 0;">
         <p class="eyebrow">Serviços</p>
         <ul class="lista-estabelecimentos" id="tplListaServicos" style="margin-top:1rem;"></ul>
+      </section>
+
+      <section id="equipeSecaoAdmin" class="container oculto" style="padding:0 0 2.5rem;">
+        <p class="eyebrow">Equipe</p>
+        <ul class="lista-estabelecimentos" id="tplListaEquipeAdmin" style="margin-top:1rem;"></ul>
       </section>
 
       <section id="tplGaleriaSecao" class="container oculto" style="padding:0 0 2.5rem;">
@@ -208,6 +213,7 @@
     <label class="admin-cor-swatch" title="Cor secundária (gradientes e detalhes)">
       <input type="color" id="adminCorSecundariaInput" value="#8a6d1c">
     </label>
+    <button type="button" id="adminFotoCardBtn" title="Foto do card no catálogo">🖼 Card</button>
     <button type="button" id="adminPainelBtn">Painel ▤</button>
     <button type="button" id="adminSairBtn">Sair</button>
   </div>
@@ -251,11 +257,27 @@
     <div class="vb-splash-circulo"><span class="brand-mark">❧</span></div>
   </div>
 
+  <!-- Tutorial guiado de criação — aparece só na primeira vez (?tutorial=1
+       e onboarding ainda não concluído), apontando pros mesmos controles
+       de admin que já existem no site, ao vivo. -->
+  <div class="vb-tutorial-overlay oculto" id="vbTutorialOverlay">
+    <div class="vb-tutorial-spot" id="vbTutorialSpot"></div>
+    <div class="vb-tutorial-bolha" id="vbTutorialBolha">
+      <p class="vb-tutorial-contador" id="vbTutorialContador"></p>
+      <h3 id="vbTutorialTitulo"></h3>
+      <p id="vbTutorialTexto"></p>
+      <div class="vb-tutorial-acoes">
+        <button type="button" class="vb-tutorial-pular" id="vbTutorialPular">Pular tutorial</button>
+        <button type="button" class="btn btn-primario" id="vbTutorialProximo">Próximo →</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/js/supabase-client.js?v=1"></script>
   <script src="/assets/tpl-classico/js/menu.js?v=1"></script>
   <script src="/assets/js/upload-fotos.js?v=1"></script>
   <script src="/assets/js/faixa-voltar.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=17"></script>
+  <script src="/assets/js/perfil.js?v=18"></script>
 </body>
 </html>
