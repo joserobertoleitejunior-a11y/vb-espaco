@@ -863,3 +863,96 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   cursor: pointer;
   padding: 0;
 }
+
+/* ================= Painel de admin no site (Caixa/Agenda/Clientes) ================= */
+.admin-painel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 320;
+  background: rgba(20, 20, 24, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.admin-painel-overlay.oculto { display: none; }
+.admin-painel-box {
+  width: 100%;
+  max-width: 560px;
+  max-height: 82vh;
+  background: #fff;
+  border-radius: 18px 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+@media (min-width: 720px) {
+  .admin-painel-overlay { align-items: center; }
+  .admin-painel-box { border-radius: 18px; max-height: 78vh; }
+}
+.admin-painel-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem 0;
+  border-bottom: 1px solid var(--borda);
+  flex-shrink: 0;
+}
+.admin-painel-abas { display: flex; gap: 0.3rem; }
+.admin-painel-abas button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  color: var(--tinta-suave);
+  border-bottom: 2px solid transparent;
+}
+.admin-painel-abas button.is-ativa { color: var(--tinta); border-bottom-color: var(--vermelho); }
+.admin-painel-fechar {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--tinta-suave);
+  padding: 0.2rem 0.4rem;
+}
+.admin-painel-corpo { padding: 1rem; overflow-y: auto; flex: 1; }
+
+.caixa-form { display: grid; gap: 0.6rem; margin-bottom: 1rem; }
+.caixa-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--linho);
+  border-radius: 10px;
+  margin-bottom: 0.8rem;
+}
+.painel-lista-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--borda);
+  font-size: 0.88rem;
+}
+.painel-lista-item:last-child { border-bottom: none; }
+.painel-lista-item .principal { font-weight: 700; }
+.painel-lista-item .secundario { color: var(--tinta-suave); font-size: 0.8rem; }
+.painel-status-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--linho);
+  color: var(--tinta-suave);
+  text-transform: capitalize;
+}
+.painel-status-badge.confirmado { background: #e6f4ea; color: #1e7a3d; }
+.painel-status-badge.cancelado { background: #fdeaea; color: #9a2b2b; }
