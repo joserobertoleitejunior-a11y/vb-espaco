@@ -133,6 +133,10 @@
           '<div class="dash-card-corpo">' +
           '<span class="nome">' + escapeHtml(e.nome) + '</span><br><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +
           '<div class="dash-card-stats"><span><strong>' + (e.total_agendamentos || 0) + '</strong> agendamento(s)</span><span><strong>' + (e.total_servicos || 0) + '</strong> serviço(s)</span><span><strong>' + (e.total_equipe || 0) + '</strong> profissional(is)</span></div>' +
+          '<div class="dash-card-acessos">' +
+          '<span>👁 <strong>' + (e.total_acessos || 0) + '</strong> acesso(s) ao site</span>' +
+          '<label class="dash-card-acessos-toggle"><input type="checkbox" data-toggle-contador-id="' + e.id + '"' + (e.mostrar_contador_publico ? ' checked' : '') + '> Mostrar pro público</label>' +
+          '</div>' +
           '<div class="dash-card-pin">PIN de admin do site: <strong>' + escapeHtml(e.admin_pin || '----') + '</strong></div>' +
           configPendenteHtml +
           pagamentoHtml +
@@ -150,6 +154,15 @@
       listaMsg.textContent = 'Sem conexão agora — tenta de novo em instantes.';
     });
   }
+
+  listaEl.addEventListener('change', function (e) {
+    var caixa = e.target.closest('[data-toggle-contador-id]');
+    if (!caixa) return;
+    db.rpc('tenant_admin_alternar_contador_publico', {
+      p_estabelecimento_id: caixa.getAttribute('data-toggle-contador-id'),
+      p_mostrar: caixa.checked
+    });
+  });
 
   listaEl.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-forma-pagamento-id]');

@@ -267,6 +267,32 @@
     link.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(consulta);
   }
 
+  // ---- contador de acessos: conta uma vez por sessão do navegador, e só
+  // pra quem visita de verdade (não conta quando o próprio dono já está
+  // com o site desbloqueado como admin). ----
+  function registrarAcessoSeNecessario() {
+    var jaAdmin = false;
+    try { jaAdmin = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}
+    if (jaAdmin) return;
+    var chaveSessao = 'vbAcessoRegistrado_' + estabId;
+    var jaContou = false;
+    try { jaContou = sessionStorage.getItem(chaveSessao) === '1'; } catch (e) {}
+    if (jaContou) return;
+    try { sessionStorage.setItem(chaveSessao, '1'); } catch (e) {}
+    db.rpc('tenant_registrar_acesso', { p_estabelecimento_id: estabId });
+  }
+
+  function atualizarContadorPublico() {
+    var el = document.getElementById('tplContadorPublico');
+    if (!el) return;
+    if (linhaAtual.mostrar_contador_publico) {
+      el.textContent = '👁 ' + (linhaAtual.total_acessos || 0) + ' acesso(s) ao site';
+      el.classList.remove('oculto');
+    } else {
+      el.classList.add('oculto');
+    }
+  }
+
   // Reconhece o endereço digitado num par de coordenadas reais (OpenStreetMap
   // Nominatim, gratuito e sem chave) pra deixar o link do mapa preciso — se
   // não achar nada, o endereço em texto continua salvo normalmente.
@@ -1125,6 +1151,8 @@
     document.getElementById('tplEnderecoRodape').textContent = linha.endereco || 'Endereço não informado';
     atualizarMapaLink();
     carregarHorarioRodape();
+    registrarAcessoSeNecessario();
+    atualizarContadorPublico();
     var linkInst = document.getElementById('tplLinkInstitucional');
     if (linkInst) linkInst.href = '/' + encodeURIComponent(slug) + '/' + encodeURIComponent(cidade) + '/institucional';
 

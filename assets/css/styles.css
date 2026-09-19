@@ -637,6 +637,34 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   color: var(--tinta-suave);
 }
 .dash-card-stats strong { color: var(--tinta); }
+.dash-card-acessos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--tinta-suave);
+  margin-bottom: 0.6rem;
+}
+.dash-card-acessos-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+/* barrinha de acessos no rodapé do site do estabelecimento — só aparece
+   se o dono ativar "Mostrar pro público" no dashboard */
+.foot-contador {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.76rem;
+  color: var(--ink-soft, var(--tinta-suave));
+  margin-top: 0.5rem;
+}
 .dash-card-pin {
   font-size: 0.78rem;
   color: var(--tinta-suave);
