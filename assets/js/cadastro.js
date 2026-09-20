@@ -23,9 +23,6 @@
     });
   });
 
-  // Contas novas só se criam pelo Google (login do estabelecimento exige
-  // Gmail) — este formulário de e-mail/senha existe só pra quem já tinha
-  // conta assim antes dessa regra, pra não perder o acesso.
   document.getElementById('emailForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var email = document.getElementById('authEmail').value.trim();
@@ -44,6 +41,48 @@
       }
       authMsg.textContent = '';
       mostrarPainel();
+    }, function () {
+      btn.disabled = false;
+      authMsg.className = 'msg msg-erro';
+      authMsg.textContent = 'Sem conexão agora — tenta de novo em instantes.';
+    });
+  });
+
+  // Criar conta nova com e-mail e senha (alternativa ao Google) — o
+  // dono_user_id do estabelecimento vai ser essa conta do mesmo jeito.
+  document.getElementById('criarContaBtn').addEventListener('click', function () {
+    var email = document.getElementById('authEmail').value.trim();
+    var senha = document.getElementById('authSenha').value;
+    var btn = document.getElementById('criarContaBtn');
+    if (!email || !senha) {
+      authMsg.className = 'msg msg-erro';
+      authMsg.textContent = 'Preencha e-mail e senha pra criar a conta.';
+      return;
+    }
+    if (senha.length < 6) {
+      authMsg.className = 'msg msg-erro';
+      authMsg.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
+      return;
+    }
+    btn.disabled = true;
+    authMsg.className = 'msg';
+    authMsg.textContent = 'Criando sua conta…';
+
+    db.auth.signUp({ email: email, password: senha }).then(function (res) {
+      btn.disabled = false;
+      if (res.error) {
+        authMsg.className = 'msg msg-erro';
+        authMsg.textContent = res.error.message;
+        return;
+      }
+      if (res.data && res.data.session) {
+        authMsg.textContent = '';
+        mostrarPainel();
+        return;
+      }
+      // projeto configurado pra exigir confirmação por e-mail antes de liberar sessão
+      authMsg.className = 'msg msg-ok';
+      authMsg.textContent = 'Conta criada! Confira seu e-mail pra confirmar antes de entrar.';
     }, function () {
       btn.disabled = false;
       authMsg.className = 'msg msg-erro';

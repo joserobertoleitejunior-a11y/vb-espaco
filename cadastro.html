@@ -27,7 +27,7 @@
         <h2>Entrar com Google</h2>
         <p class="cidade" style="margin:-0.3rem 0 1rem;">Ainda não tem conta? Sem problema — é só clicar abaixo: sua conta é criada automaticamente na primeira vez, e depois é só cadastrar seu negócio.</p>
         <button class="btn btn-google" id="googleBtn" type="button">Continuar com Google</button>
-        <div class="divisor">já tem conta antiga por e-mail?</div>
+        <div class="divisor">ou com e-mail e senha</div>
         <form id="emailForm">
           <div class="field">
             <label for="authEmail">E-mail</label>
@@ -38,6 +38,7 @@
             <input type="password" id="authSenha" required minlength="6" autocomplete="current-password">
           </div>
           <button class="btn btn-ghost" id="entrarBtn" type="submit" style="width:100%;">Entrar</button>
+          <button class="btn btn-ghost" id="criarContaBtn" type="button" style="width:100%; margin-top:0.5rem;">Criar conta com e-mail</button>
         </form>
         <p class="msg" id="authMsg"></p>
       </div>
@@ -68,6 +69,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
   <script src="assets/js/vb-dialogo.js?v=1"></script>
-  <script src="assets/js/cadastro.js?v=16"></script>
+  <script src="assets/js/cadastro.js?v=17"></script>
 </body>
 </html>
