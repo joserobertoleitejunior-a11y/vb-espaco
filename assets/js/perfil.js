@@ -32,7 +32,7 @@
     document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=4';
     document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
     var widget = document.getElementById('tplWidget');
-    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=2';
+    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=3';
   }
 
   // ---- cor de destaque: sobrescreve os tokens de acento do template ativo
@@ -102,6 +102,21 @@
       var fotoAtual = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
       if (fotoAtual) seguirCorDaImagem(fotoAtual);
     }
+  }
+
+  // widgets translúcidos (agenda/catálogo em vidro fosco) — puramente
+  // visual, aplicado via classe no body pra valer pro site inteiro
+  function aplicarWidgetsTranslucidos(ativo) {
+    document.body.classList.toggle('vb-widgets-translucidos', !!ativo);
+  }
+
+  function alternarWidgetsTranslucidos() {
+    var novoValor = !linhaAtual.widgets_translucidos;
+    linhaAtual.widgets_translucidos = novoValor;
+    var btn = document.getElementById('adminWidgetsTranslucidosBtn');
+    if (btn) btn.classList.toggle('is-ativo', novoValor);
+    aplicarWidgetsTranslucidos(novoValor);
+    db.rpc('tenant_admin_alternar_widgets_translucidos', { p_estabelecimento_id: estabId, p_translucido: novoValor });
   }
 
   if (!slug || !cidade) {
@@ -777,6 +792,7 @@
     corSecundariaInput.addEventListener('change', function () { salvarCor(corInput.value, corSecundariaInput.value); });
 
     document.getElementById('adminSeguirCorImagemBtn').addEventListener('click', alternarSeguirCorImagem);
+    document.getElementById('adminWidgetsTranslucidosBtn').addEventListener('click', alternarWidgetsTranslucidos);
     document.getElementById('adminFotoCardBtn').addEventListener('click', abrirEditorFotoCard);
     document.getElementById('adminPainelBtn').addEventListener('click', abrirPainelAdmin);
     document.getElementById('adminPainelFechar').addEventListener('click', fecharPainelAdmin);
@@ -1441,6 +1457,9 @@
     }
     var adminSeguirCorImagemBtn = document.getElementById('adminSeguirCorImagemBtn');
     if (adminSeguirCorImagemBtn) adminSeguirCorImagemBtn.classList.toggle('is-ativo', !!linha.seguir_cor_imagem);
+    aplicarWidgetsTranslucidos(linha.widgets_translucidos);
+    var adminWidgetsTranslucidosBtn = document.getElementById('adminWidgetsTranslucidosBtn');
+    if (adminWidgetsTranslucidosBtn) adminWidgetsTranslucidosBtn.classList.toggle('is-ativo', !!linha.widgets_translucidos);
 
     document.title = linha.nome + ' — VB Agenda';
     document.getElementById('tplNomeTopo').textContent = linha.nome;

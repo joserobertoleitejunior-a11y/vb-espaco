@@ -191,6 +191,34 @@ img { max-width: 100%; display: block; }
   .skeleton { animation: none; }
 }
 
+/* ---- telas neutras da VB Agenda em perfil.html/institucional.html
+   (carregando / não encontrado) ----
+   Essas páginas sempre carregam, além deste arquivo, o CSS do template
+   do estabelecimento (tpl-classico por padrão, antes do JS trocar pro
+   template certo) — e como tpl-classico é literalmente o visual do
+   Rafael Cabeleireiros, um h1/.btn genérico nessas telas acabava com a
+   cara do Rafael em vez da marca neutra da VB Agenda. Estas regras via
+   ID garantem prioridade sobre os seletores de tag/classe do template. */
+#carregando, #naoEncontrado {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+#naoEncontrado h1 {
+  font-family: inherit;
+  font-size: 1.6rem;
+  color: var(--tinta);
+  margin-bottom: 0.6rem;
+}
+#naoEncontrado .btn.btn-primario {
+  background: var(--vermelho);
+  background-image: none;
+  color: var(--branco);
+  box-shadow: none;
+}
+#naoEncontrado .btn.btn-primario:hover {
+  background: var(--vermelho-escuro);
+  transform: none;
+}
+
 .perfil-header {
   padding: 2.5rem 1.25rem 1.5rem;
   text-align: center;
