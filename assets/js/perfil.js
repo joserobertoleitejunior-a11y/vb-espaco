@@ -457,6 +457,12 @@
   }
 
   function abrirEditorHero() {
+    // a foto principal fica sempre visível pra todo mundo (é o próprio
+    // hero do site) — sem essa conferência, uma vez que esse escutador
+    // de clique é ligado (quando o dono entra no modo admin) ele nunca
+    // era removido, e continuava abrindo o editor mesmo depois de
+    // "Sair" ou pra qualquer cliente usando o mesmo aparelho depois.
+    if (!modoAdmin) return;
     var existente = document.getElementById('vbHeroEditor');
     if (existente) { existente.remove(); return; }
     var caixa = document.createElement('div');
@@ -1404,7 +1410,13 @@
       }
       window.location.href = '/cadastro.html';
     });
-    document.getElementById('adminSairBtn').addEventListener('click', desativarModoAdmin);
+    document.getElementById('adminSairBtn').addEventListener('click', function () {
+      // "Sair" precisa encerrar a sessão de verdade — só esconder a
+      // barra de admin (como era antes) deixava a conta logada por
+      // baixo, e verificarSessaoDono() reativava o modo admin sozinho
+      // na próxima visita a essa mesma aba/aparelho.
+      db.auth.signOut().then(desativarModoAdmin, desativarModoAdmin);
+    });
     var corInput = document.getElementById('adminCorInput');
     var corSecundariaInput = document.getElementById('adminCorSecundariaInput');
     corInput.addEventListener('input', function () { aplicarCorDinamica(corInput.value, corSecundariaInput.value); });
@@ -1728,6 +1740,11 @@
       if (!el || el.dataset.vbTelefoneLigado) return;
       el.dataset.vbTelefoneLigado = '1';
       el.addEventListener('click', function (e) {
+        // o link do telefone continua visível/clicável pra todo mundo
+        // (é assim que o cliente liga/manda WhatsApp) — sem essa
+        // conferência, uma vez que esse escutador é ligado ele fica pra
+        // sempre, e continuava abrindo a edição mesmo depois de "Sair".
+        if (!modoAdmin) return;
         e.preventDefault();
         var atual = linhaAtual.telefone_whatsapp || '';
         window.VBDialogo.prompt('WhatsApp com DDD (ex: 15999999999):', atual).then(function (novo) {
