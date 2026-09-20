@@ -90,8 +90,9 @@
       var cor = e.cor_destaque || '#C9A227';
       var icone = ICONES[e.segmento] || SVG_LOJA;
       var sombra = '0 1px 2px rgba(20,20,30,.05), 0 16px 26px -14px ' + hexParaRgba(cor, 0.45);
-      var capaStyle = e.foto_capa_url
-        ? "background-image:linear-gradient(0deg, rgba(0,0,0,.28), rgba(0,0,0,.1)), url('" + e.foto_capa_url + "'); background-size:cover; background-position:center;"
+      var fotoTopo = e.foto_capa_url || e.foto_hero_url;
+      var capaStyle = fotoTopo
+        ? "background-image:linear-gradient(0deg, rgba(0,0,0,.28), rgba(0,0,0,.1)), url('" + fotoTopo + "'); background-size:cover; background-position:center;"
         : 'background:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
       var fotoAvatar = e.foto_perfil_url || e.foto_hero_url;
       var avatarConteudo = fotoAvatar
@@ -104,7 +105,7 @@
       if (e.telefone_whatsapp) selosSociais += '<span class="catalogo-selo-social" aria-hidden="true">' + SVG_WHATSAPP + '</span>';
       return '<a class="catalogo-card" href="' + link + '" style="box-shadow:' + sombra + ';">' +
         '<div class="catalogo-capa" style="' + capaStyle + '">' +
-        '<span class="catalogo-capa-icone" aria-hidden="true">' + (e.foto_capa_url ? '' : icone) + '</span>' +
+        '<span class="catalogo-capa-icone" aria-hidden="true">' + (fotoTopo ? '' : icone) + '</span>' +
         '<span class="catalogo-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';">' +
         '<span class="catalogo-avatar" style="background:' + cor + ';">' + avatarConteudo + '</span>' +
         '</span>' +
