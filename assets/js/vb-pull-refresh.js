@@ -17,10 +17,11 @@
   var reduzMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduzMovimento) return;
 
-  var ALTURA_MAX = 76;
-  var ALTURA_CARREGANDO = 58;
-  var LIMIAR = 58;
+  var ALTURA_MAX = 84;
+  var ALTURA_CARREGANDO = 62;
+  var LIMIAR = 62;
   var RESISTENCIA = 0.5;
+  var ESTICAR_MAX = 2.0; // quanto o cubo alonga no eixo vertical, no pico do puxão
 
   var cuboApi = null;
 
@@ -29,13 +30,17 @@
     .catch(function () { /* sem three.js: o gesto de puxar/recarregar ainda funciona, só sem o cubo */ });
 
   function iniciarCubo(THREE) {
-    var tam = 40;
+    var tam = 46;
     var canvas = document.createElement('canvas');
     alvo.appendChild(canvas);
 
     var scene = new THREE.Scene();
-    var frustum = 2.6;
-    var camera = new THREE.OrthographicCamera(-frustum / 2, frustum / 2, frustum / 2, -frustum / 2, 0.1, 20);
+    // frustum vertical cresce junto com o esticão (recalculado em
+    // esticar()) — sem isso, o cubo esticado passa da "janela" da câmera
+    // ortográfica e as linhas de cima/baixo saem cortadas no meio do
+    // esticão, em vez de esticar inteiras e suaves.
+    var frustumBase = 2.6;
+    var camera = new THREE.OrthographicCamera(-frustumBase / 2, frustumBase / 2, frustumBase / 2, -frustumBase / 2, 0.1, 20);
     camera.position.z = 5;
 
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
@@ -67,11 +72,21 @@
 
     cuboApi = {
       esticar: function (progresso) {
-        // "elástico": estica mais no eixo vertical do que no horizontal,
-        // como se o cubo tivesse sido puxado pra baixo de verdade.
-        cubo.scale.y = 1 + progresso * 0.9;
-        cubo.scale.x = 1 + progresso * 0.15;
-        cubo.scale.z = 1 + progresso * 0.15;
+        // elástico de verdade: alonga bastante no eixo vertical e afina
+        // um pouco nos outros dois — igual uma borracha sendo puxada.
+        var escalaY = 1 + progresso * ESTICAR_MAX;
+        cubo.scale.y = escalaY;
+        cubo.scale.x = 1 - progresso * 0.22;
+        cubo.scale.z = 1 - progresso * 0.22;
+        // aumenta a "janela" vertical da câmera na mesma proporção do
+        // esticão (com folga de sobra), pra nenhuma linha sair cortada
+        // durante o alongamento — no repouso (escalaY=1) fica idêntico
+        // ao frustum original, sem pulo nenhum de tamanho.
+        var fatorJanela = 1 + Math.max(0, escalaY - 1) * 0.8;
+        var metadeV = (frustumBase / 2) * fatorJanela;
+        camera.top = metadeV;
+        camera.bottom = -metadeV;
+        camera.updateProjectionMatrix();
       },
       girarRapido: function () {
         girando = true;
@@ -79,6 +94,9 @@
       },
       resetar: function () {
         cubo.scale.set(1, 1, 1);
+        camera.top = frustumBase / 2;
+        camera.bottom = -frustumBase / 2;
+        camera.updateProjectionMatrix();
       }
     };
   }

@@ -569,6 +569,53 @@
     });
   }
 
+  // ---- status de 24h (tipo Stories) — botão da barra de admin, e
+  // também deslizar o dedo pra esquerda em cima da própria barra, do
+  // mesmo jeito que o Instagram abre a câmera arrastando na tela. ----
+  function abrirPublicarStatus() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      input.remove();
+      if (!file || !window.VBUpload) return;
+      window.VBUpload.uploadFoto(file, estabId, 'status').then(function (url) {
+        window.VBDialogo.prompt('Quer escrever uma legenda? (opcional)', '').then(function (texto) {
+          db.rpc('tenant_admin_publicar_status', { p_estabelecimento_id: estabId, p_foto_url: url, p_texto: texto || null }).then(function (res) {
+            if (res.error) { window.VBDialogo.alert('Não deu pra publicar: ' + res.error.message); return; }
+            window.VBDialogo.alert('Status publicado! Fica visível por 24 horas no catálogo.');
+          });
+        });
+      }, function (err) {
+        window.VBDialogo.alert(err.message || 'Falha ao enviar a foto.');
+      });
+    });
+    input.click();
+  }
+
+  function iniciarGestoStatusNaBarra() {
+    var barra = document.getElementById('adminModoBarra');
+    if (!barra) return;
+    var inicioX = 0, inicioY = 0, arrastando = false;
+    barra.addEventListener('touchstart', function (e) {
+      if (e.target.closest('button, input, label')) return; // botões/cores continuam funcionando normal
+      arrastando = true;
+      inicioX = e.touches[0].clientX;
+      inicioY = e.touches[0].clientY;
+    }, { passive: true });
+    barra.addEventListener('touchend', function (e) {
+      if (!arrastando) return;
+      arrastando = false;
+      var dx = (e.changedTouches[0].clientX) - inicioX;
+      var dy = (e.changedTouches[0].clientY) - inicioY;
+      // arrasto claramente horizontal, pra esquerda, e não um toque/scroll vertical
+      if (dx < -46 && Math.abs(dy) < 40) abrirPublicarStatus();
+    });
+  }
+
   function atualizarMapaLink() {
     var link = document.getElementById('tplMapaLink');
     if (!link) return;
@@ -1368,6 +1415,8 @@
     document.getElementById('adminSeguirCorImagemBtn').addEventListener('click', alternarSeguirCorImagem);
     document.getElementById('adminWidgetsTranslucidosBtn').addEventListener('click', alternarWidgetsTranslucidos);
     document.getElementById('adminFotoCardBtn').addEventListener('click', abrirEditorFotoCard);
+    document.getElementById('adminStatusBtn').addEventListener('click', abrirPublicarStatus);
+    iniciarGestoStatusNaBarra();
     document.getElementById('adminPainelBtn').addEventListener('click', abrirPainelAdmin);
     document.getElementById('adminPainelFechar').addEventListener('click', fecharPainelAdmin);
     document.querySelector('.admin-painel-abas').addEventListener('click', function (e) {

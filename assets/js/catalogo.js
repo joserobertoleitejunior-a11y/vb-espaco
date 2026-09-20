@@ -52,10 +52,13 @@
   var SVG_TIKTOK = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M16.6 5.82c-.9-.98-1.4-2.26-1.4-3.58h-3.03v13.4c0 1.5-1.22 2.72-2.72 2.72a2.72 2.72 0 01-2.72-2.72 2.72 2.72 0 012.72-2.72c.28 0 .55.04.8.12v-3.08a5.8 5.8 0 00-.8-.06A5.76 5.76 0 003 15.36 5.76 5.76 0 008.76 21.1a5.76 5.76 0 005.76-5.76V8.9a7.15 7.15 0 004.16 1.34V7.2a4.3 4.3 0 01-2.08-1.38z"/></svg>';
 
   var SOCIAL_ICONES = [
-    { campo: 'instagram_url', svg: SVG_INSTAGRAM },
-    { campo: 'facebook_url', svg: SVG_FACEBOOK },
-    { campo: 'tiktok_url', svg: SVG_TIKTOK }
+    { campo: 'instagram_url', svg: SVG_INSTAGRAM, rotulo: 'Instagram', href: function (e) { return e.instagram_url; } },
+    { campo: 'facebook_url', svg: SVG_FACEBOOK, rotulo: 'Facebook', href: function (e) { return e.facebook_url; } },
+    { campo: 'tiktok_url', svg: SVG_TIKTOK, rotulo: 'TikTok', href: function (e) { return e.tiktok_url; } },
+    { campo: 'telefone_whatsapp', svg: SVG_WHATSAPP, rotulo: 'WhatsApp', href: function (e) { return 'https://wa.me/55' + soNumeros(e.telefone_whatsapp); } }
   ];
+
+  function soNumeros(str) { return String(str || '').replace(/\D/g, ''); }
 
   function hexParaRgba(hex, alpha) {
     var h = (hex || '').replace('#', '');
@@ -95,72 +98,63 @@
         ? "background-image:linear-gradient(0deg, rgba(0,0,0,.28), rgba(0,0,0,.1)), url('" + fotoTopo + "'); background-size:cover; background-position:center;"
         : 'background:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
       var fotoAvatar = e.foto_perfil_url || e.foto_hero_url;
-      // quando o avatar e a capa caem na MESMA foto (nenhuma foto de perfil
-      // própria cadastrada ainda), sem isso cada um recorta a imagem do
-      // jeito dele e o avatar parece "cortado" no meio, como se fosse uma
-      // foto diferente — data-alinhar-capa faz o avatar virar uma janela
-      // pra mesma posição exata da imagem que já aparece atrás dele.
       var avatarConteudo = fotoAvatar
-        ? '<span class="catalogo-avatar-foto"' + (fotoAvatar === fotoTopo ? ' data-alinhar-capa="' + fotoAvatar + '"' : ' style="background-image:url(\'' + fotoAvatar + '\');"') + '></span>'
+        ? '<span class="catalogo-avatar-foto" style="background-image:url(\'' + fotoAvatar + '\');"></span>'
         : escapeHtml(iniciais(e.nome));
-      var moldura = e.moldura_foto || 'simples';
-      var selosSociais = SOCIAL_ICONES.filter(function (s) { return e[s.campo]; }).map(function (s) {
-        return '<span class="catalogo-selo-social" aria-hidden="true">' + s.svg + '</span>';
+      // avatar tem status ativo (postado nas últimas 24h)? entra a moldura
+      // de destaque nas cores do próprio site, tipo o anel de story do
+      // Instagram — e o avatar vira clicável pra abrir o status.
+      var moldura = e.tem_status_ativo ? 'aura' : (e.moldura_foto || 'simples');
+      var selosSociais = SOCIAL_ICONES.filter(function (s) { return s.href(e); }).map(function (s) {
+        return '<a class="catalogo-selo-social" href="' + escapeHtml(s.href(e)) + '" target="_blank" rel="noopener" aria-label="' + s.rotulo + '" data-social-link>' + s.svg + '</a>';
       }).join('');
-      if (e.telefone_whatsapp) selosSociais += '<span class="catalogo-selo-social" aria-hidden="true">' + SVG_WHATSAPP + '</span>';
-      return '<a class="catalogo-card" href="' + link + '" style="box-shadow:' + sombra + ';">' +
+      return '<div class="catalogo-card" role="link" tabindex="0" data-href="' + link + '" style="box-shadow:' + sombra + ';">' +
         '<div class="catalogo-capa" style="' + capaStyle + '">' +
         '<span class="catalogo-capa-icone" aria-hidden="true">' + (fotoTopo ? '' : icone) + '</span>' +
-        '<span class="catalogo-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';">' +
-        '<span class="catalogo-avatar" style="background:' + cor + ';">' + avatarConteudo + '</span>' +
-        '</span>' +
         '</div>' +
         '<div class="catalogo-corpo">' +
+        (e.tem_status_ativo
+          ? '<button type="button" class="catalogo-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';" data-abrir-status="' + e.id + '" aria-label="Ver status de ' + escapeHtml(e.nome) + '">'
+          : '<span class="catalogo-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';">') +
+        '<span class="catalogo-avatar" style="background:' + cor + ';">' + avatarConteudo + '</span>' +
+        (e.tem_status_ativo ? '</button>' : '</span>') +
         '<span class="catalogo-info">' +
         '<span class="catalogo-nome">' + escapeHtml(e.nome) + '</span>' +
         '<span class="catalogo-tags">' +
         '<span class="catalogo-tag">' + escapeHtml(SEGMENTOS[e.segmento] || 'Estabelecimento') + '</span>' +
         '<span class="catalogo-tag">' + SVG_PIN + ' ' + escapeHtml(e.cidade) + '</span>' +
-        (selosSociais ? '<span class="catalogo-tag catalogo-tag-social">' + selosSociais + '</span>' : '') +
         '</span>' +
+        (selosSociais ? '<span class="catalogo-tags catalogo-tags-social">' + selosSociais + '</span>' : '') +
         '</span>' +
         '<span class="catalogo-seta" aria-hidden="true">→</span>' +
         '</div>' +
-        '</a>' +
+        '</div>' +
         '<a class="catalogo-criar-assim" href="criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') + '">+ Criar uma loja assim →</a>';
     }).join('') + CTA_CADASTRO;
-    alinharFotosDuplicadas();
   }
 
-  // faz o avatar mostrar exatamente o pedacinho da imagem que fica por
-  // trás dele na capa, em vez de um recorte "cover" independente —
-  // calcula o tamanho/posição real que a foto ocupa dentro da capa e
-  // aplica o mesmo enquadramento (deslocado) no avatar.
-  function alinharFotosDuplicadas() {
-    listaEl.querySelectorAll('[data-alinhar-capa]').forEach(function (avatarFotoEl) {
-      var card = avatarFotoEl.closest('.catalogo-card');
-      var capaEl = card && card.querySelector('.catalogo-capa');
-      var url = avatarFotoEl.getAttribute('data-alinhar-capa');
-      if (!capaEl || !url) return;
-      var img = new Image();
-      img.onload = function () {
-        var capaRect = capaEl.getBoundingClientRect();
-        var avatarRect = avatarFotoEl.getBoundingClientRect();
-        if (!capaRect.width || !avatarRect.width || !img.naturalWidth) return;
-        var escala = Math.max(capaRect.width / img.naturalWidth, capaRect.height / img.naturalHeight);
-        var largura = img.naturalWidth * escala;
-        var altura = img.naturalHeight * escala;
-        var offX = (capaRect.width - largura) / 2;
-        var offY = (capaRect.height - altura) / 2;
-        var deltaX = avatarRect.left - capaRect.left;
-        var deltaY = avatarRect.top - capaRect.top;
-        avatarFotoEl.style.backgroundImage = "url('" + url + "')";
-        avatarFotoEl.style.backgroundSize = largura + 'px ' + altura + 'px';
-        avatarFotoEl.style.backgroundPosition = (offX - deltaX) + 'px ' + (offY - deltaY) + 'px';
-      };
-      img.src = url;
-    });
-  }
+  // o card inteiro age como link (acessível por teclado também), mas os
+  // ícones sociais e o avatar com status são cliques à parte — sem isso,
+  // eles ficariam presos dentro de um <a> gigante (inválido em HTML e
+  // pouco confiável) ou nunca seriam clicáveis de verdade.
+  listaEl.addEventListener('click', function (e) {
+    if (e.target.closest('[data-social-link]')) return;
+    var abrirStatus = e.target.closest('[data-abrir-status]');
+    if (abrirStatus) {
+      if (window.VBStatus) window.VBStatus.abrir(abrirStatus.getAttribute('data-abrir-status'));
+      return;
+    }
+    var card = e.target.closest('.catalogo-card');
+    if (card && card.getAttribute('data-href')) window.location.href = card.getAttribute('data-href');
+  });
+  listaEl.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.target.closest('[data-social-link], [data-abrir-status]')) return;
+    var card = e.target.closest('.catalogo-card');
+    if (!card) return;
+    e.preventDefault();
+    window.location.href = card.getAttribute('data-href');
+  });
 
   function carregar() {
     listaEl.innerHTML = '<div class="card"><div class="skeleton" style="height:1.4rem; width:60%; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:1rem; width:35%;"></div></div>';
