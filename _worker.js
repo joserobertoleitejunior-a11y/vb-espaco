@@ -11,6 +11,12 @@ export default {
     const url = new URL(request.url);
     const partes = url.pathname.split('/').filter(Boolean);
 
+    // com html_handling:"none" (ver comentário acima), o Cloudflare Assets
+    // não serve mais index.html sozinho na raiz — sem isso aqui, o próprio
+    // link principal do site (a home) não abria.
+    if (partes.length === 0) {
+      return servirComo(request, env, '/index.html');
+    }
     if (partes.length === 3 && partes[2] === 'institucional') {
       return servirComo(request, env, '/institucional.html');
     }
