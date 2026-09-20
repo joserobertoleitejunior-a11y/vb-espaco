@@ -52,14 +52,35 @@
       return Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0');
     }).join('');
   }
+  // essa cor vira o FUNDO de botões (.btn) e a cor do texto/borda dos
+  // chips de serviço com TEXTO BRANCO por cima em ambos os casos — se o
+  // dono escolher branco (ou qualquer tom muito claro), o texto some por
+  // cima dela. Nunca deixa isso acontecer: escurece progressivamente até
+  // garantir contraste mínimo, não importa a cor escolhida.
+  function luminanciaRelativa(rgb) {
+    var lin = rgb.map(function (c) {
+      c = c / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+  }
+  function garantirContraste(rgb) {
+    var tentativas = 0;
+    while (luminanciaRelativa(rgb) > 0.6 && tentativas < 20) {
+      rgb = rgb.map(function (c) { return Math.round(c * 0.88); });
+      tentativas++;
+    }
+    return rgb;
+  }
   // segunda cor da paleta: quando o dono escolhe uma, ela vira o tom
   // "profundo" usado nos degradês (botões, hero) no lugar do escurecimento
   // automático — as duas cores predominantes do site ficam nas mãos dele.
   function aplicarCorDinamica(cor, corSecundaria) {
     if (!/^#[0-9A-Fa-f]{6}$/.test(cor || '')) return;
-    var rgb = hexParaRgbNums(cor);
+    var rgb = garantirContraste(hexParaRgbNums(cor));
+    cor = rgbParaHex(rgb);
     var corSecundariaValida = /^#[0-9A-Fa-f]{6}$/.test(corSecundaria || '');
-    var escuro = corSecundariaValida ? corSecundaria : rgbParaHex(misturarRgb(rgb, [0, 0, 0], 0.28));
+    var escuro = corSecundariaValida ? rgbParaHex(garantirContraste(hexParaRgbNums(corSecundaria))) : rgbParaHex(misturarRgb(rgb, [0, 0, 0], 0.28));
     var claro = rgbParaHex(misturarRgb(rgb, [255, 255, 255], 0.42));
     var estilo = document.getElementById('tplCorDinamica');
     if (!estilo) {
@@ -183,10 +204,11 @@
     btn.addEventListener('click', function () {
       var atual = window.VBClienteGlobal.obter();
       if (atual) {
-        if (window.confirm('Sair da sua conta VB Agenda neste site?')) {
+        window.VBDialogo.confirm('Sair da sua conta VB Agenda neste site?').then(function (ok) {
+          if (!ok) return;
           window.VBClienteGlobal.limpar();
           aplicarClienteGlobalNaTela(null);
-        }
+        });
         return;
       }
       abrir();
@@ -345,6 +367,22 @@
   // por sistema operacional/navegador e fica cinza-chumbo, combinando com
   // o resto dos botões).
   var ICONE_CAMERA = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>';
+
+  // especialidades sugeridas por nicho — mesma ideia dos serviços
+  // sugeridos, mas pro campo de especialidade da equipe (o exemplo fixo
+  // "Cortes e barba" não fazia sentido nenhum pra quem tem uma estética
+  // automotiva, por exemplo).
+  var ESPECIALIDADES_SUGERIDAS = {
+    barbearia: ['Cortes e barba', 'Coloração', 'Sobrancelha'],
+    salao: ['Cortes e coloração', 'Escova e penteados', 'Manicure e pedicure'],
+    manicure_pedicure: ['Manicure', 'Pedicure', 'Unhas em gel'],
+    estetica: ['Limpeza de pele', 'Massagens', 'Depilação'],
+    estetica_automotiva: ['Lavagem e detalhamento', 'Polimento e vitrificação', 'Estética interna'],
+    outro: ['Atendimento geral']
+  };
+  function especialidadesSugeridasPara(segmento) {
+    return ESPECIALIDADES_SUGERIDAS[segmento] || ESPECIALIDADES_SUGERIDAS.outro;
+  }
 
   function salvarNome() {
     var el = document.getElementById('tplNomeTopo');
@@ -845,11 +883,11 @@
         return '<li>' + escapeHtml(s.nome) + ' · ' + formatarPreco(s.preco) +
           '<button type="button" class="vb-remover-x" data-remover-servico-tut="' + s.id + '" style="position:static; margin-left:0.5rem; display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;">×</button></li>';
       }).join('') + '</ul>' : '') +
-      (sugestoes.length ? '<p class="vb-servico-novo-legenda">Sugestões pro seu tipo de negócio:</p><div class="vb-servico-chips">' +
+      (sugestoes.length ? '<p class="vb-servico-novo-legenda">Sugestões pro seu tipo de negócio (toque pra usar o nome, o preço você define agora):</p><div class="vb-servico-chips">' +
         sugestoes.map(function (s) {
-          return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '" data-chip-preco="' + s.preco + '">' + escapeHtml(s.nome) + ' · ' + formatarPreco(s.preco) + '</button>';
+          return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
         }).join('') + '</div>' : '') +
-      '<p class="vb-servico-novo-legenda">Ou digite um serviço personalizado:</p>' +
+      '<p class="vb-servico-novo-legenda">Nome e preço do serviço:</p>' +
       '<div class="vb-servico-manual">' +
       '<input type="text" id="vbTutServicoNome" placeholder="Nome do serviço">' +
       '<input type="text" inputmode="decimal" id="vbTutServicoPreco" placeholder="Preço">' +
@@ -867,8 +905,15 @@
       if (!nome || !nome.trim()) return;
       db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome.trim(), p_preco: preco || 0, p_categoria: 'unissex' }).then(atualizarERenderizar);
     }
+    // a sugestão só preenche o NOME — o preço é sempre digitado na hora
+    // pelo dono (nenhum valor "chutado" entra sem ele decidir).
     container.querySelectorAll('[data-chip-nome]').forEach(function (chip) {
-      chip.addEventListener('click', function () { salvar(chip.getAttribute('data-chip-nome'), parseFloat(chip.getAttribute('data-chip-preco'))); });
+      chip.addEventListener('click', function () {
+        var nomeInput = document.getElementById('vbTutServicoNome');
+        var precoInput = document.getElementById('vbTutServicoPreco');
+        nomeInput.value = chip.getAttribute('data-chip-nome');
+        precoInput.focus();
+      });
     });
     container.querySelectorAll('[data-remover-servico-tut]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -885,15 +930,20 @@
   // ---- passo "equipe": mesmo padrão do de serviços (campos de verdade,
   // não prompt()) — precisa ter pelo menos 1 profissional pra continuar. ----
   function renderPassoTutorialEquipe(container) {
+    var especialidades = especialidadesSugeridasPara(linhaAtual.segmento);
     container.innerHTML =
       (equipeCache.length ? '<ul class="vb-tutorial-lista">' + equipeCache.map(function (p) {
         return '<li>' + escapeHtml(p.nome) + (p.especialidade ? ' · ' + escapeHtml(p.especialidade) : '') +
           '<button type="button" class="vb-remover-x" data-remover-membro-tut="' + p.id + '" style="position:static; margin-left:0.5rem; display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;">×</button></li>';
       }).join('') + '</ul>' : '') +
+      '<p class="vb-servico-novo-legenda">Especialidades comuns pro seu tipo de negócio (toque pra usar):</p><div class="vb-servico-chips">' +
+      especialidades.map(function (e) {
+        return '<button type="button" class="vb-servico-chip" data-chip-especialidade="' + escapeHtml(e) + '">' + escapeHtml(e) + '</button>';
+      }).join('') + '</div>' +
       '<p class="vb-servico-novo-legenda">Nome e especialidade do profissional:</p>' +
       '<div class="vb-servico-manual">' +
       '<input type="text" id="vbTutMembroNome" placeholder="Nome">' +
-      '<input type="text" id="vbTutMembroEspecialidade" placeholder="Especialidade (ex: Cortes e barba)">' +
+      '<input type="text" id="vbTutMembroEspecialidade" placeholder="Especialidade">' +
       '<button type="button" class="btn btn-primario" id="vbTutMembroSalvar">Adicionar</button>' +
       '</div>';
 
@@ -904,6 +954,12 @@
         mostrarPassoTutorial(passoCriacaoAtual);
       });
     }
+    container.querySelectorAll('[data-chip-especialidade]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        document.getElementById('vbTutMembroEspecialidade').value = chip.getAttribute('data-chip-especialidade');
+        document.getElementById('vbTutMembroNome').focus();
+      });
+    });
     container.querySelectorAll('[data-remover-membro-tut]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         db.rpc('tenant_admin_remover_membro', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-membro-tut') }).then(atualizarERenderizar);
@@ -935,16 +991,17 @@
         btn.addEventListener('click', function () {
           var chave = btn.getAttribute('data-rede-tut');
           var atual = linhaAtual[chave] || '';
-          var novo = window.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', atual);
-          if (novo === null) return;
-          novo = novo.trim() || null;
-          linhaAtual[chave] = novo;
-          db.rpc('tenant_admin_atualizar_redes', {
-            p_estabelecimento_id: estabId,
-            p_instagram_url: linhaAtual.instagram_url,
-            p_facebook_url: linhaAtual.facebook_url,
-            p_tiktok_url: linhaAtual.tiktok_url
-          }).then(function () { carregarRedesSociais(); render(); });
+          window.VBDialogo.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', atual).then(function (novo) {
+            if (novo === null) return;
+            novo = novo.trim() || null;
+            linhaAtual[chave] = novo;
+            db.rpc('tenant_admin_atualizar_redes', {
+              p_estabelecimento_id: estabId,
+              p_instagram_url: linhaAtual.instagram_url,
+              p_facebook_url: linhaAtual.facebook_url,
+              p_tiktok_url: linhaAtual.tiktok_url
+            }).then(function () { carregarRedesSociais(); render(); });
+          });
         });
       });
     }
@@ -1297,16 +1354,17 @@
       btn.addEventListener('click', function () {
         var chave = btn.getAttribute('data-rede');
         var atual = linhaAtual[chave] || '';
-        var novo = window.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', atual);
-        if (novo === null) return;
-        novo = novo.trim() || null;
-        linhaAtual[chave] = novo;
-        db.rpc('tenant_admin_atualizar_redes', {
-          p_estabelecimento_id: estabId,
-          p_instagram_url: linhaAtual.instagram_url,
-          p_facebook_url: linhaAtual.facebook_url,
-          p_tiktok_url: linhaAtual.tiktok_url
-        }).then(carregarRedesSociais);
+        window.VBDialogo.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', atual).then(function (novo) {
+          if (novo === null) return;
+          novo = novo.trim() || null;
+          linhaAtual[chave] = novo;
+          db.rpc('tenant_admin_atualizar_redes', {
+            p_estabelecimento_id: estabId,
+            p_instagram_url: linhaAtual.instagram_url,
+            p_facebook_url: linhaAtual.facebook_url,
+            p_tiktok_url: linhaAtual.tiktok_url
+          }).then(carregarRedesSociais);
+        });
       });
     });
   }
@@ -1373,11 +1431,11 @@
           if (!abrindo) { painel.classList.add('oculto'); return; }
           var sugestoes = window.servicosSugeridosPara ? window.servicosSugeridosPara(linhaAtual.segmento) : [];
           painel.innerHTML =
-            (sugestoes.length ? '<p class="vb-servico-novo-legenda">Sugestões pro seu tipo de negócio:</p><div class="vb-servico-chips">' +
+            (sugestoes.length ? '<p class="vb-servico-novo-legenda">Sugestões pro seu tipo de negócio (toque pra usar o nome, o preço você define agora):</p><div class="vb-servico-chips">' +
               sugestoes.map(function (s) {
-                return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '" data-chip-preco="' + s.preco + '">' + escapeHtml(s.nome) + ' · ' + formatarPreco(s.preco) + '</button>';
+                return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
               }).join('') + '</div>' : '') +
-            '<p class="vb-servico-novo-legenda">Ou digite um serviço personalizado:</p>' +
+            '<p class="vb-servico-novo-legenda">Nome e preço do serviço:</p>' +
             '<div class="vb-servico-manual">' +
             '<input type="text" id="vbNovoServicoNome" placeholder="Nome do serviço">' +
             '<input type="text" inputmode="decimal" id="vbNovoServicoPreco" placeholder="Preço">' +
@@ -1386,7 +1444,8 @@
           painel.classList.remove('oculto');
           painel.querySelectorAll('[data-chip-nome]').forEach(function (chip) {
             chip.addEventListener('click', function () {
-              salvarNovoServico(chip.getAttribute('data-chip-nome'), parseFloat(chip.getAttribute('data-chip-preco')));
+              document.getElementById('vbNovoServicoNome').value = chip.getAttribute('data-chip-nome');
+              document.getElementById('vbNovoServicoPreco').focus();
             });
           });
           document.getElementById('vbNovoServicoSalvar').addEventListener('click', function () {
@@ -1475,22 +1534,23 @@
       el.addEventListener('click', function (e) {
         e.preventDefault();
         var atual = linhaAtual.telefone_whatsapp || '';
-        var novo = window.prompt('WhatsApp com DDD (ex: 15999999999):', atual);
-        if (novo === null) return;
-        novo = novo.trim();
-        if (!novo || novo === atual) return;
-        db.rpc('tenant_admin_atualizar_identidade', {
-          p_estabelecimento_id: estabId, p_nome: null, p_slug: null, p_cidade: null, p_segmento: null, p_telefone_whatsapp: novo
-        }).then(function (res) {
-          if (res.error) return;
-          linhaAtual.telefone_whatsapp = novo;
-          var tel = novo.replace(/\D/g, '');
-          [document.getElementById('tplTelefoneMenu'), document.getElementById('tplTelefoneRodape')].forEach(function (a) {
-            a.style.display = '';
-            a.href = 'tel:+55' + tel;
-            a.textContent = novo;
+        window.VBDialogo.prompt('WhatsApp com DDD (ex: 15999999999):', atual).then(function (novo) {
+          if (novo === null) return;
+          novo = novo.trim();
+          if (!novo || novo === atual) return;
+          db.rpc('tenant_admin_atualizar_identidade', {
+            p_estabelecimento_id: estabId, p_nome: null, p_slug: null, p_cidade: null, p_segmento: null, p_telefone_whatsapp: novo
+          }).then(function (res) {
+            if (res.error) return;
+            linhaAtual.telefone_whatsapp = novo;
+            var tel = novo.replace(/\D/g, '');
+            [document.getElementById('tplTelefoneMenu'), document.getElementById('tplTelefoneRodape')].forEach(function (a) {
+              a.style.display = '';
+              a.href = 'tel:+55' + tel;
+              a.textContent = novo;
+            });
+            carregarRedesSociais();
           });
-          carregarRedesSociais();
         });
       });
     });
@@ -1809,7 +1869,7 @@
       }).then(function (res) {
         nextBtn.disabled = false;
         if (res.error) {
-          window.alert(res.error.message);
+          window.VBDialogo.alert(res.error.message);
           current = 4;
           render();
           atualizarHorarios();
@@ -1826,7 +1886,7 @@
         mostrarSucesso(url);
       }, function () {
         nextBtn.disabled = false;
-        window.alert('Sem conexão agora — tenta de novo em instantes.');
+        window.VBDialogo.alert('Sem conexão agora — tenta de novo em instantes.');
       });
     });
 

@@ -173,18 +173,20 @@
     var btn = e.target.closest('[data-apagar-id]');
     if (!btn) return;
     var nome = btn.getAttribute('data-apagar-nome');
-    if (!window.confirm('Apagar "' + nome + '" de vez? Não tem como desfazer — some o site, os serviços, a equipe e a agenda dele.')) return;
-    btn.disabled = true;
-    db.rpc('admin_apagar_estabelecimento', { p_id: btn.getAttribute('data-apagar-id') }).then(function (res) {
-      if (res.error) {
+    window.VBDialogo.confirm('Apagar "' + nome + '" de vez? Não tem como desfazer — some o site, os serviços, a equipe e a agenda dele.').then(function (ok) {
+      if (!ok) return;
+      btn.disabled = true;
+      db.rpc('admin_apagar_estabelecimento', { p_id: btn.getAttribute('data-apagar-id') }).then(function (res) {
+        if (res.error) {
+          btn.disabled = false;
+          window.VBDialogo.alert('Não deu pra apagar: ' + res.error.message);
+          return;
+        }
+        carregarEstabelecimentos();
+      }, function () {
         btn.disabled = false;
-        window.alert('Não deu pra apagar: ' + res.error.message);
-        return;
-      }
-      carregarEstabelecimentos();
-    }, function () {
-      btn.disabled = false;
-      window.alert('Sem conexão agora — tenta de novo em instantes.');
+        window.VBDialogo.alert('Sem conexão agora — tenta de novo em instantes.');
+      });
     });
   });
 

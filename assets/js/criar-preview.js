@@ -50,11 +50,34 @@
       return Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0');
     }).join('');
   }
+  // essa cor vira o FUNDO de botões (.btn) e a cor do texto/borda dos
+  // chips de serviço com TEXTO BRANCO por cima em ambos os casos — se o
+  // dono escolher branco (ou qualquer tom muito claro), o texto some por
+  // cima dela. Nunca deixa isso acontecer: escurece progressivamente até
+  // garantir contraste mínimo, não importa a cor escolhida (mesma lógica
+  // de perfil.js, pro preview ao vivo do assistente de criação bater
+  // igual com o site publicado).
+  function luminanciaRelativa(rgb) {
+    var lin = rgb.map(function (c) {
+      c = c / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+  }
+  function garantirContraste(rgb) {
+    var tentativas = 0;
+    while (luminanciaRelativa(rgb) > 0.6 && tentativas < 20) {
+      rgb = rgb.map(function (c) { return Math.round(c * 0.88); });
+      tentativas++;
+    }
+    return rgb;
+  }
   function aplicarCorDinamica(cor, corSecundaria) {
     if (!/^#[0-9A-Fa-f]{6}$/.test(cor || '')) return;
-    var rgb = hexParaRgbNums(cor);
+    var rgb = garantirContraste(hexParaRgbNums(cor));
+    cor = rgbParaHex(rgb);
     var corSecundariaValida = /^#[0-9A-Fa-f]{6}$/.test(corSecundaria || '');
-    var escuro = corSecundariaValida ? corSecundaria : rgbParaHex(misturarRgb(rgb, [0, 0, 0], 0.28));
+    var escuro = corSecundariaValida ? rgbParaHex(garantirContraste(hexParaRgbNums(corSecundaria))) : rgbParaHex(misturarRgb(rgb, [0, 0, 0], 0.28));
     var claro = rgbParaHex(misturarRgb(rgb, [255, 255, 255], 0.42));
     var estilo = document.getElementById('tplCorDinamica');
     if (!estilo) {

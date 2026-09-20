@@ -51,10 +51,11 @@
     btn.addEventListener('click', function () {
       var atual = window.VBClienteGlobal.obter();
       if (atual) {
-        if (window.confirm('Sair da sua conta VB Agenda neste site?')) {
+        window.VBDialogo.confirm('Sair da sua conta VB Agenda neste site?').then(function (ok) {
+          if (!ok) return;
           window.VBClienteGlobal.limpar();
           aplicarNaTela(null);
-        }
+        });
         return;
       }
       abrir();

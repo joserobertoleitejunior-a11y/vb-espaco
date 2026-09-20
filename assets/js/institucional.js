@@ -190,15 +190,16 @@
     strip.querySelectorAll('[data-rede]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var chave = btn.getAttribute('data-rede');
-        var novo = window.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', linhaAtual[chave] || '');
-        if (novo === null) return;
-        linhaAtual[chave] = novo.trim() || null;
-        db.rpc('tenant_admin_atualizar_redes', {
-          p_estabelecimento_id: estabId,
-          p_instagram_url: linhaAtual.instagram_url,
-          p_facebook_url: linhaAtual.facebook_url,
-          p_tiktok_url: linhaAtual.tiktok_url
-        }).then(carregarRedesSociais);
+        window.VBDialogo.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', linhaAtual[chave] || '').then(function (novo) {
+          if (novo === null) return;
+          linhaAtual[chave] = novo.trim() || null;
+          db.rpc('tenant_admin_atualizar_redes', {
+            p_estabelecimento_id: estabId,
+            p_instagram_url: linhaAtual.instagram_url,
+            p_facebook_url: linhaAtual.facebook_url,
+            p_tiktok_url: linhaAtual.tiktok_url
+          }).then(carregarRedesSociais);
+        });
       });
     });
   }
@@ -228,10 +229,12 @@
       });
       var addBtn = document.getElementById('vbAddMembro');
       if (addBtn) addBtn.addEventListener('click', function () {
-        var nome = window.prompt('Nome do profissional:');
-        if (!nome) return;
-        var especialidade = window.prompt('Especialidade (opcional):') || null;
-        db.rpc('tenant_admin_salvar_membro', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome, p_especialidade: especialidade, p_foto_url: null }).then(carregarEquipe);
+        window.VBDialogo.prompt('Nome do profissional:').then(function (nome) {
+          if (!nome) return;
+          window.VBDialogo.prompt('Especialidade (opcional):').then(function (especialidade) {
+            db.rpc('tenant_admin_salvar_membro', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome, p_especialidade: especialidade || null, p_foto_url: null }).then(carregarEquipe);
+          });
+        });
       });
     });
   }
@@ -302,10 +305,13 @@
       });
       var addBtn = document.getElementById('vbAddServicoInst');
       if (addBtn) addBtn.addEventListener('click', function () {
-        var nome = window.prompt('Nome do serviço:');
-        if (!nome) return;
-        var preco = parseFloat(window.prompt('Preço (ex: 45.00):') || '0') || 0;
-        db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome, p_preco: preco, p_categoria: 'unissex' }).then(carregarServicos);
+        window.VBDialogo.prompt('Nome do serviço:').then(function (nome) {
+          if (!nome) return;
+          window.VBDialogo.prompt('Preço (ex: 45.00):').then(function (precoTexto) {
+            var preco = parseFloat((precoTexto || '0').replace(',', '.')) || 0;
+            db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome, p_preco: preco, p_categoria: 'unissex' }).then(carregarServicos);
+          });
+        });
       });
     });
   }
