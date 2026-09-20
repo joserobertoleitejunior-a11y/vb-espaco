@@ -589,6 +589,42 @@ img { max-width: 100%; display: block; }
 }
 .vb-btn-upload .vb-btn-upload-icone { font-size: 1.05rem; line-height: 1; }
 
+/* ---- painel de "novo serviço": sugestões clicáveis por nicho + campo
+   manual, no lugar do prompt() do navegador ---- */
+.vb-servico-novo-painel {
+  margin-top: 0.7rem;
+  padding: 0.9rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.vb-servico-novo-painel.oculto { display: none; }
+.vb-servico-novo-legenda { margin: 0 0 0.5rem; font-size: 0.78rem; font-weight: 600; color: var(--tinta-suave, #666); }
+.vb-servico-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.9rem; }
+.vb-servico-chip {
+  background: #fff;
+  border: 1.5px solid var(--terracotta, var(--dourado, #C9A227));
+  color: var(--terracotta, var(--dourado, #C9A227));
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.vb-servico-chip:hover { background: var(--terracotta, var(--dourado, #C9A227)); color: #fff; }
+.vb-servico-manual { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.vb-servico-manual input {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+.vb-servico-manual .btn { padding: 0.55rem 1rem; font-size: 0.82rem; }
+
 /* ---- tutorial guiado de criação: janela em destaque (spotlight) +
    bolha explicativa, visual "vidro" premium ---- */
 .vb-tutorial-overlay {

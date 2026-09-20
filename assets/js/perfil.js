@@ -949,7 +949,11 @@
             '<span class="cidade" contenteditable="true" data-servico-id="' + s.id + '" data-campo="preco" data-vb-editavel="servico">' + Number(s.preco).toFixed(2).replace('.', ',') + '</span>' +
             '<button type="button" class="vb-remover-x" data-remover-servico="' + s.id + '">×</button>' +
             '</li>';
-        }).join('') + '<li style="border:none;"><button type="button" class="btn btn-ghost" id="vbAddServico" style="padding:0.4rem 0.8rem; font-size:0.82rem;">+ Novo serviço</button></li>';
+        }).join('') +
+          '<li style="border:none; display:block;">' +
+          '<button type="button" class="btn btn-ghost" id="vbAddServico" style="padding:0.4rem 0.8rem; font-size:0.82rem;">+ Novo serviço</button>' +
+          '<div id="vbNovoServicoPainel" class="vb-servico-novo-painel oculto"></div>' +
+          '</li>';
 
         lista.querySelectorAll('[data-servico-id]').forEach(function (el) {
           el.addEventListener('blur', function () {
@@ -966,12 +970,40 @@
             db.rpc('tenant_admin_remover_servico', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-servico') }).then(carregarServicos);
           });
         });
+
+        function salvarNovoServico(nome, preco) {
+          if (!nome || !nome.trim()) return;
+          db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome.trim(), p_preco: preco || 0, p_categoria: 'unissex' }).then(carregarServicos);
+        }
+
         var addBtn = document.getElementById('vbAddServico');
+        var painel = document.getElementById('vbNovoServicoPainel');
         if (addBtn) addBtn.addEventListener('click', function () {
-          var nome = window.prompt('Nome do serviço:');
-          if (!nome) return;
-          var preco = parseFloat(window.prompt('Preço (ex: 45.00):') || '0') || 0;
-          db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome, p_preco: preco, p_categoria: 'unissex' }).then(carregarServicos);
+          var abrindo = painel.classList.contains('oculto');
+          if (!abrindo) { painel.classList.add('oculto'); return; }
+          var sugestoes = window.servicosSugeridosPara ? window.servicosSugeridosPara(linhaAtual.segmento) : [];
+          painel.innerHTML =
+            (sugestoes.length ? '<p class="vb-servico-novo-legenda">Sugestões pro seu tipo de negócio:</p><div class="vb-servico-chips">' +
+              sugestoes.map(function (s) {
+                return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '" data-chip-preco="' + s.preco + '">' + escapeHtml(s.nome) + ' · ' + formatarPreco(s.preco) + '</button>';
+              }).join('') + '</div>' : '') +
+            '<p class="vb-servico-novo-legenda">Ou digite um serviço personalizado:</p>' +
+            '<div class="vb-servico-manual">' +
+            '<input type="text" id="vbNovoServicoNome" placeholder="Nome do serviço">' +
+            '<input type="text" inputmode="decimal" id="vbNovoServicoPreco" placeholder="Preço">' +
+            '<button type="button" class="btn btn-primario" id="vbNovoServicoSalvar">Adicionar</button>' +
+            '</div>';
+          painel.classList.remove('oculto');
+          painel.querySelectorAll('[data-chip-nome]').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+              salvarNovoServico(chip.getAttribute('data-chip-nome'), parseFloat(chip.getAttribute('data-chip-preco')));
+            });
+          });
+          document.getElementById('vbNovoServicoSalvar').addEventListener('click', function () {
+            var nome = document.getElementById('vbNovoServicoNome').value;
+            var preco = parseFloat(document.getElementById('vbNovoServicoPreco').value.replace(',', '.')) || 0;
+            salvarNovoServico(nome, preco);
+          });
         });
       }
     });
