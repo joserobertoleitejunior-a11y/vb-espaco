@@ -729,6 +729,14 @@
       render: renderPassoTutorialEquipe
     },
     {
+      id: 'localizacao', titulo: 'Localização',
+      texto: 'Onde fica seu estabelecimento? Isso aparece no rodapé do site e no link do mapa. Precisa preencher pra continuar.',
+      obrigatorio: true,
+      avisoIncompleto: 'Preencha o endereço pra continuar.',
+      completo: function () { return !!(linhaAtual && linhaAtual.endereco && linhaAtual.endereco.trim()); },
+      render: renderPassoTutorialLocalizacao
+    },
+    {
       id: 'redes', titulo: 'Redes sociais',
       texto: 'Opcional, mas muito importante — clientes confiam bem mais em quem tem Instagram e WhatsApp visíveis no site.',
       obrigatorio: false,
@@ -970,6 +978,42 @@
       var especialidade = document.getElementById('vbTutMembroEspecialidade').value;
       if (!nome || !nome.trim()) return;
       db.rpc('tenant_admin_salvar_membro', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome.trim(), p_especialidade: (especialidade || '').trim(), p_foto_url: null }).then(atualizarERenderizar);
+    });
+  }
+
+  // ---- passo "localização": endereço obrigatório (aparece no rodapé e
+  // vira o link do mapa) — geocodifica em segundo plano, sem travar o
+  // avanço caso o serviço de mapa demore ou falhe. ----
+  function renderPassoTutorialLocalizacao(container) {
+    container.innerHTML =
+      '<input type="text" id="vbTutEndereco" placeholder="Rua, número — bairro, cidade" style="width:100%; box-sizing:border-box; padding:0.65rem 0.8rem; border-radius:10px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:0.9rem;" value="' + escapeHtml(linhaAtual.endereco || '') + '">' +
+      '<p class="msg" id="vbTutEnderecoMsg" style="margin-top:0.5rem;"></p>';
+    var input = document.getElementById('vbTutEndereco');
+    var salvarPendente = null;
+    input.addEventListener('input', function () {
+      clearTimeout(salvarPendente);
+      salvarPendente = setTimeout(function () {
+        var endereco = input.value.trim();
+        linhaAtual.endereco = endereco;
+        atualizarMapaLink();
+        document.getElementById('tplEnderecoRodape').textContent = endereco || 'Endereço não informado';
+        atualizarBotaoProximoTutorial();
+        db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: null, p_lng: null });
+        if (!endereco) return;
+        var msgEl = document.getElementById('vbTutEnderecoMsg');
+        if (msgEl) msgEl.textContent = 'Localizando no mapa…';
+        geocodificarEndereco(endereco, linhaAtual.cidade).then(function (coord) {
+          // o dono pode já ter avançado pro próximo passo antes do mapa
+          // responder — a caixa desse passo nem existe mais nesse caso.
+          var msgAtual = document.getElementById('vbTutEnderecoMsg');
+          if (msgAtual) msgAtual.textContent = '';
+          if (!coord) return;
+          linhaAtual.endereco_lat = coord.lat;
+          linhaAtual.endereco_lng = coord.lng;
+          atualizarMapaLink();
+          db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: coord.lat, p_lng: coord.lng });
+        });
+      }, 500);
     });
   }
 
