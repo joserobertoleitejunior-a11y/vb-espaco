@@ -937,7 +937,7 @@
       return '<hr style="border:none; border-top:1px solid var(--borda-suave,#e7e2d8); margin:1.2rem 0;">' +
         '<p style="font-size:0.85rem; font-weight:700; margin:0 0 0.5rem;">Foto de perfil <span style="font-weight:400; color:var(--ink-soft,#7a7368);">— aparece no catálogo e no seu painel</span></p>' +
         '<div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.8rem;">' +
-        '<span class="catalogo-avatar-anel moldura-' + molduraAtual + '" id="vbTutPerfilAnel" style="position:static; --avatar-cor:' + (linhaAtual.cor_destaque || '#C9A227') + '; width:64px; height:64px; flex-shrink:0;">' +
+        '<span class="catalogo-avatar-anel moldura-' + molduraAtual + '" id="vbTutPerfilAnel" style="position:relative; left:auto; bottom:auto; --avatar-cor:' + (linhaAtual.cor_destaque || '#C9A227') + '; width:64px; height:64px; flex-shrink:0;">' +
         '<span class="catalogo-avatar" style="background:' + (linhaAtual.cor_destaque || '#C9A227') + ';">' + avatarConteudo + '</span>' +
         '</span>' +
         '<label class="vb-btn-upload" style="justify-content:center; box-sizing:border-box; flex:1;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto<input type="file" id="vbTutPerfilUpload" accept="image/*"></label>' +
