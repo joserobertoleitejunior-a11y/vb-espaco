@@ -119,6 +119,132 @@
     db.rpc('tenant_admin_alternar_widgets_translucidos', { p_estabelecimento_id: estabId, p_translucido: novoValor });
   }
 
+  // ---------- identidade do cliente na VB Agenda (login por WhatsApp) ----
+  // Reconhece a mesma pessoa em QUALQUER estabelecimento da plataforma
+  // (guardado uma única vez por telefone, não por estabelecimento como o
+  // "lembrar meus dados" que já existia só dentro da agenda de cada
+  // site). Sem verificação por enquanto — só identifica pelo número,
+  // igual o resto do site já fazia. Ao reconhecer, também registra a
+  // visita no estabelecimento aberto (tenant_registrar_cliente), pra o
+  // dono ver esse contato na lista de clientes dele.
+  function primeiroNome(nome) {
+    return (nome || '').trim().split(/\s+/)[0] || nome || '';
+  }
+
+  function aplicarClienteGlobalNaTela(cliente) {
+    var btn = document.getElementById('clienteGlobalBtn');
+    var saudacao = document.getElementById('clienteSaudacao');
+    if (cliente) {
+      if (btn) btn.textContent = 'Olá, ' + primeiroNome(cliente.nome);
+      if (saudacao) {
+        saudacao.textContent = 'Bem-vindo, ' + cliente.nome;
+        saudacao.classList.remove('oculto');
+      }
+    } else {
+      if (btn) btn.textContent = 'Entrar';
+      if (saudacao) saudacao.classList.add('oculto');
+    }
+  }
+
+  function registrarVisitaCliente(cliente) {
+    if (!cliente || !estabId) return;
+    db.rpc('tenant_registrar_cliente', { p_estabelecimento_id: estabId, p_nome: cliente.nome, p_telefone: cliente.telefone });
+  }
+
+  function iniciarClienteGlobal() {
+    if (!window.VBClienteGlobal) return;
+    var overlay = document.getElementById('clienteGlobalOverlay');
+    var btn = document.getElementById('clienteGlobalBtn');
+    if (!overlay || !btn) return;
+    var estagioTelefone = document.getElementById('clienteGlobalEstagioTelefone');
+    var estagioNome = document.getElementById('clienteGlobalEstagioNome');
+    var telefoneInput = document.getElementById('clienteGlobalTelefoneInput');
+    var nomeInput = document.getElementById('clienteGlobalNomeInput');
+    var msg = document.getElementById('clienteGlobalMsg');
+    var telefonePendente = '';
+
+    var clienteAtual = window.VBClienteGlobal.obter();
+    aplicarClienteGlobalNaTela(clienteAtual);
+    if (clienteAtual) registrarVisitaCliente(clienteAtual);
+
+    function abrir() {
+      estagioTelefone.classList.remove('oculto');
+      estagioNome.classList.add('oculto');
+      telefoneInput.value = '';
+      nomeInput.value = '';
+      msg.textContent = '';
+      msg.className = 'msg';
+      overlay.classList.remove('oculto');
+      setTimeout(function () { telefoneInput.focus(); }, 50);
+    }
+    function fechar() { overlay.classList.add('oculto'); }
+
+    btn.addEventListener('click', function () {
+      var atual = window.VBClienteGlobal.obter();
+      if (atual) {
+        if (window.confirm('Sair da sua conta VB Agenda neste site?')) {
+          window.VBClienteGlobal.limpar();
+          aplicarClienteGlobalNaTela(null);
+        }
+        return;
+      }
+      abrir();
+    });
+
+    document.getElementById('clienteGlobalCancelar').addEventListener('click', fechar);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) fechar(); });
+
+    document.getElementById('clienteGlobalContinuar').addEventListener('click', function () {
+      var telefone = window.VBClienteGlobal.normalizarTelefone(telefoneInput.value);
+      if (telefone.length < 10) {
+        msg.className = 'msg msg-erro';
+        msg.textContent = 'Digite um WhatsApp válido, com DDD.';
+        return;
+      }
+      telefonePendente = telefone;
+      msg.textContent = 'Verificando…';
+      msg.className = 'msg';
+      db.rpc('vb_buscar_cliente_global', { p_telefone: telefone }).then(function (res) {
+        var achou = res.data && res.data.length > 0 ? res.data[0] : null;
+        if (achou) {
+          window.VBClienteGlobal.salvar(achou.telefone, achou.nome);
+          aplicarClienteGlobalNaTela({ telefone: achou.telefone, nome: achou.nome });
+          registrarVisitaCliente({ telefone: achou.telefone, nome: achou.nome });
+          fechar();
+        } else {
+          msg.textContent = '';
+          msg.className = 'msg';
+          estagioTelefone.classList.add('oculto');
+          estagioNome.classList.remove('oculto');
+          setTimeout(function () { nomeInput.focus(); }, 50);
+        }
+      }, function () {
+        msg.className = 'msg msg-erro';
+        msg.textContent = 'Sem conexão agora.';
+      });
+    });
+
+    document.getElementById('clienteGlobalVoltarTelefone').addEventListener('click', function () {
+      estagioNome.classList.add('oculto');
+      estagioTelefone.classList.remove('oculto');
+    });
+
+    document.getElementById('clienteGlobalConfirmarNome').addEventListener('click', function () {
+      var nome = nomeInput.value.trim();
+      if (!nome) return;
+      db.rpc('vb_login_cliente_global', { p_telefone: telefonePendente, p_nome: nome }).then(function (res) {
+        var criado = res.data && res.data.length > 0 ? res.data[0] : { telefone: telefonePendente, nome: nome };
+        window.VBClienteGlobal.salvar(criado.telefone, criado.nome);
+        aplicarClienteGlobalNaTela({ telefone: criado.telefone, nome: criado.nome });
+        registrarVisitaCliente({ telefone: criado.telefone, nome: criado.nome });
+        fechar();
+      }, function () {
+        msg.className = 'msg msg-erro';
+        msg.textContent = 'Sem conexão agora.';
+      });
+    });
+  }
+
   if (!slug || !cidade) {
     carregando.classList.add('oculto');
     naoEncontrado.classList.remove('oculto');
@@ -1496,6 +1622,7 @@
     carregarRedesSociais();
     iniciarModoAdmin();
     iniciarWizard();
+    iniciarClienteGlobal();
     var jaDesbloqueado = false;
     try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}
     if (jaDesbloqueado) ativarModoAdmin();

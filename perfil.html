@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=24">
+<link rel="stylesheet" href="/assets/css/styles.css?v=25">
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=5" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
 <link rel="stylesheet" href="/assets/tpl-classico/css/widget.css?v=3" id="tplWidget">
@@ -33,6 +33,7 @@
       <a class="brand" href="#"><span class="brand-mark">❧</span> <span id="tplNomeTopo"></span></a>
       <div class="topbar-actions">
         <a class="gender-switch oculto" id="tplTrocaGenero" href="#"><span class="gender-switch-glyph" id="tplTrocaGlifo" aria-hidden="true"></span><span class="gender-switch-label" id="tplTrocaLabel"></span></a>
+        <button type="button" class="cliente-global-btn" id="clienteGlobalBtn">Entrar</button>
         <button class="hamburger" id="menuOpenBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="siteMenu" aria-label="Abrir menu">
           <span></span><span></span><span></span>
         </button>
@@ -60,6 +61,7 @@
       <section class="hero-split">
         <div class="hero-split-frame" aria-hidden="true"></div>
         <div class="hero-split-copy">
+          <p class="cliente-saudacao oculto" id="clienteSaudacao"></p>
           <p class="eyebrow" id="tplEyebrow"></p>
           <h1 id="tplHeadline" data-vb-editavel="titulo"></h1>
           <p id="tplSubcopy" data-vb-editavel="subtitulo"></p>
@@ -205,6 +207,31 @@
     </div>
   </div>
 
+  <div class="admin-pin-overlay oculto" id="clienteGlobalOverlay">
+    <div class="admin-pin-box cliente-global-box">
+      <div id="clienteGlobalEstagioTelefone">
+        <p class="eyebrow">VB Agenda</p>
+        <h2 style="margin:0.3rem 0;">Entrar com WhatsApp</h2>
+        <p class="hint">Assim você não precisa digitar seus dados de novo em cada estabelecimento.</p>
+        <div class="field">
+          <input type="tel" id="clienteGlobalTelefoneInput" placeholder="Seu WhatsApp com DDD" autocomplete="off">
+        </div>
+        <button class="btn btn-primario" id="clienteGlobalContinuar" type="button" style="width:100%;">Continuar</button>
+        <button class="btn btn-ghost" id="clienteGlobalCancelar" type="button" style="width:100%; margin-top:0.5rem;">Cancelar</button>
+      </div>
+      <div id="clienteGlobalEstagioNome" class="oculto">
+        <p class="eyebrow">Primeira vez por aqui</p>
+        <h2 style="margin:0.3rem 0;">Como podemos te chamar?</h2>
+        <div class="field">
+          <input type="text" id="clienteGlobalNomeInput" placeholder="Seu nome" autocomplete="off">
+        </div>
+        <button class="btn btn-primario" id="clienteGlobalConfirmarNome" type="button" style="width:100%;">Confirmar</button>
+        <button class="btn btn-ghost" id="clienteGlobalVoltarTelefone" type="button" style="width:100%; margin-top:0.5rem;">Voltar</button>
+      </div>
+      <p class="msg" id="clienteGlobalMsg"></p>
+    </div>
+  </div>
+
   <div class="admin-modo-barra oculto" id="adminModoBarra">
     <span>✎ Modo admin — clique nos campos marcados pra editar</span>
     <label class="admin-cor-swatch" title="Cor principal do site">
@@ -282,7 +309,8 @@
   <script src="/assets/js/estoque-fotos.js?v=1"></script>
   <script src="/assets/js/cor-da-imagem.js?v=1"></script>
   <script src="/assets/js/servicos-sugeridos.js?v=1"></script>
+  <script src="/assets/js/vb-cliente-global.js?v=1"></script>
   <script src="/assets/js/faixa-voltar.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=22"></script>
+  <script src="/assets/js/perfil.js?v=23"></script>
 </body>
 </html>
