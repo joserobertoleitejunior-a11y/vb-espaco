@@ -20,10 +20,11 @@
     'claro-minimal': 'tpl-claro',
     'escuro-premium': 'tpl-escuro',
     'automotivo-carbono': 'tpl-automotivo',
-    'boho-terracota': 'tpl-boho'
+    'boho-terracota': 'tpl-boho',
+    'vidro-fosco': 'tpl-vidro'
   };
   var templateAtualParaCor = 'classico-boiserie';
-  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota'];
+  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota', 'vidro-fosco'];
   function aplicarTemplateCss(templateKey) {
     templateAtualParaCor = templateKey || 'classico-boiserie';
     var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
