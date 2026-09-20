@@ -1286,8 +1286,12 @@
 
     var nome = linhaAtual.nome;
     document.getElementById('tplEyebrow').textContent = (SEGMENTOS[linhaAtual.segmento] || 'Estabelecimento') + ' · ' + linhaAtual.cidade;
-    document.getElementById('tplHeadline').textContent = linhaAtual.titulo_hero || COPY[g].headline;
-    document.getElementById('tplSubcopy').textContent = linhaAtual.subtitulo_hero || COPY[g].sub;
+    // frase de efeito por nicho, sorteada de forma estável a partir do
+    // slug+cidade — o mesmo site sempre mostra a mesma frase, mas
+    // dificilmente igual à de outro estabelecimento do mesmo segmento.
+    var frase = window.fraseEfeitoPara ? window.fraseEfeitoPara(linhaAtual.segmento, (linhaAtual.slug || '') + linhaAtual.cidade) : COPY[g];
+    document.getElementById('tplHeadline').textContent = linhaAtual.titulo_hero || frase.headline;
+    document.getElementById('tplSubcopy').textContent = linhaAtual.subtitulo_hero || frase.sub;
 
     var fotoHero = (g === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
     var heroFoto = document.getElementById('tplHeroFoto');

@@ -114,7 +114,7 @@
     var segmentoLabel = SEGMENTOS[estado.segmento] || 'Estabelecimento';
     document.getElementById('tplEyebrow').textContent = segmentoLabel + (estado.cidade ? ' · ' + estado.cidade : '');
 
-    var copy = COPY[genero] || COPY.ambos;
+    var copy = window.fraseEfeitoPara ? window.fraseEfeitoPara(estado.segmento, (estado.slug || estado.nome || '') + (estado.cidade || '')) : (COPY[genero] || COPY.ambos);
     document.getElementById('tplHeadline').textContent = estado.titulo_hero || copy.headline;
     document.getElementById('tplSubcopy').textContent = estado.subtitulo_hero || copy.sub;
     document.getElementById('tplCtaTexto').textContent = estado.texto_cta || 'Agendar horário';
