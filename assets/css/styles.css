@@ -359,22 +359,44 @@ img { max-width: 100%; display: block; }
   color: var(--branco);
 }
 .catalogo-capa-icone svg { display: block; width: 42px; height: 42px; }
-.catalogo-avatar {
+/* Moldura da foto de perfil: um anel circular por fora (a "borda"
+   escolhida pelo dono no passo a passo) com o avatar redondo por dentro
+   — assim o efeito da moldura (cor, espessura, brilho metálico) nunca
+   briga com a cor/foto inline do próprio avatar. */
+.catalogo-avatar-anel {
   position: absolute;
   left: 1rem;
-  bottom: -22px;
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  bottom: -24px;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  padding: 3px;
+  background: var(--branco);
+  box-shadow: 0 3px 8px rgba(20,20,30,0.22);
+}
+.catalogo-avatar-anel.moldura-simples { border: 3px solid var(--avatar-cor, var(--branco)); }
+.catalogo-avatar-anel.moldura-grossa { border: 5px solid var(--avatar-cor, var(--branco)); padding: 2px; }
+.catalogo-avatar-anel.moldura-pontilhada { border: 3px dashed var(--avatar-cor, var(--branco)); }
+.catalogo-avatar-anel.moldura-dupla { border: 2px solid var(--branco); outline: 2px solid var(--avatar-cor, var(--branco)); outline-offset: 2px; }
+.catalogo-avatar-anel.moldura-metalica {
+  border: 3px solid transparent;
+  background-image: linear-gradient(var(--branco), var(--branco)),
+    linear-gradient(135deg, #f4e4b0, #b8860b 30%, #fff6da 55%, #a97a1f 80%, #f4e4b0);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+.catalogo-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   color: var(--branco);
   font-weight: 800;
-  font-size: 1.15rem;
-  border: 3px solid var(--branco);
-  box-shadow: 0 3px 8px rgba(20,20,30,0.22);
+  font-size: 1.05rem;
 }
 .catalogo-avatar-foto {
   width: 100%;
@@ -878,13 +900,33 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
 }
-.dash-card-avatar {
+.dash-card-avatar-anel {
   position: absolute;
   left: 1rem;
-  bottom: -20px;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  bottom: -22px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  padding: 3px;
+  background: var(--branco);
+  box-shadow: 0 3px 8px rgba(20,20,30,0.22);
+}
+.dash-card-avatar-anel.moldura-simples { border: 3px solid var(--avatar-cor, var(--branco)); }
+.dash-card-avatar-anel.moldura-grossa { border: 5px solid var(--avatar-cor, var(--branco)); padding: 2px; }
+.dash-card-avatar-anel.moldura-pontilhada { border: 3px dashed var(--avatar-cor, var(--branco)); }
+.dash-card-avatar-anel.moldura-dupla { border: 2px solid var(--branco); outline: 2px solid var(--avatar-cor, var(--branco)); outline-offset: 2px; }
+.dash-card-avatar-anel.moldura-metalica {
+  border: 3px solid transparent;
+  background-image: linear-gradient(var(--branco), var(--branco)),
+    linear-gradient(135deg, #f4e4b0, #b8860b 30%, #fff6da 55%, #a97a1f 80%, #f4e4b0);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+.dash-card-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -892,8 +934,6 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   color: var(--branco);
   font-weight: 800;
   font-size: 1rem;
-  border: 3px solid #fff;
-  box-shadow: 0 3px 8px rgba(20,20,30,0.22);
 }
 .dash-card-avatar-foto { width: 100%; height: 100%; background-size: cover; background-position: center; }
 .dash-card-corpo { padding: 1.7rem 1.1rem 1.1rem; }

@@ -863,7 +863,67 @@
         return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; cursor:pointer; border:2px solid ' + (sel ? 'var(--terracotta, var(--dourado,#C9A227))' : 'transparent') + ';">';
       }).join('') +
       '</div>' +
-      '<p class="msg" id="vbTutFotoMsg" style="margin-top:0.5rem;"></p>';
+      '<p class="msg" id="vbTutFotoMsg" style="margin-top:0.5rem;"></p>' +
+      renderBlocoFotoPerfil();
+
+    function renderBlocoFotoPerfil() {
+      var fotoPerfil = linhaAtual.foto_perfil_url || fotoAtual;
+      var molduraAtual = linhaAtual.moldura_foto || 'simples';
+      var MOLDURAS = [
+        { chave: 'simples', nome: 'Simples' },
+        { chave: 'dupla', nome: 'Dupla' },
+        { chave: 'grossa', nome: 'Grossa' },
+        { chave: 'pontilhada', nome: 'Pontilhada' },
+        { chave: 'metalica', nome: 'Metálica' }
+      ];
+      var avatarConteudo = fotoPerfil
+        ? '<span class="catalogo-avatar-foto" style="background-image:url(\'' + fotoPerfil + '\');"></span>'
+        : escapeHtml((linhaAtual.nome || '?')[0].toUpperCase());
+      return '<hr style="border:none; border-top:1px solid var(--borda-suave,#e7e2d8); margin:1.2rem 0;">' +
+        '<p style="font-size:0.85rem; font-weight:700; margin:0 0 0.5rem;">Foto de perfil <span style="font-weight:400; color:var(--ink-soft,#7a7368);">— aparece no catálogo e no seu painel</span></p>' +
+        '<div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.8rem;">' +
+        '<span class="catalogo-avatar-anel moldura-' + molduraAtual + '" id="vbTutPerfilAnel" style="position:static; --avatar-cor:' + (linhaAtual.cor_destaque || '#C9A227') + '; width:64px; height:64px; flex-shrink:0;">' +
+        '<span class="catalogo-avatar" style="background:' + (linhaAtual.cor_destaque || '#C9A227') + ';">' + avatarConteudo + '</span>' +
+        '</span>' +
+        '<label class="vb-btn-upload" style="justify-content:center; box-sizing:border-box; flex:1;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto<input type="file" id="vbTutPerfilUpload" accept="image/*"></label>' +
+        '</div>' +
+        '<p class="vb-servico-novo-legenda">Borda da foto:</p>' +
+        '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.4rem;">' +
+        MOLDURAS.map(function (m) {
+          return '<button type="button" class="vb-servico-chip" data-moldura="' + m.chave + '" style="' + (m.chave === molduraAtual ? 'background:var(--terracotta,var(--dourado,#C9A227)); color:#fff; border-color:transparent;' : '') + '">' + m.nome + '</button>';
+        }).join('') +
+        '</div>' +
+        '<p class="msg" id="vbTutPerfilMsg"></p>';
+    }
+
+    function salvarPerfil(campo, valor) {
+      var msg = document.getElementById('vbTutPerfilMsg');
+      msg.textContent = 'Salvando…';
+      var payload = { p_estabelecimento_id: estabId, p_foto_perfil_url: null, p_foto_capa_url: null, p_moldura_foto: null };
+      payload[campo] = valor;
+      db.rpc('tenant_admin_atualizar_perfil_capa', payload).then(function (res) {
+        if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
+        if (campo === 'p_foto_perfil_url') linhaAtual.foto_perfil_url = valor;
+        if (campo === 'p_moldura_foto') linhaAtual.moldura_foto = valor;
+        mostrarPassoTutorial(passoCriacaoAtual);
+      });
+    }
+    var uploadPerfilEl = document.getElementById('vbTutPerfilUpload');
+    if (uploadPerfilEl) {
+      uploadPerfilEl.addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file || !window.VBUpload) return;
+        document.getElementById('vbTutPerfilMsg').textContent = 'Enviando…';
+        window.VBUpload.uploadFoto(file, estabId, 'perfil').then(function (url) { salvarPerfil('p_foto_perfil_url', url); }, function (err) {
+          var msg = document.getElementById('vbTutPerfilMsg');
+          msg.className = 'msg msg-erro';
+          msg.textContent = err.message || 'Falha ao enviar.';
+        });
+      });
+    }
+    container.querySelectorAll('[data-moldura]').forEach(function (btn) {
+      btn.addEventListener('click', function () { salvarPerfil('p_moldura_foto', btn.getAttribute('data-moldura')); });
+    });
 
     function salvar(url) {
       var msg = document.getElementById('vbTutFotoMsg');

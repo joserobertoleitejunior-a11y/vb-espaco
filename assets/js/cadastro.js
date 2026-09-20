@@ -89,9 +89,11 @@
         var topoStyle = fotoTopo
           ? "background-image:linear-gradient(0deg, rgba(0,0,0,.25), rgba(0,0,0,.05)), url('" + fotoTopo + "');"
           : 'background-image:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
-        var avatarConteudo = e.foto_perfil_url
-          ? '<span class="dash-card-avatar-foto" style="background-image:url(\'' + e.foto_perfil_url + '\');"></span>'
+        var fotoAvatar = e.foto_perfil_url || e.foto_hero_url;
+        var avatarConteudo = fotoAvatar
+          ? '<span class="dash-card-avatar-foto" style="background-image:url(\'' + fotoAvatar + '\');"></span>'
           : escapeHtml(iniciais(e.nome));
+        var moldura = e.moldura_foto || 'simples';
         var trialData = e.trial_termina_em ? new Date(e.trial_termina_em + 'T00:00:00').toLocaleDateString('pt-BR') : '';
         var faltando = [];
         if (!e.total_servicos) faltando.push('nenhum serviço');
@@ -112,7 +114,9 @@
         return '<li class="dash-card">' +
           '<div class="dash-card-topo" style="' + topoStyle + '">' +
           '<span class="dash-card-segmento">' + escapeHtml(SEGMENTOS_LABEL[e.segmento] || 'Estabelecimento') + '</span>' +
+          '<span class="dash-card-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';">' +
           '<span class="dash-card-avatar" style="background:' + cor + ';">' + avatarConteudo + '</span>' +
+          '</span>' +
           '</div>' +
           '<div class="dash-card-corpo">' +
           '<span class="nome">' + escapeHtml(e.nome) + '</span><br><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +

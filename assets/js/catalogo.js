@@ -93,9 +93,11 @@
       var capaStyle = e.foto_capa_url
         ? "background-image:linear-gradient(0deg, rgba(0,0,0,.28), rgba(0,0,0,.1)), url('" + e.foto_capa_url + "'); background-size:cover; background-position:center;"
         : 'background:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
-      var avatarConteudo = e.foto_perfil_url
-        ? '<span class="catalogo-avatar-foto" style="background-image:url(\'' + e.foto_perfil_url + '\');"></span>'
+      var fotoAvatar = e.foto_perfil_url || e.foto_hero_url;
+      var avatarConteudo = fotoAvatar
+        ? '<span class="catalogo-avatar-foto" style="background-image:url(\'' + fotoAvatar + '\');"></span>'
         : escapeHtml(iniciais(e.nome));
+      var moldura = e.moldura_foto || 'simples';
       var selosSociais = SOCIAL_ICONES.filter(function (s) { return e[s.campo]; }).map(function (s) {
         return '<span class="catalogo-selo-social" aria-hidden="true">' + s.svg + '</span>';
       }).join('');
@@ -103,7 +105,9 @@
       return '<a class="catalogo-card" href="' + link + '" style="box-shadow:' + sombra + ';">' +
         '<div class="catalogo-capa" style="' + capaStyle + '">' +
         '<span class="catalogo-capa-icone" aria-hidden="true">' + (e.foto_capa_url ? '' : icone) + '</span>' +
+        '<span class="catalogo-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';">' +
         '<span class="catalogo-avatar" style="background:' + cor + ';">' + avatarConteudo + '</span>' +
+        '</span>' +
         '</div>' +
         '<div class="catalogo-corpo">' +
         '<span class="catalogo-info">' +
