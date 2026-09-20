@@ -540,6 +540,10 @@ img { max-width: 100%; display: block; }
   transition: background 0.15s ease;
 }
 .admin-modo-barra button:hover { background: rgba(255, 255, 255, 0.18); }
+.admin-modo-barra button.is-ativo {
+  background: rgba(var(--terracotta-rgb, 201,162,39), 0.55);
+  border-color: rgba(var(--terracotta-rgb, 201,162,39), 0.9);
+}
 .admin-cor-swatch {
   display: inline-flex;
   width: 28px;

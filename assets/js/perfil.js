@@ -29,7 +29,7 @@
   function aplicarTemplateCss(templateKey) {
     templateAtualParaCor = templateKey || 'classico-boiserie';
     var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
-    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=3';
+    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=4';
     document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
     var widget = document.getElementById('tplWidget');
     if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=2';
@@ -77,6 +77,31 @@
     linhaAtual.cor_secundaria = corSecundaria;
     aplicarCorDinamica(cor, corSecundaria);
     db.rpc('tenant_admin_atualizar_cor', { p_estabelecimento_id: estabId, p_cor_destaque: cor, p_cor_secundaria: corSecundaria || null });
+    var corInput = document.getElementById('adminCorInput');
+    var corSecundariaInput = document.getElementById('adminCorSecundariaInput');
+    if (corInput) corInput.value = cor;
+    if (corSecundariaInput && corSecundaria) corSecundariaInput.value = corSecundaria;
+  }
+
+  // "seguir cor da imagem": extrai um tom médio e um tom escuro da própria
+  // foto principal e usa como paleta do site, pra tudo casar com a foto.
+  function seguirCorDaImagem(url) {
+    if (!window.extrairCoresDaImagem) return;
+    window.extrairCoresDaImagem(url).then(function (cores) {
+      salvarCor(cores.primaria, cores.secundaria);
+    }, function () {});
+  }
+
+  function alternarSeguirCorImagem() {
+    var novoValor = !linhaAtual.seguir_cor_imagem;
+    linhaAtual.seguir_cor_imagem = novoValor;
+    var btn = document.getElementById('adminSeguirCorImagemBtn');
+    if (btn) btn.classList.toggle('is-ativo', novoValor);
+    db.rpc('tenant_admin_alternar_seguir_cor_imagem', { p_estabelecimento_id: estabId, p_seguir: novoValor });
+    if (novoValor) {
+      var fotoAtual = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
+      if (fotoAtual) seguirCorDaImagem(fotoAtual);
+    }
   }
 
   if (!slug || !cidade) {
@@ -240,6 +265,7 @@
         if (generoAtual === 'feminino') linhaAtual.foto_hero_feminino_url = url; else linhaAtual.foto_hero_url = url;
         caixa.remove();
         aplicarGenero(generoAtual);
+        if (linhaAtual.seguir_cor_imagem) seguirCorDaImagem(url);
       });
     }
 
@@ -750,6 +776,7 @@
     corSecundariaInput.addEventListener('input', function () { aplicarCorDinamica(corInput.value, corSecundariaInput.value); });
     corSecundariaInput.addEventListener('change', function () { salvarCor(corInput.value, corSecundariaInput.value); });
 
+    document.getElementById('adminSeguirCorImagemBtn').addEventListener('click', alternarSeguirCorImagem);
     document.getElementById('adminFotoCardBtn').addEventListener('click', abrirEditorFotoCard);
     document.getElementById('adminPainelBtn').addEventListener('click', abrirPainelAdmin);
     document.getElementById('adminPainelFechar').addEventListener('click', fecharPainelAdmin);
@@ -1380,6 +1407,8 @@
     if (adminCorSecundariaInput) {
       adminCorSecundariaInput.value = linha.cor_secundaria || rgbParaHex(misturarRgb(hexParaRgbNums(linha.cor_destaque || '#C9A227'), [0, 0, 0], 0.28));
     }
+    var adminSeguirCorImagemBtn = document.getElementById('adminSeguirCorImagemBtn');
+    if (adminSeguirCorImagemBtn) adminSeguirCorImagemBtn.classList.toggle('is-ativo', !!linha.seguir_cor_imagem);
 
     document.title = linha.nome + ' — VB Agenda';
     document.getElementById('tplNomeTopo').textContent = linha.nome;

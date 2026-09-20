@@ -26,7 +26,7 @@
   function aplicarTemplateCss(templateKey) {
     templateAtualParaCor = templateKey || 'classico-boiserie';
     var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
-    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=3';
+    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=4';
     document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
   }
 

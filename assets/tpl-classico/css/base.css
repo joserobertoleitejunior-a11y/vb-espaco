@@ -260,6 +260,8 @@ body.scroll-locked{position:fixed; left:0; right:0; overflow:hidden;}
 .hero-split-photo{
   position:relative;
   background-size:cover; background-position:center 18%;
+  border:3px solid var(--dourado);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15), 0 0 50px rgba(var(--dourado-rgb), 0.35);
 }
 /* clarão sutil só no topo da foto — o suficiente pra ler o header em cima,
    sem lavar a foto inteira nem precisar de duas cores de texto */
