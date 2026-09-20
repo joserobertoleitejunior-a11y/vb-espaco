@@ -697,7 +697,11 @@
       var jaDesbloqueado = false;
       try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (err) {}
       if (jaDesbloqueado || modoAdmin) {
+        // já desbloqueado (sessão da conta ou PIN anterior) — clicar em
+        // Admin de novo abre direto o painel (Caixa/Agenda/Clientes),
+        // em vez de não fazer nada (ativarModoAdmin já é um no-op aqui).
         ativarModoAdmin();
+        abrirPainelAdmin();
         return;
       }
       overlay.classList.remove('oculto');
@@ -724,6 +728,7 @@
         try { localStorage.setItem(chaveAdmin(), '1'); } catch (e) {}
         overlay.classList.add('oculto');
         ativarModoAdmin();
+        abrirPainelAdmin();
         // logado numa conta de verdade? vincula esse site a ela agora —
         // da próxima vez o dono nem precisa mais digitar o PIN.
         db.auth.getSession().then(function (sessRes) {
