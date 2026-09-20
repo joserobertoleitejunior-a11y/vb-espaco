@@ -221,8 +221,8 @@
     caixa.innerHTML =
       '<p style="margin:0 0 0.6rem; font-size:0.85rem; font-weight:700;">Trocar foto principal</p>' +
       '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.7rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">📷</span> Escolher foto do celular<input type="file" id="vbHeroEditorUpload" accept="image/*"></label>' +
-      '<div style="display:flex; gap:0.4rem;">' +
-      ESTOQUE_FOTOS_ADMIN.map(function (f) {
+      '<div style="display:flex; gap:0.4rem; flex-wrap:wrap;">' +
+      (window.estoqueFotosPara ? window.estoqueFotosPara(linhaAtual.segmento) : ESTOQUE_FOTOS_ADMIN).map(function (f) {
         return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" style="width:52px; height:52px; object-fit:cover; border-radius:6px; cursor:pointer;">';
       }).join('') +
       '</div>' +
