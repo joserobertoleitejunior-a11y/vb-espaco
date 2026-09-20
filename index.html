@@ -16,9 +16,11 @@
       VB <em>Agenda</em>
     </a>
     <span class="topbar-local"><svg class="icone-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z"/></svg> Itapetininga</span>
+    <button type="button" class="cliente-global-btn" id="clienteGlobalBtn" style="border-color:var(--borda); color:var(--tinta);">Entrar</button>
   </header>
 
   <div class="container" style="padding-top:1.25rem;">
+    <p class="cliente-saudacao oculto" id="clienteSaudacao" style="color:var(--tinta);"></p>
     <div class="busca-wrap">
       <span class="busca-icone"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
       <input class="busca-input" id="buscaInput" type="search" placeholder="Busque pelo nome do estabelecimento">
@@ -39,6 +41,31 @@
     </div>
   </div>
 
+  <div class="admin-pin-overlay oculto" id="clienteGlobalOverlay">
+    <div class="admin-pin-box cliente-global-box">
+      <div id="clienteGlobalEstagioTelefone">
+        <p class="eyebrow">VB Agenda</p>
+        <h2 style="margin:0.3rem 0;">Entrar com WhatsApp</h2>
+        <p class="hint">Assim você não precisa digitar seus dados de novo em cada estabelecimento.</p>
+        <div class="field">
+          <input type="tel" id="clienteGlobalTelefoneInput" placeholder="Seu WhatsApp com DDD" autocomplete="off">
+        </div>
+        <button class="btn btn-primario" id="clienteGlobalContinuar" type="button" style="width:100%;">Continuar</button>
+        <button class="btn btn-ghost" id="clienteGlobalCancelar" type="button" style="width:100%; margin-top:0.5rem;">Cancelar</button>
+      </div>
+      <div id="clienteGlobalEstagioNome" class="oculto">
+        <p class="eyebrow">Primeira vez por aqui</p>
+        <h2 style="margin:0.3rem 0;">Como podemos te chamar?</h2>
+        <div class="field">
+          <input type="text" id="clienteGlobalNomeInput" placeholder="Seu nome" autocomplete="off">
+        </div>
+        <button class="btn btn-primario" id="clienteGlobalConfirmarNome" type="button" style="width:100%;">Confirmar</button>
+        <button class="btn btn-ghost" id="clienteGlobalVoltarTelefone" type="button" style="width:100%; margin-top:0.5rem;">Voltar</button>
+      </div>
+      <p class="msg" id="clienteGlobalMsg"></p>
+    </div>
+  </div>
+
   <nav class="tabbar">
     <a class="tabbar-item is-ativo" href="index.html"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>Catálogo</a>
     <a class="tabbar-item" href="criar.html"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Criar meu site</a>
@@ -48,6 +75,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
   <script src="assets/js/catalogo.js?v=11"></script>
+  <script src="assets/js/vb-cliente-global.js?v=1"></script>
+  <script src="assets/js/vb-cliente-global-index.js?v=1"></script>
   <script type="module" src="assets/js/vb-cube3d.js?v=3"></script>
 </body>
 </html>
