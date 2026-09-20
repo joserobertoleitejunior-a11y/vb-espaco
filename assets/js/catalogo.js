@@ -95,8 +95,13 @@
         ? "background-image:linear-gradient(0deg, rgba(0,0,0,.28), rgba(0,0,0,.1)), url('" + fotoTopo + "'); background-size:cover; background-position:center;"
         : 'background:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
       var fotoAvatar = e.foto_perfil_url || e.foto_hero_url;
+      // quando o avatar e a capa caem na MESMA foto (nenhuma foto de perfil
+      // própria cadastrada ainda), sem isso cada um recorta a imagem do
+      // jeito dele e o avatar parece "cortado" no meio, como se fosse uma
+      // foto diferente — data-alinhar-capa faz o avatar virar uma janela
+      // pra mesma posição exata da imagem que já aparece atrás dele.
       var avatarConteudo = fotoAvatar
-        ? '<span class="catalogo-avatar-foto" style="background-image:url(\'' + fotoAvatar + '\');"></span>'
+        ? '<span class="catalogo-avatar-foto"' + (fotoAvatar === fotoTopo ? ' data-alinhar-capa="' + fotoAvatar + '"' : ' style="background-image:url(\'' + fotoAvatar + '\');"') + '></span>'
         : escapeHtml(iniciais(e.nome));
       var moldura = e.moldura_foto || 'simples';
       var selosSociais = SOCIAL_ICONES.filter(function (s) { return e[s.campo]; }).map(function (s) {
@@ -124,6 +129,37 @@
         '</a>' +
         '<a class="catalogo-criar-assim" href="criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') + '">+ Criar uma loja assim →</a>';
     }).join('') + CTA_CADASTRO;
+    alinharFotosDuplicadas();
+  }
+
+  // faz o avatar mostrar exatamente o pedacinho da imagem que fica por
+  // trás dele na capa, em vez de um recorte "cover" independente —
+  // calcula o tamanho/posição real que a foto ocupa dentro da capa e
+  // aplica o mesmo enquadramento (deslocado) no avatar.
+  function alinharFotosDuplicadas() {
+    listaEl.querySelectorAll('[data-alinhar-capa]').forEach(function (avatarFotoEl) {
+      var card = avatarFotoEl.closest('.catalogo-card');
+      var capaEl = card && card.querySelector('.catalogo-capa');
+      var url = avatarFotoEl.getAttribute('data-alinhar-capa');
+      if (!capaEl || !url) return;
+      var img = new Image();
+      img.onload = function () {
+        var capaRect = capaEl.getBoundingClientRect();
+        var avatarRect = avatarFotoEl.getBoundingClientRect();
+        if (!capaRect.width || !avatarRect.width || !img.naturalWidth) return;
+        var escala = Math.max(capaRect.width / img.naturalWidth, capaRect.height / img.naturalHeight);
+        var largura = img.naturalWidth * escala;
+        var altura = img.naturalHeight * escala;
+        var offX = (capaRect.width - largura) / 2;
+        var offY = (capaRect.height - altura) / 2;
+        var deltaX = avatarRect.left - capaRect.left;
+        var deltaY = avatarRect.top - capaRect.top;
+        avatarFotoEl.style.backgroundImage = "url('" + url + "')";
+        avatarFotoEl.style.backgroundSize = largura + 'px ' + altura + 'px';
+        avatarFotoEl.style.backgroundPosition = (offX - deltaX) + 'px ' + (offY - deltaY) + 'px';
+      };
+      img.src = url;
+    });
   }
 
   function carregar() {

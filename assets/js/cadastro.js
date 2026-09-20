@@ -91,7 +91,7 @@
           : 'background-image:linear-gradient(135deg,' + cor + ',' + cor + 'cc);';
         var fotoAvatar = e.foto_perfil_url || e.foto_hero_url;
         var avatarConteudo = fotoAvatar
-          ? '<span class="dash-card-avatar-foto" style="background-image:url(\'' + fotoAvatar + '\');"></span>'
+          ? '<span class="dash-card-avatar-foto"' + (fotoAvatar === fotoTopo ? ' data-alinhar-topo="' + fotoAvatar + '"' : ' style="background-image:url(\'' + fotoAvatar + '\');"') + '></span>'
           : escapeHtml(iniciais(e.nome));
         var moldura = e.moldura_foto || 'simples';
         var trialData = e.trial_termina_em ? new Date(e.trial_termina_em + 'T00:00:00').toLocaleDateString('pt-BR') : '';
@@ -135,6 +135,7 @@
           '</div>' +
           '</li>';
       }).join('');
+      alinharFotosDuplicadas();
     }, function () {
       listaEl.innerHTML = '';
       listaMsg.className = 'msg msg-erro';
@@ -160,6 +161,36 @@
       p_forma_pagamento: btn.getAttribute('data-forma')
     }).then(carregarEstabelecimentos);
   });
+
+  // mesma lógica do catálogo: quando o avatar cai na mesma foto da capa
+  // (sem foto de perfil própria), alinha o recorte do avatar com o
+  // recorte exato que já aparece atrás dele, em vez de recortar cada um
+  // do seu jeito (o que parecia um corte no meio da imagem).
+  function alinharFotosDuplicadas() {
+    listaEl.querySelectorAll('[data-alinhar-topo]').forEach(function (avatarFotoEl) {
+      var card = avatarFotoEl.closest('.dash-card');
+      var topoEl = card && card.querySelector('.dash-card-topo');
+      var url = avatarFotoEl.getAttribute('data-alinhar-topo');
+      if (!topoEl || !url) return;
+      var img = new Image();
+      img.onload = function () {
+        var topoRect = topoEl.getBoundingClientRect();
+        var avatarRect = avatarFotoEl.getBoundingClientRect();
+        if (!topoRect.width || !avatarRect.width || !img.naturalWidth) return;
+        var escala = Math.max(topoRect.width / img.naturalWidth, topoRect.height / img.naturalHeight);
+        var largura = img.naturalWidth * escala;
+        var altura = img.naturalHeight * escala;
+        var offX = (topoRect.width - largura) / 2;
+        var offY = (topoRect.height - altura) / 2;
+        var deltaX = avatarRect.left - topoRect.left;
+        var deltaY = avatarRect.top - topoRect.top;
+        avatarFotoEl.style.backgroundImage = "url('" + url + "')";
+        avatarFotoEl.style.backgroundSize = largura + 'px ' + altura + 'px';
+        avatarFotoEl.style.backgroundPosition = (offX - deltaX) + 'px ' + (offY - deltaY) + 'px';
+      };
+      img.src = url;
+    });
+  }
 
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, function (c) {
