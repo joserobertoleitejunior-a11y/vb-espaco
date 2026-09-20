@@ -1040,7 +1040,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   .criar-preview-frame { height: 640px; }
 }
 
-.criar-template-grid, .criar-opcoes-genero { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+.criar-template-grid, .criar-opcoes-genero, .criar-opcoes-segmento { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
 .criar-opcao-card {
   border: 2px solid var(--borda);
   border-radius: 12px;
@@ -1051,10 +1051,29 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  transition: border-color 0.15s, transform 0.15s;
 }
-.criar-opcao-card.is-selecionado { border-color: var(--vermelho); }
+.criar-opcao-card:hover { transform: translateY(-2px); }
+.criar-opcao-card.is-selecionado { border-color: var(--vermelho); box-shadow: 0 0 0 2px rgba(214,60,44,0.18); }
 .criar-opcao-nome { font-weight: 700; font-size: 0.92rem; }
 .criar-opcao-desc { font-size: 0.78rem; color: var(--tinta-suave); }
+.criar-opcao-icone { font-size: 1.5rem; line-height: 1; }
+
+/* transição suave a cada passo — sem isso a troca de conteúdo era seca
+   demais pra um wizard que quer parecer "vivo" */
+.criar-step-anim { animation: criarStepIn 0.32s ease; }
+@keyframes criarStepIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .criar-step-anim { animation: none; }
+}
+
+.criar-slug-status { display: inline-block; margin-top: 0.35rem; font-size: 0.78rem; font-weight: 600; }
+.criar-slug-status.ok { color: #1F8A6E; }
+.criar-slug-status.ocupado { color: var(--vermelho); }
+.criar-slug-status.checando { color: var(--tinta-suave); font-weight: 400; }
 
 .criar-logo-preview {
   width: 96px;

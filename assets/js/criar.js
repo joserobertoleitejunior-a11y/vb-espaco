@@ -30,6 +30,14 @@
     estetica_automotiva: 'Estética automotiva',
     outro: 'Estabelecimento'
   };
+  var SEGMENTOS_ICONE = {
+    barbearia: '💈',
+    salao: '💇',
+    manicure_pedicure: '💅',
+    estetica: '✨',
+    estetica_automotiva: '🚗',
+    outro: '🏢'
+  };
 
   var MAPA_ACENTOS = {
     'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a',
@@ -149,6 +157,31 @@
     });
   }
 
+  // ---- passo (novo): segmento — qual tipo de negócio é, escolhido
+  // visualmente (não mais um <select> escondido no meio dos outros
+  // campos), pra já refletir no preview (rótulo do site) e decidir mais
+  // pra frente quais serviços/fotos sugerir ----
+  function renderPassoSegmento(container) {
+    container.innerHTML =
+      '<p class="criar-passo-intro">Qual desses combina mais com o seu negócio?</p>' +
+      '<div id="criarOpcoesSegmento" class="criar-opcoes-segmento"></div>';
+    function desenhar() {
+      document.getElementById('criarOpcoesSegmento').innerHTML = Object.keys(SEGMENTOS_LABEL).map(function (k) {
+        return '<button type="button" class="criar-opcao-card' + (k === estado.segmento ? ' is-selecionado' : '') + '" data-segmento="' + k + '">' +
+          '<span class="criar-opcao-icone">' + SEGMENTOS_ICONE[k] + '</span>' +
+          '<span class="criar-opcao-nome">' + SEGMENTOS_LABEL[k] + '</span></button>';
+      }).join('');
+    }
+    desenhar();
+    document.getElementById('criarOpcoesSegmento').addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-segmento]');
+      if (!btn) return;
+      estado.segmento = btn.getAttribute('data-segmento');
+      desenhar();
+      postEstado();
+    });
+  }
+
   // ---- passo 2: atendimento (gênero) ----
   var OPCOES_GENERO = [
     { chave: 'ambos', nome: 'Ambos', desc: 'O cliente escolhe masculino ou feminino ao entrar no site.' },
@@ -181,45 +214,65 @@
       '<div class="field"><label for="criarNome">Nome do estabelecimento</label>' +
       '<input type="text" id="criarNome" placeholder="Ex: Rafael Cabeleireiros" value="' + escapeHtml(estado.nome) + '"></div>' +
       '<div class="field"><label for="criarSlug">Link (gerado a partir do nome, pode editar)</label>' +
-      '<div class="prefixo"><span>vbagenda.com.br/</span><input type="text" id="criarSlug" value="' + escapeHtml(estado.slug) + '"></div></div>' +
+      '<div class="prefixo"><span>vbagenda.com.br/</span><input type="text" id="criarSlug" value="' + escapeHtml(estado.slug) + '"></div>' +
+      '<span class="criar-slug-status" id="criarSlugStatus"></span></div>' +
       '<div class="field"><label for="criarCidade">Cidade</label><input type="text" id="criarCidade" value="' + escapeHtml(estado.cidade) + '"></div>' +
-      '<div class="field"><label for="criarSegmento">Segmento</label><select id="criarSegmento">' +
-      Object.keys(SEGMENTOS_LABEL).map(function (k) {
-        return '<option value="' + k + '"' + (k === estado.segmento ? ' selected' : '') + '>' + SEGMENTOS_LABEL[k] + '</option>';
-      }).join('') +
-      '</select></div>' +
       '<div class="field"><label for="criarWhatsapp">WhatsApp (com DDD)</label><input type="tel" id="criarWhatsapp" placeholder="15999999999" value="' + escapeHtml(estado.telefone_whatsapp) + '"></div>';
 
     var slugTocadoManualmente = !!estado.slug;
+    var slugStatusEl = document.getElementById('criarSlugStatus');
+    var timerCheckSlug = null;
+    function checarSlugDisponivel() {
+      clearTimeout(timerCheckSlug);
+      var slug = estado.slug.trim();
+      var cidade = estado.cidade.trim().toLowerCase();
+      if (!slug || !cidade) { slugStatusEl.className = 'criar-slug-status'; slugStatusEl.textContent = ''; return; }
+      slugStatusEl.className = 'criar-slug-status checando';
+      slugStatusEl.textContent = 'verificando…';
+      timerCheckSlug = setTimeout(function () {
+        db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }).then(function (res) {
+          if (estado.slug.trim() !== slug || estado.cidade.trim().toLowerCase() !== cidade) return;
+          var ocupado = res.data && res.data.length > 0;
+          slugStatusEl.className = 'criar-slug-status ' + (ocupado ? 'ocupado' : 'ok');
+          slugStatusEl.textContent = ocupado ? '✕ esse link já está em uso nessa cidade' : '✓ link disponível';
+        }, function () {
+          slugStatusEl.className = 'criar-slug-status'; slugStatusEl.textContent = '';
+        });
+      }, 500);
+    }
     document.getElementById('criarNome').addEventListener('input', function () {
       estado.nome = this.value;
       if (!slugTocadoManualmente) {
         estado.slug = slugificar(this.value);
         document.getElementById('criarSlug').value = estado.slug;
+        checarSlugDisponivel();
       }
       postEstado();
     });
     document.getElementById('criarSlug').addEventListener('input', function () {
       slugTocadoManualmente = true;
       estado.slug = this.value;
+      checarSlugDisponivel();
     });
     document.getElementById('criarCidade').addEventListener('input', function () {
       estado.cidade = this.value;
-      postEstado();
-    });
-    document.getElementById('criarSegmento').addEventListener('change', function () {
-      estado.segmento = this.value;
+      checarSlugDisponivel();
       postEstado();
     });
     document.getElementById('criarWhatsapp').addEventListener('input', function () {
       estado.telefone_whatsapp = this.value;
     });
+    checarSlugDisponivel();
   }
   function validarIdentidade() {
     var msg = document.getElementById('criarMsg');
     if (!estado.nome.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'Digite o nome do estabelecimento.'; return false; }
     if (!estado.slug.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'O link não pode ficar vazio.'; return false; }
     if (!estado.cidade.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'Digite a cidade.'; return false; }
+    var slugStatusEl = document.getElementById('criarSlugStatus');
+    if (slugStatusEl && slugStatusEl.classList.contains('ocupado')) {
+      msg.className = 'msg msg-erro'; msg.textContent = 'Esse link já está em uso nessa cidade — muda o nome ou o link.'; return false;
+    }
     return true;
   }
   function aoAvancarIdentidade() {
@@ -267,6 +320,7 @@
   // começa assim que o site é criado (ver perfil.js, modo ?tutorial=1).
   var PASSOS = [
     { chave: 'template', titulo: 'Estilo do site', render: renderPassoTemplate },
+    { chave: 'segmento', titulo: 'Tipo de negócio', render: renderPassoSegmento },
     { chave: 'atendimento', titulo: 'Atendimento', render: renderPassoAtendimento },
     { chave: 'identidade', titulo: 'Nome e contato', render: renderPassoIdentidade, validar: validarIdentidade, aoAvancar: aoAvancarIdentidade }
   ];
@@ -284,8 +338,11 @@
     msg.textContent = '';
     msg.className = 'msg';
     var container = document.getElementById('criarStepContainer');
+    container.classList.remove('criar-step-anim');
+    void container.offsetWidth; // força reflow pra reanimar mesmo repetindo a classe
     container.innerHTML = '';
     passo.render(container);
+    container.classList.add('criar-step-anim');
     postEstado();
   }
 
