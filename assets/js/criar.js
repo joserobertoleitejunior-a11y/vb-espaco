@@ -392,7 +392,11 @@
     function prosseguir() {
       btn.disabled = false;
       if (passoAtual === passos.length - 1) {
-        window.location.href = '/' + encodeURIComponent(estado.slug) + '/' + encodeURIComponent(estado.cidade.trim().toLowerCase()) + '?tutorial=1';
+        // "tutorial=1" continua a MESMA criação do site no site real (não é
+        // um tutorial à parte) — "desde" avisa quantos passos já foram
+        // dados aqui, pra numeração continuar contando (Passo 7, 8, 9...)
+        // em vez de reiniciar do 1.
+        window.location.href = '/' + encodeURIComponent(estado.slug) + '/' + encodeURIComponent(estado.cidade.trim().toLowerCase()) + '?tutorial=1&desde=' + passos.length;
         return;
       }
       mostrarPasso(passoAtual + 1);

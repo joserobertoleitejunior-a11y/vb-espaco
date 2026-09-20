@@ -630,36 +630,41 @@
     iniciarTutorialSeNecessario();
   }
 
-  // ---- tutorial guiado de criação: aponta pros mesmos controles de admin
-  // que já existem no site (não é uma tela separada) — só aparece uma vez,
-  // logo depois que o site nasce no passo a passo curto (criar.html), com
-  // ?tutorial=1 na URL. ----
-  var PASSOS_TUTORIAL = [
-    { seletor: '#tplNomeTopo', titulo: 'O nome da sua loja', texto: 'Esse é o nome do seu estabelecimento. Toque nele a qualquer momento pra editar.' },
+  // ---- continuação da criação do site, direto no site real: NÃO é um
+  // tutorial opcional/pulável — é a mesma criação começada em criar.html
+  // (template, nicho, atendimento, nome, cidade, whatsapp), só que agora
+  // apontando pros controles de admin de verdade pra terminar de montar o
+  // site (foto, cores, serviços, equipe, redes, galeria). A numeração
+  // continua contando de onde criar.html parou (?desde=N na URL) — não
+  // reinicia do passo 1, pra não parecer uma etapa separada. ----
+  var PASSOS_CRIACAO = [
     { seletor: '#tplHeroFoto', titulo: 'Foto principal', texto: 'Essa é a primeira coisa que os clientes veem. Toque na foto pra trocar por uma sua.' },
     { seletor: '.admin-cor-swatch', titulo: 'Cores da sua marca', texto: 'Escolha as duas cores que mais combinam com sua loja — principal e secundária.' },
-    { seletor: '#vbAddServico', titulo: 'Serviços e preços', texto: 'Toque aqui pra adicionar cada serviço que você oferece, com o preço.' },
+    { seletor: '#vbAddServico', titulo: 'Serviços e preços', texto: 'Adicione cada serviço que você oferece, com o preço.' },
     { seletor: '#vbAddMembro', titulo: 'Sua equipe', texto: 'Adicione os profissionais que atendem na sua loja.' },
-    { seletor: '#tplTelefoneMenu', titulo: 'Seu WhatsApp', texto: 'Toque aqui pra colocar o número que os clientes vão usar pra falar com você.' },
     { seletor: '#tplRedesSociais', titulo: 'Redes sociais', texto: 'Toque nos ícones pra linkar seu Instagram, Facebook ou TikTok.' },
     { seletor: '#vbAddFoto', titulo: 'Galeria de fotos', texto: 'Mostre fotos do seu espaço e dos seus trabalhos aqui.' }
   ];
-  var passoTutorialAtual = 0;
+  var passoCriacaoAtual = 0;
+  var passoCriacaoDesde = 0;
+  var passoCriacaoTotal = 0;
 
   function iniciarTutorialSeNecessario() {
-    var querTutorial = new URLSearchParams(window.location.search).get('tutorial') === '1';
-    if (!querTutorial || !linhaAtual || linhaAtual.onboarding_concluido) return;
-    passoTutorialAtual = 0;
-    // a barra de admin e a bolha do tutorial são as duas fixas na base da
-    // tela — some com a barra enquanto o tutorial guia, senão as duas
-    // ficam se sobrepondo (voltam a aparecer quando o tutorial termina)
+    var params = new URLSearchParams(window.location.search);
+    var querContinuar = params.get('tutorial') === '1';
+    if (!querContinuar || !linhaAtual || linhaAtual.onboarding_concluido) return;
+    passoCriacaoAtual = 0;
+    passoCriacaoDesde = parseInt(params.get('desde'), 10) || 0;
+    passoCriacaoTotal = passoCriacaoDesde + PASSOS_CRIACAO.length;
+    // a barra de admin e a bolha de criação são as duas fixas na base da
+    // tela — some com a barra enquanto a criação continua, senão as duas
+    // ficam se sobrepondo (volta a aparecer quando termina)
     document.getElementById('adminModoBarra').classList.add('oculto');
     document.getElementById('vbTutorialOverlay').classList.remove('oculto');
-    document.getElementById('vbTutorialPular').addEventListener('click', concluirTutorial);
     document.getElementById('vbTutorialProximo').addEventListener('click', function () {
-      if (passoTutorialAtual >= PASSOS_TUTORIAL.length - 1) { concluirTutorial(); return; }
-      passoTutorialAtual++;
-      mostrarPassoTutorial(passoTutorialAtual);
+      if (passoCriacaoAtual >= PASSOS_CRIACAO.length - 1) { concluirTutorial(); return; }
+      passoCriacaoAtual++;
+      mostrarPassoTutorial(passoCriacaoAtual);
     });
     mostrarPassoTutorial(0);
   }
@@ -681,18 +686,18 @@
   }
 
   function mostrarPassoTutorial(indice, tentativas) {
-    var passo = PASSOS_TUTORIAL[indice];
+    var passo = PASSOS_CRIACAO[indice];
     var alvo = document.querySelector(passo.seletor);
     if (!alvo) {
       tentativas = (tentativas || 0) + 1;
-      if (tentativas > 10) { passoTutorialAtual++; if (passoTutorialAtual < PASSOS_TUTORIAL.length) mostrarPassoTutorial(passoTutorialAtual); else concluirTutorial(); return; }
+      if (tentativas > 10) { passoCriacaoAtual++; if (passoCriacaoAtual < PASSOS_CRIACAO.length) mostrarPassoTutorial(passoCriacaoAtual); else concluirTutorial(); return; }
       setTimeout(function () { mostrarPassoTutorial(indice, tentativas); }, 200);
       return;
     }
-    document.getElementById('vbTutorialContador').textContent = 'Passo ' + (indice + 1) + ' de ' + PASSOS_TUTORIAL.length;
+    document.getElementById('vbTutorialContador').textContent = 'Passo ' + (passoCriacaoDesde + indice + 1) + ' de ' + passoCriacaoTotal;
     document.getElementById('vbTutorialTitulo').textContent = passo.titulo;
     document.getElementById('vbTutorialTexto').textContent = passo.texto;
-    document.getElementById('vbTutorialProximo').textContent = indice === PASSOS_TUTORIAL.length - 1 ? 'Concluir ✓' : 'Próximo →';
+    document.getElementById('vbTutorialProximo').textContent = indice === PASSOS_CRIACAO.length - 1 ? 'Finalizar criação ✓' : 'Próximo →';
     alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(function () { posicionarSpotlight(alvo); }, 300);
   }
