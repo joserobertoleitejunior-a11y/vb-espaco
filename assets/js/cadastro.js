@@ -197,6 +197,21 @@
     carregarEstabelecimentos();
   }
 
+  // O Google/Supabase manda erro de volta pela própria URL (hash ou
+  // query), tipo ?error=... ou #error=access_denied&error_description=...
+  // Sem isso, a tela só voltava pro login calada, sem dizer o motivo.
+  (function mostrarErroDoRedirect() {
+    var hash = window.location.hash ? new URLSearchParams(window.location.hash.slice(1)) : null;
+    var query = new URLSearchParams(window.location.search);
+    var erro = (hash && hash.get('error_description')) || query.get('error_description') ||
+      (hash && hash.get('error')) || query.get('error');
+    if (erro) {
+      authMsg.className = 'msg msg-erro';
+      authMsg.textContent = decodeURIComponent(erro).replace(/\+/g, ' ');
+      history.replaceState(null, '', window.location.pathname);
+    }
+  })();
+
   if (TESTE_SEM_LOGIN) {
     mostrarPainel();
     sairBtn.classList.add('oculto');
