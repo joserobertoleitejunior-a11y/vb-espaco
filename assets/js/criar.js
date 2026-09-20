@@ -9,12 +9,23 @@
   // precisa estar logado (e-mail/senha ou Google) pra criar um site — a
   // conta é quem vira dona do estabelecimento (criar_estabelecimento usa
   // auth.uid()), e é ela que depois abre o modo admin sem PIN no site.
+  // Só é permitido 1 estabelecimento por conta — se a conta já tem um,
+  // nem começa o passo a passo (evita responder tudo pra descobrir isso
+  // só no fim).
   db.auth.getSession().then(function (res) {
     if (!res.data || !res.data.session) {
       window.location.href = 'cadastro.html';
       return;
     }
-    iniciarPassoAPasso();
+    db.rpc('meus_estabelecimentos_com_stats').then(function (r) {
+      if (r.data && r.data.length > 0) {
+        window.location.href = 'cadastro.html';
+        return;
+      }
+      iniciarPassoAPasso();
+    }, function () {
+      iniciarPassoAPasso();
+    });
   }, function () {
     window.location.href = 'cadastro.html';
   });
@@ -30,13 +41,15 @@
     estetica_automotiva: 'Estética automotiva',
     outro: 'Estabelecimento'
   };
+  // mesmos ícones de linha do catálogo (index.html) — nada de emoji, pra
+  // ficar consistente com o resto do app e com aparência mais séria/profissional
   var SEGMENTOS_ICONE = {
-    barbearia: '💈',
-    salao: '💇',
-    manicure_pedicure: '💅',
-    estetica: '✨',
-    estetica_automotiva: '🚗',
-    outro: '🏢'
+    barbearia: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><line x1="8.1" y1="7.5" x2="20" y2="19"/><line x1="8.1" y1="16.5" x2="20" y2="5"/></svg>',
+    salao: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 18c2-4 2-8 0-12"/><path d="M9 18c2-4 2-8 0-12"/><path d="M14 18c2-4 2-8 0-12"/><path d="M19 18c2-4 2-8 0-12"/></svg>',
+    manicure_pedicure: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6v3l1.5 2v13a1 1 0 01-1 1h-7a1 1 0 01-1-1V7L9 5V2z"/><path d="M9 2h6"/></svg>',
+    estetica: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M12 2L14.3 7.7L20 10L14.3 12.3L12 18L9.7 12.3L4 10L9.7 7.7z"/></svg>',
+    estetica_automotiva: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12l1.5-4.5A2 2 0 0 1 6.4 6h11.2a2 2 0 0 1 1.9 1.5L21 12"/><path d="M3 12h18v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/></svg>',
+    outro: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>'
   };
   // exemplo de nome mostrado no campo — sempre do MESMO nicho escolhido,
   // pra nunca sugerir "Rafael Cabeleireiros" (barbearia) pra quem está
@@ -101,13 +114,12 @@
     nome: '', slug: '', cidade: 'Itapetininga', segmento: 'barbearia', telefone_whatsapp: '',
     foto_perfil_url: null,
     foto_hero_url: null, foto_hero_feminino_url: null,
-    cor_destaque: '#C9A227', cor_secundaria: null,
+    cor_destaque: null, cor_secundaria: null,
     texto_cta: 'Agendar horário',
     instagram_url: '', facebook_url: '', tiktok_url: '',
     total_servicos: 0, total_equipe: 0
   };
   var estabId = null;
-  var adminPin = null;
   var pastaTemp = window.VBUpload ? window.VBUpload.novaPastaTemporaria() : 'novo-' + Date.now();
 
   // ---- pré-visualização ao vivo (iframe isolado, sem Supabase) ----
@@ -128,12 +140,15 @@
   // ---- passo 1: template ----
   // mini-mockup de cada template com as cores/raio reais dele (nada de
   // caixinha lisa com gradiente — o dono precisa reconhecer o site aqui)
+  // ---- prints reais de cada template (gerados a partir do próprio
+  // preview-embutido.html, não mockups em CSS) — o dono escolhe olhando
+  // pro site de verdade, não pra uma representação abstrata dele. ----
   var TEMPLATES_DISPONIVEIS = [
-    { chave: 'classico-boiserie', nome: 'Clássico', bg: '#FAF7F1', texto: '#0A0A0A', accent: '#C9A227', radius: '14px', escuro: false },
-    { chave: 'claro-minimal', nome: 'Claro', bg: '#FFFFFF', texto: '#16181B', accent: '#1F8A6E', radius: '18px', escuro: false },
-    { chave: 'escuro-premium', nome: 'Escuro', bg: '#121212', texto: '#F3EEDF', accent: '#D9AE55', radius: '14px', escuro: true },
-    { chave: 'automotivo-carbono', nome: 'Automotivo', bg: '#15161A', texto: '#F2F2F0', accent: '#D8342A', radius: '6px', escuro: true },
-    { chave: 'boho-terracota', nome: 'Boho', bg: '#F7EFE4', texto: '#3A2A1D', accent: '#C1613D', radius: '22px', escuro: false }
+    { chave: 'classico-boiserie', nome: 'Clássico', print: '/assets/img/templates/classico.jpg' },
+    { chave: 'claro-minimal', nome: 'Claro', print: '/assets/img/templates/claro.jpg' },
+    { chave: 'escuro-premium', nome: 'Escuro', print: '/assets/img/templates/escuro.jpg' },
+    { chave: 'automotivo-carbono', nome: 'Automotivo', print: '/assets/img/templates/automotivo.jpg' },
+    { chave: 'boho-terracota', nome: 'Boho', print: '/assets/img/templates/boho.jpg' }
   ];
   function renderPassoTemplate(container) {
     container.innerHTML =
@@ -141,18 +156,9 @@
       '<div id="criarTemplateEscolha" class="criar-template-grid"></div>';
     function desenhar() {
       document.getElementById('criarTemplateEscolha').innerHTML = TEMPLATES_DISPONIVEIS.map(function (t) {
-        return '<button type="button" class="tpl-swatch-card' + (t.chave === estado.template ? ' is-selecionado' : '') + '" data-template="' + t.chave + '" style="background:' + t.bg + '; border-radius:' + t.radius + ';">' +
-          '<span class="tpl-mock">' +
-          '<span class="tpl-mock-topo" style="border-color:' + (t.escuro ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.1)') + ';">' +
-          '<span class="tpl-mock-bolinha" style="background:' + t.accent + ';"></span>' +
-          '<span class="tpl-mock-linha" style="background:' + t.texto + ';"></span>' +
-          '</span>' +
-          '<span class="tpl-mock-hero" style="border-color:' + t.accent + '; box-shadow:0 0 12px ' + t.accent + '55; background:' + (t.escuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') + '; border-radius:' + t.radius + ';"></span>' +
-          '<span class="tpl-mock-titulo" style="background:' + t.texto + ';"></span>' +
-          '<span class="tpl-mock-sub" style="background:' + t.texto + ';"></span>' +
-          '<span class="tpl-mock-btn" style="background:' + t.accent + '; border-radius:' + t.radius + ';"></span>' +
-          '</span>' +
-          '<span class="tpl-swatch-nome" style="color:' + t.texto + ';">' + t.nome + '</span>' +
+        return '<button type="button" class="tpl-print-card' + (t.chave === estado.template ? ' is-selecionado' : '') + '" data-template="' + t.chave + '">' +
+          '<img src="' + t.print + '" alt="Prévia do template ' + t.nome + '" loading="lazy">' +
+          '<span class="tpl-swatch-nome">' + t.nome + '</span>' +
           '</button>';
       }).join('');
     }
@@ -280,9 +286,18 @@
     return true;
   }
 
+  var CIDADES_DISPONIVEIS = ['Itapetininga', 'Tatuí', 'Boituva', 'Itu', 'Sorocaba'];
   function renderPassoCidade(container) {
-    container.innerHTML = '<div class="field"><label for="criarCidade">Em qual cidade fica?</label><input type="text" id="criarCidade" value="' + escapeHtml(estado.cidade) + '"></div>';
-    document.getElementById('criarCidade').addEventListener('input', function () {
+    var atual = estado.cidade || 'Itapetininga';
+    container.innerHTML = '<div class="field"><label for="criarCidade">Em qual cidade fica?</label>' +
+      '<select id="criarCidade">' +
+      CIDADES_DISPONIVEIS.map(function (c) {
+        return '<option value="' + escapeHtml(c) + '"' + (c.toLowerCase() === atual.toLowerCase() ? ' selected' : '') + '>' + escapeHtml(c) + '</option>';
+      }).join('') +
+      '</select></div>';
+    estado.cidade = document.getElementById('criarCidade').value;
+    postEstado();
+    document.getElementById('criarCidade').addEventListener('change', function () {
       estado.cidade = this.value;
       postEstado();
     });
@@ -320,7 +335,6 @@
           throw new Error(texto);
         }
         estabId = res.data.id;
-        adminPin = res.data.admin_pin;
         msg.textContent = '';
       });
     }

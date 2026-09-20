@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=27">
+<link rel="stylesheet" href="/assets/css/styles.css?v=29">
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=5" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
 <link rel="stylesheet" href="/assets/tpl-classico/css/widget.css?v=3" id="tplWidget">
@@ -196,17 +196,6 @@
     </div>
   </div>
 
-  <div class="admin-pin-overlay oculto" id="adminPinOverlay">
-    <div class="admin-pin-box">
-      <p class="eyebrow">Acesso do dono</p>
-      <h2 style="margin:0.3rem 0;">Digite o PIN de admin</h2>
-      <input type="text" id="adminPinInput" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off">
-      <button class="btn btn-primario" id="adminPinConfirmar" type="button" style="width:100%;">Entrar</button>
-      <button class="btn btn-ghost" id="adminPinCancelar" type="button" style="width:100%; margin-top:0.5rem;">Cancelar</button>
-      <p class="msg" id="adminPinMsg"></p>
-    </div>
-  </div>
-
   <div class="admin-pin-overlay oculto" id="clienteGlobalOverlay">
     <div class="admin-pin-box cliente-global-box">
       <div id="clienteGlobalEstagioTelefone">
@@ -233,7 +222,6 @@
   </div>
 
   <div class="admin-modo-barra oculto" id="adminModoBarra">
-    <span class="admin-modo-texto">✎ Modo admin — clique nos campos marcados pra editar</span>
     <label class="admin-cor-swatch" title="Cor principal do site">
       <input type="color" id="adminCorInput" value="#C9A227">
     </label>
@@ -291,11 +279,12 @@
        concluído), terminando de montar o site nos mesmos controles de
        admin que já existem, ao vivo, sem opção de pular. -->
   <div class="vb-tutorial-overlay oculto" id="vbTutorialOverlay">
-    <div class="vb-tutorial-spot" id="vbTutorialSpot"></div>
     <div class="vb-tutorial-bolha" id="vbTutorialBolha">
       <p class="vb-tutorial-contador" id="vbTutorialContador"></p>
       <h3 id="vbTutorialTitulo"></h3>
       <p id="vbTutorialTexto"></p>
+      <div class="vb-tutorial-campos" id="vbTutorialCampos"></div>
+      <p class="vb-tutorial-aviso oculto" id="vbTutorialAviso"></p>
       <div class="vb-tutorial-acoes">
         <button type="button" class="btn btn-primario" id="vbTutorialProximo" style="width:100%;">Próximo →</button>
       </div>
@@ -311,6 +300,6 @@
   <script src="/assets/js/servicos-sugeridos.js?v=1"></script>
   <script src="/assets/js/vb-cliente-global.js?v=1"></script>
   <script src="/assets/js/faixa-voltar.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=25"></script>
+  <script src="/assets/js/perfil.js?v=26"></script>
 </body>
 </html>

@@ -95,8 +95,10 @@
     document.getElementById('tplSubcopy').textContent = estado.subtitulo_hero || copy.sub;
     document.getElementById('tplCtaTexto').textContent = estado.texto_cta || 'Agendar horário';
 
-    var cor = estado.cor_destaque || '#C9A227';
-    aplicarCorDinamica(cor, estado.cor_secundaria);
+    // sem "|| '#C9A227'" de propósito: sem cor escolhida, cada template
+    // deve mostrar a cor padrão dele mesmo (aplicarCorDinamica já ignora
+    // um valor vazio/nulo), não forçar o dourado do Rafael por cima.
+    aplicarCorDinamica(estado.cor_destaque, estado.cor_secundaria);
 
     var heroFoto = document.getElementById('tplHeroFoto');
     var fotoHero = genero === 'feminino' ? (estado.foto_hero_feminino_url || estado.foto_hero_url) : estado.foto_hero_url;
@@ -105,7 +107,7 @@
       heroFoto.style.backgroundImage = 'url("' + fotoHero + '")';
       heroFoto.style.backgroundSize = 'cover';
     } else {
-      heroFoto.style.backgroundImage = 'url("' + boiseriePlaceholder(cor) + '")';
+      heroFoto.style.backgroundImage = 'url("' + boiseriePlaceholder(estado.cor_destaque) + '")';
       heroFoto.style.backgroundSize = '72px 72px';
     }
   }

@@ -7,7 +7,7 @@
 <meta name="description" content="Crie sua conta e cadastre seu salão, barbearia ou estúdio no VB Agenda.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="assets/img/favicon.svg">
-<link rel="stylesheet" href="assets/css/styles.css?v=27">
+<link rel="stylesheet" href="assets/css/styles.css?v=29">
 </head>
 <body class="com-tabbar">
   <header class="topbar">
@@ -17,12 +17,17 @@
 
   <div class="container" style="padding-top:1.75rem; padding-bottom:3rem;">
 
-    <!-- Login / cadastro de conta -->
+    <!-- Login do ESTABELECIMENTO (dono) — separado do login do cliente,
+         que fica no site (número de WhatsApp + nome). Este aqui libera o
+         acesso admin: contas novas só entram por Google; contas antigas
+         de e-mail/senha continuam funcionando pra não perder acesso. -->
     <section id="authBox">
       <div class="card">
-        <h2>Entrar ou criar conta</h2>
+        <p class="eyebrow">Acesso do dono do estabelecimento</p>
+        <h2>Entrar com Google</h2>
+        <p class="cidade" style="margin:-0.3rem 0 1rem;">Esse login libera o painel de admin do seu estabelecimento. Contas novas precisam ser feitas com Google.</p>
         <button class="btn btn-google" id="googleBtn" type="button">Continuar com Google</button>
-        <div class="divisor">ou por e-mail</div>
+        <div class="divisor">já tem conta antiga por e-mail?</div>
         <form id="emailForm">
           <div class="field">
             <label for="authEmail">E-mail</label>
@@ -32,11 +37,8 @@
             <label for="authSenha">Senha</label>
             <input type="password" id="authSenha" required minlength="6" autocomplete="current-password">
           </div>
-          <button class="btn btn-primario" id="entrarBtn" type="submit" style="width:100%;">Entrar</button>
+          <button class="btn btn-ghost" id="entrarBtn" type="submit" style="width:100%;">Entrar</button>
         </form>
-        <p style="text-align:center; margin:0.9rem 0 0; font-size:0.9rem;">
-          Não tem conta? <a href="#" id="criarContaLink">Criar agora</a>
-        </p>
         <p class="msg" id="authMsg"></p>
       </div>
     </section>
@@ -65,6 +67,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
-  <script src="assets/js/cadastro.js?v=11"></script>
+  <script src="assets/js/cadastro.js?v=12"></script>
 </body>
 </html>

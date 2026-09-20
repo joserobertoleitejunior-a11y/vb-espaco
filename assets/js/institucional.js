@@ -311,8 +311,6 @@
   }
 
   // ---------- modo admin ----------
-  function chaveAdmin() { return 'vbAdminUnlocked_' + estabId; }
-
   function salvarNome() {
     var el = document.getElementById('tplNomeTopo');
     var nome = el.textContent.trim();
@@ -403,48 +401,23 @@
     document.getElementById('tplEnderecoRodape').removeAttribute('contenteditable');
     document.getElementById('tplNomeTopo').removeAttribute('contenteditable');
     document.getElementById('tplTituloInstitucional').removeAttribute('contenteditable');
-    try { localStorage.removeItem(chaveAdmin()); } catch (e) {}
     carregarEquipe();
     carregarGaleria();
     carregarServicos();
     carregarRedesSociais();
   }
+  // acesso admin é só pela conta real (dono logado com Gmail/e-mail) — sem
+  // PIN nenhum. Quem clica em "Admin" sem ser a conta dona é mandado pra
+  // tela de login pra entrar com a conta certa.
   function iniciarModoAdmin() {
-    var overlay = document.getElementById('adminPinOverlay');
-    var input = document.getElementById('adminPinInput');
-    var msg = document.getElementById('adminPinMsg');
     document.addEventListener('click', function (e) {
       var trigger = e.target.closest('.vb-admin-trigger');
       if (!trigger) return;
       e.preventDefault();
       if (window.RafaelMenu) window.RafaelMenu.close();
-      var jaDesbloqueado = false;
-      try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (err) {}
-      if (jaDesbloqueado || modoAdmin) { ativarModoAdmin(); return; }
-      overlay.classList.remove('oculto');
-      msg.textContent = '';
-      input.value = '';
-      input.focus();
+      if (modoAdmin) return;
+      window.location.href = '/cadastro.html';
     });
-    document.getElementById('adminPinCancelar').addEventListener('click', function () { overlay.classList.add('oculto'); });
-    function confirmarPin() {
-      var pin = input.value.trim();
-      if (!pin) return;
-      msg.className = 'msg';
-      msg.textContent = 'Verificando…';
-      db.rpc('tenant_verificar_pin', { p_estabelecimento_id: estabId, p_pin: pin }).then(function (res) {
-        if (res.error || !res.data) { msg.className = 'msg msg-erro'; msg.textContent = 'PIN incorreto.'; return; }
-        try { localStorage.setItem(chaveAdmin(), '1'); } catch (e) {}
-        overlay.classList.add('oculto');
-        ativarModoAdmin();
-        db.auth.getSession().then(function (sessRes) {
-          var session = sessRes.data && sessRes.data.session;
-          if (session) db.rpc('tenant_reivindicar_estabelecimento', { p_estabelecimento_id: estabId, p_pin: pin });
-        });
-      }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Sem conexão agora.'; });
-    }
-    document.getElementById('adminPinConfirmar').addEventListener('click', confirmarPin);
-    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') confirmarPin(); });
     document.getElementById('adminSairBtn').addEventListener('click', desativarModoAdmin);
     var corInput = document.getElementById('adminCorInput');
     var corSecundariaInput = document.getElementById('adminCorSecundariaInput');
@@ -504,9 +477,6 @@
     carregarServicos();
     carregarRedesSociais();
     iniciarModoAdmin();
-    var jaDesbloqueado = false;
-    try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}
-    if (jaDesbloqueado) ativarModoAdmin();
     verificarSessaoDono();
   }
 

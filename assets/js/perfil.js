@@ -341,8 +341,10 @@
     { url: '/assets/tpl-classico/img/estoque/hero-feminino-1.jpg', legenda: 'Salão rosé' },
     { url: '/assets/tpl-classico/img/estoque/fachada-1.jpg', legenda: 'Fachada clássica' }
   ];
-
-  function chaveAdmin() { return 'vbAdminUnlocked_' + estabId; }
+  // ícone de câmera em linha, no lugar do emoji nativo (some de aparência
+  // por sistema operacional/navegador e fica cinza-chumbo, combinando com
+  // o resto dos botões).
+  var ICONE_CAMERA = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>';
 
   function salvarNome() {
     var el = document.getElementById('tplNomeTopo');
@@ -387,10 +389,11 @@
     caixa.style.cssText = 'position:absolute; z-index:20; bottom:1rem; left:1rem; right:1rem; background:rgba(255,255,255,.92); backdrop-filter:blur(16px); border-radius:16px; padding:0.9rem; box-shadow:0 15px 40px rgba(0,0,0,.3);';
     caixa.innerHTML =
       '<p style="margin:0 0 0.6rem; font-size:0.85rem; font-weight:700;">Trocar foto principal</p>' +
-      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.7rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">📷</span> Escolher foto do celular<input type="file" id="vbHeroEditorUpload" accept="image/*"></label>' +
-      '<div style="display:flex; gap:0.4rem; flex-wrap:wrap;">' +
+      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.7rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto do celular<input type="file" id="vbHeroEditorUpload" accept="image/*"></label>' +
+      '<p style="margin:0 0 0.45rem; font-size:0.78rem; color:var(--ink-soft,#7a7368);">ou toque numa foto pronta:</p>' +
+      '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem;">' +
       (window.estoqueFotosPara ? window.estoqueFotosPara(linhaAtual.segmento) : ESTOQUE_FOTOS_ADMIN).map(function (f) {
-        return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" style="width:52px; height:52px; object-fit:cover; border-radius:6px; cursor:pointer;">';
+        return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; cursor:pointer;">';
       }).join('') +
       '</div>' +
       '<p class="msg" id="vbHeroEditorMsg" style="margin-top:0.5rem;"></p>';
@@ -433,6 +436,15 @@
   function abrirEditorFotoCard() {
     var existente = document.getElementById('vbFotoCardEditor');
     if (existente) { existente.remove(); return; }
+    var estoque = window.estoqueFotosPara ? window.estoqueFotosPara(linhaAtual.segmento) : ESTOQUE_FOTOS_ADMIN;
+    function gradeEstoque(dataAttr) {
+      return '<p style="margin:0.5rem 0 0.4rem; font-size:0.78rem; color:var(--ink-soft,#7a7368);">ou toque numa foto pronta:</p>' +
+        '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.4rem; margin-bottom:1rem;">' +
+        estoque.map(function (f) {
+          return '<img src="' + f.url + '" data-' + dataAttr + '="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; cursor:pointer;">';
+        }).join('') +
+        '</div>';
+    }
     var caixa = document.createElement('div');
     caixa.id = 'vbFotoCardEditor';
     caixa.className = 'admin-pin-overlay';
@@ -441,9 +453,11 @@
       '<p class="eyebrow">Como aparece no catálogo</p>' +
       '<h2 style="margin:0.3rem 0 1rem; font-size:1.1rem;">Foto do card</h2>' +
       '<p style="font-size:0.85rem; font-weight:700; margin:0 0 0.4rem;">Foto de perfil</p>' +
-      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:1rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">👤</span> Escolher foto<input type="file" id="vbFotoCardPerfilUpload" accept="image/*"></label>' +
+      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.3rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto<input type="file" id="vbFotoCardPerfilUpload" accept="image/*"></label>' +
+      gradeEstoque('estoque-perfil') +
       '<p style="font-size:0.85rem; font-weight:700; margin:0 0 0.4rem;">Foto de capa</p>' +
-      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:1rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">🖼</span> Escolher foto<input type="file" id="vbFotoCardCapaUpload" accept="image/*"></label>' +
+      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.3rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto<input type="file" id="vbFotoCardCapaUpload" accept="image/*"></label>' +
+      gradeEstoque('estoque-capa') +
       '<p class="msg" id="vbFotoCardMsg"></p>' +
       '<button type="button" class="btn btn-ghost" id="vbFotoCardFechar" style="width:100%;">Fechar</button>' +
       '</div>';
@@ -472,6 +486,12 @@
       document.getElementById('vbFotoCardMsg').textContent = 'Enviando…';
       window.VBUpload.uploadFoto(file, estabId, 'capa').then(function (url) { salvar('p_foto_capa_url', url); });
     });
+    caixa.querySelectorAll('[data-estoque-perfil]').forEach(function (img) {
+      img.addEventListener('click', function () { salvar('p_foto_perfil_url', img.getAttribute('data-estoque-perfil')); });
+    });
+    caixa.querySelectorAll('[data-estoque-capa]').forEach(function (img) {
+      img.addEventListener('click', function () { salvar('p_foto_capa_url', img.getAttribute('data-estoque-capa')); });
+    });
   }
 
   function atualizarMapaLink() {
@@ -489,9 +509,7 @@
   // pra quem visita de verdade (não conta quando o próprio dono já está
   // com o site desbloqueado como admin). ----
   function registrarAcessoSeNecessario() {
-    var jaAdmin = false;
-    try { jaAdmin = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}
-    if (jaAdmin) return;
+    if (modoAdmin) return;
     var chaveSessao = 'vbAcessoRegistrado_' + estabId;
     var jaContou = false;
     try { jaContou = sessionStorage.getItem(chaveSessao) === '1'; } catch (e) {}
@@ -633,17 +651,59 @@
   // ---- continuação da criação do site, direto no site real: NÃO é um
   // tutorial opcional/pulável — é a mesma criação começada em criar.html
   // (template, nicho, atendimento, nome, cidade, whatsapp), só que agora
-  // apontando pros controles de admin de verdade pra terminar de montar o
-  // site (foto, cores, serviços, equipe, redes, galeria). A numeração
-  // continua contando de onde criar.html parou (?desde=N na URL) — não
-  // reinicia do passo 1, pra não parecer uma etapa separada. ----
+  // com os campos de verdade embutidos direto na própria caixa (não é só
+  // uma mensagem apontando pra um botão em outro canto da tela — cada
+  // passo já abre a caixa de edição pronta pra preencher). Os passos com
+  // "obrigatorio: true" não deixam avançar sem dado real (foto, 1 serviço,
+  // 1 profissional); os demais só ficam marcados como recomendados. A
+  // numeração continua contando de onde criar.html parou (?desde=N na
+  // URL) — não reinicia do passo 1, pra não parecer uma etapa separada. ----
   var PASSOS_CRIACAO = [
-    { seletor: '#tplHeroFoto', titulo: 'Foto principal', texto: 'Essa é a primeira coisa que os clientes veem. Toque na foto pra trocar por uma sua.' },
-    { seletor: '.admin-cor-swatch', titulo: 'Cores da sua marca', texto: 'Escolha as duas cores que mais combinam com sua loja — principal e secundária.' },
-    { seletor: '#vbAddServico', titulo: 'Serviços e preços', texto: 'Adicione cada serviço que você oferece, com o preço.' },
-    { seletor: '#vbAddMembro', titulo: 'Sua equipe', texto: 'Adicione os profissionais que atendem na sua loja.' },
-    { seletor: '#tplRedesSociais', titulo: 'Redes sociais', texto: 'Toque nos ícones pra linkar seu Instagram, Facebook ou TikTok.' },
-    { seletor: '#vbAddFoto', titulo: 'Galeria de fotos', texto: 'Mostre fotos do seu espaço e dos seus trabalhos aqui.' }
+    {
+      id: 'foto', titulo: 'Foto principal',
+      texto: 'Essa é a primeira coisa que os clientes veem. Escolha uma foto do seu celular ou uma das opções abaixo.',
+      obrigatorio: true,
+      avisoIncompleto: 'Escolha uma foto pra continuar.',
+      completo: function () { return !!(linhaAtual && ((generoAtual === 'feminino') ? (linhaAtual.foto_hero_feminino_url || linhaAtual.foto_hero_url) : linhaAtual.foto_hero_url)); },
+      render: renderPassoTutorialFoto
+    },
+    {
+      id: 'cores', titulo: 'Cores da sua marca',
+      texto: 'Você já escolheu uma cor lá no começo — aqui dá pra trocar quantas vezes quiser. Escolha a principal e a secundária.',
+      obrigatorio: false,
+      completo: function () { return true; },
+      render: renderPassoTutorialCores
+    },
+    {
+      id: 'servicos', titulo: 'Serviços e preços',
+      texto: 'Adicione cada serviço que você oferece, com o preço. Precisa ter pelo menos um pra continuar.',
+      obrigatorio: true,
+      avisoIncompleto: 'Adicione pelo menos um serviço pra continuar.',
+      completo: function () { return servicosCache && servicosCache.length > 0; },
+      render: renderPassoTutorialServicos
+    },
+    {
+      id: 'equipe', titulo: 'Sua equipe',
+      texto: 'Adicione os profissionais que atendem na sua loja. Precisa ter pelo menos um pra continuar.',
+      obrigatorio: true,
+      avisoIncompleto: 'Adicione pelo menos um profissional pra continuar.',
+      completo: function () { return equipeCache && equipeCache.length > 0; },
+      render: renderPassoTutorialEquipe
+    },
+    {
+      id: 'redes', titulo: 'Redes sociais',
+      texto: 'Opcional, mas muito importante — clientes confiam bem mais em quem tem Instagram e WhatsApp visíveis no site.',
+      obrigatorio: false,
+      completo: function () { return true; },
+      render: renderPassoTutorialRedes
+    },
+    {
+      id: 'galeria', titulo: 'Galeria de fotos',
+      texto: 'Opcional, mas ajuda bastante a fechar clientes: mostre fotos do seu espaço e dos seus trabalhos.',
+      obrigatorio: false,
+      completo: function () { return true; },
+      render: renderPassoTutorialGaleria
+    }
   ];
   var passoCriacaoAtual = 0;
   var passoCriacaoDesde = 0;
@@ -662,6 +722,7 @@
     document.getElementById('adminModoBarra').classList.add('oculto');
     document.getElementById('vbTutorialOverlay').classList.remove('oculto');
     document.getElementById('vbTutorialProximo').addEventListener('click', function () {
+      if (this.disabled) return;
       if (passoCriacaoAtual >= PASSOS_CRIACAO.length - 1) { concluirTutorial(); return; }
       passoCriacaoAtual++;
       mostrarPassoTutorial(passoCriacaoAtual);
@@ -669,37 +730,31 @@
     mostrarPassoTutorial(0);
   }
 
-  function posicionarSpotlight(alvo) {
-    // o overlay é position:fixed (cobre sempre a janela visível), então o
-    // anel de destaque posiciona relativo à JANELA, não ao documento
-    // inteiro — nada de somar window.scrollY/scrollX aqui. A bolha de
-    // texto fica fixa na base da tela (ver CSS) — nem precisa reposicionar,
-    // só o anel persegue o elemento em destaque, mesmo que ele seja maior
-    // que a própria tela (ex: foto de capa em tela cheia).
-    var rect = alvo.getBoundingClientRect();
-    var spot = document.getElementById('vbTutorialSpot');
-    var pad = 8;
-    spot.style.top = (rect.top - pad) + 'px';
-    spot.style.left = (rect.left - pad) + 'px';
-    spot.style.width = (rect.width + pad * 2) + 'px';
-    spot.style.height = (rect.height + pad * 2) + 'px';
+  // atualiza o texto/estado do botão "Próximo" de acordo com o passo atual
+  // — obrigatório sem dado real trava o avanço (com o aviso do motivo).
+  function atualizarBotaoProximoTutorial() {
+    var passo = PASSOS_CRIACAO[passoCriacaoAtual];
+    var btn = document.getElementById('vbTutorialProximo');
+    var aviso = document.getElementById('vbTutorialAviso');
+    var completo = !passo.obrigatorio || (passo.completo && passo.completo());
+    btn.disabled = !completo;
+    btn.classList.toggle('vb-btn-desabilitado', !completo);
+    if (aviso) {
+      aviso.textContent = completo ? '' : (passo.avisoIncompleto || 'Preencha essa etapa pra continuar.');
+      aviso.classList.toggle('oculto', completo);
+    }
   }
 
-  function mostrarPassoTutorial(indice, tentativas) {
+  function mostrarPassoTutorial(indice) {
     var passo = PASSOS_CRIACAO[indice];
-    var alvo = document.querySelector(passo.seletor);
-    if (!alvo) {
-      tentativas = (tentativas || 0) + 1;
-      if (tentativas > 10) { passoCriacaoAtual++; if (passoCriacaoAtual < PASSOS_CRIACAO.length) mostrarPassoTutorial(passoCriacaoAtual); else concluirTutorial(); return; }
-      setTimeout(function () { mostrarPassoTutorial(indice, tentativas); }, 200);
-      return;
-    }
     document.getElementById('vbTutorialContador').textContent = 'Passo ' + (passoCriacaoDesde + indice + 1) + ' de ' + passoCriacaoTotal;
     document.getElementById('vbTutorialTitulo').textContent = passo.titulo;
     document.getElementById('vbTutorialTexto').textContent = passo.texto;
     document.getElementById('vbTutorialProximo').textContent = indice === PASSOS_CRIACAO.length - 1 ? 'Finalizar criação ✓' : 'Próximo →';
-    alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(function () { posicionarSpotlight(alvo); }, 300);
+    var campos = document.getElementById('vbTutorialCampos');
+    campos.innerHTML = '';
+    if (passo.render) passo.render(campos);
+    atualizarBotaoProximoTutorial();
   }
 
   function concluirTutorial() {
@@ -707,6 +762,229 @@
     document.getElementById('adminModoBarra').classList.remove('oculto');
     if (linhaAtual) linhaAtual.onboarding_concluido = true;
     db.rpc('tenant_admin_concluir_onboarding', { p_estabelecimento_id: estabId });
+  }
+
+  // ---- passo "foto principal": mesmo upload/estoque do editor rápido do
+  // admin, só que sempre visível dentro da própria caixa da criação — sem
+  // precisar adivinhar onde clicar na foto por trás dela. ----
+  function renderPassoTutorialFoto(container) {
+    var fotoAtual = (generoAtual === 'feminino') ? (linhaAtual.foto_hero_feminino_url || linhaAtual.foto_hero_url) : linhaAtual.foto_hero_url;
+    var estoque = window.estoqueFotosPara ? window.estoqueFotosPara(linhaAtual.segmento) : ESTOQUE_FOTOS_ADMIN;
+    container.innerHTML =
+      (fotoAtual ? '<div style="width:100%; aspect-ratio:16/9; border-radius:12px; background-size:cover; background-position:center; margin-bottom:0.7rem; background-image:url(\'' + fotoAtual + '\')"></div>' : '') +
+      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.7rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto do celular<input type="file" id="vbTutFotoUpload" accept="image/*"></label>' +
+      '<p class="vb-servico-novo-legenda">ou toque numa foto pronta:</p>' +
+      '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem;">' +
+      estoque.map(function (f) {
+        var sel = f.url === fotoAtual;
+        return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; cursor:pointer; border:2px solid ' + (sel ? 'var(--terracotta, var(--dourado,#C9A227))' : 'transparent') + ';">';
+      }).join('') +
+      '</div>' +
+      '<p class="msg" id="vbTutFotoMsg" style="margin-top:0.5rem;"></p>';
+
+    function salvar(url) {
+      var msg = document.getElementById('vbTutFotoMsg');
+      msg.textContent = 'Salvando…';
+      var chave = (generoAtual === 'feminino') ? 'p_foto_hero_feminino_url' : 'p_foto_hero_url';
+      var payload = { p_estabelecimento_id: estabId, p_foto_hero_url: null, p_foto_hero_feminino_url: null };
+      payload[chave] = url;
+      db.rpc('tenant_admin_atualizar_hero', payload).then(function (res) {
+        if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
+        if (generoAtual === 'feminino') linhaAtual.foto_hero_feminino_url = url; else linhaAtual.foto_hero_url = url;
+        aplicarGenero(generoAtual);
+        if (linhaAtual.seguir_cor_imagem) seguirCorDaImagem(url);
+        mostrarPassoTutorial(passoCriacaoAtual);
+      });
+    }
+    container.querySelectorAll('[data-estoque-url]').forEach(function (img) {
+      img.addEventListener('click', function () { salvar(img.getAttribute('data-estoque-url')); });
+    });
+    document.getElementById('vbTutFotoUpload').addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file || !window.VBUpload) return;
+      document.getElementById('vbTutFotoMsg').textContent = 'Enviando…';
+      window.VBUpload.uploadFoto(file, estabId, 'hero').then(salvar, function (err) {
+        document.getElementById('vbTutFotoMsg').className = 'msg msg-erro';
+        document.getElementById('vbTutFotoMsg').textContent = err.message || 'Falha ao enviar.';
+      });
+    });
+  }
+
+  // ---- passo "cores da marca": os mesmos dois seletores de cor da barra
+  // de admin, embutidos aqui — a barra de admin fica escondida durante a
+  // criação, então sem isso não dava pra mudar cor nenhuma nesse passo. ----
+  function renderPassoTutorialCores(container) {
+    var corPrincipal = linhaAtual.cor_destaque || '#C9A227';
+    var corSecundaria = linhaAtual.cor_secundaria || rgbParaHex(misturarRgb(hexParaRgbNums(corPrincipal), [0, 0, 0], 0.28));
+    container.innerHTML =
+      '<div style="display:flex; gap:1.4rem; align-items:center; margin-bottom:0.4rem;">' +
+      '<label style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; font-size:0.75rem; color:var(--ink-soft,#7a7368);">Principal' +
+      '<span class="admin-cor-swatch" style="width:44px; height:44px;"><input type="color" id="vbTutCorPrincipal" value="' + corPrincipal + '"></span>' +
+      '</label>' +
+      '<label style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; font-size:0.75rem; color:var(--ink-soft,#7a7368);">Secundária' +
+      '<span class="admin-cor-swatch" style="width:44px; height:44px;"><input type="color" id="vbTutCorSecundaria" value="' + corSecundaria + '"></span>' +
+      '</label>' +
+      '</div>';
+    var inputPrincipal = document.getElementById('vbTutCorPrincipal');
+    var inputSecundaria = document.getElementById('vbTutCorSecundaria');
+    inputPrincipal.addEventListener('input', function () { aplicarCorDinamica(inputPrincipal.value, inputSecundaria.value); });
+    inputSecundaria.addEventListener('input', function () { aplicarCorDinamica(inputPrincipal.value, inputSecundaria.value); });
+    inputPrincipal.addEventListener('change', function () { salvarCor(inputPrincipal.value, inputSecundaria.value); });
+    inputSecundaria.addEventListener('change', function () { salvarCor(inputPrincipal.value, inputSecundaria.value); });
+  }
+
+  // ---- passo "serviços": mesma sugestão por nicho + campo manual do
+  // painel "+Novo serviço" de sempre, só que já aberto aqui dentro —
+  // precisa ter pelo menos 1 cadastrado pra continuar. ----
+  function renderPassoTutorialServicos(container) {
+    var sugestoes = (window.servicosSugeridosPara ? window.servicosSugeridosPara(linhaAtual.segmento) : []).filter(function (s) {
+      return !servicosCache.some(function (existente) { return existente.nome === s.nome; });
+    });
+    container.innerHTML =
+      (servicosCache.length ? '<ul class="vb-tutorial-lista">' + servicosCache.map(function (s) {
+        return '<li>' + escapeHtml(s.nome) + ' · ' + formatarPreco(s.preco) +
+          '<button type="button" class="vb-remover-x" data-remover-servico-tut="' + s.id + '" style="position:static; margin-left:0.5rem; display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;">×</button></li>';
+      }).join('') + '</ul>' : '') +
+      (sugestoes.length ? '<p class="vb-servico-novo-legenda">Sugestões pro seu tipo de negócio:</p><div class="vb-servico-chips">' +
+        sugestoes.map(function (s) {
+          return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '" data-chip-preco="' + s.preco + '">' + escapeHtml(s.nome) + ' · ' + formatarPreco(s.preco) + '</button>';
+        }).join('') + '</div>' : '') +
+      '<p class="vb-servico-novo-legenda">Ou digite um serviço personalizado:</p>' +
+      '<div class="vb-servico-manual">' +
+      '<input type="text" id="vbTutServicoNome" placeholder="Nome do serviço">' +
+      '<input type="text" inputmode="decimal" id="vbTutServicoPreco" placeholder="Preço">' +
+      '<button type="button" class="btn btn-primario" id="vbTutServicoSalvar">Adicionar</button>' +
+      '</div>';
+
+    function atualizarERenderizar() {
+      db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }).then(function (res) {
+        servicosCache = res.data || [];
+        carregarServicos();
+        mostrarPassoTutorial(passoCriacaoAtual);
+      });
+    }
+    function salvar(nome, preco) {
+      if (!nome || !nome.trim()) return;
+      db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome.trim(), p_preco: preco || 0, p_categoria: 'unissex' }).then(atualizarERenderizar);
+    }
+    container.querySelectorAll('[data-chip-nome]').forEach(function (chip) {
+      chip.addEventListener('click', function () { salvar(chip.getAttribute('data-chip-nome'), parseFloat(chip.getAttribute('data-chip-preco'))); });
+    });
+    container.querySelectorAll('[data-remover-servico-tut]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        db.rpc('tenant_admin_remover_servico', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-servico-tut') }).then(atualizarERenderizar);
+      });
+    });
+    document.getElementById('vbTutServicoSalvar').addEventListener('click', function () {
+      var nome = document.getElementById('vbTutServicoNome').value;
+      var preco = parseFloat(document.getElementById('vbTutServicoPreco').value.replace(',', '.')) || 0;
+      salvar(nome, preco);
+    });
+  }
+
+  // ---- passo "equipe": mesmo padrão do de serviços (campos de verdade,
+  // não prompt()) — precisa ter pelo menos 1 profissional pra continuar. ----
+  function renderPassoTutorialEquipe(container) {
+    container.innerHTML =
+      (equipeCache.length ? '<ul class="vb-tutorial-lista">' + equipeCache.map(function (p) {
+        return '<li>' + escapeHtml(p.nome) + (p.especialidade ? ' · ' + escapeHtml(p.especialidade) : '') +
+          '<button type="button" class="vb-remover-x" data-remover-membro-tut="' + p.id + '" style="position:static; margin-left:0.5rem; display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;">×</button></li>';
+      }).join('') + '</ul>' : '') +
+      '<p class="vb-servico-novo-legenda">Nome e especialidade do profissional:</p>' +
+      '<div class="vb-servico-manual">' +
+      '<input type="text" id="vbTutMembroNome" placeholder="Nome">' +
+      '<input type="text" id="vbTutMembroEspecialidade" placeholder="Especialidade (ex: Cortes e barba)">' +
+      '<button type="button" class="btn btn-primario" id="vbTutMembroSalvar">Adicionar</button>' +
+      '</div>';
+
+    function atualizarERenderizar() {
+      db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }).then(function (res) {
+        equipeCache = res.data || [];
+        carregarEquipeAdmin();
+        mostrarPassoTutorial(passoCriacaoAtual);
+      });
+    }
+    container.querySelectorAll('[data-remover-membro-tut]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        db.rpc('tenant_admin_remover_membro', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-membro-tut') }).then(atualizarERenderizar);
+      });
+    });
+    document.getElementById('vbTutMembroSalvar').addEventListener('click', function () {
+      var nome = document.getElementById('vbTutMembroNome').value;
+      var especialidade = document.getElementById('vbTutMembroEspecialidade').value;
+      if (!nome || !nome.trim()) return;
+      db.rpc('tenant_admin_salvar_membro', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome.trim(), p_especialidade: (especialidade || '').trim(), p_foto_url: null }).then(atualizarERenderizar);
+    });
+  }
+
+  // ---- passo "redes sociais": opcional, mas com um selo deixando claro
+  // que vale a pena preencher (não é obrigatório, mas também não é só
+  // enfeite) — mesmo prompt de link de sempre, só que embutido aqui. ----
+  function renderPassoTutorialRedes(container) {
+    container.innerHTML =
+      '<p class="vb-tutorial-selo-recomendado">★ Recomendado</p>' +
+      '<div class="vb-tutorial-redes" id="vbTutRedes"></div>';
+    var alvo = document.getElementById('vbTutRedes');
+    var linksVisiveis = REDES.filter(function (r) { return r.chave !== 'whatsapp'; });
+    function render() {
+      alvo.innerHTML = linksVisiveis.map(function (r) {
+        var vazio = !linhaAtual[r.chave];
+        return '<button type="button" class="social-badge" data-rede-tut="' + r.chave + '" title="' + r.label + '" style="' + (vazio ? 'opacity:0.4;' : '') + '">' + r.icone + '</button>';
+      }).join('');
+      alvo.querySelectorAll('[data-rede-tut]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var chave = btn.getAttribute('data-rede-tut');
+          var atual = linhaAtual[chave] || '';
+          var novo = window.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', atual);
+          if (novo === null) return;
+          novo = novo.trim() || null;
+          linhaAtual[chave] = novo;
+          db.rpc('tenant_admin_atualizar_redes', {
+            p_estabelecimento_id: estabId,
+            p_instagram_url: linhaAtual.instagram_url,
+            p_facebook_url: linhaAtual.facebook_url,
+            p_tiktok_url: linhaAtual.tiktok_url
+          }).then(function () { carregarRedesSociais(); render(); });
+        });
+      });
+    }
+    render();
+  }
+
+  // ---- passo "galeria": botão de enviar fotos direto aqui — continua
+  // opcional, mas com o mesmo selo de "vale a pena" do passo de redes. ----
+  function renderPassoTutorialGaleria(container) {
+    container.innerHTML =
+      '<p class="vb-tutorial-selo-recomendado">★ Recomendado</p>' +
+      '<div id="vbTutGaleriaGrid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; margin-bottom:0.7rem;"></div>' +
+      '<label class="vb-btn-upload" style="width:100%; justify-content:center; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Adicionar fotos<input type="file" id="vbTutGaleriaUpload" accept="image/*" multiple></label>' +
+      '<p class="msg" id="vbTutGaleriaMsg" style="margin-top:0.5rem;"></p>';
+
+    function renderGrid() {
+      db.rpc('tenant_listar_galeria', { p_estabelecimento_id: estabId }).then(function (res) {
+        var linhas = res.data || [];
+        document.getElementById('vbTutGaleriaGrid').innerHTML = linhas.slice(0, 6).map(function (g) {
+          return '<img src="' + escapeHtml(g.foto_url) + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px;">';
+        }).join('');
+      });
+    }
+    renderGrid();
+
+    document.getElementById('vbTutGaleriaUpload').addEventListener('change', function (e) {
+      var arquivos = Array.prototype.slice.call(e.target.files);
+      if (!arquivos.length || !window.VBUpload) return;
+      var msg = document.getElementById('vbTutGaleriaMsg');
+      msg.textContent = 'Enviando…';
+      Promise.all(arquivos.map(function (arquivo) {
+        return window.VBUpload.uploadFoto(arquivo, estabId, 'galeria').then(function (url) {
+          return db.rpc('tenant_admin_adicionar_foto', { p_estabelecimento_id: estabId, p_foto_url: url, p_staff_id: null });
+        });
+      })).then(function () {
+        msg.textContent = '';
+        renderGrid();
+        carregarGaleria();
+      });
+    });
   }
 
   function desativarModoAdmin() {
@@ -719,7 +997,6 @@
     document.getElementById('tplEnderecoRodape').removeAttribute('contenteditable');
     document.getElementById('tplNomeTopo').removeAttribute('contenteditable');
     document.getElementById('tplCtaTexto').removeAttribute('contenteditable');
-    try { localStorage.removeItem(chaveAdmin()); } catch (e) {}
     // reconfere se já tem serviço/equipe (pode ter completado agora) antes
     // de decidir se o portão "em preparação" volta a aparecer pra visita.
     db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }).then(function (res) {
@@ -746,13 +1023,16 @@
   ];
 
   // conta de verdade logada e dona deste estabelecimento? liga o modo
-  // admin direto, sem pedir PIN nenhum (a conta já é a prova de dono).
+  // admin direto, sem PIN nenhum (a conta já é a prova de dono) — só
+  // depois disso resolver é que dá pra saber se quem visita é o próprio
+  // dono, então o contador de acessos espera esse resultado.
   function verificarSessaoDono() {
     db.auth.getSession().then(function (res) {
       var session = res.data && res.data.session;
       if (session && linhaAtual && session.user.id === linhaAtual.dono_user_id) {
         ativarModoAdmin();
       }
+      registrarAcessoSeNecessario();
     });
   }
 
@@ -862,64 +1142,21 @@
     }, function () { corpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
   }
 
+  // acesso admin é só pela conta real (dono logado com Gmail/e-mail) — sem
+  // PIN nenhum. Quem clica em "Admin" sem ser a conta dona é mandado pra
+  // tela de login pra entrar com a conta certa.
   function iniciarModoAdmin() {
-    var overlay = document.getElementById('adminPinOverlay');
-    var input = document.getElementById('adminPinInput');
-    var msg = document.getElementById('adminPinMsg');
-
     document.addEventListener('click', function (e) {
       var trigger = e.target.closest('.vb-admin-trigger');
       if (!trigger) return;
       e.preventDefault();
       if (window.RafaelMenu) window.RafaelMenu.close();
-      var jaDesbloqueado = false;
-      try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (err) {}
-      if (jaDesbloqueado || modoAdmin) {
-        // já desbloqueado (sessão da conta ou PIN anterior) — clicar em
-        // Admin de novo abre direto o painel (Caixa/Agenda/Clientes),
-        // em vez de não fazer nada (ativarModoAdmin já é um no-op aqui).
-        ativarModoAdmin();
+      if (modoAdmin) {
         abrirPainelAdmin();
         return;
       }
-      overlay.classList.remove('oculto');
-      msg.textContent = '';
-      input.value = '';
-      input.focus();
+      window.location.href = '/cadastro.html';
     });
-
-    document.getElementById('adminPinCancelar').addEventListener('click', function () {
-      overlay.classList.add('oculto');
-    });
-
-    function confirmarPin() {
-      var pin = input.value.trim();
-      if (!pin) return;
-      msg.className = 'msg';
-      msg.textContent = 'Verificando…';
-      db.rpc('tenant_verificar_pin', { p_estabelecimento_id: estabId, p_pin: pin }).then(function (res) {
-        if (res.error || !res.data) {
-          msg.className = 'msg msg-erro';
-          msg.textContent = 'PIN incorreto.';
-          return;
-        }
-        try { localStorage.setItem(chaveAdmin(), '1'); } catch (e) {}
-        overlay.classList.add('oculto');
-        ativarModoAdmin();
-        abrirPainelAdmin();
-        // logado numa conta de verdade? vincula esse site a ela agora —
-        // da próxima vez o dono nem precisa mais digitar o PIN.
-        db.auth.getSession().then(function (sessRes) {
-          var session = sessRes.data && sessRes.data.session;
-          if (session) db.rpc('tenant_reivindicar_estabelecimento', { p_estabelecimento_id: estabId, p_pin: pin });
-        });
-      }, function () {
-        msg.className = 'msg msg-erro';
-        msg.textContent = 'Sem conexão agora.';
-      });
-    }
-    document.getElementById('adminPinConfirmar').addEventListener('click', confirmarPin);
-    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') confirmarPin(); });
     document.getElementById('adminSairBtn').addEventListener('click', desativarModoAdmin);
     var corInput = document.getElementById('adminCorInput');
     var corSecundariaInput = document.getElementById('adminCorSecundariaInput');
@@ -1164,6 +1401,7 @@
 
   // ---- equipe (aparece só pro admin nesta página — o público vê a
   // equipe no site institucional, mas o dono gerencia direto por aqui) ----
+  var equipeCache = [];
   function carregarEquipeAdmin() {
     if (!modoAdmin) return;
     var secao = document.getElementById('equipeSecaoAdmin');
@@ -1172,13 +1410,18 @@
     secao.classList.remove('oculto');
     db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }).then(function (res) {
       var linhas = res.data || [];
+      equipeCache = linhas;
       lista.innerHTML = linhas.map(function (p) {
         return '<li style="position:relative; padding-right:2.2rem;">' +
           '<span class="nome" contenteditable="true" data-membro-id="' + p.id + '" data-campo="nome" data-vb-editavel="membro">' + escapeHtml(p.nome) + '</span>' +
           '<span class="cidade" contenteditable="true" data-membro-id="' + p.id + '" data-campo="especialidade" data-vb-editavel="membro">' + escapeHtml(p.especialidade || 'Especialidade') + '</span>' +
           '<button type="button" class="vb-remover-x" data-remover-membro="' + p.id + '">×</button>' +
           '</li>';
-      }).join('') + '<li style="border:none;"><button type="button" class="btn btn-ghost" id="vbAddMembro" style="padding:0.4rem 0.8rem; font-size:0.82rem;">+ Novo profissional</button></li>';
+      }).join('') +
+        '<li style="border:none; display:block;">' +
+        '<button type="button" class="btn btn-ghost" id="vbAddMembro" style="padding:0.4rem 0.8rem; font-size:0.82rem;">+ Novo profissional</button>' +
+        '<div id="vbNovoMembroPainel" class="vb-servico-novo-painel oculto"></div>' +
+        '</li>';
 
       lista.querySelectorAll('[data-membro-id]').forEach(function (el) {
         el.addEventListener('blur', function () {
@@ -1196,12 +1439,28 @@
           db.rpc('tenant_admin_remover_membro', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-membro') }).then(carregarEquipeAdmin);
         });
       });
+
+      function salvarNovoMembro(nome, especialidade) {
+        if (!nome || !nome.trim()) return;
+        db.rpc('tenant_admin_salvar_membro', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome.trim(), p_especialidade: (especialidade || '').trim(), p_foto_url: null }).then(carregarEquipeAdmin);
+      }
+
       var addBtn = document.getElementById('vbAddMembro');
+      var painelMembro = document.getElementById('vbNovoMembroPainel');
       if (addBtn) addBtn.addEventListener('click', function () {
-        var nome = window.prompt('Nome do profissional:');
-        if (!nome) return;
-        var especialidade = window.prompt('Especialidade (ex: Cortes e barba):') || '';
-        db.rpc('tenant_admin_salvar_membro', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome, p_especialidade: especialidade, p_foto_url: null }).then(carregarEquipeAdmin);
+        var abrindo = painelMembro.classList.contains('oculto');
+        if (!abrindo) { painelMembro.classList.add('oculto'); return; }
+        painelMembro.innerHTML =
+          '<p class="vb-servico-novo-legenda">Nome e especialidade do profissional:</p>' +
+          '<div class="vb-servico-manual">' +
+          '<input type="text" id="vbNovoMembroNome" placeholder="Nome">' +
+          '<input type="text" id="vbNovoMembroEspecialidade" placeholder="Especialidade (ex: Cortes e barba)">' +
+          '<button type="button" class="btn btn-primario" id="vbNovoMembroSalvar">Adicionar</button>' +
+          '</div>';
+        painelMembro.classList.remove('oculto');
+        document.getElementById('vbNovoMembroSalvar').addEventListener('click', function () {
+          salvarNovoMembro(document.getElementById('vbNovoMembroNome').value, document.getElementById('vbNovoMembroEspecialidade').value);
+        });
       });
     });
   }
@@ -1621,7 +1880,6 @@
     document.getElementById('tplEnderecoRodape').textContent = linha.endereco || 'Endereço não informado';
     atualizarMapaLink();
     carregarHorarioRodape();
-    registrarAcessoSeNecessario();
     atualizarContadorPublico();
     var linkInst = document.getElementById('tplLinkInstitucional');
     if (linkInst) linkInst.href = '/' + encodeURIComponent(slug) + '/' + encodeURIComponent(cidade) + '/institucional';
@@ -1634,9 +1892,6 @@
     iniciarModoAdmin();
     iniciarWizard();
     iniciarClienteGlobal();
-    var jaDesbloqueado = false;
-    try { jaDesbloqueado = localStorage.getItem(chaveAdmin()) === '1'; } catch (e) {}
-    if (jaDesbloqueado) ativarModoAdmin();
     verificarSessaoDono();
 
     // site incompleto (sem serviço ou sem equipe) pra quem visita? mostra

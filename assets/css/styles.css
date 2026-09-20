@@ -583,14 +583,6 @@ img { max-width: 100%; display: block; }
   margin: 0 auto;
 }
 .admin-modo-barra.oculto { display: none; }
-/* a frase de instrução só cabe confortavelmente em telas largas —
-   no celular ela sozinha já não cabia numa linha e "explodia" a barra
-   inteira numa bolha esticada, empurrando os botões pra baixo dela */
-.admin-modo-texto { flex: 1 1 100%; text-align: center; order: -1; }
-@media (min-width: 720px) {
-  .admin-modo-barra { justify-content: space-between; flex-wrap: nowrap; }
-  .admin-modo-texto { flex: 0 1 auto; order: 0; text-align: left; white-space: nowrap; }
-}
 .admin-modo-barra button {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(243, 230, 200, 0.5);
@@ -688,32 +680,31 @@ img { max-width: 100%; display: block; }
 }
 .vb-servico-manual .btn { padding: 0.55rem 1rem; font-size: 0.82rem; }
 
-/* ---- tutorial guiado de criação: janela em destaque (spotlight) +
-   bolha explicativa, visual "vidro" premium ---- */
+/* ---- continuação da criação embutida no site real: a própria caixa já
+   traz os campos de verdade pra preencher (foto, cores, serviços,
+   equipe...), sem precisar apontar pra um elemento em outro canto da
+   tela — mais robusto (não depende de o alvo estar visível/carregado) e
+   mais direto (o cliente já vê o campo editável junto da instrução). ---- */
 .vb-tutorial-overlay {
   position: fixed;
   inset: 0;
   z-index: 400;
+  background: rgba(8, 8, 12, 0.4);
   pointer-events: none;
 }
 .vb-tutorial-overlay.oculto { display: none; }
-.vb-tutorial-spot {
-  position: absolute;
-  border-radius: 18px;
-  box-shadow: 0 0 0 9999px rgba(8, 8, 12, 0.62), 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 40px rgba(255, 255, 255, 0.25);
-  transition: top 0.35s cubic-bezier(.4,0,.2,1), left 0.35s cubic-bezier(.4,0,.2,1), width 0.35s cubic-bezier(.4,0,.2,1), height 0.35s cubic-bezier(.4,0,.2,1);
-  pointer-events: none;
-}
 .vb-tutorial-bolha {
-  /* fixo na base da tela — mais previsível que perseguir o elemento
-     destacado (que pode ser maior que a própria janela, tipo a foto de
-     capa) e sempre alcançável no celular, com o polegar. */
+  /* fixo na base da tela — mais previsível que perseguir um elemento
+     que pode ser maior que a própria janela, e sempre alcançável no
+     celular, com o polegar. */
   position: fixed;
   left: 50%;
   bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   width: min(92vw, 340px);
-  background: rgba(255, 255, 255, 0.88);
+  max-height: 80vh;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.6);
@@ -732,8 +723,40 @@ img { max-width: 100%; display: block; }
 }
 .vb-tutorial-bolha h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
 .vb-tutorial-bolha p:not(.vb-tutorial-contador) { margin: 0 0 1rem; font-size: 0.88rem; line-height: 1.5; color: var(--ink-soft, #555); }
+.vb-tutorial-campos { margin-bottom: 0.9rem; }
+.vb-tutorial-campos:empty { margin-bottom: 0; }
+.vb-tutorial-aviso {
+  margin: -0.5rem 0 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--erro, #b5442e);
+}
+.vb-tutorial-aviso.oculto { display: none; }
+.vb-tutorial-selo-recomendado {
+  display: inline-block;
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--terracotta, var(--dourado, #C9A227));
+  background: rgba(var(--terracotta-rgb, 201,162,39), 0.12);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+}
+.vb-tutorial-lista { list-style: none; margin: 0 0 0.8rem; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.vb-tutorial-lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+  padding: 0.45rem 0.7rem;
+}
+.vb-tutorial-redes { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
 .vb-tutorial-acoes { display: flex; align-items: center; justify-content: center; gap: 0.75rem; }
 .vb-tutorial-acoes .btn { padding: 0.55rem 1.1rem; font-size: 0.85rem; }
+.vb-tutorial-acoes .btn.vb-btn-desabilitado { opacity: 0.45; cursor: not-allowed; }
 body.vb-modo-admin [data-vb-editavel] {
   outline: 1.5px dashed #c9a227;
   outline-offset: 3px;
@@ -875,15 +898,6 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   border-color: currentColor;
   font-weight: 600;
 }
-.dash-card-pin {
-  font-size: 0.78rem;
-  color: var(--tinta-suave);
-  background: var(--linho);
-  border-radius: 8px;
-  padding: 0.4rem 0.6rem;
-  margin-bottom: 0.8rem;
-}
-.dash-card-pin strong { letter-spacing: 0.15rem; color: var(--tinta); }
 .dash-card-acoes { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .dash-card-pagamento {
   font-size: 0.8rem;
@@ -907,37 +921,23 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 .dash-card-config-pendente p { margin: 0; }
 
 /* ---- seletor de estilo (template) na criação do estabelecimento ----
-   cada card é um mini-mockup de verdade (topo + foto + título + botão)
-   nas cores reais do template, não uma caixinha lisa de gradiente —
-   o dono precisa reconhecer o site final só de bater o olho aqui. */
-.tpl-swatch-card {
+   cada card é um print real do site com esse template (gerado a partir
+   do próprio preview-embutido.html), não uma representação abstrata em
+   CSS — o dono escolhe olhando pro resultado de verdade. */
+.tpl-print-card {
   border: 2px solid var(--borda);
   border-radius: 12px;
-  padding: 0.6rem;
+  padding: 0;
   cursor: pointer;
   text-align: left;
+  overflow: hidden;
+  background: none;
   transition: border-color 0.15s, transform 0.15s;
 }
-.tpl-swatch-card:hover { transform: translateY(-2px); }
-.tpl-swatch-card.is-selecionado { border-color: var(--vermelho); box-shadow: 0 0 0 2px rgba(214,60,44,0.18); }
-.tpl-mock { display: block; }
-.tpl-mock-topo {
-  display: flex; align-items: center; gap: 0.3rem;
-  padding-bottom: 0.35rem; margin-bottom: 0.4rem;
-  border-bottom: 1px solid;
-}
-.tpl-mock-bolinha { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.tpl-mock-topo .tpl-mock-linha { height: 5px; width: 40%; border-radius: 3px; opacity: 0.55; }
-.tpl-mock-hero {
-  display: block;
-  height: 46px;
-  border: 2px solid;
-  margin-bottom: 0.4rem;
-}
-.tpl-mock-titulo { display: block; height: 7px; width: 70%; border-radius: 3px; opacity: 0.85; margin-bottom: 0.25rem; }
-.tpl-mock-sub { display: block; height: 5px; width: 46%; border-radius: 3px; opacity: 0.4; margin-bottom: 0.4rem; }
-.tpl-mock-btn { display: block; height: 14px; width: 52%; }
-.tpl-swatch-nome { display: block; font-size: 0.82rem; font-weight: 700; margin-top: 0.5rem; }
+.tpl-print-card img { display: block; width: 100%; aspect-ratio: 640/441; object-fit: cover; }
+.tpl-print-card:hover { transform: translateY(-2px); }
+.tpl-print-card.is-selecionado { border-color: var(--vermelho); box-shadow: 0 0 0 2px rgba(214,60,44,0.18); }
+.tpl-swatch-nome { display: block; font-size: 0.82rem; font-weight: 700; padding: 0.5rem 0.6rem; }
 
 /* fica acima do gate de gênero (z-index 200 no base.css do template) —
    não faz sentido perguntar M/F pra um site ainda sem serviço/equipe. */

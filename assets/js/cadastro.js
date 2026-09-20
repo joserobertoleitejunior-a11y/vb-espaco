@@ -5,8 +5,8 @@
   if (!window.db) return;
 
   // Login de verdade: precisa criar conta ou entrar (e-mail+senha, ou
-  // Google) pra ver e criar estabelecimentos — a conta é o que decide
-  // quem é dono de cada site (ver tenant_reivindicar_estabelecimento).
+  // Google) pra ver e criar estabelecimentos — a conta (dono_user_id) é
+  // o que decide quem é dono de cada site, sem PIN nenhum envolvido.
   var TESTE_SEM_LOGIN = false;
 
   var authBox = document.getElementById('authBox');
@@ -16,16 +16,6 @@
   var listaMsg = document.getElementById('listaMsg');
   var listaEl = document.getElementById('listaEstabelecimentos');
 
-  var modoCriarConta = false;
-
-  document.getElementById('criarContaLink').addEventListener('click', function (e) {
-    e.preventDefault();
-    modoCriarConta = !modoCriarConta;
-    document.getElementById('entrarBtn').textContent = modoCriarConta ? 'Criar conta' : 'Entrar';
-    this.textContent = modoCriarConta ? 'Já tenho conta' : 'Criar agora';
-    authMsg.textContent = '';
-  });
-
   document.getElementById('googleBtn').addEventListener('click', function () {
     db.auth.signInWithOAuth({
       provider: 'google',
@@ -33,6 +23,9 @@
     });
   });
 
+  // Contas novas só se criam pelo Google (login do estabelecimento exige
+  // Gmail) — este formulário de e-mail/senha existe só pra quem já tinha
+  // conta assim antes dessa regra, pra não perder o acesso.
   document.getElementById('emailForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var email = document.getElementById('authEmail').value.trim();
@@ -42,20 +35,11 @@
     authMsg.className = 'msg';
     authMsg.textContent = 'Um instante…';
 
-    var acao = modoCriarConta
-      ? db.auth.signUp({ email: email, password: senha })
-      : db.auth.signInWithPassword({ email: email, password: senha });
-
-    acao.then(function (res) {
+    db.auth.signInWithPassword({ email: email, password: senha }).then(function (res) {
       btn.disabled = false;
       if (res.error) {
         authMsg.className = 'msg msg-erro';
         authMsg.textContent = res.error.message;
-        return;
-      }
-      if (modoCriarConta && res.data && res.data.user && !res.data.session) {
-        authMsg.className = 'msg msg-ok';
-        authMsg.textContent = 'Conta criada! Confira seu e-mail pra confirmar antes de entrar.';
         return;
       }
       authMsg.textContent = '';
@@ -114,7 +98,7 @@
         if (!e.total_equipe) faltando.push('nenhum profissional');
         var configPendenteHtml = faltando.length
           ? '<div class="dash-card-config-pendente">' +
-            '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Entre no site (Ver site →) e use o menu ☰ → Admin com o PIN acima pra completar.</p>' +
+            '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Clique em "Editar meu site →" — como você já está logado na sua conta, o modo admin abre direto.</p>' +
             '</div>'
           : '';
         var pagamentoHtml = e.forma_pagamento
@@ -137,7 +121,6 @@
           '<span>👁 <strong>' + (e.total_acessos || 0) + '</strong> acesso(s) ao site</span>' +
           '<label class="dash-card-acessos-toggle"><input type="checkbox" data-toggle-contador-id="' + e.id + '"' + (e.mostrar_contador_publico ? ' checked' : '') + '> Mostrar pro público</label>' +
           '</div>' +
-          '<div class="dash-card-pin">PIN de admin do site: <strong>' + escapeHtml(e.admin_pin || '----') + '</strong></div>' +
           configPendenteHtml +
           pagamentoHtml +
           '<div class="dash-card-acoes">' +
