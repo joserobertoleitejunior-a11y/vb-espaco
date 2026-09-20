@@ -54,6 +54,14 @@
     cubo.rotation.x = 0.4;
     cubo.rotation.y = 0.5;
     scene.add(cubo);
+    // uma segunda cópia, um pouco maior e mais fraca, exatamente por
+    // cima — sozinha, uma linha de 1px girando muito rápido "some" na
+    // tela de muito celular (o WebGL não desenha linha grossa de
+    // verdade); com esse reforço o cubo continua visível mesmo girando
+    // no talo.
+    var reforco = new THREE.LineSegments(arestas, new THREE.LineBasicMaterial({ color: 0xC9A227, transparent: true, opacity: 0.55 }));
+    reforco.scale.set(1.12, 1.12, 1.12);
+    cubo.add(reforco);
 
     var girando = false;
     var velocidade = 0;
@@ -90,7 +98,7 @@
       },
       girarRapido: function () {
         girando = true;
-        velocidade = 0.6;
+        velocidade = 0.48;
       },
       resetar: function () {
         cubo.scale.set(1, 1, 1);
@@ -136,9 +144,13 @@
   function finalizarArrasto() {
     if (!arrastando) return;
     arrastando = false;
-    zona.classList.remove('sem-transicao');
     if (puxadoPx >= LIMIAR && !carregando) {
       carregando = true;
+      // trava na altura de carregando NA HORA, sem transição — se
+      // deixar animar (encolher) enquanto o cubo já está girando rápido,
+      // o cubo parece "fugir" do lugar durante o giro em vez de ficar
+      // parado exatamente onde puxamos ele.
+      zona.classList.add('sem-transicao');
       zona.style.height = ALTURA_CARREGANDO + 'px';
       if (cuboApi) {
         cuboApi.resetar();
@@ -146,6 +158,7 @@
       }
       setTimeout(function () { window.location.reload(); }, 900);
     } else {
+      zona.classList.remove('sem-transicao');
       zona.style.height = '0px';
       if (cuboApi) cuboApi.resetar();
     }
