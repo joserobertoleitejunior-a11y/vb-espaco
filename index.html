@@ -66,6 +66,19 @@
     </div>
   </div>
 
+  <div class="admin-painel-overlay oculto" id="meusAgendamentosOverlay">
+    <div class="admin-painel-box">
+      <div class="admin-painel-topo">
+        <p style="font-weight:800; margin:0 0 0.7rem; font-size:1.05rem;">Meus agendamentos</p>
+        <button type="button" class="admin-painel-fechar" id="magFechar" aria-label="Fechar">×</button>
+      </div>
+      <div class="admin-painel-corpo" id="magCorpo"></div>
+      <div style="padding:0 1rem 1rem; flex-shrink:0;">
+        <button type="button" class="btn btn-ghost" id="magSair" style="width:100%;">Sair da conta</button>
+      </div>
+    </div>
+  </div>
+
   <nav class="tabbar">
     <a class="tabbar-item is-ativo" href="index.html"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>Catálogo</a>
     <a class="tabbar-item" href="criar.html"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Criar meu site</a>
@@ -77,6 +90,7 @@
   <script src="assets/js/catalogo.js?v=11"></script>
   <script src="assets/js/vb-cliente-global.js?v=1"></script>
   <script src="assets/js/vb-dialogo.js?v=1"></script>
+  <script src="assets/js/meus-agendamentos.js?v=1"></script>
   <script src="assets/js/vb-cliente-global-index.js?v=2"></script>
   <script type="module" src="assets/js/vb-cube3d.js?v=3"></script>
 </body>

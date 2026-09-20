@@ -51,6 +51,7 @@
     btn.addEventListener('click', function () {
       var atual = window.VBClienteGlobal.obter();
       if (atual) {
+        if (window.VBMeusAgendamentos) { window.VBMeusAgendamentos.abrir(); return; }
         window.VBDialogo.confirm('Sair da sua conta VB Agenda neste site?').then(function (ok) {
           if (!ok) return;
           window.VBClienteGlobal.limpar();
