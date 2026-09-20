@@ -363,28 +363,56 @@ img { max-width: 100%; display: block; }
    escolhida pelo dono no passo a passo) com o avatar redondo por dentro
    — assim o efeito da moldura (cor, espessura, brilho metálico) nunca
    briga com a cor/foto inline do próprio avatar. */
+@keyframes vbAvatarGirar { to { transform: rotate(360deg); } }
 .catalogo-avatar-anel {
   position: absolute;
   left: 1rem;
-  bottom: -24px;
-  width: 62px;
-  height: 62px;
+  bottom: -26px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   box-sizing: border-box;
-  padding: 3px;
+  padding: 2.5px;
   background: var(--branco);
   box-shadow: 0 3px 8px rgba(20,20,30,0.22);
 }
-.catalogo-avatar-anel.moldura-simples { border: 3px solid var(--avatar-cor, var(--branco)); }
-.catalogo-avatar-anel.moldura-grossa { border: 5px solid var(--avatar-cor, var(--branco)); padding: 2px; }
-.catalogo-avatar-anel.moldura-pontilhada { border: 3px dashed var(--avatar-cor, var(--branco)); }
-.catalogo-avatar-anel.moldura-dupla { border: 2px solid var(--branco); outline: 2px solid var(--avatar-cor, var(--branco)); outline-offset: 2px; }
+/* minimalistas: linha fina, sem exagero, deixando a foto ser o
+   protagonista — só a cor de destaque do próprio dono muda entre elas */
+.catalogo-avatar-anel.moldura-simples { border: 2px solid var(--avatar-cor, var(--branco)); }
+.catalogo-avatar-anel.moldura-grossa { border: 3.5px solid var(--avatar-cor, var(--branco)); padding: 1.5px; }
+.catalogo-avatar-anel.moldura-pontilhada { border: 1.5px dotted var(--avatar-cor, var(--branco)); }
+.catalogo-avatar-anel.moldura-dupla { border: 1.5px solid var(--branco); outline: 1.5px solid var(--avatar-cor, var(--branco)); outline-offset: 2px; }
 .catalogo-avatar-anel.moldura-metalica {
-  border: 3px solid transparent;
+  border: 2.5px solid transparent;
   background-image: linear-gradient(var(--branco), var(--branco)),
     linear-gradient(135deg, #f4e4b0, #b8860b 30%, #fff6da 55%, #a97a1f 80%, #f4e4b0);
   background-origin: border-box;
   background-clip: padding-box, border-box;
+}
+/* "giratoria": anel de luz girando em volta da foto (efeito 3D), nas
+   duas cores do próprio dono — a foto e o painel branco por baixo ficam
+   parados, só o brilho gira. */
+.catalogo-avatar-anel.moldura-giratoria { border: none; position: absolute; }
+.catalogo-avatar-anel.moldura-giratoria::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+    var(--avatar-cor, #C9A227), color-mix(in srgb, var(--avatar-cor, #C9A227) 15%, white) 25%,
+    var(--avatar-cor, #C9A227) 50%, color-mix(in srgb, var(--avatar-cor, #C9A227) 15%, white) 75%,
+    var(--avatar-cor, #C9A227));
+  animation: vbAvatarGirar 3.5s linear infinite;
+  z-index: 0;
+}
+.catalogo-avatar-anel.moldura-giratoria .catalogo-avatar { position: relative; z-index: 1; }
+/* "aura": brilho suave ao redor, tipo destaque/novidade (referência
+   visual ao anel de "story" do Instagram) — estático, mais discreto. */
+.catalogo-avatar-anel.moldura-aura {
+  border: 2px solid var(--branco);
+  box-shadow: 0 0 0 2.5px var(--avatar-cor, var(--branco)),
+    0 0 12px 1px color-mix(in srgb, var(--avatar-cor, #C9A227) 55%, transparent),
+    0 3px 8px rgba(20,20,30,0.22);
 }
 .catalogo-avatar {
   width: 100%;
@@ -903,25 +931,45 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 .dash-card-avatar-anel {
   position: absolute;
   left: 1rem;
-  bottom: -22px;
-  width: 54px;
-  height: 54px;
+  bottom: -24px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   box-sizing: border-box;
-  padding: 3px;
+  padding: 2.5px;
   background: var(--branco);
   box-shadow: 0 3px 8px rgba(20,20,30,0.22);
 }
-.dash-card-avatar-anel.moldura-simples { border: 3px solid var(--avatar-cor, var(--branco)); }
-.dash-card-avatar-anel.moldura-grossa { border: 5px solid var(--avatar-cor, var(--branco)); padding: 2px; }
-.dash-card-avatar-anel.moldura-pontilhada { border: 3px dashed var(--avatar-cor, var(--branco)); }
-.dash-card-avatar-anel.moldura-dupla { border: 2px solid var(--branco); outline: 2px solid var(--avatar-cor, var(--branco)); outline-offset: 2px; }
+.dash-card-avatar-anel.moldura-simples { border: 2px solid var(--avatar-cor, var(--branco)); }
+.dash-card-avatar-anel.moldura-grossa { border: 3.5px solid var(--avatar-cor, var(--branco)); padding: 1.5px; }
+.dash-card-avatar-anel.moldura-pontilhada { border: 1.5px dotted var(--avatar-cor, var(--branco)); }
+.dash-card-avatar-anel.moldura-dupla { border: 1.5px solid var(--branco); outline: 1.5px solid var(--avatar-cor, var(--branco)); outline-offset: 2px; }
 .dash-card-avatar-anel.moldura-metalica {
-  border: 3px solid transparent;
+  border: 2.5px solid transparent;
   background-image: linear-gradient(var(--branco), var(--branco)),
     linear-gradient(135deg, #f4e4b0, #b8860b 30%, #fff6da 55%, #a97a1f 80%, #f4e4b0);
   background-origin: border-box;
   background-clip: padding-box, border-box;
+}
+.dash-card-avatar-anel.moldura-giratoria { border: none; }
+.dash-card-avatar-anel.moldura-giratoria::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+    var(--avatar-cor, #C9A227), color-mix(in srgb, var(--avatar-cor, #C9A227) 15%, white) 25%,
+    var(--avatar-cor, #C9A227) 50%, color-mix(in srgb, var(--avatar-cor, #C9A227) 15%, white) 75%,
+    var(--avatar-cor, #C9A227));
+  animation: vbAvatarGirar 3.5s linear infinite;
+  z-index: 0;
+}
+.dash-card-avatar-anel.moldura-giratoria .dash-card-avatar { position: relative; z-index: 1; }
+.dash-card-avatar-anel.moldura-aura {
+  border: 2px solid var(--branco);
+  box-shadow: 0 0 0 2.5px var(--avatar-cor, var(--branco)),
+    0 0 12px 1px color-mix(in srgb, var(--avatar-cor, #C9A227) 55%, transparent),
+    0 3px 8px rgba(20,20,30,0.22);
 }
 .dash-card-avatar {
   width: 100%;

@@ -874,7 +874,9 @@
         { chave: 'dupla', nome: 'Dupla' },
         { chave: 'grossa', nome: 'Grossa' },
         { chave: 'pontilhada', nome: 'Pontilhada' },
-        { chave: 'metalica', nome: 'Metálica' }
+        { chave: 'metalica', nome: 'Metálica' },
+        { chave: 'giratoria', nome: 'Giratória ✨' },
+        { chave: 'aura', nome: 'Aura' }
       ];
       var avatarConteudo = fotoPerfil
         ? '<span class="catalogo-avatar-foto" style="background-image:url(\'' + fotoPerfil + '\');"></span>'
