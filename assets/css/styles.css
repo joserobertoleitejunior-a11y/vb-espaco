@@ -852,22 +852,38 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 }
 .dash-card-config-pendente p { margin: 0; }
 
-/* ---- seletor de estilo (template) na criação do estabelecimento ---- */
+/* ---- seletor de estilo (template) na criação do estabelecimento ----
+   cada card é um mini-mockup de verdade (topo + foto + título + botão)
+   nas cores reais do template, não uma caixinha lisa de gradiente —
+   o dono precisa reconhecer o site final só de bater o olho aqui. */
 .tpl-swatch-card {
   border: 2px solid var(--borda);
   border-radius: 12px;
-  padding: 0.7rem;
+  padding: 0.6rem;
   cursor: pointer;
-  background: #fff;
   text-align: left;
+  transition: border-color 0.15s, transform 0.15s;
 }
-.tpl-swatch-card.is-selecionado { border-color: var(--vermelho); }
-.tpl-swatch-preview {
-  height: 44px;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
+.tpl-swatch-card:hover { transform: translateY(-2px); }
+.tpl-swatch-card.is-selecionado { border-color: var(--vermelho); box-shadow: 0 0 0 2px rgba(214,60,44,0.18); }
+.tpl-mock { display: block; }
+.tpl-mock-topo {
+  display: flex; align-items: center; gap: 0.3rem;
+  padding-bottom: 0.35rem; margin-bottom: 0.4rem;
+  border-bottom: 1px solid;
 }
-.tpl-swatch-nome { font-size: 0.82rem; font-weight: 700; }
+.tpl-mock-bolinha { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tpl-mock-topo .tpl-mock-linha { height: 5px; width: 40%; border-radius: 3px; opacity: 0.55; }
+.tpl-mock-hero {
+  display: block;
+  height: 46px;
+  border: 2px solid;
+  margin-bottom: 0.4rem;
+}
+.tpl-mock-titulo { display: block; height: 7px; width: 70%; border-radius: 3px; opacity: 0.85; margin-bottom: 0.25rem; }
+.tpl-mock-sub { display: block; height: 5px; width: 46%; border-radius: 3px; opacity: 0.4; margin-bottom: 0.4rem; }
+.tpl-mock-btn { display: block; height: 14px; width: 52%; }
+.tpl-swatch-nome { display: block; font-size: 0.82rem; font-weight: 700; margin-top: 0.5rem; }
 
 /* fica acima do gate de gênero (z-index 200 no base.css do template) —
    não faz sentido perguntar M/F pra um site ainda sem serviço/equipe. */

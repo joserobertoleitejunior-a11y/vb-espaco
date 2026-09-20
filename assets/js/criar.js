@@ -110,11 +110,13 @@
   });
 
   // ---- passo 1: template ----
+  // mini-mockup de cada template com as cores/raio reais dele (nada de
+  // caixinha lisa com gradiente — o dono precisa reconhecer o site aqui)
   var TEMPLATES_DISPONIVEIS = [
-    { chave: 'classico-boiserie', nome: 'Clássico', preview: 'linear-gradient(135deg,#FAF7F1,#C9A227)' },
-    { chave: 'claro-minimal', nome: 'Claro', preview: 'linear-gradient(135deg,#FFFFFF,#1F8A6E)' },
-    { chave: 'escuro-premium', nome: 'Escuro', preview: 'linear-gradient(135deg,#121212,#D9AE55)' },
-    { chave: 'automotivo-carbono', nome: 'Automotivo', preview: 'linear-gradient(135deg,#15161A,#D8342A)' }
+    { chave: 'classico-boiserie', nome: 'Clássico', bg: '#FAF7F1', texto: '#0A0A0A', accent: '#C9A227', radius: '14px', escuro: false },
+    { chave: 'claro-minimal', nome: 'Claro', bg: '#FFFFFF', texto: '#16181B', accent: '#1F8A6E', radius: '18px', escuro: false },
+    { chave: 'escuro-premium', nome: 'Escuro', bg: '#121212', texto: '#F3EEDF', accent: '#D9AE55', radius: '14px', escuro: true },
+    { chave: 'automotivo-carbono', nome: 'Automotivo', bg: '#15161A', texto: '#F2F2F0', accent: '#D8342A', radius: '6px', escuro: true }
   ];
   function renderPassoTemplate(container) {
     container.innerHTML =
@@ -122,9 +124,18 @@
       '<div id="criarTemplateEscolha" class="criar-template-grid"></div>';
     function desenhar() {
       document.getElementById('criarTemplateEscolha').innerHTML = TEMPLATES_DISPONIVEIS.map(function (t) {
-        return '<button type="button" class="tpl-swatch-card' + (t.chave === estado.template ? ' is-selecionado' : '') + '" data-template="' + t.chave + '">' +
-          '<div class="tpl-swatch-preview" style="background:' + t.preview + ';"></div>' +
-          '<span class="tpl-swatch-nome">' + t.nome + '</span>' +
+        return '<button type="button" class="tpl-swatch-card' + (t.chave === estado.template ? ' is-selecionado' : '') + '" data-template="' + t.chave + '" style="background:' + t.bg + '; border-radius:' + t.radius + ';">' +
+          '<span class="tpl-mock">' +
+          '<span class="tpl-mock-topo" style="border-color:' + (t.escuro ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.1)') + ';">' +
+          '<span class="tpl-mock-bolinha" style="background:' + t.accent + ';"></span>' +
+          '<span class="tpl-mock-linha" style="background:' + t.texto + ';"></span>' +
+          '</span>' +
+          '<span class="tpl-mock-hero" style="border-color:' + t.accent + '; box-shadow:0 0 12px ' + t.accent + '55; background:' + (t.escuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') + '; border-radius:' + t.radius + ';"></span>' +
+          '<span class="tpl-mock-titulo" style="background:' + t.texto + ';"></span>' +
+          '<span class="tpl-mock-sub" style="background:' + t.texto + ';"></span>' +
+          '<span class="tpl-mock-btn" style="background:' + t.accent + '; border-radius:' + t.radius + ';"></span>' +
+          '</span>' +
+          '<span class="tpl-swatch-nome" style="color:' + t.texto + ';">' + t.nome + '</span>' +
           '</button>';
       }).join('');
     }
