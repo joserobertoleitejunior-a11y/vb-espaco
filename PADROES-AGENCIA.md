@@ -12,10 +12,10 @@
 Nome do projeto: VB Agenda
 Cliente: Agência própria (José) — plataforma white-label multi-tenant
 Modelo de negócio: R$40/mês por estabelecimento (assinatura da plataforma) + 5% de comissão sobre toda transação dentro do app, via split automático (Mercado Pago Marketplace, cada dono conecta a própria conta MP)
-Stack principal: Site estático (HTML/JS puro, sem build/bundler) + Supabase (banco/auth/RLS) + Mercado Pago (pagamento + split) + Netlify (hospedagem)
+Stack principal: Site estático (HTML/JS puro, sem build/bundler) + Supabase (banco/auth/RLS) + Mercado Pago (pagamento + split) + Cloudflare Workers (hospedagem)
 Repositório: github.com/joserobertoleitejunior-a11y/vb-espaco
-Ambiente de produção: Netlify
-Domínio(s) de produção: vbagenda.com.br (a confirmar registro) — link de cada estabelecimento no formato /:slug/:cidade
+Ambiente de produção: Cloudflare Workers (git-conectado ao branch main, deploy automático a cada push). Netlify foi usado antes e foi abandonado (ficou sem créditos de deploy); não sobrou nenhum arquivo dele no repo.
+Domínio(s) de produção: vb-espaco.joserobertoleitejunior.workers.dev (domínio próprio ainda não registrado) — link de cada estabelecimento no formato /:slug/:cidade
 Responsável técnico: José
 Escopo inicial: barbearias, salões de beleza, manicure e pedicure, estética — só Itapetininga/SP por enquanto
 Data de início: 2026-09-17
@@ -126,7 +126,7 @@ Aplicar em 100% das telas:
 - Migration de banco é sempre reversível ou testada em ambiente de staging antes de rodar em produção — nunca alterar schema direto na base de produção sem testar antes.
 - Backup de banco configurado e testado (não só "existe backup", mas "já restauramos um backup pra confirmar que funciona") antes do primeiro cliente real usar o sistema.
 
-**Status neste projeto**: `netlify.toml` roda `npm test` (testes unitários das regras de negócio críticas — combo, categoria de pagamento, ranking de sabores, migração de segredos) antes de publicar; se um teste quebrar, o deploy não sobe. Lint (Biome) está configurado (`npm run lint`) mas **não** trava o deploy ainda — o código legado tem ~100 avisos de estilo que precisam de uma limpeza dedicada antes de virar gate obrigatório. Backup do Firestore ainda não foi testado (restaurar de verdade) — pendente.
+**Status neste projeto**: sem pipeline automático ainda — o deploy sobe direto a cada push no branch `main` (Cloudflare Workers git-conectado), sem lint/teste automatizado antes de publicar. Os testes existentes (Playwright, ponta a ponta) rodam manualmente contra um servidor local antes de cada push, não em CI. Backup do Supabase ainda não foi testado (restaurar de verdade) — pendente.
 
 ---
 

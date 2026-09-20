@@ -4,7 +4,7 @@ Plataforma white-label de agendamento e pagamento pra salões, barbearias, manic
 
 ## Como funciona o link de cada estabelecimento
 
-`vbagenda.com.br/:slug/:cidade` — ex: `vbagenda.com.br/rafael-cabeleireiros/itapetininga`. O roteamento é feito pelo `_redirects` (Netlify), que reescreve qualquer caminho de dois segmentos pra `perfil.html`, e o JS lê o caminho real da URL pra saber qual estabelecimento buscar.
+`vb-espaco.joserobertoleitejunior.workers.dev/:slug/:cidade` — ex: `.../rafael-cabeleireiros/itapetininga`. Hospedagem em Cloudflare Workers (não usamos mais Netlify), roteada pelo `_worker.js` na raiz, que intercepta caminhos de dois segmentos (`/:slug/:cidade` e `/:slug/:cidade/institucional`) e serve `perfil.html`/`institucional.html` preservando a URL original — o JS lê o caminho real da URL pra saber qual estabelecimento buscar.
 
 ## Páginas
 
