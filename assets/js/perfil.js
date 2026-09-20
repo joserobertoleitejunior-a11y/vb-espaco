@@ -157,15 +157,18 @@
   function aplicarClienteGlobalNaTela(cliente) {
     var btn = document.getElementById('clienteGlobalBtn');
     var saudacao = document.getElementById('clienteSaudacao');
+    var menuLoginTexto = document.getElementById('menuClienteLoginTexto');
     if (cliente) {
       if (btn) btn.textContent = 'Olá, ' + primeiroNome(cliente.nome);
       if (saudacao) {
         saudacao.textContent = 'Bem-vindo, ' + cliente.nome;
         saudacao.classList.remove('oculto');
       }
+      if (menuLoginTexto) menuLoginTexto.textContent = 'Sair (' + primeiroNome(cliente.nome) + ')';
     } else {
       if (btn) btn.textContent = 'Entrar';
       if (saudacao) saudacao.classList.add('oculto');
+      if (menuLoginTexto) menuLoginTexto.textContent = 'Entrar';
     }
   }
 
@@ -205,6 +208,7 @@
     btn.addEventListener('click', function () {
       var atual = window.VBClienteGlobal.obter();
       if (atual) {
+        if (window.VBMeusAgendamentos) { window.VBMeusAgendamentos.abrir(); return; }
         window.VBDialogo.confirm('Sair da sua conta VB Agenda neste site?').then(function (ok) {
           if (!ok) return;
           window.VBClienteGlobal.limpar();
@@ -265,6 +269,38 @@
       }, function () {
         msg.className = 'msg msg-erro';
         msg.textContent = 'Sem conexão agora.';
+      });
+    });
+
+    // ---- itens de cliente dentro do menu hambúrguer (separados dos itens
+    // do estabelecimento) — mesma lógica do botão do topo, só que
+    // acessível de dentro do menu também. ----
+    var menuLoginBtn = document.getElementById('menuClienteLogin');
+    if (menuLoginBtn) menuLoginBtn.addEventListener('click', function () {
+      if (window.RafaelMenu) window.RafaelMenu.close();
+      btn.click();
+    });
+    var menuAgendamentosBtn = document.getElementById('menuMeusAgendamentos');
+    if (menuAgendamentosBtn) menuAgendamentosBtn.addEventListener('click', function () {
+      if (window.RafaelMenu) window.RafaelMenu.close();
+      if (!window.VBClienteGlobal.obter()) { abrir(); return; }
+      if (window.VBMeusAgendamentos) window.VBMeusAgendamentos.abrir();
+    });
+    var menuDadosBtn = document.getElementById('menuMeusDados');
+    if (menuDadosBtn) menuDadosBtn.addEventListener('click', function () {
+      if (window.RafaelMenu) window.RafaelMenu.close();
+      var cliente = window.VBClienteGlobal.obter();
+      if (!cliente) { abrir(); return; }
+      window.VBDialogo.prompt('Seu nome:', cliente.nome).then(function (novoNome) {
+        if (novoNome === null) return;
+        novoNome = novoNome.trim() || cliente.nome;
+        window.VBDialogo.prompt('Seu WhatsApp com DDD:', cliente.telefone).then(function (novoTelefone) {
+          if (novoTelefone === null) return;
+          novoTelefone = window.VBClienteGlobal.normalizarTelefone(novoTelefone) || cliente.telefone;
+          window.VBClienteGlobal.salvar(novoTelefone, novoNome);
+          aplicarClienteGlobalNaTela({ telefone: novoTelefone, nome: novoNome });
+          registrarVisitaCliente({ telefone: novoTelefone, nome: novoNome });
+        });
       });
     });
   }
@@ -1828,6 +1864,13 @@
         var raw = localStorage.getItem(storageKey());
         if (raw) saved = JSON.parse(raw);
       } catch (e) {}
+      // sem histórico neste estabelecimento (primeira visita), mas já
+      // logado com a conta global (telefone+nome)? usa esses dados —
+      // só o serviço fica mesmo por preencher, o resto é automático.
+      if (!saved && window.VBClienteGlobal) {
+        var global = window.VBClienteGlobal.obter();
+        if (global) saved = { nome: global.nome, telefone: global.telefone };
+      }
 
       current = 1;
       choices = {};

@@ -208,7 +208,9 @@ body.scroll-locked{position:fixed; left:0; right:0; overflow:hidden;}
 }
 .site-menu-close:active{transform:scale(0.9); transition:transform 0.1s ease;}
 .site-menu-list a:active, .site-menu-list button:active{opacity:0.55;}
-.site-menu-list{margin-top:2.2rem; display:flex; flex-direction:column;}
+.site-menu-secao{margin:1.8rem 0 0.5rem; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:rgba(250,247,241,0.5);}
+.site-menu-secao:first-of-type{margin-top:2.2rem;}
+.site-menu-list{display:flex; flex-direction:column;}
 .site-menu-list li{border-bottom:1px solid rgba(255,255,255,0.14);}
 .site-menu-list a, .site-menu-list button{
   display:flex; align-items:center; justify-content:space-between;

@@ -43,13 +43,28 @@
     <nav class="site-menu" id="siteMenu" aria-hidden="true" aria-label="Menu principal">
       <div class="site-menu-inner">
         <button class="site-menu-close" id="menuCloseBtn" type="button" aria-label="Fechar menu">×</button>
+
+        <p class="site-menu-secao">Cliente</p>
         <ul class="site-menu-list">
           <li><a href="#" class="is-current"><span>Início</span><span class="num">01</span></a></li>
           <li><button type="button" data-open-widget><span>Agenda</span><span class="num">02</span></button></li>
-          <li><a href="#servicosSecao"><span>Serviços</span><span class="num">03</span></a></li>
-          <li><a id="tplLinkInstitucional" href="#"><span>Site institucional</span><span class="num">04</span></a></li>
-          <li><a href="#" class="vb-admin-trigger"><span>Admin</span><span class="num">◆</span></a></li>
+          <li><button type="button" id="menuMeusAgendamentos"><span>Meus agendamentos</span><span class="num">03</span></button></li>
+          <li><button type="button" id="menuMeusDados"><span>Meus dados</span><span class="num">04</span></button></li>
+          <li><button type="button" id="menuClienteLogin"><span id="menuClienteLoginTexto">Entrar</span><span class="num">05</span></button></li>
         </ul>
+
+        <p class="site-menu-secao">Estabelecimento</p>
+        <ul class="site-menu-list">
+          <li><a href="#servicosSecao"><span>Serviços</span><span class="num">06</span></a></li>
+          <li><a id="tplLinkInstitucional" href="#"><span>Quem somos</span><span class="num">07</span></a></li>
+          <li><a href="#" class="vb-admin-trigger"><span>Painel do dono</span><span class="num">◆</span></a></li>
+        </ul>
+
+        <p class="site-menu-secao">VB Agenda</p>
+        <ul class="site-menu-list">
+          <li><a href="/termos.html"><span>Termos de uso</span><span class="num">•</span></a></li>
+        </ul>
+
         <div class="site-menu-contact">
           <p id="tplEnderecoMenu"></p>
           <p><a id="tplTelefoneMenu" href="#"></a></p>
@@ -221,6 +236,19 @@
     </div>
   </div>
 
+  <div class="admin-painel-overlay oculto" id="meusAgendamentosOverlay">
+    <div class="admin-painel-box">
+      <div class="admin-painel-topo">
+        <p style="font-weight:800; margin:0 0 0.7rem; font-size:1.05rem;">Meus agendamentos</p>
+        <button type="button" class="admin-painel-fechar" id="magFechar" aria-label="Fechar">×</button>
+      </div>
+      <div class="admin-painel-corpo" id="magCorpo"></div>
+      <div style="padding:0 1rem 1rem; flex-shrink:0;">
+        <button type="button" class="btn btn-ghost" id="magSair" style="width:100%;">Sair da conta</button>
+      </div>
+    </div>
+  </div>
+
   <div class="admin-modo-barra oculto" id="adminModoBarra">
     <label class="admin-cor-swatch" title="Cor principal do site">
       <input type="color" id="adminCorInput" value="#C9A227">
@@ -302,6 +330,7 @@
   <script src="/assets/js/faixa-voltar.js?v=1"></script>
   <script src="/assets/js/vb-dialogo.js?v=1"></script>
   <script src="/assets/js/frases-efeito.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=29"></script>
+  <script src="/assets/js/meus-agendamentos.js?v=1"></script>
+  <script src="/assets/js/perfil.js?v=30"></script>
 </body>
 </html>
