@@ -6,39 +6,34 @@
 <title>Criar seu site — VB Agenda</title>
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="assets/img/favicon.svg">
-<link rel="stylesheet" href="assets/css/styles.css?v=25">
+<link rel="stylesheet" href="assets/css/styles.css?v=26">
 </head>
-<body class="criar-body">
-  <header class="criar-topo">
+<body class="criar-body-full">
+  <header class="criar-topo-flutuante">
     <a class="brand" href="cadastro.html" style="font-size:1.05rem;">← VB <em>Agenda</em></a>
     <div class="criar-progresso">
       <span id="criarPassoLabel">Passo 1 de 4</span>
       <div class="criar-progresso-barra"><div class="criar-progresso-fill" id="criarProgressoFill"></div></div>
     </div>
-    <button type="button" class="criar-preview-toggle-topo" id="criarPreviewToggle">Ver site →</button>
   </header>
 
-  <div class="criar-layout">
-    <div class="criar-form-area">
-      <h1 class="criar-titulo-passo" id="criarTituloPasso"></h1>
-      <div id="criarStepContainer"></div>
-      <p class="msg" id="criarMsg"></p>
-      <div class="criar-nav">
-        <button type="button" class="btn btn-ghost" id="criarVoltarBtn">← Voltar</button>
-        <button type="button" class="btn btn-primario" id="criarProximoBtn">Próximo →</button>
-      </div>
-    </div>
-    <div class="criar-preview-area" id="criarPreviewArea">
-      <p class="criar-preview-legenda">Assim vai ficar o seu site</p>
-      <div class="criar-preview-frame">
-        <iframe id="wizardPreviewFrame" src="preview-embutido.html?v=1" title="Pré-visualização do site"></iframe>
-      </div>
+  <div class="criar-preview-full">
+    <iframe id="wizardPreviewFrame" src="preview-embutido.html?v=1" title="Seu site sendo criado ao vivo"></iframe>
+  </div>
+
+  <div class="criar-pergunta-flutuante" id="criarPerguntaCard">
+    <h1 class="criar-titulo-passo" id="criarTituloPasso"></h1>
+    <div id="criarStepContainer"></div>
+    <p class="msg" id="criarMsg"></p>
+    <div class="criar-nav">
+      <button type="button" class="btn btn-ghost" id="criarVoltarBtn">← Voltar</button>
+      <button type="button" class="btn btn-primario" id="criarProximoBtn">Próximo →</button>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
   <script src="assets/js/upload-fotos.js?v=1"></script>
-  <script src="assets/js/criar.js?v=5"></script>
+  <script src="assets/js/criar.js?v=6"></script>
 </body>
 </html>

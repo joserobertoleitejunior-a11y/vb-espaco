@@ -22,10 +22,11 @@
     'classico-boiserie': 'tpl-classico',
     'claro-minimal': 'tpl-claro',
     'escuro-premium': 'tpl-escuro',
-    'automotivo-carbono': 'tpl-automotivo'
+    'automotivo-carbono': 'tpl-automotivo',
+    'boho-terracota': 'tpl-boho'
   };
   var templateAtualParaCor = 'classico-boiserie';
-  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono'];
+  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota'];
   function aplicarTemplateCss(templateKey) {
     templateAtualParaCor = templateKey || 'classico-boiserie';
     var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
@@ -649,6 +650,10 @@
     var querTutorial = new URLSearchParams(window.location.search).get('tutorial') === '1';
     if (!querTutorial || !linhaAtual || linhaAtual.onboarding_concluido) return;
     passoTutorialAtual = 0;
+    // a barra de admin e a bolha do tutorial são as duas fixas na base da
+    // tela — some com a barra enquanto o tutorial guia, senão as duas
+    // ficam se sobrepondo (voltam a aparecer quando o tutorial termina)
+    document.getElementById('adminModoBarra').classList.add('oculto');
     document.getElementById('vbTutorialOverlay').classList.remove('oculto');
     document.getElementById('vbTutorialPular').addEventListener('click', concluirTutorial);
     document.getElementById('vbTutorialProximo').addEventListener('click', function () {
@@ -694,6 +699,7 @@
 
   function concluirTutorial() {
     document.getElementById('vbTutorialOverlay').classList.add('oculto');
+    document.getElementById('adminModoBarra').classList.remove('oculto');
     if (linhaAtual) linhaAtual.onboarding_concluido = true;
     db.rpc('tenant_admin_concluir_onboarding', { p_estabelecimento_id: estabId });
   }

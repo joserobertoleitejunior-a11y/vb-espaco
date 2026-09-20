@@ -19,10 +19,11 @@
     'classico-boiserie': 'tpl-classico',
     'claro-minimal': 'tpl-claro',
     'escuro-premium': 'tpl-escuro',
-    'automotivo-carbono': 'tpl-automotivo'
+    'automotivo-carbono': 'tpl-automotivo',
+    'boho-terracota': 'tpl-boho'
   };
   var templateAtualParaCor = 'classico-boiserie';
-  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono'];
+  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota'];
   function aplicarTemplateCss(templateKey) {
     templateAtualParaCor = templateKey || 'classico-boiserie';
     var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';

@@ -38,6 +38,17 @@
     estetica_automotiva: '🚗',
     outro: '🏢'
   };
+  // exemplo de nome mostrado no campo — sempre do MESMO nicho escolhido,
+  // pra nunca sugerir "Rafael Cabeleireiros" (barbearia) pra quem está
+  // criando um site de estética automotiva, por exemplo
+  var NOME_EXEMPLO_POR_SEGMENTO = {
+    barbearia: 'Ex: Rafael Cabeleireiros',
+    salao: 'Ex: Studio Bella Hair',
+    manicure_pedicure: 'Ex: Espaço Unhas & Cia',
+    estetica: 'Ex: Clínica Estética Renove',
+    estetica_automotiva: 'Ex: Auto Estética Prime',
+    outro: 'Ex: Nome do seu negócio'
+  };
 
   var MAPA_ACENTOS = {
     'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a',
@@ -113,9 +124,6 @@
     }
   });
 
-  document.getElementById('criarPreviewToggle').addEventListener('click', function () {
-    document.getElementById('criarPreviewArea').classList.toggle('aberta');
-  });
 
   // ---- passo 1: template ----
   // mini-mockup de cada template com as cores/raio reais dele (nada de
@@ -124,7 +132,8 @@
     { chave: 'classico-boiserie', nome: 'Clássico', bg: '#FAF7F1', texto: '#0A0A0A', accent: '#C9A227', radius: '14px', escuro: false },
     { chave: 'claro-minimal', nome: 'Claro', bg: '#FFFFFF', texto: '#16181B', accent: '#1F8A6E', radius: '18px', escuro: false },
     { chave: 'escuro-premium', nome: 'Escuro', bg: '#121212', texto: '#F3EEDF', accent: '#D9AE55', radius: '14px', escuro: true },
-    { chave: 'automotivo-carbono', nome: 'Automotivo', bg: '#15161A', texto: '#F2F2F0', accent: '#D8342A', radius: '6px', escuro: true }
+    { chave: 'automotivo-carbono', nome: 'Automotivo', bg: '#15161A', texto: '#F2F2F0', accent: '#D8342A', radius: '6px', escuro: true },
+    { chave: 'boho-terracota', nome: 'Boho', bg: '#F7EFE4', texto: '#3A2A1D', accent: '#C1613D', radius: '22px', escuro: false }
   ];
   function renderPassoTemplate(container) {
     container.innerHTML =
@@ -177,6 +186,9 @@
       var btn = e.target.closest('[data-segmento]');
       if (!btn) return;
       estado.segmento = btn.getAttribute('data-segmento');
+      // estética automotiva não tem sentido de atendimento
+      // masculino/feminino — pula essa pergunta pra esse nicho
+      if (estado.segmento === 'estetica_automotiva') estado.genero_atendimento = 'ambos';
       desenhar();
       postEstado();
     });
@@ -208,16 +220,17 @@
     });
   }
 
-  // ---- passo 3: identidade (nome, link, cidade, segmento, whatsapp) ----
-  function renderPassoIdentidade(container) {
+  // ---- passos seguintes: cada um pergunta UMA coisa só (funil), não um
+  // formulário inteiro de uma vez — nome+link seguem juntos porque são a
+  // mesma ideia (o link nasce do nome), o resto vem em telas separadas ----
+  function renderPassoNome(container) {
+    var exemplo = NOME_EXEMPLO_POR_SEGMENTO[estado.segmento] || NOME_EXEMPLO_POR_SEGMENTO.outro;
     container.innerHTML =
       '<div class="field"><label for="criarNome">Nome do estabelecimento</label>' +
-      '<input type="text" id="criarNome" placeholder="Ex: Rafael Cabeleireiros" value="' + escapeHtml(estado.nome) + '"></div>' +
+      '<input type="text" id="criarNome" placeholder="' + escapeHtml(exemplo) + '" value="' + escapeHtml(estado.nome) + '"></div>' +
       '<div class="field"><label for="criarSlug">Link (gerado a partir do nome, pode editar)</label>' +
       '<div class="prefixo"><span>vbagenda.com.br/</span><input type="text" id="criarSlug" value="' + escapeHtml(estado.slug) + '"></div>' +
-      '<span class="criar-slug-status" id="criarSlugStatus"></span></div>' +
-      '<div class="field"><label for="criarCidade">Cidade</label><input type="text" id="criarCidade" value="' + escapeHtml(estado.cidade) + '"></div>' +
-      '<div class="field"><label for="criarWhatsapp">WhatsApp (com DDD)</label><input type="tel" id="criarWhatsapp" placeholder="15999999999" value="' + escapeHtml(estado.telefone_whatsapp) + '"></div>';
+      '<span class="criar-slug-status" id="criarSlugStatus"></span></div>';
 
     var slugTocadoManualmente = !!estado.slug;
     var slugStatusEl = document.getElementById('criarSlugStatus');
@@ -254,28 +267,39 @@
       estado.slug = this.value;
       checarSlugDisponivel();
     });
-    document.getElementById('criarCidade').addEventListener('input', function () {
-      estado.cidade = this.value;
-      checarSlugDisponivel();
-      postEstado();
-    });
-    document.getElementById('criarWhatsapp').addEventListener('input', function () {
-      estado.telefone_whatsapp = this.value;
-    });
     checarSlugDisponivel();
   }
-  function validarIdentidade() {
+  function validarNome() {
     var msg = document.getElementById('criarMsg');
     if (!estado.nome.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'Digite o nome do estabelecimento.'; return false; }
     if (!estado.slug.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'O link não pode ficar vazio.'; return false; }
-    if (!estado.cidade.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'Digite a cidade.'; return false; }
     var slugStatusEl = document.getElementById('criarSlugStatus');
     if (slugStatusEl && slugStatusEl.classList.contains('ocupado')) {
       msg.className = 'msg msg-erro'; msg.textContent = 'Esse link já está em uso nessa cidade — muda o nome ou o link.'; return false;
     }
     return true;
   }
-  function aoAvancarIdentidade() {
+
+  function renderPassoCidade(container) {
+    container.innerHTML = '<div class="field"><label for="criarCidade">Em qual cidade fica?</label><input type="text" id="criarCidade" value="' + escapeHtml(estado.cidade) + '"></div>';
+    document.getElementById('criarCidade').addEventListener('input', function () {
+      estado.cidade = this.value;
+      postEstado();
+    });
+  }
+  function validarCidade() {
+    var msg = document.getElementById('criarMsg');
+    if (!estado.cidade.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'Digite a cidade.'; return false; }
+    return true;
+  }
+
+  function renderPassoWhatsapp(container) {
+    container.innerHTML = '<div class="field"><label for="criarWhatsapp">WhatsApp pra receber os agendamentos (com DDD)</label><input type="tel" id="criarWhatsapp" placeholder="15999999999" value="' + escapeHtml(estado.telefone_whatsapp) + '"></div>';
+    document.getElementById('criarWhatsapp').addEventListener('input', function () {
+      estado.telefone_whatsapp = this.value;
+    });
+  }
+  function aoAvancarFinal() {
     var msg = document.getElementById('criarMsg');
     msg.className = 'msg';
     msg.textContent = 'Salvando…';
@@ -314,26 +338,39 @@
   }
 
   // ---- engine dos passos ----
-  // Só o essencial pra nascer o site (template, atendimento e identidade)
-  // acontece aqui — o resto (fotos, cores, serviços, equipe, redes) agora
-  // é preenchido ao vivo, direto no site real, no tutorial guiado que
-  // começa assim que o site é criado (ver perfil.js, modo ?tutorial=1).
-  var PASSOS = [
-    { chave: 'template', titulo: 'Estilo do site', render: renderPassoTemplate },
-    { chave: 'segmento', titulo: 'Tipo de negócio', render: renderPassoSegmento },
-    { chave: 'atendimento', titulo: 'Atendimento', render: renderPassoAtendimento },
-    { chave: 'identidade', titulo: 'Nome e contato', render: renderPassoIdentidade, validar: validarIdentidade, aoAvancar: aoAvancarIdentidade }
-  ];
+  // Só o essencial pra nascer o site (template, nicho, atendimento e
+  // identidade) acontece aqui — o resto (fotos, cores, serviços, equipe,
+  // redes) agora é preenchido ao vivo, direto no site real, no tutorial
+  // guiado que começa assim que o site é criado (ver perfil.js, modo
+  // ?tutorial=1). A lista é montada de novo a cada navegação porque o
+  // nicho escolhido decide se a pergunta de atendimento aparece ou não
+  // (funil: só pergunta o que faz sentido pro negócio escolhido).
+  function obterPassos() {
+    var passos = [
+      { chave: 'template', titulo: 'Estilo do site', render: renderPassoTemplate },
+      { chave: 'segmento', titulo: 'Tipo de negócio', render: renderPassoSegmento }
+    ];
+    if (estado.segmento !== 'estetica_automotiva') {
+      passos.push({ chave: 'atendimento', titulo: 'Atendimento', render: renderPassoAtendimento });
+    }
+    passos.push(
+      { chave: 'nome', titulo: 'Nome do site', render: renderPassoNome, validar: validarNome },
+      { chave: 'cidade', titulo: 'Cidade', render: renderPassoCidade, validar: validarCidade },
+      { chave: 'whatsapp', titulo: 'WhatsApp', render: renderPassoWhatsapp, aoAvancar: aoAvancarFinal }
+    );
+    return passos;
+  }
   var passoAtual = 0;
 
   function mostrarPasso(indice) {
     passoAtual = indice;
-    var passo = PASSOS[indice];
+    var passos = obterPassos();
+    var passo = passos[indice];
     document.getElementById('criarTituloPasso').textContent = passo.titulo;
-    document.getElementById('criarPassoLabel').textContent = 'Passo ' + (indice + 1) + ' de ' + PASSOS.length + ': ' + passo.titulo;
-    document.getElementById('criarProgressoFill').style.width = (((indice + 1) / PASSOS.length) * 100) + '%';
+    document.getElementById('criarPassoLabel').textContent = 'Passo ' + (indice + 1) + ' de ' + passos.length + ': ' + passo.titulo;
+    document.getElementById('criarProgressoFill').style.width = (((indice + 1) / passos.length) * 100) + '%';
     document.getElementById('criarVoltarBtn').style.visibility = indice === 0 ? 'hidden' : 'visible';
-    document.getElementById('criarProximoBtn').textContent = indice === PASSOS.length - 1 ? 'Ir para o meu site ✓' : 'Próximo →';
+    document.getElementById('criarProximoBtn').textContent = indice === passos.length - 1 ? 'Ir para o meu site ✓' : 'Próximo →';
     var msg = document.getElementById('criarMsg');
     msg.textContent = '';
     msg.className = 'msg';
@@ -347,13 +384,14 @@
   }
 
   document.getElementById('criarProximoBtn').addEventListener('click', function () {
-    var passo = PASSOS[passoAtual];
+    var passos = obterPassos();
+    var passo = passos[passoAtual];
     if (passo.validar && !passo.validar()) return;
     var btn = this;
     btn.disabled = true;
     function prosseguir() {
       btn.disabled = false;
-      if (passoAtual === PASSOS.length - 1) {
+      if (passoAtual === passos.length - 1) {
         window.location.href = '/' + encodeURIComponent(estado.slug) + '/' + encodeURIComponent(estado.cidade.trim().toLowerCase()) + '?tutorial=1';
         return;
       }

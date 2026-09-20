@@ -1,0 +1,25 @@
+/* ==========================================================================
+   Trilha feminina do boho-terracota — mesma estrutura de sempre, só com
+   um blush terroso mais suave que o padrão (dusty rose puxando pro
+   argila, não um rosa genérico) e o rodapé num marrom quente profundo.
+   Carregado só nas páginas -feminino, depois de base.css — por isso só
+   sobrescreve cor.
+   ========================================================================== */
+:root{
+  --linen:#FBEDE6;
+  --linen-deep:#F5DCCF;
+  --white:#FFF6F0;
+  --line-accent:rgba(199,122,99,0.4);
+  --line-accent-dark:rgba(199,122,99,0.6);
+  --stone:rgba(199,122,99,0.22);
+  --terracotta:#C77A63;
+  --terracotta-deep:#9C5943;
+  --terracotta-rgb:199,122,99;
+  --lavender-pale:#F6DED4;
+  --gloss:linear-gradient(160deg,rgba(255,255,255,0.18),rgba(255,255,255,0));
+  --gloss-hover:linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0));
+}
+.eyebrow, .wizard-eyebrow{color:var(--terracotta-deep);}
+.corner-mark{color:var(--terracotta);}
+footer.site-footer{background:#2E1D12;}
+footer.site-footer .foot-brand{color:#FBEDE6;}
