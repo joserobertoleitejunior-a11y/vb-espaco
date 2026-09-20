@@ -45,6 +45,22 @@ img { max-width: 100%; display: block; }
   border-bottom: 1px solid var(--borda);
   background: var(--branco);
 }
+
+/* área de "puxar pra atualizar": some com height:0, e a própria
+   vb-pull-refresh.js controla a altura no toque — deixamos a transição
+   aqui só pra quando ELA soltar o dedo (o arrasto em si fica sem
+   transição, senão o cubo "atrasa" atrás do dedo). */
+.pull-refresh-zona {
+  height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--branco);
+  transition: height 0.3s cubic-bezier(.2,.9,.3,1.2);
+}
+.pull-refresh-zona.sem-transicao { transition: none; }
+.pull-refresh-cubo { display: block; width: 40px; height: 40px; }
 .brand {
   display: inline-flex;
   align-items: center;
