@@ -22,10 +22,19 @@
          acesso admin: contas novas só entram por Google; contas antigas
          de e-mail/senha continuam funcionando pra não perder acesso. -->
     <section id="authBox">
+      <!-- Quem cai aqui pela aba "Cadastrar" pode ainda não ter negócio
+           nenhum cadastrado — sem isso, essa tela só mostrava login, sem
+           nenhum jeito de começar do zero. Fica dentro do authBox pra
+           sumir sozinho assim que a pessoa já estiver logada. -->
+      <div class="card" style="text-align:center; margin-bottom:1rem;">
+        <p style="margin:0 0 0.7rem; font-size:0.92rem;">Ainda não tem seu site no VB Agenda?</p>
+        <a class="btn btn-primario" href="criar.html" style="width:100%;">Cadastrar meu negócio grátis →</a>
+      </div>
+
       <div class="card">
         <p class="eyebrow">Acesso do dono do estabelecimento</p>
         <h2>Entrar com Google</h2>
-        <p class="cidade" style="margin:-0.3rem 0 1rem;">Esse login libera o painel de admin do seu estabelecimento. Contas novas precisam ser feitas com Google.</p>
+        <p class="cidade" style="margin:-0.3rem 0 1rem;">Já tem um site? Esse login libera o painel de admin do seu estabelecimento. Contas novas precisam ser feitas com Google.</p>
         <button class="btn btn-google" id="googleBtn" type="button">Continuar com Google</button>
         <div class="divisor">já tem conta antiga por e-mail?</div>
         <form id="emailForm">
