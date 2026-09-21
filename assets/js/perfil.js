@@ -1312,7 +1312,6 @@
     modoAdmin = false;
     document.body.classList.remove('vb-modo-admin');
     document.getElementById('adminModoBarra').classList.add('oculto');
-    fecharPainelAdmin();
     document.getElementById('tplHeadline').removeAttribute('contenteditable');
     document.getElementById('tplSubcopy').removeAttribute('contenteditable');
     document.getElementById('tplEnderecoRodape').removeAttribute('contenteditable');
@@ -1334,15 +1333,6 @@
     carregarRedesSociais();
   }
 
-  // ---- painel admin: caixa (PDV), agenda e clientes, aberto pela barra de admin ----
-  var abaPainelAtual = 'caixa';
-  var STATUS_LABEL = { pendente: 'Pendente', confirmado: 'Confirmado', cancelado: 'Cancelado' };
-  var FORMAS_PAGAMENTO = [
-    { chave: 'pix', nome: 'Pix' },
-    { chave: 'dinheiro', nome: 'Dinheiro' },
-    { chave: 'cartao', nome: 'Cartão' }
-  ];
-
   // conta de verdade logada e dona deste estabelecimento? liga o modo
   // admin direto, sem PIN nenhum (a conta já é a prova de dono) — só
   // depois disso resolver é que dá pra saber se quem visita é o próprio
@@ -1357,125 +1347,18 @@
     });
   }
 
-  function abrirPainelAdmin() {
-    document.getElementById('adminPainelOverlay').classList.remove('oculto');
-    mostrarAbaPainel(abaPainelAtual);
-  }
-  function fecharPainelAdmin() {
-    document.getElementById('adminPainelOverlay').classList.add('oculto');
-  }
-  function mostrarAbaPainel(aba) {
-    abaPainelAtual = aba;
-    document.querySelectorAll('.admin-painel-abas [data-aba]').forEach(function (b) {
-      b.classList.toggle('is-ativa', b.getAttribute('data-aba') === aba);
-    });
-    if (aba === 'caixa') renderizarPainelCaixa();
-    else if (aba === 'agenda') renderizarPainelAgenda();
-    else if (aba === 'clientes') renderizarPainelClientes();
-  }
-
-  function renderizarPainelCaixa() {
-    var corpo = document.getElementById('adminPainelCorpo');
-    corpo.innerHTML = '<div class="skeleton" style="height:2rem;"></div>';
-    Promise.all([
-      db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }),
-      db.rpc('tenant_admin_listar_vendas_hoje', { p_estabelecimento_id: estabId })
-    ]).then(function (resultados) {
-      var servicos = (resultados[0].data || []);
-      var vendas = (resultados[1].data || []);
-      var total = vendas.reduce(function (soma, v) { return soma + Number(v.valor); }, 0);
-      corpo.innerHTML =
-        '<form id="caixaForm" class="caixa-form">' +
-        '<select id="caixaServico"><option value="">Item avulso…</option>' +
-        servicos.map(function (s) { return '<option value="' + s.id + '" data-preco="' + s.preco + '">' + escapeHtml(s.nome) + ' — ' + formatarPreco(s.preco) + '</option>'; }).join('') +
-        '</select>' +
-        '<input type="text" id="caixaDescricao" placeholder="Descrição (obrigatório se item avulso)">' +
-        '<input type="number" id="caixaValor" min="0" step="0.01" placeholder="Valor (R$)" required>' +
-        '<select id="caixaForma">' + FORMAS_PAGAMENTO.map(function (f) { return '<option value="' + f.chave + '">' + f.nome + '</option>'; }).join('') + '</select>' +
-        '<button class="btn btn-primario" type="submit">Registrar venda</button>' +
-        '</form>' +
-        '<p class="msg" id="caixaMsg"></p>' +
-        '<div class="caixa-total"><span>Total de hoje</span><span>' + formatarPreco(total) + '</span></div>' +
-        '<div id="caixaLista">' + (vendas.length ? vendas.map(function (v) {
-          return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(v.descricao) + '</span><br>' +
-            '<span class="secundario">' + FORMAS_PAGAMENTO.filter(function (f) { return f.chave === v.forma_pagamento; }).map(function (f) { return f.nome; })[0] + '</span></span>' +
-            '<span><strong>' + formatarPreco(v.valor) + '</strong> <button type="button" class="btn btn-ghost" style="padding:0.25rem 0.5rem; font-size:0.72rem;" data-remover-venda="' + v.id + '">✕</button></span></div>';
-        }).join('') : '<p style="color:var(--tinta-suave); font-size:0.85rem;">Nenhuma venda registrada hoje ainda.</p>') + '</div>';
-
-      var servicoSelect = document.getElementById('caixaServico');
-      servicoSelect.addEventListener('change', function () {
-        var opt = servicoSelect.options[servicoSelect.selectedIndex];
-        document.getElementById('caixaValor').value = opt.getAttribute('data-preco') || '';
-        document.getElementById('caixaDescricao').value = opt.value ? opt.textContent.split(' — ')[0] : '';
-      });
-      document.getElementById('caixaForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        var msg = document.getElementById('caixaMsg');
-        var servicoId = servicoSelect.value || null;
-        var descricao = document.getElementById('caixaDescricao').value.trim() || (servicoId ? servicoSelect.options[servicoSelect.selectedIndex].textContent.split(' — ')[0] : '');
-        if (!descricao) { msg.className = 'msg msg-erro'; msg.textContent = 'Descreva o que foi vendido.'; return; }
-        msg.className = 'msg';
-        msg.textContent = 'Registrando…';
-        db.rpc('tenant_admin_registrar_venda', {
-          p_estabelecimento_id: estabId,
-          p_descricao: descricao,
-          p_valor: parseFloat(document.getElementById('caixaValor').value) || 0,
-          p_forma_pagamento: document.getElementById('caixaForma').value,
-          p_servico_id: servicoId
-        }).then(function (res) {
-          if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
-          renderizarPainelCaixa();
-        }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Sem conexão agora.'; });
-      });
-      document.getElementById('caixaLista').addEventListener('click', function (e) {
-        var btn = e.target.closest('[data-remover-venda]');
-        if (!btn) return;
-        db.rpc('tenant_admin_remover_venda', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-venda') }).then(renderizarPainelCaixa);
-      });
-    });
-  }
-
-  function renderizarPainelAgenda() {
-    var corpo = document.getElementById('adminPainelCorpo');
-    corpo.innerHTML = '<div class="skeleton" style="height:2rem;"></div>';
-    db.rpc('tenant_admin_listar_agenda', { p_estabelecimento_id: estabId }).then(function (res) {
-      var linhas = res.data || [];
-      if (!linhas.length) { corpo.innerHTML = '<p style="color:var(--tinta-suave); font-size:0.85rem;">Nenhum agendamento ainda.</p>'; return; }
-      corpo.innerHTML = linhas.map(function (a) {
-        return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(a.cliente_nome) + '</span><br>' +
-          '<span class="secundario">' + escapeHtml(a.servico) + (a.staff_nome ? ' · ' + escapeHtml(a.staff_nome) : '') + ' · ' + escapeHtml(a.dia_label || a.dia) + ' ' + escapeHtml(a.horario) + '</span></span>' +
-          '<span class="painel-status-badge ' + a.status + '">' + (STATUS_LABEL[a.status] || a.status) + '</span></div>';
-      }).join('');
-    }, function () { corpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
-  }
-
-  function renderizarPainelClientes() {
-    var corpo = document.getElementById('adminPainelCorpo');
-    corpo.innerHTML = '<div class="skeleton" style="height:2rem;"></div>';
-    db.rpc('tenant_admin_listar_clientes', { p_estabelecimento_id: estabId }).then(function (res) {
-      var linhas = res.data || [];
-      if (!linhas.length) { corpo.innerHTML = '<p style="color:var(--tinta-suave); font-size:0.85rem;">Nenhum cliente registrado ainda.</p>'; return; }
-      corpo.innerHTML = linhas.map(function (c) {
-        return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(c.nome) + '</span><br>' +
-          '<span class="secundario">' + escapeHtml(c.telefone) + '</span></span>' +
-          '<span class="secundario">' + c.total_visitas + ' visita(s)</span></div>';
-      }).join('');
-    }, function () { corpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
-  }
-
   // acesso admin é só pela conta real (dono logado com Gmail/e-mail) — sem
   // PIN nenhum. Quem clica em "Admin" sem ser a conta dona é mandado pra
-  // tela de login pra entrar com a conta certa.
+  // tela de login pra entrar com a conta certa. Toda a gestão do negócio
+  // (caixa, agenda, clientes, dashboard) mudou pra cadastro.html — aqui
+  // no site em si só sobrou o Modo Edição visual, então o gatilho sempre
+  // manda pra lá.
   function iniciarModoAdmin() {
     document.addEventListener('click', function (e) {
       var trigger = e.target.closest('.vb-admin-trigger');
       if (!trigger) return;
       e.preventDefault();
       if (window.RafaelMenu) window.RafaelMenu.close();
-      if (modoAdmin) {
-        abrirPainelAdmin();
-        return;
-      }
       window.location.href = '/cadastro.html';
     });
     document.getElementById('adminSairBtn').addEventListener('click', function () {
@@ -1497,13 +1380,6 @@
     document.getElementById('adminFotoCardBtn').addEventListener('click', abrirEditorFotoCard);
     document.getElementById('adminStatusBtn').addEventListener('click', abrirPublicarStatus);
     iniciarGestoStatusNaBarra();
-    document.getElementById('adminPainelBtn').addEventListener('click', abrirPainelAdmin);
-    document.getElementById('adminPainelFechar').addEventListener('click', fecharPainelAdmin);
-    document.querySelector('.admin-painel-abas').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-aba]');
-      if (!btn) return;
-      mostrarAbaPainel(btn.getAttribute('data-aba'));
-    });
   }
 
   function aplicarGenero(g) {

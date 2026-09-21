@@ -1575,3 +1575,115 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 }
 .painel-status-badge.confirmado { background: #e6f4ea; color: #1e7a3d; }
 .painel-status-badge.cancelado { background: #fdeaea; color: #9a2b2b; }
+.painel-status-badge.concluido { background: #eaf0fb; color: #2b4a9a; }
+
+/* ---- Dashboard do dono (cadastro.html) — barra de notificação,
+   resumo/gráfico, agenda com agendamento manual, clientes e caixa.
+   Reaproveita as classes .admin-painel-*/.painel-* já usadas no site
+   pra manter a mesma linguagem visual em toda a conta do dono. ---- */
+.dash-badge-pendente {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--vermelho, #b33);
+  font-size: 0.7rem;
+  font-weight: 800;
+  margin-left: 0.3rem;
+}
+.dash-notificacoes {
+  background: #fff8e6;
+  border: 1px solid #f0d98c;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.2rem;
+  color: #6b5410;
+}
+.dash-notificacoes p { margin: 0 0 0.5rem; font-weight: 600; font-size: 0.9rem; }
+.dash-notificacoes-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.dash-notificacao-chip {
+  background: #fff;
+  border: 1px solid #f0d98c;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b5410;
+  cursor: pointer;
+}
+#dashboardOverlay .admin-painel-box { max-width: 640px; }
+.dash-dashboard-titulo {
+  padding: 0.6rem 1rem 0;
+  margin: 0;
+  font-weight: 800;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.dash-resumo-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+@media (min-width: 520px) {
+  .dash-resumo-cards { grid-template-columns: repeat(4, 1fr); }
+}
+.dash-resumo-card {
+  background: var(--linho);
+  border-radius: 10px;
+  padding: 0.7rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.dash-resumo-numero { font-size: 1.05rem; font-weight: 800; }
+.dash-resumo-label { font-size: 0.72rem; color: var(--tinta-suave); }
+.dash-resumo-subtitulo {
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 1.1rem 0 0.6rem;
+}
+.dash-grafico-barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  height: 130px;
+  padding: 0.4rem 0.2rem 0;
+  border-bottom: 1px solid var(--borda);
+}
+.dash-barra-coluna {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 0.3rem;
+}
+.dash-barra {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--terracotta, var(--dourado, #C9A227)), var(--terracotta-deep, var(--dourado-escuro, #8a6d1c)));
+  transition: height 0.2s ease;
+}
+.dash-barra-label {
+  font-size: 0.6rem;
+  color: var(--tinta-suave);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+.dash-status-resumo { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.dash-lista-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 1.1rem;
+}
+.dash-agenda-acoes { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }

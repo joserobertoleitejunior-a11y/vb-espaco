@@ -7,7 +7,7 @@
 <meta name="description" content="Crie sua conta e cadastre seu salão, barbearia ou estúdio no VB Agenda.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="assets/img/favicon.svg">
-<link rel="stylesheet" href="assets/css/styles.css?v=38">
+<link rel="stylesheet" href="assets/css/styles.css?v=39">
 </head>
 <body class="com-tabbar">
   <header class="topbar">
@@ -46,6 +46,8 @@
 
     <!-- Área logada -->
     <section id="painelBox" class="oculto">
+      <div class="dash-notificacoes oculto" id="notificacoesBarra"></div>
+
       <div class="card" id="listaCard">
         <h2>Seus estabelecimentos</h2>
         <ul class="dash-lista" id="listaEstabelecimentos"></ul>
@@ -61,6 +63,27 @@
 
   </div>
 
+  <!-- Dashboard de gestão do estabelecimento: Resumo (gráfico), Agenda
+       (agendamento manual + lista), Clientes e Caixa (PDV). Tudo que
+       antes vivia em "Painel do dono" dentro do próprio site agora mora
+       aqui, na conta do dono — o site em si (perfil.html) virou só o
+       Modo Edição visual. -->
+  <div class="admin-painel-overlay oculto" id="dashboardOverlay">
+    <div class="admin-painel-box">
+      <div class="admin-painel-topo">
+        <div class="admin-painel-abas">
+          <button type="button" class="is-ativa" data-dash-aba="resumo">Resumo</button>
+          <button type="button" data-dash-aba="agenda">Agenda</button>
+          <button type="button" data-dash-aba="clientes">Clientes</button>
+          <button type="button" data-dash-aba="caixa">Caixa</button>
+        </div>
+        <button type="button" class="admin-painel-fechar" id="dashboardFechar" aria-label="Fechar painel">×</button>
+      </div>
+      <p class="dash-dashboard-titulo" id="dashboardTitulo"></p>
+      <div class="admin-painel-corpo" id="dashboardCorpo"></div>
+    </div>
+  </div>
+
   <nav class="tabbar">
     <a class="tabbar-item" href="index.html"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>Catálogo</a>
     <a class="tabbar-item is-ativo" href="cadastro.html"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>Cadastrar</a>
@@ -69,6 +92,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
   <script src="assets/js/vb-dialogo.js?v=1"></script>
-  <script src="assets/js/cadastro.js?v=18"></script>
+  <script src="assets/js/cadastro.js?v=19"></script>
 </body>
 </html>
