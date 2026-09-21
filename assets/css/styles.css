@@ -730,6 +730,14 @@ button.catalogo-avatar-anel { cursor: pointer; }
   max-width: 340px;
   width: 100%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  /* sempre um cartão claro, então fixa texto escuro e redefine --ink/
+     --ink-soft aqui dentro — sem isso, tanto o texto quanto qualquer
+     var(--ink-soft) escrito por dentro (mesmo inline) herdava a cor
+     clara de temas escuros (automotivo, escuro premium) e ficava
+     ilegível em cima do fundo branco. */
+  color: #1f2024;
+  --ink: #1f2024;
+  --ink-soft: rgba(31, 32, 36, 0.62);
 }
 .vb-dialogo-msg { margin: 0 0 1rem; font-size: 0.92rem; line-height: 1.5; color: var(--ink, #222); }
 .vb-dialogo-input {
@@ -755,6 +763,11 @@ button.catalogo-avatar-anel { cursor: pointer; }
   width: 100%;
   text-align: center;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  /* sempre um cartão claro, então fixa texto e redefine --ink/--ink-soft
+     aqui dentro (mesma razão do .vb-dialogo-box e .vb-tutorial-bolha). */
+  color: #1f2024;
+  --ink: #1f2024;
+  --ink-soft: rgba(31, 32, 36, 0.62);
 }
 .admin-pin-box input {
   width: 100%;
@@ -923,6 +936,20 @@ button.catalogo-avatar-anel { cursor: pointer; }
   padding: 1.1rem 1.25rem;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
+  /* a bolha é sempre um cartão claro, mas o texto de dentro herdava a
+     cor do TEMPLATE escolhido — em temas escuros (automotivo, escuro
+     premium) --ink/--ink-soft são claros, pensados pra fundo escuro, e
+     ficavam quase invisíveis em cima do cartão branco (tanto em regras
+     do template quanto em texto com style="color:var(--ink-soft)"
+     embutido direto no HTML). Redefine essas variáveis aqui dentro —
+     como são variáveis CSS, qualquer var(--ink-soft) escrito por dentro
+     da bolha (mesmo inline) passa a usar esse valor escuro, não importa
+     o template ativo. */
+  color: #1f2024;
+  --ink: #1f2024;
+  --ink-soft: rgba(31, 32, 36, 0.62);
+  --tinta: #1f2024;
+  --tinta-suave: rgba(31, 32, 36, 0.62);
 }
 .vb-tutorial-contador {
   margin: 0 0 0.25rem;
@@ -1390,6 +1417,11 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* sempre um cartão claro, redefine --ink/--ink-soft aqui dentro
+     (mesma razão do .vb-dialogo-box e .vb-tutorial-bolha). */
+  color: #1f2024;
+  --ink: #1f2024;
+  --ink-soft: rgba(31, 32, 36, 0.62);
 }
 @media (min-width: 720px) {
   .admin-painel-overlay { align-items: center; }
