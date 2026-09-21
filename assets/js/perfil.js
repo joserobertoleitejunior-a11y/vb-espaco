@@ -34,7 +34,7 @@
     document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=4';
     document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
     var widget = document.getElementById('tplWidget');
-    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=3';
+    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=4';
   }
 
   // ---- cor de destaque: sobrescreve os tokens de acento do template ativo
@@ -140,10 +140,10 @@
     if (btn) btn.classList.toggle('is-ativo', novoValor);
     aplicarWidgetsTranslucidos(novoValor);
     db.rpc('tenant_admin_alternar_widgets_translucidos', { p_estabelecimento_id: estabId, p_translucido: novoValor });
-    // o efeito só aparece dentro da agenda/catálogo (não muda nada na tela
-    // principal do site) — sem avisar isso, parece que o botão não fez nada.
+    // o efeito cobre o site inteiro (cabeçalho, menu, rodapé e a
+    // agenda/catálogo) — já dá pra ver de cara no topo da página.
     window.VBDialogo.alert(novoValor
-      ? 'Vidro fosco ativado! Toque em "Agendar horário" pra ver o efeito na agenda.'
+      ? 'Vidro fosco ativado! O cabeçalho, o menu e o rodapé do site já ficam translúcidos — e a agenda também, quando abrir.'
       : 'Vidro fosco desativado.');
   }
 
