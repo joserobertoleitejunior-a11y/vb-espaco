@@ -818,39 +818,68 @@ button.catalogo-avatar-anel { cursor: pointer; }
 }
 .admin-modo-barra.oculto { display: none; }
 .admin-modo-barra button {
-  background: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(rgba(20, 14, 4, 0.42), rgba(20, 14, 4, 0.42)),
+    url("/assets/img/admin-bar/textura-gold.png");
+  background-size: cover;
+  background-position: center;
   border: 1px solid rgba(243, 230, 200, 0.5);
   color: #f3e6c8;
   border-radius: 999px;
   padding: 0.4rem 0.9rem;
   font-size: 0.78rem;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s ease;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transition: filter 0.15s ease, transform 0.1s ease;
 }
-.admin-modo-barra button:hover { background: rgba(255, 255, 255, 0.18); }
+.admin-modo-barra button:hover { filter: brightness(1.15); }
+.admin-modo-barra button:active { transform: scale(0.96); }
+/* "Sair" fica neutro (sem textura pintada) — é uma ação utilitária, não
+   criativa, então não precisa do mesmo tratamento decorativo. */
+#adminSairBtn {
+  background: rgba(255, 255, 255, 0.08);
+  text-shadow: none;
+}
+#adminSairBtn:hover { background: rgba(255, 255, 255, 0.18); filter: none; }
 .admin-modo-barra button.is-ativo {
-  background: rgba(var(--terracotta-rgb, 201,162,39), 0.55);
-  border-color: rgba(var(--terracotta-rgb, 201,162,39), 0.9);
+  background:
+    linear-gradient(rgba(15, 10, 2, 0.5), rgba(15, 10, 2, 0.5)),
+    url("/assets/img/admin-bar/textura-brown.png");
+  background-size: cover;
+  background-position: center;
+  border-color: rgba(255, 224, 150, 0.9);
 }
 .admin-cor-swatch {
   display: inline-flex;
-  width: 28px;
-  height: 28px;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid rgba(243, 230, 200, 0.7);
+  background-size: cover;
+  background-position: center;
   cursor: pointer;
   flex-shrink: 0;
 }
+.admin-cor-swatch.admin-cor-principal { background-image: url("/assets/img/admin-bar/circulo-gold.png"); }
+.admin-cor-swatch.admin-cor-secundaria { background-image: url("/assets/img/admin-bar/circulo-brown.png"); }
 .admin-cor-swatch input[type="color"] {
-  width: 140%;
-  height: 140%;
-  margin: -20%;
-  border: none;
+  width: 60%;
+  height: 60%;
+  margin: 0;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
   padding: 0;
   cursor: pointer;
 }
+/* o <input type=color> nativo do Chromium desenha uma borda/respiro
+   cinza próprios por dentro (::-webkit-color-swatch*) — sem remover
+   isso, a moeda pintada ao redor quase não aparecia, virava só um
+   quadradinho cinza no meio do círculo. */
+.admin-cor-swatch input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 50%; }
+.admin-cor-swatch input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
 
 /* paletas prontas do passo "Cores" do assistente — círculo dividido ao
    meio mostrando a cor principal e a secundária juntas, num só toque. */

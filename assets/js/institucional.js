@@ -425,7 +425,13 @@
       if (modoAdmin) return;
       window.location.href = '/cadastro.html';
     });
-    document.getElementById('adminSairBtn').addEventListener('click', desativarModoAdmin);
+    document.getElementById('adminSairBtn').addEventListener('click', function () {
+      // "Sair" precisa encerrar a sessão de verdade — só esconder a barra
+      // deixava a conta logada por baixo, e verificarSessaoDono() reativava
+      // o modo admin sozinho na próxima visita a essa mesma aba/aparelho
+      // (mesmo bug já corrigido em perfil.js).
+      db.auth.signOut().then(desativarModoAdmin, desativarModoAdmin);
+    });
     var corInput = document.getElementById('adminCorInput');
     var corSecundariaInput = document.getElementById('adminCorSecundariaInput');
     corInput.addEventListener('input', function () { aplicarCorDinamica(corInput.value, corSecundariaInput.value); });
