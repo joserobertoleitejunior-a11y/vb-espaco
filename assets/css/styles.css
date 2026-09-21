@@ -842,6 +842,24 @@ button.catalogo-avatar-anel { cursor: pointer; }
   cursor: pointer;
 }
 
+/* paletas prontas do passo "Cores" do assistente — círculo dividido ao
+   meio mostrando a cor principal e a secundária juntas, num só toque. */
+.vb-paleta-pronta {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+.vb-paleta-pronta span { flex: 1; height: 100%; }
+.vb-paleta-pronta:active { transform: scale(0.92); }
+.vb-paleta-pronta.is-selecionada { border-color: var(--terracotta, var(--dourado, #1f2024)); }
+
 /* ---- botão de upload customizado — some com o "Escolher arquivo /
    Nenhum arquivo escolhido" nativo do navegador em todo o site. ---- */
 .vb-btn-upload {

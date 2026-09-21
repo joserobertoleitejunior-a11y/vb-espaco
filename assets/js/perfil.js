@@ -140,6 +140,11 @@
     if (btn) btn.classList.toggle('is-ativo', novoValor);
     aplicarWidgetsTranslucidos(novoValor);
     db.rpc('tenant_admin_alternar_widgets_translucidos', { p_estabelecimento_id: estabId, p_translucido: novoValor });
+    // o efeito só aparece dentro da agenda/catálogo (não muda nada na tela
+    // principal do site) — sem avisar isso, parece que o botão não fez nada.
+    window.VBDialogo.alert(novoValor
+      ? 'Vidro fosco ativado! Toque em "Agendar horário" pra ver o efeito na agenda.'
+      : 'Vidro fosco desativado.');
   }
 
   // ---------- identidade do cliente na VB Agenda (login por WhatsApp) ----
@@ -1011,10 +1016,36 @@
   // ---- passo "cores da marca": os mesmos dois seletores de cor da barra
   // de admin, embutidos aqui — a barra de admin fica escondida durante a
   // criação, então sem isso não dava pra mudar cor nenhuma nesse passo. ----
+  // paletas prontas — jeito rápido e moderno de escolher cor sem precisar
+  // entender teoria de cor: cada uma já é um par testado (principal +
+  // secundária), cobrindo climas bem diferentes de marca.
+  var PALETAS_PRONTAS = [
+    { nome: 'Dourado clássico', principal: '#C9A227', secundaria: '#8A6D1C' },
+    { nome: 'Vermelho pista', principal: '#D8342A', secundaria: '#8F1F18' },
+    { nome: 'Azul confiança', principal: '#2E6F9E', secundaria: '#1C435F' },
+    { nome: 'Verde natural', principal: '#3F7A4E', secundaria: '#26492F' },
+    { nome: 'Rosa suave', principal: '#C9668E', secundaria: '#8A4160' },
+    { nome: 'Roxo premium', principal: '#6B4FA0', secundaria: '#463368' },
+    { nome: 'Grafite & prata', principal: '#54565A', secundaria: '#232426' },
+    { nome: 'Terracota', principal: '#B5622E', secundaria: '#7A4019' }
+  ];
+
   function renderPassoTutorialCores(container) {
     var corPrincipal = linhaAtual.cor_destaque || '#C9A227';
     var corSecundaria = linhaAtual.cor_secundaria || rgbParaHex(misturarRgb(hexParaRgbNums(corPrincipal), [0, 0, 0], 0.28));
+    var temFoto = !!((generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) || linhaAtual.foto_hero_url);
     container.innerHTML =
+      (temFoto ? '<button type="button" class="btn btn-ghost" id="vbTutSeguirFoto" style="width:100%; margin-bottom:1rem;">🎨 Usar as cores da minha foto</button>' : '') +
+      '<p class="vb-servico-novo-legenda">Paletas prontas:</p>' +
+      '<div style="display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:1.1rem;">' +
+      PALETAS_PRONTAS.map(function (p) {
+        var ativa = p.principal.toLowerCase() === corPrincipal.toLowerCase();
+        return '<button type="button" class="vb-paleta-pronta' + (ativa ? ' is-selecionada' : '') + '" data-paleta-principal="' + p.principal + '" data-paleta-secundaria="' + p.secundaria + '" title="' + p.nome + '" aria-label="' + p.nome + '">' +
+          '<span style="background:' + p.principal + ';"></span><span style="background:' + p.secundaria + ';"></span>' +
+          '</button>';
+      }).join('') +
+      '</div>' +
+      '<p class="vb-servico-novo-legenda">Ou escolha à mão:</p>' +
       '<div style="display:flex; gap:1.4rem; align-items:center; margin-bottom:0.4rem;">' +
       '<label style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; font-size:0.75rem; color:var(--ink-soft,#7a7368);">Principal' +
       '<span class="admin-cor-swatch" style="width:44px; height:44px;"><input type="color" id="vbTutCorPrincipal" value="' + corPrincipal + '"></span>' +
@@ -1029,6 +1060,22 @@
     inputSecundaria.addEventListener('input', function () { aplicarCorDinamica(inputPrincipal.value, inputSecundaria.value); });
     inputPrincipal.addEventListener('change', function () { salvarCor(inputPrincipal.value, inputSecundaria.value); });
     inputSecundaria.addEventListener('change', function () { salvarCor(inputPrincipal.value, inputSecundaria.value); });
+    container.querySelectorAll('[data-paleta-principal]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        salvarCor(btn.getAttribute('data-paleta-principal'), btn.getAttribute('data-paleta-secundaria'));
+        mostrarPassoTutorial(passoCriacaoAtual);
+      });
+    });
+    var seguirBtn = document.getElementById('vbTutSeguirFoto');
+    if (seguirBtn) {
+      seguirBtn.addEventListener('click', function () {
+        var fotoAtual = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
+        linhaAtual.seguir_cor_imagem = true;
+        db.rpc('tenant_admin_alternar_seguir_cor_imagem', { p_estabelecimento_id: estabId, p_seguir: true });
+        seguirCorDaImagem(fotoAtual);
+        setTimeout(function () { mostrarPassoTutorial(passoCriacaoAtual); }, 200);
+      });
+    }
   }
 
   // ---- passo "serviços": mesma sugestão por nicho + campo manual do
