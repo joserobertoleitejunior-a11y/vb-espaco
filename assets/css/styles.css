@@ -2055,14 +2055,14 @@ body.vb-modo-admin { padding-bottom: 3rem; }
      tela) — com 1 ou 2 estabelecimentos (o caso comum), um container bem
      largo deixa o painel branco com uma sobra de espaço vazio enorme do
      lado; o grid abaixo só passa a valer a pena quando existem vários. */
-  .tela-cadastro .container { max-width: 46rem; }
-  .tela-cadastro .dash-lista {
+  .tela-interna .container { max-width: 46rem; }
+  .tela-interna .dash-lista {
     grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
     align-items: start;
   }
-  .tela-cadastro .dash-card { max-width: 26rem; }
-  .tela-cadastro.com-tabbar { padding-bottom: 0; }
-  .tela-cadastro .tabbar {
+  .tela-interna .dash-card { max-width: 26rem; }
+  .tela-interna.com-tabbar { padding-bottom: 0; }
+  .tela-interna .tabbar {
     position: static;
     max-width: 46rem;
     margin: 2rem auto 0;
