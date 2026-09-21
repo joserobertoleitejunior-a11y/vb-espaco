@@ -319,22 +319,42 @@
   function formatarPreco(v) {
     return 'R$ ' + Number(v).toFixed(2).replace('.', ',');
   }
-  function baixarCsv(nomeArquivo, cabecalho, linhas) {
-    var csv = [cabecalho].concat(linhas).map(function (linha) {
-      return linha.map(function (campo) {
-        var texto = String(campo == null ? '' : campo).replace(/"/g, '""');
-        return '"' + texto + '"';
-      }).join(';');
-    }).join('\r\n');
-    var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = nomeArquivo;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  // ---- exportação em PDF (antes era CSV puro, que abria feito bloco de
+  // notas sem formatação nenhuma) — tabela limpa, com título, cabeçalho
+  // destacado e listras zebradas pra ficar fácil de ler. ----
+  function baixarPdf(titulo, nomeArquivo, cabecalho, linhas) {
+    if (!window.jspdf) { window.VBDialogo.alert('Não deu pra gerar o PDF agora — recarregue a página e tente de novo.'); return; }
+    var doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    var nomeEstab = (dashboardTitulo && dashboardTitulo.textContent) || '';
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(31, 32, 36);
+    doc.text(titulo, 40, 42);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(107, 109, 118);
+    var subtitulo = [nomeEstab, 'gerado em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })].filter(Boolean).join(' — ');
+    doc.text(subtitulo, 40, 60);
+    doc.autoTable({
+      head: [cabecalho],
+      body: linhas.map(function (linha) { return linha.map(function (campo) { return campo == null ? '' : String(campo); }); }),
+      startY: 76,
+      margin: { left: 40, right: 40 },
+      styles: { font: 'helvetica', fontSize: 9.5, textColor: [31, 32, 36], cellPadding: 7, lineColor: [231, 231, 234], lineWidth: 0.5 },
+      headStyles: { fillColor: [234, 29, 44], textColor: [255, 255, 255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [249, 249, 250] }
+    });
+    // rodapé com número de página: só dá pra saber o total depois que
+    // a tabela inteira foi montada, então roda numa segunda passada.
+    var totalPaginas = doc.internal.getNumberOfPages();
+    for (var p = 1; p <= totalPaginas; p++) {
+      doc.setPage(p);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(107, 109, 118);
+      doc.text('VB Agenda · página ' + p + ' de ' + totalPaginas, 40, doc.internal.pageSize.getHeight() - 18);
+    }
+    doc.save(nomeArquivo);
   }
 
   // ---------- notificações (agendamentos aguardando confirmação em
@@ -507,7 +527,7 @@
             '</form>' +
             '<p class="msg" id="dashAgendamentoMsg"></p>') +
         '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Agenda (clientes que já agendaram)</p>' +
-        (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashAgendaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar planilha (CSV)</button>' : '') +
+        (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashAgendaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar PDF</button>' : '') +
         '</div>' +
         '<div id="dashAgendaLista">' + (linhas.length ? linhas.map(function (a) {
           return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(a.cliente_nome) + '</span><br>' +
@@ -570,7 +590,7 @@
 
       var exportarBtn = document.getElementById('dashAgendaExportar');
       if (exportarBtn) exportarBtn.addEventListener('click', function () {
-        baixarCsv('agenda.csv', ['Cliente', 'Telefone', 'Serviço', 'Profissional', 'Dia', 'Horário', 'Status'], linhas.map(function (a) {
+        baixarPdf('Agenda', 'agenda.pdf', ['Cliente', 'Telefone', 'Serviço', 'Profissional', 'Dia', 'Horário', 'Status'], linhas.map(function (a) {
           return [a.cliente_nome, a.cliente_telefone, a.servico, a.staff_nome, a.dia_label || a.dia, a.horario, STATUS_LABEL[a.status] || a.status];
         }));
       });
@@ -586,7 +606,7 @@
       dashboardCorpo.innerHTML =
         '<p class="dash-secao-intro" style="margin-top:0;">Todo cliente que agenda pelo site — ou é cadastrado na aba Agenda — entra aqui automaticamente, com quantas vezes já voltou.</p>' +
         '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Clientes cadastrados</p>' +
-        (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashClientesExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar planilha (CSV)</button>' : '') +
+        (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashClientesExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar PDF</button>' : '') +
         '</div>' +
         (linhas.length ? linhas.map(function (c) {
           return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(c.nome) + '</span><br>' +
@@ -595,7 +615,7 @@
         }).join('') : blocoVazio(ICONE_VAZIO_CLIENTES, 'Nenhum cliente ainda', 'Assim que alguém agendar pelo seu site — ou você cadastrar um agendamento manual na aba Agenda — o cliente aparece aqui, com o total de visitas atualizado a cada nova vinda.'));
       var exportarBtn = document.getElementById('dashClientesExportar');
       if (exportarBtn) exportarBtn.addEventListener('click', function () {
-        baixarCsv('clientes.csv', ['Nome', 'Telefone', 'Visitas', 'Primeira visita', 'Última visita'], linhas.map(function (c) {
+        baixarPdf('Clientes', 'clientes.pdf', ['Nome', 'Telefone', 'Visitas', 'Primeira visita', 'Última visita'], linhas.map(function (c) {
           return [c.nome, c.telefone, c.total_visitas, c.primeira_visita, c.ultima_visita];
         }));
       });
@@ -670,7 +690,7 @@
         '<div class="caixa-total"><span>Total de hoje</span><span>' + formatarPreco(total) + '</span></div>' +
         '<div class="dash-lista-cabecalho">' +
         '<p class="dash-resumo-subtitulo" style="margin:0;">Vendas de hoje</p>' +
-        (vendas.length ? '<button type="button" class="btn btn-ghost" id="caixaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar planilha (CSV)</button>' : '') +
+        (vendas.length ? '<button type="button" class="btn btn-ghost" id="caixaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar PDF</button>' : '') +
         '</div>' +
         '<div id="caixaLista">' + (vendas.length ? vendas.map(function (v) {
           var detalhes = [FORMAS_PAGAMENTO.filter(function (f) { return f.chave === v.forma_pagamento; }).map(function (f) { return f.nome; })[0]];
@@ -969,8 +989,8 @@
       });
       var exportarBtn = document.getElementById('caixaExportar');
       if (exportarBtn) exportarBtn.addEventListener('click', function () {
-        baixarCsv('vendas.csv', ['Descrição', 'Valor', 'Forma de pagamento', 'Profissional', 'Cliente', 'Telefone do cliente', 'Data'], vendas.map(function (v) {
-          return [v.descricao, v.valor, FORMAS_PAGAMENTO.filter(function (f) { return f.chave === v.forma_pagamento; }).map(function (f) { return f.nome; })[0], v.staff_nome, v.cliente_nome, v.cliente_telefone, v.criado_em];
+        baixarPdf('Vendas de hoje', 'vendas.pdf', ['Descrição', 'Valor', 'Forma de pagamento', 'Profissional', 'Cliente', 'Telefone do cliente', 'Data'], vendas.map(function (v) {
+          return [v.descricao, formatarPreco(v.valor), FORMAS_PAGAMENTO.filter(function (f) { return f.chave === v.forma_pagamento; }).map(function (f) { return f.nome; })[0], v.staff_nome, v.cliente_nome, v.cliente_telefone, new Date(v.criado_em).toLocaleString('pt-BR')];
         }));
       });
     });
