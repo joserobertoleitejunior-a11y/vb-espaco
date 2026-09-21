@@ -1136,10 +1136,19 @@
   // ---- passo "localização": endereço obrigatório (aparece no rodapé e
   // vira o link do mapa) — geocodifica em segundo plano, sem travar o
   // avanço caso o serviço de mapa demore ou falhe. ----
+  function mapaEmbedHtml(lat, lng) {
+    var d = 0.006; // ~600m de folga ao redor do ponto, pra dar contexto sem afastar demais
+    var bbox = (lng - d) + ',' + (lat - d) + ',' + (lng + d) + ',' + (lat + d);
+    var src = 'https://www.openstreetmap.org/export/embed.html?bbox=' + bbox + '&marker=' + lat + ',' + lng + '&layer=mapnik';
+    return '<iframe src="' + src + '" style="width:100%; height:150px; border:0; border-radius:10px; margin-top:0.6rem;" loading="lazy" title="Mapa do endereço"></iframe>';
+  }
+
   function renderPassoTutorialLocalizacao(container) {
+    var temCoord = linhaAtual.endereco_lat != null && linhaAtual.endereco_lng != null;
     container.innerHTML =
       '<input type="text" id="vbTutEndereco" placeholder="Rua, número — bairro, cidade" style="width:100%; box-sizing:border-box; padding:0.65rem 0.8rem; border-radius:10px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:0.9rem;" value="' + escapeHtml(linhaAtual.endereco || '') + '">' +
-      '<p class="msg" id="vbTutEnderecoMsg" style="margin-top:0.5rem;"></p>';
+      '<p class="msg" id="vbTutEnderecoMsg" style="margin-top:0.5rem;">' + (temCoord ? '✓ Encontramos esse endereço no mapa.' : '') + '</p>' +
+      '<div id="vbTutEnderecoMapa">' + (temCoord ? mapaEmbedHtml(linhaAtual.endereco_lat, linhaAtual.endereco_lng) : '') + '</div>';
     var input = document.getElementById('vbTutEndereco');
     var salvarPendente = null;
     input.addEventListener('input', function () {
@@ -1147,22 +1156,34 @@
       salvarPendente = setTimeout(function () {
         var endereco = input.value.trim();
         linhaAtual.endereco = endereco;
+        linhaAtual.endereco_lat = null;
+        linhaAtual.endereco_lng = null;
         atualizarMapaLink();
         document.getElementById('tplEnderecoRodape').textContent = endereco || 'Endereço não informado';
         atualizarBotaoProximoTutorial();
+        var mapaEl = document.getElementById('vbTutEnderecoMapa');
+        if (mapaEl) mapaEl.innerHTML = '';
         db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: null, p_lng: null });
-        if (!endereco) return;
         var msgEl = document.getElementById('vbTutEnderecoMsg');
-        if (msgEl) msgEl.textContent = 'Localizando no mapa…';
+        if (!endereco) {
+          if (msgEl) msgEl.textContent = '';
+          return;
+        }
+        if (msgEl) { msgEl.className = 'msg'; msgEl.textContent = 'Localizando no mapa…'; }
         geocodificarEndereco(endereco, linhaAtual.cidade).then(function (coord) {
           // o dono pode já ter avançado pro próximo passo antes do mapa
           // responder — a caixa desse passo nem existe mais nesse caso.
           var msgAtual = document.getElementById('vbTutEnderecoMsg');
-          if (msgAtual) msgAtual.textContent = '';
-          if (!coord) return;
+          var mapaAtual = document.getElementById('vbTutEnderecoMapa');
+          if (!coord) {
+            if (msgAtual) { msgAtual.className = 'msg msg-erro'; msgAtual.textContent = 'Não achamos esse endereço no mapa — confira se tem rua, número, bairro e cidade completos. O texto continua salvo do jeito que você digitou.'; }
+            return;
+          }
           linhaAtual.endereco_lat = coord.lat;
           linhaAtual.endereco_lng = coord.lng;
           atualizarMapaLink();
+          if (msgAtual) { msgAtual.className = 'msg msg-ok'; msgAtual.textContent = '✓ Encontramos esse endereço no mapa.'; }
+          if (mapaAtual) mapaAtual.innerHTML = mapaEmbedHtml(coord.lat, coord.lng);
           db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: coord.lat, p_lng: coord.lng });
         });
       }, 500);
