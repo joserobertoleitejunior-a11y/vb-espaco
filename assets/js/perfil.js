@@ -647,8 +647,18 @@
     var jaContou = false;
     try { jaContou = sessionStorage.getItem(chaveSessao) === '1'; } catch (e) {}
     if (jaContou) return;
-    try { sessionStorage.setItem(chaveSessao, '1'); } catch (e) {}
-    db.rpc('tenant_registrar_acesso', { p_estabelecimento_id: estabId });
+    // só marca como "já contou" depois da RPC confirmar sucesso — assim,
+    // se a chamada falhar (rede, permissão, etc.), a próxima visita na
+    // mesma sessão tenta de novo em vez de ficar zerada pra sempre.
+    db.rpc('tenant_registrar_acesso', { p_estabelecimento_id: estabId }).then(function (res) {
+      if (res && res.error) {
+        console.error('Falha ao registrar acesso:', res.error);
+        return;
+      }
+      try { sessionStorage.setItem(chaveSessao, '1'); } catch (e) {}
+    }, function (err) {
+      console.error('Falha ao registrar acesso:', err);
+    });
   }
 
   var periodoContadorAtual = null;
