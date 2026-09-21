@@ -13,7 +13,17 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* some navegadores (Android Chrome) fazem zoom no clique duplo mesmo
+     com o viewport travado — isso aqui desliga esse gesto também. */
+  touch-action: manipulation;
+}
+/* iOS Safari dá zoom automático em qualquer campo focado com fonte
+   menor que 16px, mesmo com o viewport travado (maximum-scale/
+   user-scalable não bloqueiam esse caso específico) — força 16px como
+   piso em todo campo de formulário do site inteiro. */
+input, select, textarea { font-size: max(16px, 1rem); }
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -1616,13 +1626,6 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   cursor: pointer;
 }
 #dashboardOverlay .admin-painel-box { max-width: 640px; }
-.dash-dashboard-titulo {
-  padding: 0.6rem 1rem 0;
-  margin: 0;
-  font-weight: 800;
-  font-size: 1rem;
-  flex-shrink: 0;
-}
 .dash-resumo-cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1650,24 +1653,37 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 .dash-grafico-barras {
   display: flex;
   align-items: flex-end;
-  gap: 0.35rem;
+  gap: 0.4rem;
   height: 130px;
-  padding: 0.4rem 0.2rem 0;
-  border-bottom: 1px solid var(--borda);
+  padding: 0 0.2rem;
 }
-.dash-barra-coluna {
+.dash-barra-coluna-envolt {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
   height: 100%;
-  gap: 0.3rem;
+  gap: 0.35rem;
+}
+/* trilha visível do início ao fim (fundo cinza) — sem ela, um dia com
+   valor zero (ou o gráfico inteiro zerado) mostrava só um tracinho
+   boiando no topo, parecendo quebrado em vez de "sem dado ainda". */
+.dash-barra-coluna {
+  position: relative;
+  width: 100%;
+  max-width: 24px;
+  height: 100%;
+  background: var(--linho);
+  border-radius: 4px;
+  overflow: hidden;
 }
 .dash-barra {
-  width: 100%;
-  max-width: 22px;
-  border-radius: 4px 4px 0 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 3px;
+  border-radius: 4px;
   background: linear-gradient(180deg, var(--terracotta, var(--dourado, #C9A227)), var(--terracotta-deep, var(--dourado-escuro, #8a6d1c)));
   transition: height 0.2s ease;
 }
@@ -1677,6 +1693,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .dash-status-resumo { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .dash-lista-cabecalho {
@@ -1687,3 +1704,130 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   margin-top: 1.1rem;
 }
 .dash-agenda-acoes { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ---- Dashboard: cabeçalho e abas com ícone (substituem o
+   .admin-painel-topo/.admin-painel-abas genéricos só dentro do
+   Dashboard — o overlay "Meus agendamentos" continua com o visual
+   simples de antes, sem abas). ---- */
+#dashboardOverlay .admin-painel-topo {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.7rem;
+  padding: 1.1rem 1.1rem 0;
+}
+.dash-cabecalho-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.dash-cabecalho-titulos { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.dash-cabecalho-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--destaque);
+  margin: 0;
+}
+.dash-cabecalho-nome {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-fechar-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--linho);
+  color: var(--tinta-suave);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dash-fechar-btn:hover { background: var(--linho-fundo); color: var(--tinta); }
+.dash-abas {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 -1.1rem;
+  padding: 0 1.1rem;
+}
+.dash-abas::-webkit-scrollbar { display: none; }
+.dash-aba {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-radius: 999px 999px 0 0;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  color: var(--tinta-suave);
+  border-bottom: 2.5px solid transparent;
+  white-space: nowrap;
+}
+.dash-aba svg { flex-shrink: 0; opacity: 0.7; }
+.dash-aba.is-ativa {
+  color: var(--tinta);
+  background: var(--linho);
+  border-bottom-color: var(--destaque);
+}
+.dash-aba.is-ativa svg { opacity: 1; color: var(--destaque); }
+
+/* ---- campos do Dashboard sempre com rótulo (mesmo padrão .field do
+   resto do site) — nada de <input>/<select> soltos sem legenda. ---- */
+.dash-campos-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+@media (min-width: 480px) {
+  .dash-campos-grid { grid-template-columns: 1fr 1fr; }
+  .dash-campos-grid .field-full { grid-column: 1 / -1; }
+}
+.dash-secao-intro {
+  font-size: 0.82rem;
+  color: var(--tinta-suave);
+  margin: 0 0 0.9rem;
+  line-height: 1.45;
+}
+
+/* ---- estado vazio didático: ícone + explicação, em vez de uma
+   frase solta ("Nenhum cliente registrado ainda."). ---- */
+.dash-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 1.8rem 1rem;
+  color: var(--tinta-suave);
+}
+.dash-vazio-icone {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--linho);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--destaque);
+}
+.dash-vazio-titulo { font-weight: 800; color: var(--tinta); font-size: 0.95rem; }
+.dash-vazio-texto { font-size: 0.82rem; max-width: 30rem; line-height: 1.5; }

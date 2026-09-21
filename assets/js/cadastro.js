@@ -313,6 +313,20 @@
   ];
   var DIAS_ABREV = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
+  // ícones dos estados vazios (mesmo traço fino usado no resto do app) —
+  // "didático": cada aba explica com uma frase curta como os dados chegam
+  // ali, em vez de só dizer "nenhum X ainda" sem contexto nenhum.
+  var ICONE_VAZIO_AGENDA = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>';
+  var ICONE_VAZIO_CLIENTES = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6"/><circle cx="17.5" cy="9" r="2.2"/><path d="M15 20c.2-2.6 1.7-4.6 4-5.2"/></svg>';
+  var ICONE_VAZIO_CAIXA = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="19" height="13" rx="2"/><path d="M2.5 11h19"/><path d="M7 7V5.5A2.5 2.5 0 0 1 9.5 3h5A2.5 2.5 0 0 1 17 5.5V7"/><circle cx="12" cy="14.5" r="1.8"/></svg>';
+  var ICONE_VAZIO_GRAFICO = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="22" y1="20" x2="22" y2="9"/></svg>';
+
+  function blocoVazio(icone, titulo, texto) {
+    return '<div class="dash-vazio"><span class="dash-vazio-icone">' + icone + '</span>' +
+      '<p class="dash-vazio-titulo">' + titulo + '</p>' +
+      '<p class="dash-vazio-texto">' + texto + '</p></div>';
+  }
+
   function abrirDashboard(estabId, nome, abaInicial) {
     dashEstabId = estabId;
     dashboardTitulo.textContent = nome;
@@ -325,7 +339,7 @@
   }
   function mostrarAbaDashboard(aba) {
     dashAbaAtual = aba;
-    document.querySelectorAll('#dashboardOverlay .admin-painel-abas [data-dash-aba]').forEach(function (b) {
+    document.querySelectorAll('#dashboardAbas [data-dash-aba]').forEach(function (b) {
       b.classList.toggle('is-ativa', b.getAttribute('data-dash-aba') === aba);
     });
     if (aba === 'resumo') renderizarDashResumo();
@@ -342,31 +356,39 @@
       if (res.error) { dashboardCorpo.innerHTML = '<p class="msg msg-erro">' + escapeHtml(res.error.message) + '</p>'; return; }
       var r = res.data || {};
       var dias = r.faturamento_por_dia || [];
-      var maiorValor = dias.reduce(function (m, d) { return Math.max(m, Number(d.total)); }, 0) || 1;
+      var maiorValor = dias.reduce(function (m, d) { return Math.max(m, Number(d.total)); }, 0);
       var status = r.agendamentos_por_status || {};
+      var statusComMovimento = Object.keys(STATUS_LABEL).filter(function (k) { return status[k] > 0; });
+
       dashboardCorpo.innerHTML =
+        '<p class="dash-secao-intro">Visão geral dos últimos 14 dias: quanto entrou, quantos agendamentos e quantos clientes já passaram por aqui.</p>' +
         '<div class="dash-resumo-cards">' +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(r.total_hoje || 0) + '</span><span class="dash-resumo-label">Faturado hoje</span></div>' +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(r.total_periodo || 0) + '</span><span class="dash-resumo-label">Últimos 14 dias</span></div>' +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.agendamentos_periodo || 0) + '</span><span class="dash-resumo-label">Agendamentos (14 dias)</span></div>' +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.total_clientes || 0) + '</span><span class="dash-resumo-label">Clientes no total</span></div>' +
         '</div>' +
-        '<p class="dash-resumo-subtitulo">Faturamento por dia (últimos 14 dias)</p>' +
-        '<div class="dash-grafico-barras">' +
-        dias.map(function (d) {
-          var altura = Math.max(4, Math.round((Number(d.total) / maiorValor) * 100));
-          return '<div class="dash-barra-coluna" title="' + escapeHtml(d.dia) + ': ' + formatarPreco(d.total) + '">' +
-            '<div class="dash-barra" style="height:' + altura + '%;"></div>' +
-            '<span class="dash-barra-label">' + escapeHtml(d.dia) + '</span>' +
-            '</div>';
-        }).join('') +
-        '</div>' +
+        '<p class="dash-resumo-subtitulo">Faturamento por dia</p>' +
+        (maiorValor > 0
+          ? '<div class="dash-grafico-barras">' +
+            dias.map(function (d) {
+              var altura = Math.round((Number(d.total) / maiorValor) * 100);
+              return '<div class="dash-barra-coluna-envolt" title="' + escapeHtml(d.dia) + ': ' + formatarPreco(d.total) + '">' +
+                '<div class="dash-barra-coluna"><div class="dash-barra" style="height:' + altura + '%;"></div></div>' +
+                '<span class="dash-barra-label">' + escapeHtml(d.dia) + '</span>' +
+                '</div>';
+            }).join('') +
+            '</div>'
+          : blocoVazio(ICONE_VAZIO_GRAFICO, 'Ainda sem vendas no período', 'Assim que você registrar uma venda na aba Caixa (ou um cliente concluir um serviço), o faturamento de cada dia aparece aqui, em barras.')
+        ) +
         '<p class="dash-resumo-subtitulo">Agendamentos por status</p>' +
-        '<div class="dash-status-resumo">' +
-        Object.keys(STATUS_LABEL).map(function (k) {
-          return '<span class="painel-status-badge ' + k + '">' + STATUS_LABEL[k] + ': ' + (status[k] || 0) + '</span>';
-        }).join('') +
-        '</div>' +
+        (statusComMovimento.length
+          ? '<div class="dash-status-resumo">' +
+            statusComMovimento.map(function (k) {
+              return '<span class="painel-status-badge ' + k + '">' + STATUS_LABEL[k] + ': ' + status[k] + '</span>';
+            }).join('') +
+            '</div>'
+          : '<p class="dash-secao-intro" style="margin:0;">Nenhum agendamento pendente, confirmado, cancelado ou concluído ainda — eles vão aparecer aqui separados por status conforme forem chegando.</p>') +
         (r.top_servicos && r.top_servicos.length ? '<p class="dash-resumo-subtitulo">Mais vendidos no período</p><div id="dashTopServicos">' +
           r.top_servicos.map(function (s) {
             return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(s.nome) + '</span><br><span class="secundario">' + s.qtd + ' venda(s)</span></span><span><strong>' + formatarPreco(s.total) + '</strong></span></div>';
@@ -386,22 +408,26 @@
       var servicos = resultados[0].data || [];
       var equipe = resultados[1].data || [];
       var linhas = resultados[2].data || [];
+      var semCadastroBase = !servicos.length || !equipe.length;
       dashboardCorpo.innerHTML =
-        '<p class="dash-resumo-subtitulo">Novo agendamento manual (cliente por telefone ou balcão)</p>' +
-        '<form id="dashAgendamentoForm" class="caixa-form">' +
-        '<input type="text" id="dashAgCliente" placeholder="Nome do cliente" required>' +
-        '<input type="text" id="dashAgTelefone" placeholder="Telefone (com DDD)" required>' +
-        '<select id="dashAgServico" required><option value="">Selecione o serviço…</option>' +
-        servicos.map(function (s) { return '<option value="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</option>'; }).join('') +
-        '</select>' +
-        '<select id="dashAgProfissional"><option value="">Qualquer profissional</option>' +
-        equipe.map(function (p) { return '<option value="' + p.id + '" data-nome="' + escapeHtml(p.nome) + '">' + escapeHtml(p.nome) + '</option>'; }).join('') +
-        '</select>' +
-        '<input type="date" id="dashAgData" required>' +
-        '<input type="time" id="dashAgHorario" required>' +
-        '<button class="btn btn-primario" type="submit">Criar agendamento</button>' +
-        '</form>' +
-        '<p class="msg" id="dashAgendamentoMsg"></p>' +
+        '<p class="dash-resumo-subtitulo" style="margin-top:0;">Novo agendamento manual</p>' +
+        '<p class="dash-secao-intro">Pra cliente que liga ou chega no balcão sem passar pelo site — entra direto confirmado, com o cliente já registrado.</p>' +
+        (semCadastroBase
+          ? '<p class="msg msg-erro" style="margin-bottom:1rem;">Cadastre pelo menos 1 serviço e 1 profissional em "Editar meu site" antes de criar um agendamento manual.</p>'
+          : '<form id="dashAgendamentoForm" class="dash-campos-grid">' +
+            '<div class="field field-full"><label for="dashAgCliente">Nome do cliente</label><input type="text" id="dashAgCliente" placeholder="Ex: Maria Silva" required></div>' +
+            '<div class="field field-full"><label for="dashAgTelefone">Telefone (com DDD)</label><input type="text" id="dashAgTelefone" placeholder="Ex: 15999998888" required></div>' +
+            '<div class="field"><label for="dashAgServico">Serviço</label><select id="dashAgServico" required><option value="">Selecione…</option>' +
+            servicos.map(function (s) { return '<option value="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</option>'; }).join('') +
+            '</select></div>' +
+            '<div class="field"><label for="dashAgProfissional">Profissional</label><select id="dashAgProfissional"><option value="">Qualquer um</option>' +
+            equipe.map(function (p) { return '<option value="' + p.id + '" data-nome="' + escapeHtml(p.nome) + '">' + escapeHtml(p.nome) + '</option>'; }).join('') +
+            '</select></div>' +
+            '<div class="field"><label for="dashAgData">Dia</label><input type="date" id="dashAgData" required></div>' +
+            '<div class="field"><label for="dashAgHorario">Horário</label><input type="time" id="dashAgHorario" required></div>' +
+            '<button class="btn btn-primario field-full" type="submit">Criar agendamento</button>' +
+            '</form>' +
+            '<p class="msg" id="dashAgendamentoMsg"></p>') +
         '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Agenda (clientes que já agendaram)</p>' +
         (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashAgendaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar planilha (CSV)</button>' : '') +
         '</div>' +
@@ -414,10 +440,11 @@
             (a.status === 'confirmado' ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="concluido" style="padding:0.2rem 0.5rem; font-size:0.72rem;">Concluir</button>' : '') +
             ((a.status === 'pendente' || a.status === 'confirmado') ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="cancelado" style="padding:0.2rem 0.5rem; font-size:0.72rem; color:var(--erro); border-color:var(--erro);">Cancelar</button>' : '') +
             '</span></div>';
-        }).join('') : '<p style="color:var(--tinta-suave); font-size:0.85rem;">Nenhum agendamento ainda.</p>') + '</div>';
+        }).join('') : blocoVazio(ICONE_VAZIO_AGENDA, 'Nenhum agendamento ainda', 'Todo agendamento feito pelo site (ou criado manualmente aqui em cima) aparece nesta lista, com o status de cada um.')) + '</div>';
 
       var profSelect = document.getElementById('dashAgProfissional');
-      document.getElementById('dashAgendamentoForm').addEventListener('submit', function (e) {
+      var formAgendamento = document.getElementById('dashAgendamentoForm');
+      if (formAgendamento) formAgendamento.addEventListener('submit', function (e) {
         e.preventDefault();
         var msg = document.getElementById('dashAgendamentoMsg');
         var dataInput = document.getElementById('dashAgData').value;
@@ -478,6 +505,7 @@
       if (dashEstabId !== estabId) return;
       var linhas = res.data || [];
       dashboardCorpo.innerHTML =
+        '<p class="dash-secao-intro" style="margin-top:0;">Todo cliente que agenda pelo site — ou é cadastrado na aba Agenda — entra aqui automaticamente, com quantas vezes já voltou.</p>' +
         '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Clientes cadastrados</p>' +
         (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashClientesExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar planilha (CSV)</button>' : '') +
         '</div>' +
@@ -485,7 +513,7 @@
           return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(c.nome) + '</span><br>' +
             '<span class="secundario">' + escapeHtml(c.telefone) + '</span></span>' +
             '<span class="secundario">' + c.total_visitas + ' visita(s)</span></div>';
-        }).join('') : '<p style="color:var(--tinta-suave); font-size:0.85rem;">Nenhum cliente registrado ainda.</p>');
+        }).join('') : blocoVazio(ICONE_VAZIO_CLIENTES, 'Nenhum cliente ainda', 'Assim que alguém agendar pelo seu site — ou você cadastrar um agendamento manual na aba Agenda — o cliente aparece aqui, com o total de visitas atualizado a cada nova vinda.'));
       var exportarBtn = document.getElementById('dashClientesExportar');
       if (exportarBtn) exportarBtn.addEventListener('click', function () {
         baixarCsv('clientes.csv', ['Nome', 'Telefone', 'Visitas', 'Primeira visita', 'Última visita'], linhas.map(function (c) {
@@ -507,14 +535,15 @@
       var vendas = resultados[1].data || [];
       var total = vendas.reduce(function (soma, v) { return soma + Number(v.valor); }, 0);
       dashboardCorpo.innerHTML =
-        '<form id="caixaForm" class="caixa-form">' +
-        '<select id="caixaServico"><option value="">Item avulso…</option>' +
+        '<p class="dash-secao-intro" style="margin-top:0;">Registre aqui qualquer venda do dia a dia — um serviço já cadastrado ou um item avulso — pra manter o faturamento em dia.</p>' +
+        '<form id="caixaForm" class="dash-campos-grid">' +
+        '<div class="field"><label for="caixaServico">Serviço</label><select id="caixaServico"><option value="">Item avulso…</option>' +
         servicos.map(function (s) { return '<option value="' + s.id + '" data-preco="' + s.preco + '">' + escapeHtml(s.nome) + ' — ' + formatarPreco(s.preco) + '</option>'; }).join('') +
-        '</select>' +
-        '<input type="text" id="caixaDescricao" placeholder="Descrição (obrigatório se item avulso)">' +
-        '<input type="number" id="caixaValor" min="0" step="0.01" placeholder="Valor (R$)" required>' +
-        '<select id="caixaForma">' + FORMAS_PAGAMENTO.map(function (f) { return '<option value="' + f.chave + '">' + f.nome + '</option>'; }).join('') + '</select>' +
-        '<button class="btn btn-primario" type="submit">Registrar venda</button>' +
+        '</select></div>' +
+        '<div class="field"><label for="caixaForma">Forma de pagamento</label><select id="caixaForma">' + FORMAS_PAGAMENTO.map(function (f) { return '<option value="' + f.chave + '">' + f.nome + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field"><label for="caixaDescricao">Descrição</label><input type="text" id="caixaDescricao" placeholder="Obrigatório se item avulso"></div>' +
+        '<div class="field"><label for="caixaValor">Valor (R$)</label><input type="number" id="caixaValor" min="0" step="0.01" placeholder="0,00" required></div>' +
+        '<button class="btn btn-primario field-full" type="submit">Registrar venda</button>' +
         '</form>' +
         '<p class="msg" id="caixaMsg"></p>' +
         '<div class="caixa-total"><span>Total de hoje</span><span>' + formatarPreco(total) + '</span></div>' +
@@ -525,7 +554,7 @@
           return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(v.descricao) + '</span><br>' +
             '<span class="secundario">' + FORMAS_PAGAMENTO.filter(function (f) { return f.chave === v.forma_pagamento; }).map(function (f) { return f.nome; })[0] + '</span></span>' +
             '<span><strong>' + formatarPreco(v.valor) + '</strong> <button type="button" class="btn btn-ghost" style="padding:0.25rem 0.5rem; font-size:0.72rem;" data-remover-venda="' + v.id + '">✕</button></span></div>';
-        }).join('') : '<p style="color:var(--tinta-suave); font-size:0.85rem;">Nenhuma venda registrada hoje ainda.</p>') + '</div>';
+        }).join('') : blocoVazio(ICONE_VAZIO_CAIXA, 'Nenhuma venda hoje ainda', 'Toda venda registrada aqui entra no faturamento do dia e também alimenta o gráfico da aba Resumo.')) + '</div>';
 
       var servicoSelect = document.getElementById('caixaServico');
       servicoSelect.addEventListener('change', function () {
@@ -567,7 +596,7 @@
   }
 
   document.getElementById('dashboardFechar').addEventListener('click', fecharDashboard);
-  document.querySelector('#dashboardOverlay .admin-painel-abas').addEventListener('click', function (e) {
+  document.getElementById('dashboardAbas').addEventListener('click', function (e) {
     var btn = e.target.closest('[data-dash-aba]');
     if (!btn) return;
     mostrarAbaDashboard(btn.getAttribute('data-dash-aba'));

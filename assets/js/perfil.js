@@ -688,15 +688,34 @@
   }
 
   // Reconhece o endereço digitado num par de coordenadas reais (OpenStreetMap
-  // Nominatim, gratuito e sem chave) pra deixar o link do mapa preciso — se
-  // não achar nada, o endereço em texto continua salvo normalmente.
+  // Nominatim, gratuito e sem chave) pra deixar o link do mapa preciso.
+  // Um endereço completo digitado de um jeito que o Nominatim não reconhece
+  // ao pé da letra (abreviação de "Rua"/"Av.", complemento tipo "sala 2"/
+  // "apto 301" no meio do texto, número colado sem vírgula etc.) fazia a
+  // busca simplesmente não achar nada e desistir — agora tenta de novo com
+  // versões cada vez mais simplificadas do texto, até no pior caso cair só
+  // no nome da cidade (impreciso, mas melhor que não mostrar mapa nenhum).
   function geocodificarEndereco(endereco, cidade) {
-    var consulta = [endereco, cidade, 'Brasil'].filter(Boolean).join(', ');
-    var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(consulta);
-    return fetch(url).then(function (res) { return res.json(); }).then(function (dados) {
-      var achado = dados && dados[0];
-      return achado ? { lat: parseFloat(achado.lat), lng: parseFloat(achado.lon) } : null;
-    }, function () { return null; });
+    var semComplemento = (endereco || '').replace(/,?\s*(ap(?:t|to)?\.?|sala|loja|bloco|bl\.?|conjunto|cj\.?)\s*\.?\s*\d+\w*/gi, '').trim();
+    var soRua = semComplemento.replace(/,?\s*n[º°o]?\.?\s*\d+[\w-]*/gi, '').replace(/^\s*,\s*/, '').trim();
+    var tentativasBrutas = [endereco, semComplemento, soRua, ''];
+    var vistas = {};
+    var tentativas = [];
+    tentativasBrutas.forEach(function (texto) {
+      var consulta = [texto, cidade, 'Brasil'].filter(Boolean).join(', ');
+      if (!vistas[consulta]) { vistas[consulta] = true; tentativas.push(consulta); }
+    });
+
+    function tentar(i) {
+      if (i >= tentativas.length) return null;
+      var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(tentativas[i]);
+      return fetch(url).then(function (res) { return res.json(); }).then(function (dados) {
+        var achado = dados && dados[0];
+        if (achado) return { lat: parseFloat(achado.lat), lng: parseFloat(achado.lon), aproximado: i > 0 };
+        return tentar(i + 1);
+      }, function () { return tentar(i + 1); });
+    }
+    return Promise.resolve(tentar(0));
   }
 
   function salvarEndereco() {
@@ -1203,7 +1222,7 @@
   function renderPassoTutorialLocalizacao(container) {
     var temCoord = linhaAtual.endereco_lat != null && linhaAtual.endereco_lng != null;
     container.innerHTML =
-      '<input type="text" id="vbTutEndereco" placeholder="Rua, número — bairro, cidade" style="width:100%; box-sizing:border-box; padding:0.65rem 0.8rem; border-radius:10px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:0.9rem;" value="' + escapeHtml(linhaAtual.endereco || '') + '">' +
+      '<input type="text" id="vbTutEndereco" placeholder="Rua, número — bairro, cidade" style="width:100%; box-sizing:border-box; padding:0.65rem 0.8rem; border-radius:10px; border:1px solid rgba(0,0,0,0.15); font-family:inherit; font-size:16px;" value="' + escapeHtml(linhaAtual.endereco || '') + '">' +
       '<p class="msg" id="vbTutEnderecoMsg" style="margin-top:0.5rem;">' + (temCoord ? '✓ Encontramos esse endereço no mapa.' : '') + '</p>' +
       '<div id="vbTutEnderecoMapa">' + (temCoord ? mapaEmbedHtml(linhaAtual.endereco_lat, linhaAtual.endereco_lng) : '') + '</div>';
     var input = document.getElementById('vbTutEndereco');

@@ -2,12 +2,12 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Cadastre seu estabelecimento — VB Agenda</title>
 <meta name="description" content="Crie sua conta e cadastre seu salão, barbearia ou estúdio no VB Agenda.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="assets/img/favicon.svg">
-<link rel="stylesheet" href="assets/css/styles.css?v=39">
+<link rel="stylesheet" href="assets/css/styles.css?v=40">
 </head>
 <body class="com-tabbar">
   <header class="topbar">
@@ -71,15 +71,32 @@
   <div class="admin-painel-overlay oculto" id="dashboardOverlay">
     <div class="admin-painel-box">
       <div class="admin-painel-topo">
-        <div class="admin-painel-abas">
-          <button type="button" class="is-ativa" data-dash-aba="resumo">Resumo</button>
-          <button type="button" data-dash-aba="agenda">Agenda</button>
-          <button type="button" data-dash-aba="clientes">Clientes</button>
-          <button type="button" data-dash-aba="caixa">Caixa</button>
+        <div class="dash-cabecalho-linha">
+          <div class="dash-cabecalho-titulos">
+            <p class="dash-cabecalho-eyebrow">Dashboard</p>
+            <p class="dash-cabecalho-nome" id="dashboardTitulo"></p>
+          </div>
+          <button type="button" class="dash-fechar-btn" id="dashboardFechar" aria-label="Fechar painel">×</button>
         </div>
-        <button type="button" class="admin-painel-fechar" id="dashboardFechar" aria-label="Fechar painel">×</button>
+        <div class="dash-abas" id="dashboardAbas">
+          <button type="button" class="dash-aba is-ativa" data-dash-aba="resumo">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="22" y1="20" x2="22" y2="9"/></svg>
+            Resumo
+          </button>
+          <button type="button" class="dash-aba" data-dash-aba="agenda">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+            Agenda
+          </button>
+          <button type="button" class="dash-aba" data-dash-aba="clientes">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6"/><circle cx="17.5" cy="9" r="2.2"/><path d="M15 20c.2-2.6 1.7-4.6 4-5.2"/></svg>
+            Clientes
+          </button>
+          <button type="button" class="dash-aba" data-dash-aba="caixa">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="19" height="13" rx="2"/><path d="M2.5 11h19"/><path d="M7 7V5.5A2.5 2.5 0 0 1 9.5 3h5A2.5 2.5 0 0 1 17 5.5V7"/><circle cx="12" cy="14.5" r="1.8"/></svg>
+            Caixa
+          </button>
+        </div>
       </div>
-      <p class="dash-dashboard-titulo" id="dashboardTitulo"></p>
       <div class="admin-painel-corpo" id="dashboardCorpo"></div>
     </div>
   </div>
@@ -92,6 +109,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
   <script src="assets/js/vb-dialogo.js?v=1"></script>
-  <script src="assets/js/cadastro.js?v=19"></script>
+  <script src="assets/js/cadastro.js?v=20"></script>
 </body>
 </html>
