@@ -1437,6 +1437,20 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   padding: 0.6rem 0.7rem;
 }
 .dash-card-pagamento-pendente p { margin: 0 0 0.5rem; }
+.dash-card-pagamento-emdia {
+  background: #e8f5ea;
+  color: #1e6b32;
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  font-weight: 600;
+}
+.dash-card-pagamento-urgente {
+  background: #fdeaea;
+  color: #9a2b2b;
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  font-weight: 600;
+}
 .dash-card-config-pendente {
   background: #fdeaea;
   color: #9a2b2b;

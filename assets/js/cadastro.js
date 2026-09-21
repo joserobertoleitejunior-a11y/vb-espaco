@@ -158,14 +158,24 @@
             '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Clique em "Editar meu site →" — como você já está logado na sua conta, o modo admin abre direto.</p>' +
             '</div>'
           : '';
-        var pagamentoHtml = e.forma_pagamento
-          ? '<div class="dash-card-pagamento">Forma de pagamento: <strong>' + (e.forma_pagamento === 'pix' ? 'Pix' : 'Cartão de crédito') + '</strong> — cobrança automática ainda será ativada, por enquanto seu acesso segue liberado.</div>'
-          : '<div class="dash-card-pagamento dash-card-pagamento-pendente">' +
-            '<p>1º mês grátis' + (trialData ? ' até ' + trialData : '') + '. Depois, R$ 39,90/mês. Escolha como prefere pagar:</p>' +
+        var mensalidadeTexto = formatarPreco(e.mensalidade || 39.9) + '/mês';
+        var pagamentoHtml;
+        if (e.pagamento_status === 'em_dia') {
+          pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-emdia">Assinatura em dia — ' + mensalidadeTexto + (e.forma_pagamento ? ' via ' + (e.forma_pagamento === 'pix' ? 'Pix' : 'cartão de crédito') : '') + '.</div>';
+        } else if (e.pagamento_status === 'atrasado') {
+          pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-urgente">Pagamento atrasado — regularize a assinatura (' + mensalidadeTexto + ') para não perder o acesso ao seu site.</div>';
+        } else if (e.pagamento_status === 'bloqueado') {
+          pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-urgente">Acesso bloqueado por falta de pagamento. Fale com o suporte do VB Agenda para regularizar.</div>';
+        } else if (e.forma_pagamento) {
+          pagamentoHtml = '<div class="dash-card-pagamento">Forma de pagamento: <strong>' + (e.forma_pagamento === 'pix' ? 'Pix' : 'Cartão de crédito') + '</strong> — cobrança automática ainda será ativada, por enquanto seu acesso segue liberado.</div>';
+        } else {
+          pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-pendente">' +
+            '<p>1º mês grátis' + (trialData ? ' até ' + trialData : '') + '. Depois, ' + mensalidadeTexto + '. Escolha como prefere pagar:</p>' +
             '<div class="dash-card-acoes">' +
             '<button type="button" class="btn btn-ghost" data-forma-pagamento-id="' + e.id + '" data-forma="pix" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Pix</button>' +
             '<button type="button" class="btn btn-ghost" data-forma-pagamento-id="' + e.id + '" data-forma="cartao" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Cartão de crédito</button>' +
             '</div></div>';
+        }
         return '<li class="dash-card">' +
           '<div class="dash-card-topo" style="' + topoStyle + '">' +
           '<span class="dash-card-segmento">' + escapeHtml(SEGMENTOS_LABEL[e.segmento] || 'Estabelecimento') + '</span>' +
