@@ -214,7 +214,15 @@
 
   <div class="admin-pin-overlay oculto" id="clienteGlobalOverlay">
     <div class="admin-pin-box cliente-global-box">
-      <div id="clienteGlobalEstagioTelefone">
+      <div id="clienteGlobalEstagioEscolha">
+        <p class="eyebrow">VB Agenda</p>
+        <h2 style="margin:0.3rem 0;">Como você quer entrar?</h2>
+        <p class="hint">Escolha o tipo de acesso.</p>
+        <button class="btn btn-primario" id="clienteGlobalEscolherCliente" type="button" style="width:100%;">Sou cliente</button>
+        <button class="btn btn-ghost" id="clienteGlobalEscolherEstabelecimento" type="button" style="width:100%; margin-top:0.5rem;">Tenho um estabelecimento</button>
+        <button class="btn btn-ghost" id="clienteGlobalCancelarEscolha" type="button" style="width:100%; margin-top:0.5rem;">Cancelar</button>
+      </div>
+      <div id="clienteGlobalEstagioTelefone" class="oculto">
         <p class="eyebrow">VB Agenda</p>
         <h2 style="margin:0.3rem 0;">Entrar com WhatsApp</h2>
         <p class="hint">Assim você não precisa digitar seus dados de novo em cada estabelecimento.</p>
@@ -319,6 +327,6 @@
   <script src="/assets/js/vb-dialogo.js?v=1"></script>
   <script src="/assets/js/frases-efeito.js?v=1"></script>
   <script src="/assets/js/meus-agendamentos.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=44"></script>
+  <script src="/assets/js/perfil.js?v=45"></script>
 </body>
 </html>

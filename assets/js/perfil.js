@@ -187,6 +187,7 @@
     var overlay = document.getElementById('clienteGlobalOverlay');
     var btn = document.getElementById('clienteGlobalBtn');
     if (!overlay || !btn) return;
+    var estagioEscolha = document.getElementById('clienteGlobalEstagioEscolha');
     var estagioTelefone = document.getElementById('clienteGlobalEstagioTelefone');
     var estagioNome = document.getElementById('clienteGlobalEstagioNome');
     var telefoneInput = document.getElementById('clienteGlobalTelefoneInput');
@@ -198,17 +199,42 @@
     aplicarClienteGlobalNaTela(clienteAtual);
     if (clienteAtual) registrarVisitaCliente(clienteAtual);
 
-    function abrir() {
-      estagioTelefone.classList.remove('oculto');
+    function resetarEstagios() {
+      estagioTelefone.classList.add('oculto');
       estagioNome.classList.add('oculto');
       telefoneInput.value = '';
       nomeInput.value = '';
       msg.textContent = '';
       msg.className = 'msg';
+    }
+    // "Entrar" no hero agora pergunta primeiro quem tá entrando — cliente
+    // (segue pro login por WhatsApp de sempre) ou dono de estabelecimento
+    // (manda direto pro acesso do dono em cadastro.html), em vez de abrir
+    // só o login de cliente e deixar o dono sem saber onde clicar. Ações
+    // que já são claramente de cliente (Meus agendamentos, Meus dados)
+    // pulam essa pergunta e vão direto pro login por WhatsApp.
+    function abrir() {
+      resetarEstagios();
+      if (estagioEscolha) estagioEscolha.classList.remove('oculto');
+      overlay.classList.remove('oculto');
+    }
+    function abrirLoginCliente() {
+      resetarEstagios();
+      if (estagioEscolha) estagioEscolha.classList.add('oculto');
+      estagioTelefone.classList.remove('oculto');
       overlay.classList.remove('oculto');
       setTimeout(function () { telefoneInput.focus(); }, 50);
     }
     function fechar() { overlay.classList.add('oculto'); }
+
+    var escolherClienteBtn = document.getElementById('clienteGlobalEscolherCliente');
+    if (escolherClienteBtn) escolherClienteBtn.addEventListener('click', abrirLoginCliente);
+    var escolherEstabelecimentoBtn = document.getElementById('clienteGlobalEscolherEstabelecimento');
+    if (escolherEstabelecimentoBtn) escolherEstabelecimentoBtn.addEventListener('click', function () {
+      window.location.href = '/cadastro.html';
+    });
+    var cancelarEscolhaBtn = document.getElementById('clienteGlobalCancelarEscolha');
+    if (cancelarEscolhaBtn) cancelarEscolhaBtn.addEventListener('click', fechar);
 
     btn.addEventListener('click', function () {
       var atual = window.VBClienteGlobal.obter();
@@ -288,14 +314,14 @@
     var menuAgendamentosBtn = document.getElementById('menuMeusAgendamentos');
     if (menuAgendamentosBtn) menuAgendamentosBtn.addEventListener('click', function () {
       if (window.RafaelMenu) window.RafaelMenu.close();
-      if (!window.VBClienteGlobal.obter()) { abrir(); return; }
+      if (!window.VBClienteGlobal.obter()) { abrirLoginCliente(); return; }
       if (window.VBMeusAgendamentos) window.VBMeusAgendamentos.abrir();
     });
     var menuDadosBtn = document.getElementById('menuMeusDados');
     if (menuDadosBtn) menuDadosBtn.addEventListener('click', function () {
       if (window.RafaelMenu) window.RafaelMenu.close();
       var cliente = window.VBClienteGlobal.obter();
-      if (!cliente) { abrir(); return; }
+      if (!cliente) { abrirLoginCliente(); return; }
       window.VBDialogo.prompt('Seu nome:', cliente.nome).then(function (novoNome) {
         if (novoNome === null) return;
         novoNome = novoNome.trim() || cliente.nome;
