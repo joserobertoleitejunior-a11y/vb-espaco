@@ -964,6 +964,16 @@ button.catalogo-avatar-anel { cursor: pointer; }
   margin: 0.9rem 0;
   font-family: inherit;
 }
+/* o telefone/nome do login de cliente usa .field (não é um código de
+   PIN) — sem isso, herdava o tamanho gigante e o letter-spacing pensado
+   pro PIN numérico de 4-6 dígitos do dono/equipe. */
+.cliente-global-box .field input {
+  text-align: left;
+  font-size: 1rem;
+  letter-spacing: normal;
+  padding: 0.75rem 0.9rem;
+  margin: 0;
+}
 .admin-modo-barra {
   position: fixed;
   left: 0.75rem;
