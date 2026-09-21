@@ -947,6 +947,13 @@
         '</span>' +
         '<label class="vb-btn-upload" style="justify-content:center; box-sizing:border-box; flex:1;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto<input type="file" id="vbTutPerfilUpload" accept="image/*"></label>' +
         '</div>' +
+        '<p class="vb-servico-novo-legenda">ou escolha um avatar pronto:</p>' +
+        '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.5rem; margin-bottom:0.8rem;">' +
+        (window.avataresParaSegmento ? window.avataresParaSegmento(linhaAtual.segmento) : []).map(function (f) {
+          var sel = f.url === fotoPerfil;
+          return '<img src="' + f.url + '" data-estoque-avatar-url="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:contain; background:var(--linho,#f2ede2); border-radius:10px; cursor:pointer; border:2px solid ' + (sel ? 'var(--terracotta, var(--dourado,#C9A227))' : 'transparent') + ';">';
+        }).join('') +
+        '</div>' +
         '<p class="vb-servico-novo-legenda">Borda da foto:</p>' +
         '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.4rem;">' +
         MOLDURAS.map(function (m) {
@@ -981,6 +988,9 @@
         });
       });
     }
+    container.querySelectorAll('[data-estoque-avatar-url]').forEach(function (img) {
+      img.addEventListener('click', function () { salvarPerfil('p_foto_perfil_url', img.getAttribute('data-estoque-avatar-url')); });
+    });
     container.querySelectorAll('[data-moldura]').forEach(function (btn) {
       btn.addEventListener('click', function () { salvarPerfil('p_moldura_foto', btn.getAttribute('data-moldura')); });
     });
