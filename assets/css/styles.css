@@ -860,6 +860,69 @@ button.catalogo-avatar-anel { cursor: pointer; }
 .vb-paleta-pronta:active { transform: scale(0.92); }
 .vb-paleta-pronta.is-selecionada { border-color: var(--terracotta, var(--dourado, #1f2024)); }
 
+/* lista pública de serviços — botões redondos coloridos (cor do site),
+   com ícone temático do nicho, que abrem a agenda direto com o pedido
+   já escolhido (ver data-open-widget-servico em perfil.js). */
+#tplListaServicos.servicos-redondos-lista {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.1rem 0.9rem;
+  padding: 0.4rem 0 0.2rem;
+}
+#tplListaServicos.servicos-redondos-lista li {
+  border: none;
+  padding: 0;
+  list-style: none;
+}
+.servico-redondo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  width: 96px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.servico-redondo-icone {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.servico-redondo:hover .servico-redondo-icone,
+.servico-redondo:focus-visible .servico-redondo-icone {
+  transform: scale(1.07);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+}
+.servico-redondo:active .servico-redondo-icone { transform: scale(0.95); }
+.servico-redondo-icone svg { width: 30px; height: 30px; }
+.servico-redondo-nome {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+.servico-redondo-preco {
+  font-size: 0.76rem;
+  color: var(--ink-soft, var(--tinta-suave));
+}
+@media (max-width: 420px) {
+  .servico-redondo { width: 84px; }
+  .servico-redondo-icone { width: 64px; height: 64px; }
+  .servico-redondo-icone svg { width: 26px; height: 26px; }
+}
+
 /* ---- botão de upload customizado — some com o "Escolher arquivo /
    Nenhum arquivo escolhido" nativo do navegador em todo o site. ---- */
 .vb-btn-upload {

@@ -1657,6 +1657,48 @@
 
   var servicosCache = [];
 
+  // ícone de linha por nicho — mesmo estilo/traço dos ícones do catálogo e
+  // do seletor de segmento em criar.js, pra ficar visualmente consistente
+  // em todo o app (nada de foto real aqui: é tudo gerado por código, então
+  // funciona pra qualquer estabelecimento sem precisar subir imagem).
+  var ICONES_SEGMENTO = {
+    barbearia: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><line x1="8.1" y1="7.5" x2="20" y2="19"/><line x1="8.1" y1="16.5" x2="20" y2="5"/></svg>',
+    salao: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 18c2-4 2-8 0-12"/><path d="M9 18c2-4 2-8 0-12"/><path d="M14 18c2-4 2-8 0-12"/><path d="M19 18c2-4 2-8 0-12"/></svg>',
+    manicure_pedicure: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6v3l1.5 2v13a1 1 0 01-1 1h-7a1 1 0 01-1-1V7L9 5V2z"/><path d="M9 2h6"/></svg>',
+    estetica: '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M12 2L14.3 7.7L20 10L14.3 12.3L12 18L9.7 12.3L4 10L9.7 7.7z"/></svg>',
+    estetica_automotiva: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12l1.5-4.5A2 2 0 0 1 6.4 6h11.2a2 2 0 0 1 1.9 1.5L21 12"/><path d="M3 12h18v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/></svg>',
+    outro: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>'
+  };
+  // alguns nomes de serviço são tão comuns entre nichos diferentes que dá
+  // pra acertar um ícone mais específico só pelo texto (ex: "barba" tem
+  // ícone próprio mesmo dentro de um salão unissex) — quando nada bate,
+  // cai no ícone padrão do segmento do estabelecimento.
+  var ICONES_SERVICO_PALAVRA = [
+    { chave: /barba/i, icone: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4v6c0 5 3 9 6 9s6-4 6-9V4"/><path d="M9 4v5"/><path d="M15 4v5"/></svg>' },
+    { chave: /unha|esmalt/i, icone: ICONES_SEGMENTO.manicure_pedicure },
+    { chave: /sobrancelha|design de olhar/i, icone: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 15c2-5 6-7 9-7s7 2 9 7"/></svg>' },
+    { chave: /massagem|relax/i, icone: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><path d="M6 21c0-4 2-6 2-9M18 21c0-4-2-6-2-9M8 12h8"/></svg>' },
+    { chave: /lavagem|higieniza/i, icone: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2s6 7 6 12a6 6 0 1 1-12 0c0-5 6-12 6-12z"/></svg>' },
+    { chave: /polimento|cera|brilho/i, icone: ICONES_SEGMENTO.estetica },
+    { chave: /corte|cabelo/i, icone: ICONE_TESOURA }
+  ];
+  function iconeParaServico(nome) {
+    for (var i = 0; i < ICONES_SERVICO_PALAVRA.length; i++) {
+      if (ICONES_SERVICO_PALAVRA[i].chave.test(nome || '')) return ICONES_SERVICO_PALAVRA[i].icone;
+    }
+    return ICONES_SEGMENTO[linhaAtual.segmento] || ICONES_SEGMENTO.outro;
+  }
+  // gradiente do botão redondo: sempre a partir da cor do site (a mesma
+  // que o dono escolheu no wizard), alternando um tom mais claro/mais
+  // escuro a cada botão pra não ficar tudo idêntico.
+  function corBotaoRedondo(indice) {
+    var base = garantirContraste(hexParaRgbNums(linhaAtual.cor_destaque || '#C9A227'));
+    var alvo = (indice % 2 === 0) ? [0, 0, 0] : [255, 255, 255];
+    var quantidade = (indice % 2 === 0) ? 0.22 : 0.16;
+    var ponta = misturarRgb(base, alvo, quantidade);
+    return 'linear-gradient(135deg, ' + rgbParaHex(base) + ', ' + rgbParaHex(ponta) + ')';
+  }
+
   function carregarServicos() {
     var lista = document.getElementById('tplListaServicos');
     var strip = document.getElementById('tplServiceStrip');
@@ -1668,15 +1710,23 @@
         '<button type="button" class="service-badge" data-open-widget><span class="mark">' + ICONE_AGENDA + '</span><strong>Agendar</strong><span>Horário</span></button>';
 
       if (!linhas.length && !modoAdmin) {
+        lista.classList.remove('servicos-redondos-lista');
         lista.innerHTML = '<li style="border:none; color:var(--ink-soft);">Serviços em breve.</li>';
         return;
       }
 
       if (!modoAdmin) {
-        lista.innerHTML = linhas.map(function (s) {
-          return '<li><span class="nome">' + escapeHtml(s.nome) + '</span><span class="cidade">' + formatarPreco(s.preco) + '</span></li>';
+        lista.classList.add('servicos-redondos-lista');
+        lista.innerHTML = linhas.map(function (s, i) {
+          return '<li>' +
+            '<button type="button" class="servico-redondo" data-open-widget-servico="' + escapeHtml(s.nome) + '" aria-label="Agendar ' + escapeHtml(s.nome) + '">' +
+            '<span class="servico-redondo-icone" style="background:' + corBotaoRedondo(i) + '">' + iconeParaServico(s.nome) + '</span>' +
+            '<span class="servico-redondo-nome">' + escapeHtml(s.nome) + '</span>' +
+            '<span class="servico-redondo-preco">' + formatarPreco(s.preco) + '</span>' +
+            '</button></li>';
         }).join('');
       } else {
+        lista.classList.remove('servicos-redondos-lista');
         lista.innerHTML = linhas.map(function (s) {
           return '<li style="position:relative; padding-right:2.2rem;">' +
             '<span class="nome" contenteditable="true" data-servico-id="' + s.id + '" data-campo="nome" data-vb-editavel="servico">' + escapeHtml(s.nome) + '</span>' +
@@ -1941,7 +1991,7 @@
       var lista = servicosCache.filter(function (s) { return s.categoria === genero || s.categoria === 'unissex'; });
       if (!lista.length) lista = servicosCache;
       servicoGrid.innerHTML = lista.map(function (s) {
-        return '<button type="button" class="pick-btn" data-value="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
+        return '<button type="button" class="pick-btn' + (s.nome === choices.servico ? ' selected' : '') + '" data-value="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
       }).join('');
     }
 
@@ -2056,13 +2106,12 @@
       document.body.classList.remove('scroll-locked');
     }
 
-    function open() {
+    function open(servicoPreSelecionado) {
       lastFocused = document.activeElement;
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
       lockScroll();
       carregarProfissionais();
-      carregarServicosWizard();
       renderDias();
 
       var saved = null;
@@ -2080,6 +2129,10 @@
 
       current = 1;
       choices = {};
+      // veio de um botão redondo de serviço específico (clicado direto no
+      // site)? já entra com o pedido decidido — só falta contato/horário.
+      if (servicoPreSelecionado) choices.servico = servicoPreSelecionado;
+      carregarServicosWizard();
       if (saved && saved.nome && saved.telefone) {
         choices.nome = saved.nome;
         choices.telefone = saved.telefone;
@@ -2190,6 +2243,12 @@
 
     document.addEventListener('click', function (e) {
       if (modoAdmin && e.target.closest('[contenteditable="true"]')) return;
+      var botaoServico = e.target.closest('[data-open-widget-servico]');
+      if (botaoServico) {
+        if (window.RafaelMenu) window.RafaelMenu.close();
+        open(botaoServico.getAttribute('data-open-widget-servico'));
+        return;
+      }
       if (e.target.closest('[data-open-widget]')) {
         if (window.RafaelMenu) window.RafaelMenu.close();
         open();
