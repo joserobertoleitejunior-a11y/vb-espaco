@@ -154,10 +154,12 @@
   var ICONE_STAT_AGENDA = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>';
   var ICONE_STAT_SERVICO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><line x1="8.1" y1="7.5" x2="20" y2="19"/><line x1="8.1" y1="16.5" x2="20" y2="5"/></svg>';
   var ICONE_STAT_EQUIPE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6"/><circle cx="17.5" cy="9" r="2.2"/><path d="M15 20c.2-2.6 1.7-4.6 4-5.2"/></svg>';
-  var ICONE_ACAO_GESTAO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:0.35rem; vertical-align:-3px;"><rect x="2.5" y="7" width="19" height="13" rx="2"/><path d="M2.5 11h19"/><path d="M7 7V5.5A2.5 2.5 0 0 1 9.5 3h5A2.5 2.5 0 0 1 17 5.5V7"/><circle cx="12" cy="14.5" r="1.8"/></svg>';
-  var ICONE_ACAO_VER = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:0.35rem; vertical-align:-3px;"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
-  var ICONE_ACAO_EDITAR = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:0.35rem; vertical-align:-3px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
-  var ICONE_ACAO_APAGAR = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:0.35rem; vertical-align:-3px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+  var ICONE_ACAO_GESTAO = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="19" height="13" rx="2"/><path d="M2.5 11h19"/><path d="M7 7V5.5A2.5 2.5 0 0 1 9.5 3h5A2.5 2.5 0 0 1 17 5.5V7"/><circle cx="12" cy="14.5" r="1.8"/></svg>';
+  var ICONE_ACAO_VER = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var ICONE_ACAO_EDITAR = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+  var ICONE_ACAO_APAGAR = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+  var ICONE_MENU_CHEVRON = '<svg class="dash-card-menu-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>';
+  var ICONE_ACESSOS = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 
   function carregarEstabelecimentos() {
     listaEl.innerHTML = '<li><span class="skeleton" style="width:70%;"></span></li>';
@@ -197,7 +199,7 @@
         if (!e.total_equipe) faltando.push('nenhum profissional');
         var configPendenteHtml = faltando.length
           ? '<div class="dash-card-config-pendente">' +
-            '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Clique em "Editar meu site →" — como você já está logado na sua conta, o modo admin abre direto.</p>' +
+            '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Clique em "Editar site" — como você já está logado na sua conta, o modo admin abre direto.</p>' +
             '</div>'
           : '';
         var mensalidadeTexto = formatarPreco(e.mensalidade || 39.9) + '/mês';
@@ -213,38 +215,54 @@
         } else {
           pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-pendente">' +
             '<p>1º mês grátis' + (trialData ? ' até ' + trialData : '') + '. Depois, ' + mensalidadeTexto + '. Escolha como prefere pagar:</p>' +
-            '<div class="dash-card-acoes">' +
+            '<div class="dash-card-pagamento-botoes">' +
             '<button type="button" class="btn btn-ghost" data-forma-pagamento-id="' + e.id + '" data-forma="pix" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Pix</button>' +
             '<button type="button" class="btn btn-ghost" data-forma-pagamento-id="' + e.id + '" data-forma="cartao" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Cartão de crédito</button>' +
             '</div></div>';
         }
+        // linha de menu genérica: ícone + rótulo à esquerda, valor à
+        // direita — o mesmo formato pra estatística (só leitura) e pra
+        // ação (link/botão clicável, com seta indicando que abre algo).
+        function linhaMenu(icone, rotulo, valorHtml, acaoAttrs, classesExtra) {
+          var tag = acaoAttrs ? (acaoAttrs.indexOf('href=') > -1 ? 'a' : 'button') : 'div';
+          var abre = tag !== 'div';
+          return '<' + tag + (tag === 'button' ? ' type="button"' : '') + ' class="dash-card-menu-linha' + (abre ? ' is-acao' : '') + (classesExtra ? ' ' + classesExtra : '') + '"' + (acaoAttrs || '') + '>' +
+            '<span class="rotulo">' + icone + escapeHtml(rotulo) + '</span>' +
+            '<span class="valor">' + valorHtml + (abre ? ICONE_MENU_CHEVRON : '') + '</span>' +
+            '</' + tag + '>';
+        }
         return '<li class="dash-card">' +
+          '<div class="dash-card-layout">' +
+          '<div class="dash-card-identidade">' +
           '<div class="dash-card-topo" style="' + topoStyle + '">' +
           '<span class="dash-card-segmento">' + escapeHtml(SEGMENTOS_LABEL[e.segmento] || 'Estabelecimento') + '</span>' +
           '<span class="dash-card-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';">' +
           '<span class="dash-card-avatar" style="background:' + cor + ';">' + avatarConteudo + '</span>' +
           '</span>' +
           '</div>' +
-          '<div class="dash-card-corpo">' +
-          '<span class="nome">' + escapeHtml(e.nome) + '</span><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +
-          '<div class="dash-card-stats">' +
-          '<div class="dash-card-stat">' + ICONE_STAT_AGENDA + '<strong>' + (e.total_agendamentos || 0) + '</strong><span>agendamento(s)</span></div>' +
-          '<div class="dash-card-stat">' + ICONE_STAT_SERVICO + '<strong>' + (e.total_servicos || 0) + '</strong><span>serviço(s)</span></div>' +
-          '<div class="dash-card-stat">' + ICONE_STAT_EQUIPE + '<strong>' + (e.total_equipe || 0) + '</strong><span>profissional(is)</span></div>' +
+          '<div class="dash-card-nome-bloco"><span class="nome">' + escapeHtml(e.nome) + '</span><span class="cidade">' + escapeHtml(e.cidade) + '</span></div>' +
           '</div>' +
-          '<div class="dash-card-acessos">' +
-          '<span><svg class="icone-inline" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg> <strong>' + (e.total_acessos || 0) + '</strong> acesso(s) ao site</span>' +
-          '<label class="dash-card-acessos-toggle"><input type="checkbox" data-toggle-contador-id="' + e.id + '"' + (e.mostrar_contador_publico ? ' checked' : '') + '> Mostrar pro público</label>' +
-          '</div>' +
+          '<div class="dash-card-menu">' +
           configPendenteHtml +
           pagamentoHtml +
-          '<div class="dash-card-acoes">' +
-          '<button class="btn btn-primario" type="button" data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" style="position:relative;">' + ICONE_ACAO_GESTAO + 'Gestão' +
-          (e.total_pendentes ? ' <span class="dash-badge-pendente">' + e.total_pendentes + '</span>' : '') +
-          '</button>' +
-          '<a class="btn btn-ghost" href="' + link + '" target="_blank" rel="noopener">' + ICONE_ACAO_VER + 'Ver site</a>' +
-          '<a class="btn btn-ghost" href="' + link + '">' + ICONE_ACAO_EDITAR + 'Editar site</a>' +
-          '<button class="btn btn-ghost btn-apagar" type="button" data-apagar-id="' + e.id + '" data-apagar-nome="' + escapeHtml(e.nome) + '">' + ICONE_ACAO_APAGAR + 'Apagar site</button>' +
+          '<div class="dash-card-menu-corpo">' +
+          '<div class="dash-card-menu-grupo">' +
+          '<p class="dash-card-menu-titulo">Visão geral</p>' +
+          linhaMenu(ICONE_STAT_AGENDA, 'Agendamentos', '<strong>' + (e.total_agendamentos || 0) + '</strong>') +
+          linhaMenu(ICONE_STAT_SERVICO, 'Serviços', '<strong>' + (e.total_servicos || 0) + '</strong>') +
+          linhaMenu(ICONE_STAT_EQUIPE, 'Profissionais', '<strong>' + (e.total_equipe || 0) + '</strong>') +
+          linhaMenu(ICONE_ACESSOS, 'Acessos ao site', '<strong>' + (e.total_acessos || 0) + '</strong>' +
+            '<label class="dash-card-switch" title="Mostrar pro público"><input type="checkbox" data-toggle-contador-id="' + e.id + '"' + (e.mostrar_contador_publico ? ' checked' : '') + '><span class="dash-card-switch-trilho"></span></label>') +
+          '</div>' +
+          '<div class="dash-card-menu-grupo">' +
+          '<p class="dash-card-menu-titulo">Ações</p>' +
+          linhaMenu(ICONE_ACAO_GESTAO, 'Gestão', (e.total_pendentes ? '<span class="dash-badge-pendente">' + e.total_pendentes + '</span>' : ''),
+            ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '"', 'is-principal') +
+          linhaMenu(ICONE_ACAO_VER, 'Ver site', '', ' href="' + link + '" target="_blank" rel="noopener"') +
+          linhaMenu(ICONE_ACAO_EDITAR, 'Editar site', '', ' href="' + link + '"') +
+          linhaMenu(ICONE_ACAO_APAGAR, 'Apagar site', '', ' data-apagar-id="' + e.id + '" data-apagar-nome="' + escapeHtml(e.nome) + '"', 'is-perigo') +
+          '</div>' +
+          '</div>' +
           '</div>' +
           '</div>' +
           '</li>';
@@ -270,7 +288,7 @@
   listaEl.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-forma-pagamento-id]');
     if (!btn) return;
-    btn.closest('.dash-card-acoes').querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+    btn.closest('.dash-card-pagamento-botoes').querySelectorAll('button').forEach(function (b) { b.disabled = true; });
     db.rpc('tenant_cadastrar_forma_pagamento', {
       p_estabelecimento_id: btn.getAttribute('data-forma-pagamento-id'),
       p_forma_pagamento: btn.getAttribute('data-forma')
@@ -1032,10 +1050,16 @@
   });
 
   function mostrarPainel(email) {
+    if (email) topbarMenuEmail.textContent = email;
+    // onAuthStateChange dispara de novo (com uma sessão válida) toda vez
+    // que a aba volta a ficar visível — o supabase-js reconfere/renova o
+    // token nesse momento — não só num login de verdade. Sem essa trava,
+    // cada volta pra aba recarregava a lista do zero (some e aparece):
+    // já com o painel na tela, não tem o que fazer de novo aqui.
+    if (!painelBox.classList.contains('oculto')) return;
     authBox.classList.add('oculto');
     painelBox.classList.remove('oculto');
     topbarIcones.classList.remove('oculto');
-    if (email) topbarMenuEmail.textContent = email;
     carregarEstabelecimentos();
   }
 
