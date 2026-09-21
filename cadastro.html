@@ -7,12 +7,37 @@
 <meta name="description" content="Crie sua conta e cadastre seu salão, barbearia ou estúdio no VB Agenda.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="assets/img/favicon.svg">
-<link rel="stylesheet" href="assets/css/styles.css?v=49">
+<link rel="stylesheet" href="assets/css/styles.css?v=50">
 </head>
 <body class="com-tabbar tela-interna">
   <header class="topbar">
     <a class="brand" href="index.html">VB <em>Agenda</em></a>
-    <button class="btn btn-ghost oculto" id="sairBtn" type="button" style="padding:0.5rem 1rem; font-size:0.9rem;">Sair</button>
+    <div class="topbar-icones oculto" id="topbarIcones">
+      <div class="topbar-dropdown-wrap">
+        <button type="button" class="topbar-icone-btn" id="notifBtn" aria-label="Notificações" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M9.5 20a2.5 2.5 0 0 0 5 0"/></svg>
+          <span class="topbar-badge oculto" id="notifBadge"></span>
+        </button>
+        <div class="topbar-dropdown oculto" id="notifDropdown">
+          <p class="topbar-dropdown-titulo">Notificações</p>
+          <div id="notifDropdownConteudo"></div>
+        </div>
+      </div>
+      <div class="topbar-dropdown-wrap">
+        <button type="button" class="topbar-icone-btn" id="menuBtn" aria-label="Abrir menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+        <div class="topbar-dropdown topbar-dropdown-menu oculto" id="menuDropdown">
+          <p class="topbar-dropdown-titulo">Sua conta</p>
+          <p class="topbar-menu-email" id="topbarMenuEmail"></p>
+          <nav class="topbar-menu-nav">
+            <a href="index.html"><svg class="icone-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg> Catálogo</a>
+            <a href="cadastro.html" class="is-atual"><svg class="icone-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg> Seus estabelecimentos</a>
+          </nav>
+          <button class="btn btn-ghost" id="sairBtn" type="button" style="width:100%; margin-top:0.6rem;">Sair</button>
+        </div>
+      </div>
+    </div>
   </header>
 
   <div class="container" style="padding-top:1.75rem; padding-bottom:3rem;">
@@ -46,8 +71,6 @@
 
     <!-- Área logada -->
     <section id="painelBox" class="oculto">
-      <div class="dash-notificacoes oculto" id="notificacoesBarra"></div>
-
       <div class="card" id="listaCard">
         <h2>Seus estabelecimentos</h2>
         <ul class="dash-lista" id="listaEstabelecimentos"></ul>
@@ -110,6 +133,6 @@
   <script src="assets/js/supabase-client.js?v=1"></script>
   <script src="assets/js/vb-dialogo.js?v=1"></script>
   <script src="assets/js/vb-select.js?v=1"></script>
-  <script src="assets/js/cadastro.js?v=24"></script>
+  <script src="assets/js/cadastro.js?v=25"></script>
 </body>
 </html>

@@ -15,7 +15,49 @@
   var authMsg = document.getElementById('authMsg');
   var listaMsg = document.getElementById('listaMsg');
   var listaEl = document.getElementById('listaEstabelecimentos');
-  var notificacoesEl = document.getElementById('notificacoesBarra');
+  var topbarIcones = document.getElementById('topbarIcones');
+  var notifBtn = document.getElementById('notifBtn');
+  var notifBadge = document.getElementById('notifBadge');
+  var notifDropdown = document.getElementById('notifDropdown');
+  var notificacoesEl = document.getElementById('notifDropdownConteudo');
+  var menuBtn = document.getElementById('menuBtn');
+  var menuDropdown = document.getElementById('menuDropdown');
+  var topbarMenuEmail = document.getElementById('topbarMenuEmail');
+
+  // ---- dropdowns do topbar (notificações e menu): só um aberto por vez,
+  // fecha ao clicar fora ou apertar Esc — mesmo padrão de qualquer
+  // dropdown nativo, sem framework nenhum. ----
+  function fecharDropdown(btn, dropdown) {
+    if (dropdown.classList.contains('oculto')) return;
+    dropdown.classList.remove('is-aberto');
+    btn.setAttribute('aria-expanded', 'false');
+    setTimeout(function () { dropdown.classList.add('oculto'); }, 160);
+  }
+  function fecharDropdowns() {
+    fecharDropdown(notifBtn, notifDropdown);
+    fecharDropdown(menuBtn, menuDropdown);
+  }
+  function alternarDropdown(btn, dropdown) {
+    var abrindo = dropdown.classList.contains('oculto');
+    fecharDropdowns();
+    if (abrindo) {
+      dropdown.classList.remove('oculto');
+      // remove o "oculto" (display:none) num frame e só depois liga a
+      // classe que anima opacidade/posição — sem isso a transição não
+      // roda (não dá pra animar a partir de display:none).
+      requestAnimationFrame(function () {
+        dropdown.classList.add('is-aberto');
+        btn.setAttribute('aria-expanded', 'true');
+      });
+    }
+  }
+  notifBtn.addEventListener('click', function (e) { e.stopPropagation(); alternarDropdown(notifBtn, notifDropdown); });
+  menuBtn.addEventListener('click', function (e) { e.stopPropagation(); alternarDropdown(menuBtn, menuDropdown); });
+  // conteúdo dos dois dropdowns é só texto e links/botões que navegam ou
+  // disparam uma ação (abrir dashboard, sair) — faz sentido fechar o
+  // dropdown nesses cliques também, então não trava a propagação aqui.
+  document.addEventListener('click', fecharDropdowns);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fecharDropdowns(); });
 
   document.getElementById('googleBtn').addEventListener('click', function () {
     db.auth.signInWithOAuth({
@@ -295,14 +337,16 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  // ---------- barra de notificação (agendamentos aguardando confirmação
-  // em qualquer um dos estabelecimentos do dono) — texto puro, sem emoji. ----------
+  // ---------- notificações (agendamentos aguardando confirmação em
+  // qualquer um dos estabelecimentos do dono): sininho com contador no
+  // topbar, conteúdo mora num dropdown — não ocupa espaço na tela até
+  // o dono querer olhar. ----------
   function atualizarNotificacoesBarra(linhas) {
     if (!notificacoesEl) return;
     var comPendentes = (linhas || []).filter(function (e) { return e.total_pendentes > 0; });
     if (!comPendentes.length) {
-      notificacoesEl.classList.add('oculto');
-      notificacoesEl.innerHTML = '';
+      notifBadge.classList.add('oculto');
+      notificacoesEl.innerHTML = '<p class="topbar-dropdown-vazio">Nenhum agendamento aguardando confirmação por enquanto.</p>';
       return;
     }
     var totalGeral = comPendentes.reduce(function (soma, e) { return soma + Number(e.total_pendentes); }, 0);
@@ -310,14 +354,15 @@
       ? 'Você tem ' + totalGeral + ' agendamento(s) aguardando confirmação em ' + escapeHtml(comPendentes[0].nome) + '.'
       : 'Você tem ' + totalGeral + ' agendamento(s) aguardando confirmação, em ' + comPendentes.length + ' estabelecimentos.';
     notificacoesEl.innerHTML =
-      '<p>' + resumoTexto + '</p>' +
+      '<p class="topbar-dropdown-resumo">' + resumoTexto + '</p>' +
       '<div class="dash-notificacoes-chips">' +
       comPendentes.map(function (e) {
         return '<button type="button" class="dash-notificacao-chip" data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="agenda">' +
           escapeHtml(e.nome) + ' (' + e.total_pendentes + ')</button>';
       }).join('') +
       '</div>';
-    notificacoesEl.classList.remove('oculto');
+    notifBadge.textContent = totalGeral > 9 ? '9+' : String(totalGeral);
+    notifBadge.classList.remove('oculto');
   }
 
   // ---------- Dashboard por estabelecimento: Resumo (gráfico), Agenda
@@ -966,10 +1011,11 @@
     });
   });
 
-  function mostrarPainel() {
+  function mostrarPainel(email) {
     authBox.classList.add('oculto');
     painelBox.classList.remove('oculto');
-    sairBtn.classList.remove('oculto');
+    topbarIcones.classList.remove('oculto');
+    if (email) topbarMenuEmail.textContent = email;
     carregarEstabelecimentos();
   }
 
@@ -990,15 +1036,15 @@
 
   if (TESTE_SEM_LOGIN) {
     mostrarPainel();
-    sairBtn.classList.add('oculto');
   } else {
     db.auth.getSession().then(function (res) {
-      if (res.data && res.data.session) mostrarPainel();
+      var session = res.data && res.data.session;
+      if (session) mostrarPainel(session.user && session.user.email);
     });
     // cobre o retorno do login do Google (a sessão só fica pronta
     // depois que o supabase-js processa o redirect) e o logout.
     db.auth.onAuthStateChange(function (evento, session) {
-      if (session) mostrarPainel();
+      if (session) mostrarPainel(session.user && session.user.email);
       else if (evento === 'SIGNED_OUT') window.location.reload();
     });
   }

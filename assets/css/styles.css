@@ -82,6 +82,99 @@ img { max-width: 100%; display: block; }
   color: var(--tinta-suave);
 }
 
+/* ---- topbar de cadastro.html: sininho de notificações + menu
+   hambúrguer, os dois como dropdowns leves em vez de uma faixa fixa
+   ocupando a tela toda. ---- */
+.topbar-icones { display: flex; align-items: center; gap: 0.5rem; }
+.topbar-dropdown-wrap { position: relative; }
+.topbar-icone-btn {
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 50%;
+  border: 1px solid var(--borda);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tinta);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.topbar-icone-btn:hover { border-color: var(--destaque); }
+.topbar-icone-btn:active { transform: scale(0.94); }
+.topbar-icone-btn[aria-expanded="true"] { background: var(--linho); border-color: var(--destaque); }
+.topbar-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: var(--vermelho);
+  color: #fff;
+  font-size: 0.64rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.25rem;
+  border: 2px solid #fff;
+}
+.topbar-dropdown {
+  position: absolute;
+  top: calc(100% + 0.8rem);
+  right: 0;
+  width: min(87vw, 320px);
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  box-shadow: 0 18px 44px rgba(20, 20, 30, 0.16);
+  padding: 1.1rem;
+  z-index: 90;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.97);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.topbar-dropdown.is-aberto { opacity: 1; transform: translateY(0) scale(1); }
+.topbar-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 1.15rem;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-left: 1px solid var(--borda);
+  border-top: 1px solid var(--borda);
+  transform: rotate(45deg);
+  border-radius: 2px 0 0 0;
+}
+.topbar-dropdown-titulo { margin: 0 0 0.6rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-suave); }
+.topbar-dropdown-resumo { margin: 0 0 0.7rem; font-size: 0.86rem; font-weight: 600; color: var(--tinta); line-height: 1.4; }
+.topbar-dropdown-vazio { margin: 0; font-size: 0.85rem; color: var(--tinta-suave); text-align: center; padding: 0.6rem 0; }
+.topbar-menu-email { margin: 0 0 0.9rem; font-size: 0.84rem; font-weight: 700; color: var(--tinta); word-break: break-all; }
+.topbar-menu-nav { display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 0.6rem; }
+.topbar-menu-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.5rem;
+  border-radius: 10px;
+  color: var(--tinta);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: background 0.12s ease;
+}
+.topbar-menu-nav a:hover { background: var(--linho); }
+.topbar-menu-nav a.is-atual { color: var(--vermelho); }
+@media (min-width: 900px) {
+  .topbar-dropdown { width: 340px; }
+}
+
 .catalogo-hero {
   padding: 2.1rem 1.25rem 1.5rem;
   text-align: center;
@@ -1775,16 +1868,6 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   font-weight: 800;
   margin-left: 0.3rem;
 }
-.dash-notificacoes {
-  background: var(--branco);
-  border: 1px solid var(--borda);
-  border-left: 3px solid var(--vermelho);
-  border-radius: 12px;
-  padding: 0.9rem 1rem;
-  margin-bottom: 1.2rem;
-  color: var(--tinta);
-}
-.dash-notificacoes p { margin: 0 0 0.5rem; font-weight: 600; font-size: 0.9rem; }
 .dash-notificacoes-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .dash-notificacao-chip {
   background: #fdeaea;
