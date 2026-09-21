@@ -1534,7 +1534,7 @@
     }
 
     var trocaBtn = document.getElementById('tplTrocaGenero');
-    if (linhaAtual.genero_atendimento === 'ambos') {
+    if (linhaAtual.genero_atendimento === 'ambos' && linhaAtual.segmento !== 'estetica_automotiva') {
       var outro = g === 'masculino' ? 'feminino' : 'masculino';
       document.getElementById('tplTrocaGlifo').textContent = outro === 'feminino' ? 'F' : 'M';
       document.getElementById('tplTrocaLabel').textContent = outro === 'feminino' ? 'Área feminina' : 'Área masculina';
@@ -1562,6 +1562,16 @@
   }
 
   function iniciarGenero() {
+    // estética automotiva não distingue público por gênero — o campo
+    // genero_atendimento é gravado como 'ambos' só como valor técnico
+    // padrão desde a criação (criar.js), mas aqui isso nunca deve abrir
+    // o portão de escolha nem mostrar o botão de trocar de área.
+    if (linhaAtual.segmento === 'estetica_automotiva') {
+      document.getElementById('genderGate').remove();
+      mostrarSplashSeNecessario();
+      aplicarGenero('masculino');
+      return;
+    }
     if (linhaAtual.genero_atendimento !== 'ambos') {
       document.getElementById('genderGate').remove();
       mostrarSplashSeNecessario();
