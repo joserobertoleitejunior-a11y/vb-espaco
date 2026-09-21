@@ -4,6 +4,25 @@
 (function () {
   var el = document.getElementById('faixaVoltar');
   if (!el) return;
+
+  // sorteia uma textura por carregamento de página (tema visual da
+  // faixa) — se o arquivo não existir ainda, o fundo escuro sólido de
+  // sempre continua valendo, então isso é seguro adicionar antes das
+  // imagens existirem. Recortadas de uma folha única gerada por IA.
+  var TOTAL_TEMAS = 6;
+  var tema = 1 + Math.floor(Math.random() * TOTAL_TEMAS);
+  var img = new Image();
+  img.onload = function () {
+    el.style.backgroundImage = 'linear-gradient(rgba(20,20,24,0.55), rgba(20,20,24,0.55)), url("/assets/img/faixa/faixa-' + tema + '.png")';
+    el.classList.add('com-textura');
+  };
+  img.src = '/assets/img/faixa/faixa-' + tema + '.png';
+
+  el.classList.add('faixa-entrando');
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { el.classList.add('faixa-entrou'); });
+  });
+
   var ultimoY = window.scrollY;
   window.addEventListener('scroll', function () {
     var atual = window.scrollY;
