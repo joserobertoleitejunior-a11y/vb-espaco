@@ -2043,3 +2043,31 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 }
 .dash-vazio-titulo { font-weight: 800; color: var(--tinta); font-size: 0.95rem; }
 .dash-vazio-texto { font-size: 0.82rem; max-width: 30rem; line-height: 1.5; }
+
+/* ---- cadastro.html em telas de desktop: era a mesma coluna estreita
+   de celular (640px) espremida no meio de uma tela de 1440px, com a
+   barra de abas fixa no rodapé por cima de tudo. Não mexe no site
+   público (perfil/institucional), que segue com a mesma cara de app
+   de propósito — só a área de gestão do dono. ---- */
+#authBox .card { max-width: 26rem; margin-left: auto; margin-right: auto; }
+@media (min-width: 900px) {
+  /* container só um pouco mais largo que o mobile (não os 62rem cheios da
+     tela) — com 1 ou 2 estabelecimentos (o caso comum), um container bem
+     largo deixa o painel branco com uma sobra de espaço vazio enorme do
+     lado; o grid abaixo só passa a valer a pena quando existem vários. */
+  .tela-cadastro .container { max-width: 46rem; }
+  .tela-cadastro .dash-lista {
+    grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+    align-items: start;
+  }
+  .tela-cadastro .dash-card { max-width: 26rem; }
+  .tela-cadastro.com-tabbar { padding-bottom: 0; }
+  .tela-cadastro .tabbar {
+    position: static;
+    max-width: 46rem;
+    margin: 2rem auto 0;
+    border-top: 1px solid var(--borda);
+    box-shadow: none;
+  }
+  #dashboardOverlay .admin-painel-box { max-width: 780px; }
+}
