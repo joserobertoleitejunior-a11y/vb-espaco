@@ -1863,6 +1863,39 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 .painel-lista-item:last-child { border-bottom: none; }
 .painel-lista-item .principal { font-weight: 700; }
 .painel-lista-item .secundario { color: var(--tinta-suave); font-size: 0.8rem; }
+
+/* ---- Clientes: cada linha expande pra mostrar dados completos, botão
+   de WhatsApp e histórico — mesma linguagem de menu do card do
+   estabelecimento, não uma lista rasa de nome+telefone. ---- */
+.dash-cliente-item { border-bottom: 1px solid var(--borda); }
+.dash-cliente-item:last-child { border-bottom: none; }
+.dash-cliente-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--tinta);
+  text-align: left;
+  cursor: pointer;
+}
+.dash-cliente-cabecalho .principal { font-weight: 700; }
+.dash-cliente-cabecalho .secundario { color: var(--tinta-suave); font-size: 0.8rem; }
+.dash-cliente-cabecalho .valor { display: flex; align-items: center; gap: 0.4rem; color: var(--tinta-suave); font-weight: 700; font-size: 0.82rem; flex-shrink: 0; }
+.dash-cliente-cabecalho .valor .dash-card-menu-chevron { transition: transform 0.15s ease; }
+.dash-cliente-item:has(.dash-cliente-detalhe:not(.oculto)) .valor .dash-card-menu-chevron { transform: rotate(90deg); }
+.dash-cliente-detalhe { padding: 0 0 1.1rem; }
+.dash-cliente-info { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; font-size: 0.82rem; color: var(--tinta-suave); margin-bottom: 0.8rem; }
+.dash-cliente-info strong { color: var(--tinta); font-weight: 700; }
+.dash-cliente-whatsapp { display: inline-flex; align-items: center; gap: 0.5rem; color: #1e8e5a; border-color: #1e8e5a; }
+.dash-cliente-historico { margin-top: 0.4rem; }
+.dash-cliente-historico .painel-lista-item { font-size: 0.82rem; }
 .painel-status-badge {
   font-size: 0.7rem;
   font-weight: 700;
