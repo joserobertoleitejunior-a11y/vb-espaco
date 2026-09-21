@@ -106,6 +106,17 @@
     outro: 'Estabelecimento'
   };
 
+  // ícones do card do estabelecimento — mesmo traço fino usado no resto
+  // do app (nada de emoji), tanto nas estatísticas quanto nos botões de
+  // ação, pra dar mais acabamento visual ao card.
+  var ICONE_STAT_AGENDA = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>';
+  var ICONE_STAT_SERVICO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><line x1="8.1" y1="7.5" x2="20" y2="19"/><line x1="8.1" y1="16.5" x2="20" y2="5"/></svg>';
+  var ICONE_STAT_EQUIPE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6"/><circle cx="17.5" cy="9" r="2.2"/><path d="M15 20c.2-2.6 1.7-4.6 4-5.2"/></svg>';
+  var ICONE_ACAO_GESTAO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:0.35rem; vertical-align:-3px;"><rect x="2.5" y="7" width="19" height="13" rx="2"/><path d="M2.5 11h19"/><path d="M7 7V5.5A2.5 2.5 0 0 1 9.5 3h5A2.5 2.5 0 0 1 17 5.5V7"/><circle cx="12" cy="14.5" r="1.8"/></svg>';
+  var ICONE_ACAO_VER = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:0.35rem; vertical-align:-3px;"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var ICONE_ACAO_EDITAR = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:0.35rem; vertical-align:-3px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+  var ICONE_ACAO_APAGAR = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:0.35rem; vertical-align:-3px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+
   function carregarEstabelecimentos() {
     listaEl.innerHTML = '<li><span class="skeleton" style="width:70%;"></span></li>';
     db.rpc('meus_estabelecimentos_com_stats').then(function (res) {
@@ -163,8 +174,12 @@
           '</span>' +
           '</div>' +
           '<div class="dash-card-corpo">' +
-          '<span class="nome">' + escapeHtml(e.nome) + '</span><br><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +
-          '<div class="dash-card-stats"><span><strong>' + (e.total_agendamentos || 0) + '</strong> agendamento(s)</span><span><strong>' + (e.total_servicos || 0) + '</strong> serviço(s)</span><span><strong>' + (e.total_equipe || 0) + '</strong> profissional(is)</span></div>' +
+          '<span class="nome">' + escapeHtml(e.nome) + '</span><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +
+          '<div class="dash-card-stats">' +
+          '<div class="dash-card-stat">' + ICONE_STAT_AGENDA + '<strong>' + (e.total_agendamentos || 0) + '</strong><span>agendamento(s)</span></div>' +
+          '<div class="dash-card-stat">' + ICONE_STAT_SERVICO + '<strong>' + (e.total_servicos || 0) + '</strong><span>serviço(s)</span></div>' +
+          '<div class="dash-card-stat">' + ICONE_STAT_EQUIPE + '<strong>' + (e.total_equipe || 0) + '</strong><span>profissional(is)</span></div>' +
+          '</div>' +
           '<div class="dash-card-acessos">' +
           '<span><svg class="icone-inline" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg> <strong>' + (e.total_acessos || 0) + '</strong> acesso(s) ao site</span>' +
           '<label class="dash-card-acessos-toggle"><input type="checkbox" data-toggle-contador-id="' + e.id + '"' + (e.mostrar_contador_publico ? ' checked' : '') + '> Mostrar pro público</label>' +
@@ -172,12 +187,12 @@
           configPendenteHtml +
           pagamentoHtml +
           '<div class="dash-card-acoes">' +
-          '<button class="btn btn-primario" type="button" style="padding:0.5rem 0.9rem; font-size:0.85rem; position:relative;" data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '">Dashboard' +
+          '<button class="btn btn-primario" type="button" data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" style="position:relative;">' + ICONE_ACAO_GESTAO + 'Gestão' +
           (e.total_pendentes ? ' <span class="dash-badge-pendente">' + e.total_pendentes + '</span>' : '') +
           '</button>' +
-          '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '" target="_blank" rel="noopener">Ver site →</a>' +
-          '<a class="btn btn-ghost" style="padding:0.5rem 0.9rem; font-size:0.85rem;" href="' + link + '">Editar meu site →</a>' +
-          '<button class="btn btn-ghost" type="button" style="padding:0.5rem 0.9rem; font-size:0.85rem; color:var(--erro); border-color:var(--erro);" data-apagar-id="' + e.id + '" data-apagar-nome="' + escapeHtml(e.nome) + '">Apagar</button>' +
+          '<a class="btn btn-ghost" href="' + link + '" target="_blank" rel="noopener">' + ICONE_ACAO_VER + 'Ver site</a>' +
+          '<a class="btn btn-ghost" href="' + link + '">' + ICONE_ACAO_EDITAR + 'Editar site</a>' +
+          '<button class="btn btn-ghost btn-apagar" type="button" data-apagar-id="' + e.id + '" data-apagar-nome="' + escapeHtml(e.nome) + '">' + ICONE_ACAO_APAGAR + 'Apagar site</button>' +
           '</div>' +
           '</div>' +
           '</li>';
@@ -344,6 +359,12 @@
     document.querySelectorAll('#dashboardAbas [data-dash-aba]').forEach(function (b) {
       b.classList.toggle('is-ativa', b.getAttribute('data-dash-aba') === aba);
     });
+    // trocar o innerHTML por um skeleton na hora e substituir de novo
+    // assim que a RPC responde (quase instantâneo, sobretudo em rede boa)
+    // pisca a tela — dá a sensação de algo quebrando no clique. Em vez
+    // disso, mantém o conteúdo da aba anterior visível (só esmaecido)
+    // até o novo conteúdo estar pronto pra entrar de uma vez.
+    dashboardCorpo.classList.add('dash-carregando');
     if (aba === 'resumo') renderizarDashResumo();
     else if (aba === 'agenda') renderizarDashAgenda();
     else if (aba === 'clientes') renderizarDashClientes();
@@ -352,16 +373,16 @@
 
   function renderizarDashResumo() {
     var estabId = dashEstabId;
-    dashboardCorpo.innerHTML = '<div class="skeleton" style="height:2rem;"></div>';
     db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: 14 }).then(function (res) {
       if (dashEstabId !== estabId) return;
-      if (res.error) { dashboardCorpo.innerHTML = '<p class="msg msg-erro">' + escapeHtml(res.error.message) + '</p>'; return; }
+      if (res.error) { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">' + escapeHtml(res.error.message) + '</p>'; return; }
       var r = res.data || {};
       var dias = r.faturamento_por_dia || [];
       var maiorValor = dias.reduce(function (m, d) { return Math.max(m, Number(d.total)); }, 0);
       var status = r.agendamentos_por_status || {};
       var statusComMovimento = Object.keys(STATUS_LABEL).filter(function (k) { return status[k] > 0; });
 
+      dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
         '<p class="dash-secao-intro">Visão geral dos últimos 14 dias: quanto entrou, quantos agendamentos e quantos clientes já passaram por aqui.</p>' +
         '<div class="dash-resumo-cards">' +
@@ -395,12 +416,11 @@
           r.top_servicos.map(function (s) {
             return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(s.nome) + '</span><br><span class="secundario">' + s.qtd + ' venda(s)</span></span><span><strong>' + formatarPreco(s.total) + '</strong></span></div>';
           }).join('') + '</div>' : '');
-    }, function () { dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
+    }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
   }
 
   function renderizarDashAgenda() {
     var estabId = dashEstabId;
-    dashboardCorpo.innerHTML = '<div class="skeleton" style="height:2rem;"></div>';
     Promise.all([
       db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }),
       db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }),
@@ -411,6 +431,7 @@
       var equipe = resultados[1].data || [];
       var linhas = resultados[2].data || [];
       var semCadastroBase = !servicos.length || !equipe.length;
+      dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
         '<p class="dash-resumo-subtitulo" style="margin-top:0;">Novo agendamento manual</p>' +
         '<p class="dash-secao-intro">Pra cliente que liga ou chega no balcão sem passar pelo site — entra direto confirmado, com o cliente já registrado.</p>' +
@@ -498,15 +519,15 @@
           return [a.cliente_nome, a.cliente_telefone, a.servico, a.staff_nome, a.dia_label || a.dia, a.horario, STATUS_LABEL[a.status] || a.status];
         }));
       });
-    }, function () { dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
+    }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
   }
 
   function renderizarDashClientes() {
     var estabId = dashEstabId;
-    dashboardCorpo.innerHTML = '<div class="skeleton" style="height:2rem;"></div>';
     db.rpc('tenant_admin_listar_clientes', { p_estabelecimento_id: estabId }).then(function (res) {
       if (dashEstabId !== estabId) return;
       var linhas = res.data || [];
+      dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
         '<p class="dash-secao-intro" style="margin-top:0;">Todo cliente que agenda pelo site — ou é cadastrado na aba Agenda — entra aqui automaticamente, com quantas vezes já voltou.</p>' +
         '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Clientes cadastrados</p>' +
@@ -523,12 +544,11 @@
           return [c.nome, c.telefone, c.total_visitas, c.primeira_visita, c.ultima_visita];
         }));
       });
-    }, function () { dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
+    }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
   }
 
   function renderizarDashCaixa() {
     var estabId = dashEstabId;
-    dashboardCorpo.innerHTML = '<div class="skeleton" style="height:2rem;"></div>';
     Promise.all([
       db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }),
       db.rpc('tenant_admin_listar_vendas_hoje', { p_estabelecimento_id: estabId }),
@@ -543,6 +563,7 @@
       FORMAS_PAGAMENTO.forEach(function (f) { porForma[f.chave] = 0; });
       vendas.forEach(function (v) { porForma[v.forma_pagamento] = (porForma[v.forma_pagamento] || 0) + Number(v.valor); });
 
+      dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
         '<p class="dash-secao-intro" style="margin-top:0;">Toque no serviço vendido — o valor já vem preenchido, é só confirmar a forma de pagamento e registrar.</p>' +
         '<div class="dash-caixa-servicos" id="caixaServicos">' +
