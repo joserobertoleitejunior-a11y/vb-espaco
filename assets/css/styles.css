@@ -160,6 +160,74 @@ img { max-width: 100%; display: block; }
 }
 .field input:focus,
 .field select:focus { outline: 2px solid var(--vermelho); outline-offset: 1px; }
+
+/* ---- select customizado (vb-select.js) — troca a aparência crua e
+   inconsistente do <select> nativo por um botão + lista no mesmo
+   estilo do resto do site. O <select> original continua no DOM (só
+   escondido), então nada que já lê/escuta ele precisa mudar. ---- */
+.vb-select { position: relative; width: 100%; }
+.vb-select-nativo {
+  position: absolute !important;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
+.vb-select-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: var(--linho);
+  color: var(--tinta);
+  cursor: pointer;
+  text-align: left;
+}
+.vb-select-btn .vb-select-valor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vb-select-btn svg { flex-shrink: 0; color: var(--tinta-suave); transition: transform 0.15s ease; }
+.vb-select.is-aberto .vb-select-btn svg { transform: rotate(180deg); }
+.vb-select.is-aberto .vb-select-btn { border-color: var(--destaque); outline: 2px solid var(--vermelho); outline-offset: 1px; }
+.vb-select-lista {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: #fff;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 0.35rem;
+}
+.vb-select.is-aberto .vb-select-lista { display: block; }
+.vb-select-opcao {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.92rem;
+  font-family: inherit;
+  color: var(--tinta);
+  cursor: pointer;
+}
+.vb-select-opcao:hover { background: var(--linho); }
+.vb-select-opcao.is-selecionada { background: var(--linho); font-weight: 700; color: var(--destaque); }
 .field .prefixo {
   display: flex;
   align-items: stretch;
@@ -1733,6 +1801,62 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   margin-top: 1.1rem;
 }
 .dash-agenda-acoes { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ---- Caixa (PDV): grade de toque com os serviços já cadastrados —
+   bate o valor sozinho, sem precisar abrir select nenhum pra achar o
+   serviço vendido. ---- */
+.dash-caixa-servicos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+@media (min-width: 480px) {
+  .dash-caixa-servicos { grid-template-columns: repeat(3, 1fr); }
+}
+.dash-caixa-servico-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  border: 2px solid var(--borda);
+  background: var(--linho);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.dash-caixa-servico-btn:hover { border-color: var(--destaque); }
+.dash-caixa-servico-btn.is-selecionada {
+  border-color: var(--destaque);
+  background: rgba(201, 162, 39, 0.12);
+}
+.dash-caixa-servico-nome { font-weight: 700; font-size: 0.85rem; color: var(--tinta); }
+.dash-caixa-servico-preco { font-size: 0.78rem; color: var(--tinta-suave); }
+.dash-caixa-servico-btn.is-avulso .dash-caixa-servico-nome { color: var(--tinta-suave); }
+
+.dash-forma-pagamento { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.dash-forma-btn {
+  flex: 1;
+  min-width: 84px;
+  padding: 0.7rem 0.6rem;
+  border-radius: 10px;
+  border: 2px solid var(--borda);
+  background: var(--linho);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--tinta);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.dash-forma-btn.is-selecionada {
+  border-color: var(--destaque);
+  background: rgba(201, 162, 39, 0.14);
+  color: var(--tinta);
+}
 
 /* ---- Dashboard: cabeçalho e abas com ícone (substituem o
    .admin-painel-topo/.admin-painel-abas genéricos só dentro do

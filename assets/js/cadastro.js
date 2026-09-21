@@ -331,7 +331,9 @@
     dashEstabId = estabId;
     dashboardTitulo.textContent = nome;
     dashboardOverlay.classList.remove('oculto');
-    mostrarAbaDashboard(abaInicial || 'resumo');
+    // Caixa é a aba mais usada no dia a dia (registrar uma venda é rápido
+    // e constante) — abre direto nela, em vez do Resumo.
+    mostrarAbaDashboard(abaInicial || 'caixa');
   }
   function fecharDashboard() {
     dashboardOverlay.classList.add('oculto');
@@ -442,6 +444,7 @@
             '</span></div>';
         }).join('') : blocoVazio(ICONE_VAZIO_AGENDA, 'Nenhum agendamento ainda', 'Todo agendamento feito pelo site (ou criado manualmente aqui em cima) aparece nesta lista, com o status de cada um.')) + '</div>';
 
+      if (window.VBSelect) window.VBSelect.enhanceTodos(dashboardCorpo);
       var profSelect = document.getElementById('dashAgProfissional');
       var formAgendamento = document.getElementById('dashAgendamentoForm');
       if (formAgendamento) formAgendamento.addEventListener('submit', function (e) {
@@ -528,57 +531,135 @@
     dashboardCorpo.innerHTML = '<div class="skeleton" style="height:2rem;"></div>';
     Promise.all([
       db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }),
-      db.rpc('tenant_admin_listar_vendas_hoje', { p_estabelecimento_id: estabId })
+      db.rpc('tenant_admin_listar_vendas_hoje', { p_estabelecimento_id: estabId }),
+      db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId })
     ]).then(function (resultados) {
       if (dashEstabId !== estabId) return;
       var servicos = resultados[0].data || [];
       var vendas = resultados[1].data || [];
+      var equipe = resultados[2].data || [];
       var total = vendas.reduce(function (soma, v) { return soma + Number(v.valor); }, 0);
+      var porForma = {};
+      FORMAS_PAGAMENTO.forEach(function (f) { porForma[f.chave] = 0; });
+      vendas.forEach(function (v) { porForma[v.forma_pagamento] = (porForma[v.forma_pagamento] || 0) + Number(v.valor); });
+
       dashboardCorpo.innerHTML =
-        '<p class="dash-secao-intro" style="margin-top:0;">Registre aqui qualquer venda do dia a dia — um serviço já cadastrado ou um item avulso — pra manter o faturamento em dia.</p>' +
+        '<p class="dash-secao-intro" style="margin-top:0;">Toque no serviço vendido — o valor já vem preenchido, é só confirmar a forma de pagamento e registrar.</p>' +
+        '<div class="dash-caixa-servicos" id="caixaServicos">' +
+        servicos.map(function (s) {
+          return '<button type="button" class="dash-caixa-servico-btn" data-caixa-servico-id="' + s.id + '" data-preco="' + s.preco + '" data-nome="' + escapeHtml(s.nome) + '">' +
+            '<span class="dash-caixa-servico-nome">' + escapeHtml(s.nome) + '</span>' +
+            '<span class="dash-caixa-servico-preco">' + formatarPreco(s.preco) + '</span>' +
+            '</button>';
+        }).join('') +
+        '<button type="button" class="dash-caixa-servico-btn is-avulso is-selecionada" data-caixa-servico-id="">' +
+        '<span class="dash-caixa-servico-nome">Item avulso</span><span class="dash-caixa-servico-preco">outro valor</span>' +
+        '</button>' +
+        '</div>' +
+        (equipe.length ? '<p class="dash-resumo-subtitulo" style="margin-top:0;">Quem atendeu</p><div class="dash-forma-pagamento" id="caixaProfissionalBotoes" style="margin-bottom:1rem;">' +
+          '<button type="button" class="dash-forma-btn is-selecionada" data-staff-id="" data-staff-nome="">Sem informar</button>' +
+          equipe.map(function (p) { return '<button type="button" class="dash-forma-btn" data-staff-id="' + p.id + '" data-staff-nome="' + escapeHtml(p.nome) + '">' + escapeHtml(p.nome) + '</button>'; }).join('') +
+          '</div>' : '') +
         '<form id="caixaForm" class="dash-campos-grid">' +
-        '<div class="field"><label for="caixaServico">Serviço</label><select id="caixaServico"><option value="">Item avulso…</option>' +
-        servicos.map(function (s) { return '<option value="' + s.id + '" data-preco="' + s.preco + '">' + escapeHtml(s.nome) + ' — ' + formatarPreco(s.preco) + '</option>'; }).join('') +
-        '</select></div>' +
-        '<div class="field"><label for="caixaForma">Forma de pagamento</label><select id="caixaForma">' + FORMAS_PAGAMENTO.map(function (f) { return '<option value="' + f.chave + '">' + f.nome + '</option>'; }).join('') + '</select></div>' +
-        '<div class="field"><label for="caixaDescricao">Descrição</label><input type="text" id="caixaDescricao" placeholder="Obrigatório se item avulso"></div>' +
+        '<div class="field field-full" id="caixaDescricaoWrap"><label for="caixaDescricao">Descrição</label><input type="text" id="caixaDescricao" placeholder="Ex: Produto avulso"></div>' +
+        '<div class="field"><label for="caixaClienteNome">Nome do cliente (opcional)</label><input type="text" id="caixaClienteNome" placeholder="Ex: Maria Silva"></div>' +
+        '<div class="field"><label for="caixaClienteTelefone">Telefone do cliente (opcional)</label><input type="text" id="caixaClienteTelefone" placeholder="Ex: 15999998888"></div>' +
         '<div class="field"><label for="caixaValor">Valor (R$)</label><input type="number" id="caixaValor" min="0" step="0.01" placeholder="0,00" required></div>' +
+        '<div class="field"><label>Forma de pagamento</label><div class="dash-forma-pagamento" id="caixaFormaBotoes">' +
+        FORMAS_PAGAMENTO.map(function (f, i) { return '<button type="button" class="dash-forma-btn' + (i === 0 ? ' is-selecionada' : '') + '" data-forma="' + f.chave + '">' + f.nome + '</button>'; }).join('') +
+        '</div></div>' +
         '<button class="btn btn-primario field-full" type="submit">Registrar venda</button>' +
         '</form>' +
         '<p class="msg" id="caixaMsg"></p>' +
+        '<p class="dash-resumo-subtitulo">Recebido hoje por forma de pagamento</p>' +
+        '<div class="dash-resumo-cards">' +
+        FORMAS_PAGAMENTO.map(function (f) {
+          return '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(porForma[f.chave] || 0) + '</span><span class="dash-resumo-label">' + f.nome + '</span></div>';
+        }).join('') +
+        '</div>' +
         '<div class="caixa-total"><span>Total de hoje</span><span>' + formatarPreco(total) + '</span></div>' +
         '<div class="dash-lista-cabecalho">' +
-        (vendas.length ? '<button type="button" class="btn btn-ghost" id="caixaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar planilha (CSV)</button>' : '<span></span>') +
+        '<p class="dash-resumo-subtitulo" style="margin:0;">Vendas de hoje</p>' +
+        (vendas.length ? '<button type="button" class="btn btn-ghost" id="caixaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar planilha (CSV)</button>' : '') +
         '</div>' +
         '<div id="caixaLista">' + (vendas.length ? vendas.map(function (v) {
+          var detalhes = [FORMAS_PAGAMENTO.filter(function (f) { return f.chave === v.forma_pagamento; }).map(function (f) { return f.nome; })[0]];
+          if (v.staff_nome) detalhes.push(v.staff_nome);
+          if (v.cliente_nome) detalhes.push(v.cliente_nome);
           return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(v.descricao) + '</span><br>' +
-            '<span class="secundario">' + FORMAS_PAGAMENTO.filter(function (f) { return f.chave === v.forma_pagamento; }).map(function (f) { return f.nome; })[0] + '</span></span>' +
+            '<span class="secundario">' + escapeHtml(detalhes.join(' · ')) + '</span></span>' +
             '<span><strong>' + formatarPreco(v.valor) + '</strong> <button type="button" class="btn btn-ghost" style="padding:0.25rem 0.5rem; font-size:0.72rem;" data-remover-venda="' + v.id + '">✕</button></span></div>';
         }).join('') : blocoVazio(ICONE_VAZIO_CAIXA, 'Nenhuma venda hoje ainda', 'Toda venda registrada aqui entra no faturamento do dia e também alimenta o gráfico da aba Resumo.')) + '</div>';
 
-      var servicoSelect = document.getElementById('caixaServico');
-      servicoSelect.addEventListener('change', function () {
-        var opt = servicoSelect.options[servicoSelect.selectedIndex];
-        document.getElementById('caixaValor').value = opt.getAttribute('data-preco') || '';
-        document.getElementById('caixaDescricao').value = opt.value ? opt.textContent.split(' — ')[0] : '';
+      var servicoIdSelecionado = null;
+      var nomeSelecionado = null;
+      var descricaoInput = document.getElementById('caixaDescricao');
+      var valorInput = document.getElementById('caixaValor');
+      var descricaoWrap = document.getElementById('caixaDescricaoWrap');
+
+      function selecionarServicoBtn(btn) {
+        document.querySelectorAll('#caixaServicos .dash-caixa-servico-btn').forEach(function (b) { b.classList.remove('is-selecionada'); });
+        btn.classList.add('is-selecionada');
+        servicoIdSelecionado = btn.getAttribute('data-caixa-servico-id') || null;
+        nomeSelecionado = btn.getAttribute('data-nome') || null;
+        if (servicoIdSelecionado) {
+          valorInput.value = btn.getAttribute('data-preco') || '';
+          descricaoInput.value = nomeSelecionado;
+          descricaoWrap.classList.add('oculto');
+        } else {
+          valorInput.value = '';
+          descricaoInput.value = '';
+          descricaoWrap.classList.remove('oculto');
+          descricaoInput.focus();
+        }
+      }
+      document.getElementById('caixaServicos').addEventListener('click', function (e) {
+        var btn = e.target.closest('.dash-caixa-servico-btn');
+        if (!btn) return;
+        selecionarServicoBtn(btn);
       });
+      // "Item avulso" já começa selecionado (nenhum serviço cadastrado
+      // ainda, ou dono quer lançar algo fora da lista) — mostra a
+      // descrição livre desde o início.
+      descricaoWrap.classList.remove('oculto');
+
+      document.getElementById('caixaFormaBotoes').addEventListener('click', function (e) {
+        var btn = e.target.closest('.dash-forma-btn');
+        if (!btn) return;
+        document.querySelectorAll('#caixaFormaBotoes .dash-forma-btn').forEach(function (b) { b.classList.remove('is-selecionada'); });
+        btn.classList.add('is-selecionada');
+      });
+      var profissionalBotoes = document.getElementById('caixaProfissionalBotoes');
+      if (profissionalBotoes) profissionalBotoes.addEventListener('click', function (e) {
+        var btn = e.target.closest('.dash-forma-btn');
+        if (!btn) return;
+        profissionalBotoes.querySelectorAll('.dash-forma-btn').forEach(function (b) { b.classList.remove('is-selecionada'); });
+        btn.classList.add('is-selecionada');
+      });
+
       document.getElementById('caixaForm').addEventListener('submit', function (e) {
         e.preventDefault();
         var msg = document.getElementById('caixaMsg');
-        var servicoId = servicoSelect.value || null;
-        var descricao = document.getElementById('caixaDescricao').value.trim() || (servicoId ? servicoSelect.options[servicoSelect.selectedIndex].textContent.split(' — ')[0] : '');
+        var descricao = descricaoInput.value.trim() || nomeSelecionado;
         if (!descricao) { msg.className = 'msg msg-erro'; msg.textContent = 'Descreva o que foi vendido.'; return; }
+        var formaBtn = document.querySelector('#caixaFormaBotoes .dash-forma-btn.is-selecionada');
+        var staffBtn = profissionalBotoes ? profissionalBotoes.querySelector('.dash-forma-btn.is-selecionada') : null;
         msg.className = 'msg';
         msg.textContent = 'Registrando…';
         db.rpc('tenant_admin_registrar_venda', {
           p_estabelecimento_id: estabId,
           p_descricao: descricao,
-          p_valor: parseFloat(document.getElementById('caixaValor').value) || 0,
-          p_forma_pagamento: document.getElementById('caixaForma').value,
-          p_servico_id: servicoId
+          p_valor: parseFloat(valorInput.value) || 0,
+          p_forma_pagamento: formaBtn ? formaBtn.getAttribute('data-forma') : FORMAS_PAGAMENTO[0].chave,
+          p_servico_id: servicoIdSelecionado,
+          p_staff_id: staffBtn ? (staffBtn.getAttribute('data-staff-id') || null) : null,
+          p_staff_nome: staffBtn ? (staffBtn.getAttribute('data-staff-nome') || null) : null,
+          p_cliente_nome: document.getElementById('caixaClienteNome').value.trim() || null,
+          p_cliente_telefone: document.getElementById('caixaClienteTelefone').value.trim() || null
         }).then(function (res) {
           if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
           renderizarDashCaixa();
+          carregarEstabelecimentos();
         }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Sem conexão agora.'; });
       });
       document.getElementById('caixaLista').addEventListener('click', function (e) {
@@ -588,8 +669,8 @@
       });
       var exportarBtn = document.getElementById('caixaExportar');
       if (exportarBtn) exportarBtn.addEventListener('click', function () {
-        baixarCsv('vendas.csv', ['Descrição', 'Valor', 'Forma de pagamento', 'Data'], vendas.map(function (v) {
-          return [v.descricao, v.valor, FORMAS_PAGAMENTO.filter(function (f) { return f.chave === v.forma_pagamento; }).map(function (f) { return f.nome; })[0], v.criado_em];
+        baixarCsv('vendas.csv', ['Descrição', 'Valor', 'Forma de pagamento', 'Profissional', 'Cliente', 'Telefone do cliente', 'Data'], vendas.map(function (v) {
+          return [v.descricao, v.valor, FORMAS_PAGAMENTO.filter(function (f) { return f.chave === v.forma_pagamento; }).map(function (f) { return f.nome; })[0], v.staff_nome, v.cliente_nome, v.cliente_telefone, v.criado_em];
         }));
       });
     });
