@@ -1712,10 +1712,18 @@
       var linhas = res.data || [];
       equipeCache = linhas;
       lista.innerHTML = linhas.map(function (p) {
+        var avatarConteudo = p.foto_url
+          ? '<span style="width:100%; height:100%; display:block; background-size:cover; background-position:center; background-image:url(\'' + escapeHtml(p.foto_url) + '\');"></span>'
+          : escapeHtml((p.nome || '?')[0].toUpperCase());
         return '<li style="position:relative; padding-right:2.2rem;">' +
+          '<div style="display:flex; align-items:center; gap:0.6rem;">' +
+          '<button type="button" class="vb-membro-avatar-btn" data-editar-foto-membro="' + p.id + '" title="Trocar foto" style="flex-shrink:0; width:38px; height:38px; border-radius:50%; overflow:hidden; border:1px solid rgba(0,0,0,0.15); background:var(--linho,#f2ede2); display:flex; align-items:center; justify-content:center; font-weight:700; cursor:pointer; padding:0;">' + avatarConteudo + '</button>' +
+          '<div style="flex:1; min-width:0;">' +
           '<span class="nome" contenteditable="true" data-membro-id="' + p.id + '" data-campo="nome" data-vb-editavel="membro">' + escapeHtml(p.nome) + '</span>' +
           '<span class="cidade" contenteditable="true" data-membro-id="' + p.id + '" data-campo="especialidade" data-vb-editavel="membro">' + escapeHtml(p.especialidade || 'Especialidade') + '</span>' +
+          '</div></div>' +
           '<button type="button" class="vb-remover-x" data-remover-membro="' + p.id + '">×</button>' +
+          '<div class="vb-servico-novo-painel oculto" id="vbFotoMembroPainel-' + p.id + '" style="margin-top:0.6rem;"></div>' +
           '</li>';
       }).join('') +
         '<li style="border:none; display:block;">' +
@@ -1723,20 +1731,75 @@
         '<div id="vbNovoMembroPainel" class="vb-servico-novo-painel oculto"></div>' +
         '</li>';
 
+      function membroAtual(id) {
+        return equipeCache.filter(function (m) { return m.id === id; })[0] || {};
+      }
+
       lista.querySelectorAll('[data-membro-id]').forEach(function (el) {
         el.addEventListener('blur', function () {
-          var item = el.parentNode;
+          var item = el.closest('li');
+          var membroId = el.getAttribute('data-membro-id');
           var novoNome = item.querySelector('[data-campo="nome"]').textContent.trim();
           var novaEspecialidade = item.querySelector('[data-campo="especialidade"]').textContent.trim();
+          // manda a foto atual de volta (do cache) — sem isso, toda edição
+          // de texto apagava a foto, porque a RPC sempre substitui o
+          // foto_url pelo que for enviado, mesmo que seja nulo.
           db.rpc('tenant_admin_salvar_membro', {
-            p_estabelecimento_id: estabId, p_id: el.getAttribute('data-membro-id'),
-            p_nome: novoNome, p_especialidade: novaEspecialidade, p_foto_url: null
+            p_estabelecimento_id: estabId, p_id: membroId,
+            p_nome: novoNome, p_especialidade: novaEspecialidade, p_foto_url: membroAtual(membroId).foto_url || null
           });
         });
       });
       lista.querySelectorAll('[data-remover-membro]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           db.rpc('tenant_admin_remover_membro', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-membro') }).then(carregarEquipeAdmin);
+        });
+      });
+
+      function salvarFotoMembro(membroId, url) {
+        var m = membroAtual(membroId);
+        db.rpc('tenant_admin_salvar_membro', {
+          p_estabelecimento_id: estabId, p_id: membroId,
+          p_nome: m.nome, p_especialidade: m.especialidade || '', p_foto_url: url
+        }).then(carregarEquipeAdmin);
+      }
+
+      lista.querySelectorAll('[data-editar-foto-membro]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var membroId = btn.getAttribute('data-editar-foto-membro');
+          var painel = document.getElementById('vbFotoMembroPainel-' + membroId);
+          // fecha qualquer outro painel de foto aberto antes de abrir este
+          lista.querySelectorAll('.vb-servico-novo-painel').forEach(function (p) { if (p !== painel) p.classList.add('oculto'); });
+          var abrindo = painel.classList.contains('oculto');
+          if (!abrindo) { painel.classList.add('oculto'); return; }
+          var avatares = window.avataresParaSegmento ? window.avataresParaSegmento(linhaAtual.segmento) : [];
+          painel.innerHTML =
+            '<label class="vb-btn-upload" style="width:100%; justify-content:center; box-sizing:border-box; margin-bottom:0.6rem;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto do celular<input type="file" id="vbUploadFotoMembro-' + membroId + '" accept="image/*"></label>' +
+            (avatares.length
+              ? '<p class="vb-servico-novo-legenda">ou escolha um avatar pronto:</p><div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.5rem;">' +
+                avatares.map(function (f) {
+                  return '<img src="' + f.url + '" data-avatar-membro-url="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:contain; background:var(--linho,#f2ede2); border-radius:10px; cursor:pointer;">';
+                }).join('') + '</div>'
+              : '') +
+            (membroAtual(membroId).foto_url ? '<button type="button" class="btn btn-ghost" id="vbRemoverFotoMembro" style="width:100%; margin-top:0.6rem;">Remover foto</button>' : '') +
+            '<p class="msg" id="vbFotoMembroMsg-' + membroId + '" style="margin-top:0.4rem;"></p>';
+          painel.classList.remove('oculto');
+          var uploadEl = document.getElementById('vbUploadFotoMembro-' + membroId);
+          uploadEl.addEventListener('change', function (e) {
+            var file = e.target.files[0];
+            if (!file || !window.VBUpload) return;
+            var msg = document.getElementById('vbFotoMembroMsg-' + membroId);
+            msg.textContent = 'Enviando…';
+            window.VBUpload.uploadFoto(file, estabId, 'equipe').then(function (url) { salvarFotoMembro(membroId, url); }, function (err) {
+              msg.className = 'msg msg-erro';
+              msg.textContent = err.message || 'Falha ao enviar.';
+            });
+          });
+          painel.querySelectorAll('[data-avatar-membro-url]').forEach(function (img) {
+            img.addEventListener('click', function () { salvarFotoMembro(membroId, img.getAttribute('data-avatar-membro-url')); });
+          });
+          var removerBtn = document.getElementById('vbRemoverFotoMembro');
+          if (removerBtn) removerBtn.addEventListener('click', function () { salvarFotoMembro(membroId, null); });
         });
       });
 
