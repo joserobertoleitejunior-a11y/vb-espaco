@@ -573,34 +573,48 @@
       FORMAS_PAGAMENTO.forEach(function (f) { porForma[f.chave] = 0; });
       vendas.forEach(function (v) { porForma[v.forma_pagamento] = (porForma[v.forma_pagamento] || 0) + Number(v.valor); });
 
+      // carrinho: vários itens por venda (antes só dava pra marcar 1
+      // serviço por vez). Cada toque num serviço soma +1 na quantidade;
+      // "item avulso" abre um painel próprio pra descrição+valor livres.
+      var carrinho = [];
+      var avulsoSeq = 0;
+      var splitAtivo = false;
+
       dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
-        '<p class="dash-secao-intro" style="margin-top:0;">Toque no serviço vendido — o valor já vem preenchido, é só confirmar a forma de pagamento e registrar.</p>' +
+        '<p class="dash-secao-intro" style="margin-top:0;">Toque nos serviços vendidos — pode adicionar quantos precisar. Ajuste o carrinho e a forma de pagamento antes de registrar.</p>' +
         '<div class="dash-caixa-servicos" id="caixaServicos">' +
         servicos.map(function (s) {
           return '<button type="button" class="dash-caixa-servico-btn" data-caixa-servico-id="' + s.id + '" data-preco="' + s.preco + '" data-nome="' + escapeHtml(s.nome) + '">' +
             '<span class="dash-caixa-servico-nome">' + escapeHtml(s.nome) + '</span>' +
             '<span class="dash-caixa-servico-preco">' + formatarPreco(s.preco) + '</span>' +
+            '<span class="dash-caixa-servico-qtd oculto" data-caixa-qtd-badge></span>' +
             '</button>';
         }).join('') +
-        '<button type="button" class="dash-caixa-servico-btn is-avulso is-selecionada" data-caixa-servico-id="">' +
+        '<button type="button" class="dash-caixa-servico-btn is-avulso" data-caixa-avulso>' +
         '<span class="dash-caixa-servico-nome">Item avulso</span><span class="dash-caixa-servico-preco">outro valor</span>' +
         '</button>' +
         '</div>' +
+        '<div class="vb-servico-novo-painel oculto" id="caixaAvulsoPainel">' +
+        '<p class="vb-servico-novo-legenda">Descrição e valor do item:</p>' +
+        '<div class="vb-servico-manual">' +
+        '<input type="text" id="caixaAvulsoDescricao" placeholder="Ex: Produto avulso">' +
+        '<input type="number" id="caixaAvulsoValor" min="0" step="0.01" placeholder="Valor (R$)">' +
+        '<button type="button" class="btn btn-primario" id="caixaAvulsoAdicionar">Adicionar ao carrinho</button>' +
+        '</div></div>' +
         (equipe.length ? '<p class="dash-resumo-subtitulo" style="margin-top:0;">Quem atendeu</p><div class="dash-forma-pagamento" id="caixaProfissionalBotoes" style="margin-bottom:1rem;">' +
           '<button type="button" class="dash-forma-btn is-selecionada" data-staff-id="" data-staff-nome="">Sem informar</button>' +
           equipe.map(function (p) { return '<button type="button" class="dash-forma-btn" data-staff-id="' + p.id + '" data-staff-nome="' + escapeHtml(p.nome) + '">' + escapeHtml(p.nome) + '</button>'; }).join('') +
           '</div>' : '') +
-        '<form id="caixaForm" class="dash-campos-grid">' +
-        '<div class="field field-full" id="caixaDescricaoWrap"><label for="caixaDescricao">Descrição</label><input type="text" id="caixaDescricao" placeholder="Ex: Produto avulso"></div>' +
+        '<p class="dash-resumo-subtitulo" style="margin-top:0;">Carrinho</p>' +
+        '<div class="dash-caixa-carrinho" id="caixaCarrinhoLista"></div>' +
+        '<div class="caixa-total"><span>Total do carrinho</span><span id="caixaCarrinhoTotalValor">' + formatarPreco(0) + '</span></div>' +
+        '<div class="dash-campos-grid" style="margin-top:0.8rem;">' +
         '<div class="field"><label for="caixaClienteNome">Nome do cliente (opcional)</label><input type="text" id="caixaClienteNome" placeholder="Ex: Maria Silva"></div>' +
         '<div class="field"><label for="caixaClienteTelefone">Telefone do cliente (opcional)</label><input type="text" id="caixaClienteTelefone" placeholder="Ex: 15999998888"></div>' +
-        '<div class="field"><label for="caixaValor">Valor (R$)</label><input type="number" id="caixaValor" min="0" step="0.01" placeholder="0,00" required></div>' +
-        '<div class="field"><label>Forma de pagamento</label><div class="dash-forma-pagamento" id="caixaFormaBotoes">' +
-        FORMAS_PAGAMENTO.map(function (f, i) { return '<button type="button" class="dash-forma-btn' + (i === 0 ? ' is-selecionada' : '') + '" data-forma="' + f.chave + '">' + f.nome + '</button>'; }).join('') +
-        '</div></div>' +
-        '<button class="btn btn-primario field-full" type="submit">Registrar venda</button>' +
-        '</form>' +
+        '</div>' +
+        '<div id="caixaPagamentoBox"></div>' +
+        '<button class="btn btn-primario" type="button" id="caixaRegistrarBtn" style="width:100%; margin-top:0.8rem;" disabled>Registrar venda</button>' +
         '<p class="msg" id="caixaMsg"></p>' +
         '<p class="dash-resumo-subtitulo">Recebido hoje por forma de pagamento</p>' +
         '<div class="dash-resumo-cards">' +
@@ -622,45 +636,99 @@
             '<span><strong>' + formatarPreco(v.valor) + '</strong> <button type="button" class="btn btn-ghost" style="padding:0.25rem 0.5rem; font-size:0.72rem;" data-remover-venda="' + v.id + '">✕</button></span></div>';
         }).join('') : blocoVazio(ICONE_VAZIO_CAIXA, 'Nenhuma venda hoje ainda', 'Toda venda registrada aqui entra no faturamento do dia e também alimenta o gráfico da aba Resumo.')) + '</div>';
 
-      var servicoIdSelecionado = null;
-      var nomeSelecionado = null;
-      var descricaoInput = document.getElementById('caixaDescricao');
-      var valorInput = document.getElementById('caixaValor');
-      var descricaoWrap = document.getElementById('caixaDescricaoWrap');
-
-      function selecionarServicoBtn(btn) {
-        document.querySelectorAll('#caixaServicos .dash-caixa-servico-btn').forEach(function (b) { b.classList.remove('is-selecionada'); });
-        btn.classList.add('is-selecionada');
-        servicoIdSelecionado = btn.getAttribute('data-caixa-servico-id') || null;
-        nomeSelecionado = btn.getAttribute('data-nome') || null;
-        if (servicoIdSelecionado) {
-          valorInput.value = btn.getAttribute('data-preco') || '';
-          descricaoInput.value = nomeSelecionado;
-          descricaoWrap.classList.add('oculto');
-        } else {
-          valorInput.value = '';
-          descricaoInput.value = '';
-          descricaoWrap.classList.remove('oculto');
-          descricaoInput.focus();
-        }
-      }
-      document.getElementById('caixaServicos').addEventListener('click', function (e) {
-        var btn = e.target.closest('.dash-caixa-servico-btn');
-        if (!btn) return;
-        selecionarServicoBtn(btn);
-      });
-      // "Item avulso" já começa selecionado (nenhum serviço cadastrado
-      // ainda, ou dono quer lançar algo fora da lista) — mostra a
-      // descrição livre desde o início.
-      descricaoWrap.classList.remove('oculto');
-
-      document.getElementById('caixaFormaBotoes').addEventListener('click', function (e) {
-        var btn = e.target.closest('.dash-forma-btn');
-        if (!btn) return;
-        document.querySelectorAll('#caixaFormaBotoes .dash-forma-btn').forEach(function (b) { b.classList.remove('is-selecionada'); });
-        btn.classList.add('is-selecionada');
-      });
+      var carrinhoListaEl = document.getElementById('caixaCarrinhoLista');
+      var carrinhoTotalEl = document.getElementById('caixaCarrinhoTotalValor');
+      var pagamentoBox = document.getElementById('caixaPagamentoBox');
+      var registrarBtn = document.getElementById('caixaRegistrarBtn');
       var profissionalBotoes = document.getElementById('caixaProfissionalBotoes');
+
+      function totalCarrinho() {
+        return carrinho.reduce(function (soma, item) { return soma + item.precoUnit * item.qtd; }, 0);
+      }
+
+      function atualizarBadgesServico() {
+        document.querySelectorAll('#caixaServicos .dash-caixa-servico-btn[data-caixa-servico-id]').forEach(function (btn) {
+          var id = btn.getAttribute('data-caixa-servico-id');
+          var item = carrinho.filter(function (i) { return i.key === id; })[0];
+          var badge = btn.querySelector('[data-caixa-qtd-badge]');
+          if (item && item.qtd > 0) {
+            badge.textContent = item.qtd;
+            badge.classList.remove('oculto');
+            btn.classList.add('is-selecionada');
+          } else {
+            badge.classList.add('oculto');
+            btn.classList.remove('is-selecionada');
+          }
+        });
+      }
+
+      function renderizarCarrinho() {
+        carrinhoListaEl.innerHTML = carrinho.length
+          ? carrinho.map(function (item) {
+            return '<div class="dash-caixa-carrinho-item">' +
+              '<div class="dash-caixa-carrinho-info"><span class="nome">' + escapeHtml(item.nome) + '</span><span class="preco-unit">' + formatarPreco(item.precoUnit) + ' cada</span></div>' +
+              '<div class="dash-caixa-stepper">' +
+              '<button type="button" data-carrinho-dec="' + item.key + '">−</button>' +
+              '<span>' + item.qtd + '</span>' +
+              '<button type="button" data-carrinho-inc="' + item.key + '">+</button>' +
+              '</div>' +
+              '<span class="dash-caixa-carrinho-subtotal">' + formatarPreco(item.precoUnit * item.qtd) + '</span>' +
+              '<button type="button" class="vb-remover-x" data-carrinho-remover="' + item.key + '">×</button>' +
+              '</div>';
+          }).join('')
+          : '<p class="dash-caixa-carrinho-vazio">Nenhum item ainda — toque em um serviço acima ou adicione um item avulso.</p>';
+        carrinhoTotalEl.textContent = formatarPreco(totalCarrinho());
+        atualizarBadgesServico();
+        atualizarPagamentoResumo();
+        registrarBtn.disabled = carrinho.length === 0;
+      }
+
+      function adicionarItem(key, nome, precoUnit, servicoId) {
+        var existente = carrinho.filter(function (i) { return i.key === key; })[0];
+        if (existente) { existente.qtd += 1; } else { carrinho.push({ key: key, nome: nome, precoUnit: precoUnit, qtd: 1, servicoId: servicoId }); }
+        renderizarCarrinho();
+      }
+
+      document.getElementById('caixaServicos').addEventListener('click', function (e) {
+        var avulsoBtn = e.target.closest('[data-caixa-avulso]');
+        if (avulsoBtn) {
+          var painel = document.getElementById('caixaAvulsoPainel');
+          painel.classList.toggle('oculto');
+          if (!painel.classList.contains('oculto')) document.getElementById('caixaAvulsoDescricao').focus();
+          return;
+        }
+        var btn = e.target.closest('.dash-caixa-servico-btn[data-caixa-servico-id]');
+        if (!btn) return;
+        adicionarItem(btn.getAttribute('data-caixa-servico-id'), btn.getAttribute('data-nome'), Number(btn.getAttribute('data-preco')), btn.getAttribute('data-caixa-servico-id'));
+      });
+      document.getElementById('caixaAvulsoAdicionar').addEventListener('click', function () {
+        var descInput = document.getElementById('caixaAvulsoDescricao');
+        var valInput = document.getElementById('caixaAvulsoValor');
+        var descricao = descInput.value.trim();
+        var valor = parseFloat(valInput.value);
+        if (!descricao || !(valor > 0)) { descInput.focus(); return; }
+        adicionarItem('avulso-' + (++avulsoSeq), descricao, valor, null);
+        descInput.value = '';
+        valInput.value = '';
+        descInput.focus();
+      });
+      carrinhoListaEl.addEventListener('click', function (e) {
+        var incBtn = e.target.closest('[data-carrinho-inc]');
+        var decBtn = e.target.closest('[data-carrinho-dec]');
+        var remBtn = e.target.closest('[data-carrinho-remover]');
+        var key = null;
+        if (incBtn) key = incBtn.getAttribute('data-carrinho-inc');
+        else if (decBtn) key = decBtn.getAttribute('data-carrinho-dec');
+        else if (remBtn) key = remBtn.getAttribute('data-carrinho-remover');
+        if (!key) return;
+        var item = carrinho.filter(function (i) { return i.key === key; })[0];
+        if (!item) return;
+        if (incBtn) item.qtd += 1;
+        else if (decBtn) item.qtd -= 1;
+        if (remBtn || item.qtd <= 0) carrinho = carrinho.filter(function (i) { return i.key !== key; });
+        renderizarCarrinho();
+      });
+
       if (profissionalBotoes) profissionalBotoes.addEventListener('click', function (e) {
         var btn = e.target.closest('.dash-forma-btn');
         if (!btn) return;
@@ -668,31 +736,187 @@
         btn.classList.add('is-selecionada');
       });
 
-      document.getElementById('caixaForm').addEventListener('submit', function (e) {
-        e.preventDefault();
+      // ---- pagamento: modo único (com troco quando é dinheiro) ou
+      // fracionado entre várias formas (split), como um PDV de verdade. ----
+      function renderizarPagamentoUnico() {
+        pagamentoBox.innerHTML =
+          '<div class="field"><label>Forma de pagamento</label><div class="dash-forma-pagamento" id="caixaFormaBotoes">' +
+          FORMAS_PAGAMENTO.map(function (f, i) { return '<button type="button" class="dash-forma-btn' + (i === 0 ? ' is-selecionada' : '') + '" data-forma="' + f.chave + '">' + f.nome + '</button>'; }).join('') +
+          '</div></div>' +
+          '<div class="field oculto" id="caixaTrocoWrap"><label for="caixaValorRecebido">Valor recebido em dinheiro (opcional)</label><input type="number" id="caixaValorRecebido" min="0" step="0.01" placeholder="0,00"></div>' +
+          '<p class="dash-caixa-troco oculto" id="caixaTrocoResultado"></p>' +
+          '<button type="button" class="btn btn-ghost" id="caixaAtivarSplit" style="width:100%; margin-top:0.4rem;">Dividir entre mais de uma forma de pagamento</button>';
+        document.getElementById('caixaFormaBotoes').addEventListener('click', function (e) {
+          var btn = e.target.closest('.dash-forma-btn');
+          if (!btn) return;
+          document.querySelectorAll('#caixaFormaBotoes .dash-forma-btn').forEach(function (b) { b.classList.remove('is-selecionada'); });
+          btn.classList.add('is-selecionada');
+          atualizarPagamentoResumo();
+        });
+        document.getElementById('caixaValorRecebido').addEventListener('input', atualizarPagamentoResumo);
+        document.getElementById('caixaAtivarSplit').addEventListener('click', function () {
+          splitAtivo = true;
+          renderizarPagamentoSplit();
+        });
+      }
+
+      function linhaSplitHtml(forma) {
+        return '<div class="dash-caixa-split-linha">' +
+          '<div class="dash-forma-pagamento">' +
+          FORMAS_PAGAMENTO.map(function (f) { return '<button type="button" class="dash-forma-btn' + (f.chave === forma ? ' is-selecionada' : '') + '" data-split-forma="' + f.chave + '">' + f.nome + '</button>'; }).join('') +
+          '</div>' +
+          '<input type="number" class="dash-caixa-split-valor" min="0" step="0.01" placeholder="Valor (R$)">' +
+          '<button type="button" class="vb-remover-x" data-split-remover>×</button>' +
+          '</div>';
+      }
+
+      function renderizarPagamentoSplit() {
+        pagamentoBox.innerHTML =
+          '<p class="dash-resumo-subtitulo" style="margin-top:0;">Pagamento dividido</p>' +
+          '<div id="caixaSplitLinhas">' + linhaSplitHtml('pix') + linhaSplitHtml('dinheiro') + '</div>' +
+          '<button type="button" class="btn btn-ghost" id="caixaSplitAdicionarLinha" style="width:100%; margin:0.5rem 0;">+ Adicionar forma de pagamento</button>' +
+          '<p class="dash-caixa-troco" id="caixaSplitResumo"></p>' +
+          '<button type="button" class="btn btn-ghost" id="caixaDesativarSplit" style="width:100%;">Voltar pra uma forma só</button>';
+        document.getElementById('caixaSplitLinhas').addEventListener('click', function (e) {
+          var formaBtn = e.target.closest('[data-split-forma]');
+          if (formaBtn) {
+            formaBtn.parentElement.querySelectorAll('.dash-forma-btn').forEach(function (b) { b.classList.remove('is-selecionada'); });
+            formaBtn.classList.add('is-selecionada');
+            atualizarPagamentoResumo();
+            return;
+          }
+          var remBtn = e.target.closest('[data-split-remover]');
+          if (remBtn) {
+            remBtn.closest('.dash-caixa-split-linha').remove();
+            atualizarPagamentoResumo();
+          }
+        });
+        document.getElementById('caixaSplitLinhas').addEventListener('input', function (e) {
+          if (e.target.classList.contains('dash-caixa-split-valor')) atualizarPagamentoResumo();
+        });
+        document.getElementById('caixaSplitAdicionarLinha').addEventListener('click', function () {
+          document.getElementById('caixaSplitLinhas').insertAdjacentHTML('beforeend', linhaSplitHtml('cartao'));
+          atualizarPagamentoResumo();
+        });
+        document.getElementById('caixaDesativarSplit').addEventListener('click', function () {
+          splitAtivo = false;
+          renderizarPagamentoUnico();
+          atualizarPagamentoResumo();
+        });
+        atualizarPagamentoResumo();
+      }
+
+      function lerSplitTenders() {
+        return Array.prototype.slice.call(document.querySelectorAll('#caixaSplitLinhas .dash-caixa-split-linha')).map(function (linha) {
+          var formaBtn = linha.querySelector('.dash-forma-btn.is-selecionada');
+          var valorInput = linha.querySelector('.dash-caixa-split-valor');
+          return { forma: formaBtn ? formaBtn.getAttribute('data-split-forma') : FORMAS_PAGAMENTO[0].chave, valor: parseFloat(valorInput.value) || 0 };
+        });
+      }
+
+      function atualizarPagamentoResumo() {
+        var totalAtual = totalCarrinho();
+        if (!splitAtivo) {
+          var formaBtn = document.querySelector('#caixaFormaBotoes .dash-forma-btn.is-selecionada');
+          var trocoWrap = document.getElementById('caixaTrocoWrap');
+          var trocoResultado = document.getElementById('caixaTrocoResultado');
+          if (!formaBtn || !trocoWrap || !trocoResultado) return;
+          var ehDinheiro = formaBtn.getAttribute('data-forma') === 'dinheiro';
+          trocoWrap.classList.toggle('oculto', !ehDinheiro);
+          if (ehDinheiro) {
+            var recebido = parseFloat(document.getElementById('caixaValorRecebido').value);
+            if (recebido > 0) {
+              var diferenca = recebido - totalAtual;
+              trocoResultado.classList.remove('oculto');
+              trocoResultado.textContent = diferenca >= 0 ? 'Troco: ' + formatarPreco(diferenca) : 'Faltam ' + formatarPreco(-diferenca);
+              trocoResultado.classList.toggle('dash-caixa-troco-alerta', diferenca < 0);
+            } else {
+              trocoResultado.classList.add('oculto');
+            }
+          } else {
+            trocoResultado.classList.add('oculto');
+          }
+          registrarBtn.disabled = carrinho.length === 0;
+        } else {
+          var resumo = document.getElementById('caixaSplitResumo');
+          if (!resumo) return;
+          var alocado = lerSplitTenders().reduce(function (soma, t) { return soma + t.valor; }, 0);
+          var diff = Math.round((totalAtual - alocado) * 100) / 100;
+          if (Math.abs(diff) < 0.01) {
+            resumo.textContent = 'Total alocado: ' + formatarPreco(alocado) + ' — confere com o carrinho.';
+            resumo.classList.remove('dash-caixa-troco-alerta');
+          } else if (diff > 0) {
+            resumo.textContent = 'Falta alocar ' + formatarPreco(diff) + ' (carrinho: ' + formatarPreco(totalAtual) + ').';
+            resumo.classList.add('dash-caixa-troco-alerta');
+          } else {
+            resumo.textContent = 'Passou ' + formatarPreco(-diff) + ' do total do carrinho.';
+            resumo.classList.add('dash-caixa-troco-alerta');
+          }
+          registrarBtn.disabled = carrinho.length === 0 || Math.abs(diff) >= 0.01;
+        }
+      }
+
+      renderizarPagamentoUnico();
+      renderizarCarrinho();
+
+      registrarBtn.addEventListener('click', function () {
         var msg = document.getElementById('caixaMsg');
-        var descricao = descricaoInput.value.trim() || nomeSelecionado;
-        if (!descricao) { msg.className = 'msg msg-erro'; msg.textContent = 'Descreva o que foi vendido.'; return; }
-        var formaBtn = document.querySelector('#caixaFormaBotoes .dash-forma-btn.is-selecionada');
+        if (!carrinho.length) { msg.className = 'msg msg-erro'; msg.textContent = 'Adicione ao menos um item ao carrinho.'; return; }
         var staffBtn = profissionalBotoes ? profissionalBotoes.querySelector('.dash-forma-btn.is-selecionada') : null;
-        msg.className = 'msg';
-        msg.textContent = 'Registrando…';
-        db.rpc('tenant_admin_registrar_venda', {
+        var dadosComuns = {
           p_estabelecimento_id: estabId,
-          p_descricao: descricao,
-          p_valor: parseFloat(valorInput.value) || 0,
-          p_forma_pagamento: formaBtn ? formaBtn.getAttribute('data-forma') : FORMAS_PAGAMENTO[0].chave,
-          p_servico_id: servicoIdSelecionado,
           p_staff_id: staffBtn ? (staffBtn.getAttribute('data-staff-id') || null) : null,
           p_staff_nome: staffBtn ? (staffBtn.getAttribute('data-staff-nome') || null) : null,
           p_cliente_nome: document.getElementById('caixaClienteNome').value.trim() || null,
           p_cliente_telefone: document.getElementById('caixaClienteTelefone').value.trim() || null
-        }).then(function (res) {
-          if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
+        };
+        var chamadas;
+        if (!splitAtivo) {
+          var formaBtn = document.querySelector('#caixaFormaBotoes .dash-forma-btn.is-selecionada');
+          var forma = formaBtn ? formaBtn.getAttribute('data-forma') : FORMAS_PAGAMENTO[0].chave;
+          chamadas = carrinho.map(function (item) {
+            var params = Object.assign({}, dadosComuns, {
+              p_descricao: item.qtd > 1 ? (item.qtd + 'x ' + item.nome) : item.nome,
+              p_valor: Math.round(item.precoUnit * item.qtd * 100) / 100,
+              p_forma_pagamento: forma,
+              p_servico_id: item.servicoId
+            });
+            return function () { return db.rpc('tenant_admin_registrar_venda', params); };
+          });
+        } else {
+          var tenders = lerSplitTenders().filter(function (t) { return t.valor > 0; });
+          var alocado = tenders.reduce(function (soma, t) { return soma + t.valor; }, 0);
+          if (Math.abs(alocado - totalCarrinho()) >= 0.01) {
+            msg.className = 'msg msg-erro';
+            msg.textContent = 'A soma das formas de pagamento precisa bater com o total do carrinho.';
+            return;
+          }
+          var descricaoConjunta = carrinho.map(function (item) { return item.qtd > 1 ? (item.qtd + 'x ' + item.nome) : item.nome; }).join(', ');
+          chamadas = tenders.map(function (t) {
+            var params = Object.assign({}, dadosComuns, {
+              p_descricao: descricaoConjunta,
+              p_valor: t.valor,
+              p_forma_pagamento: t.forma,
+              p_servico_id: null
+            });
+            return function () { return db.rpc('tenant_admin_registrar_venda', params); };
+          });
+        }
+        msg.className = 'msg';
+        msg.textContent = 'Registrando…';
+        registrarBtn.disabled = true;
+        chamadas.reduce(function (promessa, chamar) {
+          return promessa.then(function (erroAnterior) {
+            if (erroAnterior) return erroAnterior;
+            return chamar().then(function (res) { return res.error || null; });
+          });
+        }, Promise.resolve(null)).then(function (erro) {
+          if (erro) { msg.className = 'msg msg-erro'; msg.textContent = erro.message; registrarBtn.disabled = false; return; }
           renderizarDashCaixa();
           carregarEstabelecimentos();
-        }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Sem conexão agora.'; });
+        }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Sem conexão agora.'; registrarBtn.disabled = false; });
       });
+
       document.getElementById('caixaLista').addEventListener('click', function (e) {
         var btn = e.target.closest('[data-remover-venda]');
         if (!btn) return;

@@ -1910,6 +1910,64 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 .dash-caixa-servico-nome { font-weight: 700; font-size: 0.85rem; color: var(--tinta); }
 .dash-caixa-servico-preco { font-size: 0.78rem; color: var(--tinta-suave); }
 .dash-caixa-servico-btn.is-avulso .dash-caixa-servico-nome { color: var(--tinta-suave); }
+.dash-caixa-servico-btn { position: relative; }
+.dash-caixa-servico-qtd {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  background: var(--vermelho);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.3rem;
+}
+
+/* ---- Caixa: carrinho com vários itens (antes só dava pra marcar 1
+   serviço por venda) — cada linha tem quantidade ajustável, e o total
+   alimenta tanto o troco (pagamento único) quanto a checagem de soma
+   do pagamento fracionado. ---- */
+.dash-caixa-carrinho { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.8rem; }
+.dash-caixa-carrinho-vazio { font-size: 0.82rem; color: var(--tinta-suave); text-align: center; padding: 0.8rem 0; margin: 0; }
+.dash-caixa-carrinho-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--linho);
+}
+.dash-caixa-carrinho-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dash-caixa-carrinho-info .nome { font-weight: 700; font-size: 0.85rem; color: var(--tinta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-caixa-carrinho-info .preco-unit { font-size: 0.74rem; color: var(--tinta-suave); }
+.dash-caixa-stepper { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+.dash-caixa-stepper button {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--borda);
+  background: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--tinta);
+}
+.dash-caixa-stepper span { min-width: 1.2rem; text-align: center; font-weight: 700; font-size: 0.85rem; }
+.dash-caixa-carrinho-subtotal { font-weight: 800; font-size: 0.85rem; flex-shrink: 0; min-width: 4.2rem; text-align: right; }
+
+.dash-caixa-troco { font-size: 0.85rem; font-weight: 700; color: #1e6b32; margin: 0.4rem 0 0; }
+.dash-caixa-troco.dash-caixa-troco-alerta { color: #9a2b2b; }
+.dash-caixa-split-linha { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+.dash-caixa-split-linha .dash-forma-pagamento { flex: 1; gap: 0.3rem; }
+.dash-caixa-split-linha .dash-forma-btn { padding: 0.45rem 0.3rem; font-size: 0.72rem; min-width: 0; }
+.dash-caixa-split-linha .dash-caixa-split-valor { width: 6.5rem; flex-shrink: 0; }
 
 .dash-forma-pagamento { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .dash-forma-btn {
