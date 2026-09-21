@@ -115,6 +115,10 @@
         return;
       }
       var linhas = res.data || [];
+      // quem já tem um site não precisa ver "criar outro" toda hora — some
+      // sozinho assim que existe pelo menos um estabelecimento cadastrado.
+      var ctaCard = document.querySelector('.criar-cta-card');
+      if (ctaCard) ctaCard.classList.toggle('oculto', linhas.length > 0);
       if (!linhas.length) {
         listaEl.innerHTML = '';
         listaMsg.textContent = 'Nenhum estabelecimento cadastrado ainda.';
@@ -161,7 +165,7 @@
           '<span class="nome">' + escapeHtml(e.nome) + '</span><br><span class="cidade">' + escapeHtml(e.cidade) + '</span>' +
           '<div class="dash-card-stats"><span><strong>' + (e.total_agendamentos || 0) + '</strong> agendamento(s)</span><span><strong>' + (e.total_servicos || 0) + '</strong> serviço(s)</span><span><strong>' + (e.total_equipe || 0) + '</strong> profissional(is)</span></div>' +
           '<div class="dash-card-acessos">' +
-          '<span>👁 <strong>' + (e.total_acessos || 0) + '</strong> acesso(s) ao site</span>' +
+          '<span><svg class="icone-inline" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg> <strong>' + (e.total_acessos || 0) + '</strong> acesso(s) ao site</span>' +
           '<label class="dash-card-acessos-toggle"><input type="checkbox" data-toggle-contador-id="' + e.id + '"' + (e.mostrar_contador_publico ? ' checked' : '') + '> Mostrar pro público</label>' +
           '</div>' +
           configPendenteHtml +
