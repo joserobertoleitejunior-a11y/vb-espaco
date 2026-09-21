@@ -1518,17 +1518,26 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 .dash-card-switch input:focus-visible + .dash-card-switch-trilho { outline: 2px solid var(--destaque); outline-offset: 2px; }
 
 /* barrinha de acessos no rodapé do site do estabelecimento — só aparece
-   se o dono ativar "Mostrar pro público" no dashboard */
+   se o dono ativar "Mostrar pro público" no dashboard. Fica ao lado dos
+   ícones de rede social (mesma coluna "Contato"), não isolada longe
+   deles numa coluna própria. */
+.foot-redes-linha { display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem 1.1rem; margin-top: 0.5rem; }
+.foot-redes-linha .social-strip { margin-top: 0; }
 .foot-contador {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.35rem;
-  font-size: 0.76rem;
-  color: var(--ink-soft, var(--tinta-suave));
-  margin-top: 0.5rem;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  /* cor herdada de propósito (não var(--ink-soft)): cada template já
+     define a cor de texto certa pro seu próprio rodapé (claro ou
+     escuro) direto no elemento <footer>, e --ink-soft sempre aponta
+     pro tom "escuro sobre claro" do :root — usar a variável deixava
+     esse texto invisível (quase preto) em cima de rodapés escuros. */
+  color: inherit;
 }
-.foot-contador-total { margin: 0; }
+.foot-contador-total { margin: 0; display: inline-flex; align-items: center; gap: 0.3rem; }
+.foot-contador-total svg { flex-shrink: 0; }
 .foot-contador-periodos { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .foot-contador-periodos button {
   background: none;
