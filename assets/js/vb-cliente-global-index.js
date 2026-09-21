@@ -1,6 +1,10 @@
 /* Login por WhatsApp na página inicial (index.html) — mesma identidade
    global usada dentro de cada estabelecimento (ver vb-cliente-global.js),
-   só que aqui não há um estabelecimento aberto pra registrar visita. */
+   só que aqui não há um estabelecimento aberto pra registrar visita.
+   "Entrar" no topo pergunta primeiro quem tá entrando — cliente (segue
+   pro login por WhatsApp de sempre) ou dono de estabelecimento (manda
+   direto pro acesso do dono em cadastro.html) — igual ao mesmo botão
+   dentro de cada site (ver perfil.js). */
 (function () {
   if (!window.db || !window.VBClienteGlobal) return;
 
@@ -27,6 +31,7 @@
     var overlay = document.getElementById('clienteGlobalOverlay');
     var btn = document.getElementById('clienteGlobalBtn');
     if (!overlay || !btn) return;
+    var estagioEscolha = document.getElementById('clienteGlobalEstagioEscolha');
     var estagioTelefone = document.getElementById('clienteGlobalEstagioTelefone');
     var estagioNome = document.getElementById('clienteGlobalEstagioNome');
     var telefoneInput = document.getElementById('clienteGlobalTelefoneInput');
@@ -36,17 +41,36 @@
 
     aplicarNaTela(window.VBClienteGlobal.obter());
 
-    function abrir() {
-      estagioTelefone.classList.remove('oculto');
+    function resetarEstagios() {
+      estagioTelefone.classList.add('oculto');
       estagioNome.classList.add('oculto');
       telefoneInput.value = '';
       nomeInput.value = '';
       msg.textContent = '';
       msg.className = 'msg';
+    }
+    function abrir() {
+      resetarEstagios();
+      if (estagioEscolha) estagioEscolha.classList.remove('oculto');
+      overlay.classList.remove('oculto');
+    }
+    function abrirLoginCliente() {
+      resetarEstagios();
+      if (estagioEscolha) estagioEscolha.classList.add('oculto');
+      estagioTelefone.classList.remove('oculto');
       overlay.classList.remove('oculto');
       setTimeout(function () { telefoneInput.focus(); }, 50);
     }
     function fechar() { overlay.classList.add('oculto'); }
+
+    var escolherClienteBtn = document.getElementById('clienteGlobalEscolherCliente');
+    if (escolherClienteBtn) escolherClienteBtn.addEventListener('click', abrirLoginCliente);
+    var escolherEstabelecimentoBtn = document.getElementById('clienteGlobalEscolherEstabelecimento');
+    if (escolherEstabelecimentoBtn) escolherEstabelecimentoBtn.addEventListener('click', function () {
+      window.location.href = '/cadastro.html';
+    });
+    var cancelarEscolhaBtn = document.getElementById('clienteGlobalCancelarEscolha');
+    if (cancelarEscolhaBtn) cancelarEscolhaBtn.addEventListener('click', fechar);
 
     btn.addEventListener('click', function () {
       var atual = window.VBClienteGlobal.obter();
