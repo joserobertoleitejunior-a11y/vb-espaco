@@ -106,7 +106,14 @@
     linhaAtual.cor_destaque = cor;
     linhaAtual.cor_secundaria = corSecundaria;
     aplicarCorDinamica(cor, corSecundaria);
-    db.rpc('tenant_admin_atualizar_cor', { p_estabelecimento_id: estabId, p_cor_destaque: cor, p_cor_secundaria: corSecundaria || null });
+    // antes esse rpc era "fire and forget" — se falhasse (rede, sessão
+    // expirada etc.), a cor mudava na tela mas nunca era salva de verdade,
+    // e um F5 devolvia a cor antiga sem nenhum aviso do motivo.
+    db.rpc('tenant_admin_atualizar_cor', { p_estabelecimento_id: estabId, p_cor_destaque: cor, p_cor_secundaria: corSecundaria || null }).then(function (res) {
+      if (res.error && window.VBDialogo) window.VBDialogo.alert('Não deu pra salvar a cor: ' + res.error.message);
+    }, function () {
+      if (window.VBDialogo) window.VBDialogo.alert('Sem conexão — a cor mudou na tela mas não foi salva. Tenta de novo.');
+    });
     var corInput = document.getElementById('adminCorInput');
     var corSecundariaInput = document.getElementById('adminCorSecundariaInput');
     if (corInput) corInput.value = cor;
@@ -119,7 +126,13 @@
     if (!window.extrairCoresDaImagem) return;
     window.extrairCoresDaImagem(url).then(function (cores) {
       salvarCor(cores.primaria, cores.secundaria);
-    }, function () {});
+    }, function (err) {
+      // extração falha silenciosamente com bastante frequência quando a
+      // foto vem de outra origem (CORS) — antes isso não avisava nada,
+      // parecia que "seguiu a cor" (mudou na tela um instante) mas na
+      // real nunca chegou a acontecer.
+      if (window.VBDialogo) window.VBDialogo.alert('Não consegui pegar a cor dessa foto: ' + (err && err.message ? err.message : 'tenta com outra imagem.'));
+    });
   }
 
   function alternarSeguirCorImagem() {
@@ -127,7 +140,11 @@
     linhaAtual.seguir_cor_imagem = novoValor;
     var btn = document.getElementById('adminSeguirCorImagemBtn');
     if (btn) btn.classList.toggle('is-ativo', novoValor);
-    db.rpc('tenant_admin_alternar_seguir_cor_imagem', { p_estabelecimento_id: estabId, p_seguir: novoValor });
+    db.rpc('tenant_admin_alternar_seguir_cor_imagem', { p_estabelecimento_id: estabId, p_seguir: novoValor }).then(function (res) {
+      if (res.error && window.VBDialogo) window.VBDialogo.alert('Não deu pra salvar: ' + res.error.message);
+    }, function () {
+      if (window.VBDialogo) window.VBDialogo.alert('Sem conexão — tenta de novo.');
+    });
     if (novoValor) {
       var fotoAtual = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
       if (fotoAtual) seguirCorDaImagem(fotoAtual);

@@ -1000,26 +1000,26 @@ button.catalogo-avatar-anel { cursor: pointer; }
   margin: 0 auto;
 }
 .admin-modo-barra.oculto { display: none; }
+/* Antes cada botão tinha uma textura PNG dourada fixa, sempre igual
+   independente da cor real do site — destoava em qualquer site que não
+   fosse dourado/preto. Agora segue a mesma cor dinâmica (--terracotta,
+   com --dourado de fallback) que já pinta o resto do site. */
 .admin-modo-barra button {
-  background:
-    linear-gradient(rgba(20, 14, 4, 0.42), rgba(20, 14, 4, 0.42)),
-    url("/assets/img/admin-bar/textura-gold.png");
-  background-size: cover;
-  background-position: center;
-  border: 1px solid rgba(243, 230, 200, 0.5);
-  color: #f3e6c8;
+  background: linear-gradient(160deg, var(--terracotta, var(--dourado, #C9A227)), var(--terracotta-deep, var(--dourado-escuro, #8a6d1c)));
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
   border-radius: 999px;
   padding: 0.4rem 0.9rem;
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   transition: filter 0.15s ease, transform 0.1s ease;
 }
 .admin-modo-barra button:hover { filter: brightness(1.15); }
 .admin-modo-barra button:active { transform: scale(0.96); }
-/* "Sair" fica neutro (sem textura pintada) — é uma ação utilitária, não
+/* "Sair" fica neutro (sem cor de marca) — é uma ação utilitária, não
    criativa, então não precisa do mesmo tratamento decorativo. */
 #adminSairBtn {
   background: rgba(255, 255, 255, 0.08);
@@ -1027,13 +1027,13 @@ button.catalogo-avatar-anel { cursor: pointer; }
 }
 #adminSairBtn:hover { background: rgba(255, 255, 255, 0.18); filter: none; }
 .admin-modo-barra button.is-ativo {
-  background:
-    linear-gradient(rgba(15, 10, 2, 0.5), rgba(15, 10, 2, 0.5)),
-    url("/assets/img/admin-bar/textura-brown.png");
-  background-size: cover;
-  background-position: center;
-  border-color: rgba(255, 224, 150, 0.9);
+  background: linear-gradient(160deg, var(--terracotta-deep, var(--dourado-escuro, #8a6d1c)), var(--terracotta, var(--dourado, #C9A227)));
+  border-color: rgba(255, 255, 255, 0.9);
 }
+/* Antes cada círculo tinha uma moedinha PNG pintada (dourada/marrom)
+   sempre igual por trás do seletor de cor nativo — agora é só um anel
+   fino branco, deixando a própria cor escolhida (mostrada pelo
+   <input type="color"> de dentro) ser a única cor visível aqui. */
 .admin-cor-swatch {
   display: inline-flex;
   align-items: center;
@@ -1041,13 +1041,10 @@ button.catalogo-avatar-anel { cursor: pointer; }
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background-size: cover;
-  background-position: center;
+  border: 2px solid rgba(255, 255, 255, 0.5);
   cursor: pointer;
   flex-shrink: 0;
 }
-.admin-cor-swatch.admin-cor-principal { background-image: url("/assets/img/admin-bar/circulo-gold.png"); }
-.admin-cor-swatch.admin-cor-secundaria { background-image: url("/assets/img/admin-bar/circulo-brown.png"); }
 .admin-cor-swatch input[type="color"] {
   width: 60%;
   height: 60%;
