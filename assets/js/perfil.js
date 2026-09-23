@@ -34,7 +34,7 @@
     document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=4';
     document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
     var widget = document.getElementById('tplWidget');
-    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=4';
+    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=5';
   }
 
   // ---- cor de destaque: sobrescreve os tokens de acento do template ativo
