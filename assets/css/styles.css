@@ -1982,6 +1982,34 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 .painel-lista-item .principal { font-weight: 700; }
 .painel-lista-item .secundario { color: var(--tinta-suave); font-size: 0.8rem; }
 
+/* ---- Comunidade (Status + Promoções): miniatura quadrada + apagar ---- */
+.dash-comunidade-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--linho);
+  flex-shrink: 0;
+}
+.dash-comunidade-thumb-vazia {
+  background-image: none;
+  border: 1.5px dashed var(--borda);
+}
+.dash-comunidade-apagar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: var(--tinta-suave);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.dash-comunidade-apagar:hover { background: var(--linho); color: var(--tinta); }
+
 /* ---- Clientes: cada linha expande pra mostrar dados completos, botão
    de WhatsApp e histórico — mesma linguagem de menu do card do
    estabelecimento, não uma lista rasa de nome+telefone. ---- */
@@ -2376,6 +2404,55 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 }
 .dash-vazio-titulo { font-weight: 800; color: var(--tinta); font-size: 0.95rem; }
 .dash-vazio-texto { font-size: 0.82rem; max-width: 30rem; line-height: 1.5; }
+
+/* ---- avisos de "sem conexão" reaproveitáveis em qualquer lista do
+   site: um banner discreto quando dá pra mostrar dado salvo (cache
+   local), e um estado maior quando não tem nada salvo ainda — nunca
+   mais aquele texto vermelho de erro solto. ---- */
+.vb-offline-aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.9rem;
+  border-radius: 12px;
+  background: var(--linho);
+  color: var(--tinta-suave);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.vb-offline-aviso svg { flex-shrink: 0; color: var(--cor-marca, var(--destaque)); }
+.vb-offline-aviso-topo {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  margin: 0;
+  border-radius: 0;
+  justify-content: center;
+  background: var(--terracotta, var(--dourado, #0F6B5C));
+  color: #fff;
+}
+.vb-offline-aviso-topo svg { color: #fff; }
+.vb-offline-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: 3rem 1.2rem;
+  color: var(--tinta-suave);
+}
+.vb-offline-vazio svg {
+  width: 64px;
+  height: 64px;
+  padding: 13px;
+  border-radius: 50%;
+  background: var(--linho);
+  color: var(--tinta-suave);
+  box-sizing: border-box;
+}
+.vb-offline-vazio-titulo { font-weight: 800; color: var(--tinta); font-size: 1.02rem; margin: 0; }
+.vb-offline-vazio-texto { font-size: 0.85rem; max-width: 22rem; line-height: 1.5; margin: 0; }
 
 /* ---- cadastro.html em telas de desktop: era a mesma coluna estreita
    de celular (640px) espremida no meio de uma tela de 1440px, com a

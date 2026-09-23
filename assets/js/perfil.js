@@ -372,6 +372,18 @@
     naoEncontrado.classList.remove('oculto');
   }
 
+  // sem internet mas o site já tinha sido aberto antes neste aparelho?
+  // mostra a versão salva (localStorage) em vez do "não encontramos" —
+  // que parecia um link quebrado quando era só falta de conexão.
+  var ICONE_OFFLINE_TOPO = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.58 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
+  function mostrarAvisoOfflineTopo() {
+    if (document.querySelector('.vb-offline-aviso-topo')) return;
+    var aviso = document.createElement('div');
+    aviso.className = 'vb-offline-aviso vb-offline-aviso-topo';
+    aviso.innerHTML = ICONE_OFFLINE_TOPO + '<span>Sem conexão — mostrando a última versão salva deste site.</span>';
+    document.body.prepend(aviso);
+  }
+
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -628,53 +640,6 @@
     });
     caixa.querySelectorAll('[data-estoque-capa]').forEach(function (img) {
       img.addEventListener('click', function () { salvar('p_foto_capa_url', img.getAttribute('data-estoque-capa')); });
-    });
-  }
-
-  // ---- status de 24h (tipo Stories) — botão da barra de admin, e
-  // também deslizar o dedo pra esquerda em cima da própria barra, do
-  // mesmo jeito que o Instagram abre a câmera arrastando na tela. ----
-  function abrirPublicarStatus() {
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.style.display = 'none';
-    document.body.appendChild(input);
-    input.addEventListener('change', function (e) {
-      var file = e.target.files[0];
-      input.remove();
-      if (!file || !window.VBUpload) return;
-      window.VBUpload.uploadFoto(file, estabId, 'status').then(function (url) {
-        window.VBDialogo.prompt('Quer escrever uma legenda? (opcional)', '').then(function (texto) {
-          db.rpc('tenant_admin_publicar_status', { p_estabelecimento_id: estabId, p_foto_url: url, p_texto: texto || null }).then(function (res) {
-            if (res.error) { window.VBDialogo.alert('Não deu pra publicar: ' + res.error.message); return; }
-            window.VBDialogo.alert('Status publicado! Fica visível por 24 horas no catálogo.');
-          });
-        });
-      }, function (err) {
-        window.VBDialogo.alert(err.message || 'Falha ao enviar a foto.');
-      });
-    });
-    input.click();
-  }
-
-  function iniciarGestoStatusNaBarra() {
-    var barra = document.getElementById('adminModoBarra');
-    if (!barra) return;
-    var inicioX = 0, inicioY = 0, arrastando = false;
-    barra.addEventListener('touchstart', function (e) {
-      if (e.target.closest('button, input, label')) return; // botões/cores continuam funcionando normal
-      arrastando = true;
-      inicioX = e.touches[0].clientX;
-      inicioY = e.touches[0].clientY;
-    }, { passive: true });
-    barra.addEventListener('touchend', function (e) {
-      if (!arrastando) return;
-      arrastando = false;
-      var dx = (e.changedTouches[0].clientX) - inicioX;
-      var dy = (e.changedTouches[0].clientY) - inicioY;
-      // arrasto claramente horizontal, pra esquerda, e não um toque/scroll vertical
-      if (dx < -46 && Math.abs(dy) < 40) abrirPublicarStatus();
     });
   }
 
@@ -1468,8 +1433,6 @@
     document.getElementById('adminSeguirCorImagemBtn').addEventListener('click', alternarSeguirCorImagem);
     document.getElementById('adminWidgetsTranslucidosBtn').addEventListener('click', alternarWidgetsTranslucidos);
     document.getElementById('adminFotoCardBtn').addEventListener('click', abrirEditorFotoCard);
-    document.getElementById('adminStatusBtn').addEventListener('click', abrirPublicarStatus);
-    iniciarGestoStatusNaBarra();
   }
 
   function aplicarGenero(g) {
@@ -2355,12 +2318,22 @@
     }
   }
 
+  var chaveCachePerfil = 'perfil_' + slug + '_' + cidade;
   db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }).then(function (res) {
     var linha = res.data && res.data[0];
     if (res.error || !linha) {
       mostrarNaoEncontrado();
       return;
     }
+    if (window.VBCache) window.VBCache.salvar(chaveCachePerfil, linha);
     renderizar(linha);
-  }, mostrarNaoEncontrado);
+  }, function () {
+    var cache = window.VBCache ? window.VBCache.carregar(chaveCachePerfil) : null;
+    if (cache && cache.dados) {
+      mostrarAvisoOfflineTopo();
+      renderizar(cache.dados);
+      return;
+    }
+    mostrarNaoEncontrado();
+  });
 })();

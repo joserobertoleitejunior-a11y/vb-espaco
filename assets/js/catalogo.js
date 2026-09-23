@@ -8,6 +8,17 @@
   var buscaEl = document.getElementById('buscaInput');
   var segmentoAtual = '';
   var todos = [];
+  var estadoOffline = null; // null | 'com-cache' | 'sem-cache'
+
+  var ICONE_OFFLINE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.58 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
+  var ICONE_OFFLINE_GRANDE = '<svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.58 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
+
+  function chaveCache() { return 'catalogo_' + (segmentoAtual || 'todos'); }
+  function avisoOfflineHtml() {
+    return estadoOffline === 'com-cache'
+      ? '<div class="vb-offline-aviso">' + ICONE_OFFLINE + '<span>Sem conexão agora — mostrando o catálogo salvo, pode estar um pouco desatualizado.</span></div>'
+      : '';
+  }
 
   var SEGMENTOS = {
     barbearia: 'Barbearia',
@@ -78,17 +89,24 @@
     '</div>';
 
   function renderizar() {
+    if (estadoOffline === 'sem-cache') {
+      listaEl.innerHTML = '<div class="vb-offline-vazio">' + ICONE_OFFLINE_GRANDE +
+        '<p class="vb-offline-vazio-titulo">Sem conexão</p>' +
+        '<p class="vb-offline-vazio-texto">Ainda não tem nada salvo desse catálogo neste aparelho. Assim que a internet voltar, ele carrega sozinho.</p></div>';
+      return;
+    }
+
     var termo = (buscaEl.value || '').trim().toLowerCase();
     var linhas = todos.filter(function (e) {
       return !termo || e.nome.toLowerCase().indexOf(termo) > -1;
     });
 
     if (!linhas.length) {
-      listaEl.innerHTML = '<p style="color:var(--tinta-suave); text-align:center; padding:2rem 0;">Nenhum estabelecimento encontrado.</p>' + CTA_CADASTRO;
+      listaEl.innerHTML = avisoOfflineHtml() + '<p style="color:var(--tinta-suave); text-align:center; padding:2rem 0;">Nenhum estabelecimento encontrado.</p>' + CTA_CADASTRO;
       return;
     }
 
-    listaEl.innerHTML = linhas.map(function (e) {
+    listaEl.innerHTML = avisoOfflineHtml() + linhas.map(function (e) {
       var link = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade);
       var cor = e.cor_destaque || '#C9A227';
       var icone = ICONES[e.segmento] || SVG_LOJA;
@@ -156,18 +174,32 @@
     window.location.href = card.getAttribute('data-href');
   });
 
+  function usarCacheOuOffline() {
+    var cache = window.VBCache ? window.VBCache.carregar(chaveCache()) : null;
+    if (cache && cache.dados && cache.dados.length) {
+      todos = cache.dados;
+      estadoOffline = 'com-cache';
+    } else {
+      todos = [];
+      estadoOffline = 'sem-cache';
+    }
+    renderizar();
+  }
+
   function carregar() {
     listaEl.innerHTML = '<div class="card"><div class="skeleton" style="height:1.4rem; width:60%; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:1rem; width:35%;"></div></div>';
 
     db.rpc('listar_estabelecimentos', { p_cidade: null, p_segmento: segmentoAtual || null }).then(function (res) {
       if (res.error) {
-        listaEl.innerHTML = '<p class="msg msg-erro">Sem conexão agora — tenta de novo em instantes.</p>';
+        listaEl.innerHTML = '<p class="msg msg-erro">' + escapeHtml(res.error.message || 'Não deu pra carregar agora.') + '</p>';
         return;
       }
       todos = res.data || [];
+      estadoOffline = null;
+      if (window.VBCache) window.VBCache.salvar(chaveCache(), todos);
       renderizar();
     }, function () {
-      listaEl.innerHTML = '<p class="msg msg-erro">Sem conexão agora — tenta de novo em instantes.</p>';
+      usarCacheOuOffline();
     });
   }
 

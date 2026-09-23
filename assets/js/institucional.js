@@ -90,6 +90,15 @@
     naoEncontrado.classList.remove('oculto');
   }
 
+  var ICONE_OFFLINE_TOPO = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.58 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
+  function mostrarAvisoOfflineTopo() {
+    if (document.querySelector('.vb-offline-aviso-topo')) return;
+    var aviso = document.createElement('div');
+    aviso.className = 'vb-offline-aviso vb-offline-aviso-topo';
+    aviso.innerHTML = ICONE_OFFLINE_TOPO + '<span>Sem conexão — mostrando a última versão salva deste site.</span>';
+    document.body.prepend(aviso);
+  }
+
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -499,9 +508,19 @@
     verificarSessaoDono();
   }
 
+  var chaveCacheInst = 'perfil_' + slug + '_' + cidade;
   db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }).then(function (res) {
     var linha = res.data && res.data[0];
     if (res.error || !linha) { mostrarNaoEncontrado(); return; }
+    if (window.VBCache) window.VBCache.salvar(chaveCacheInst, linha);
     renderizar(linha);
-  }, mostrarNaoEncontrado);
+  }, function () {
+    var cache = window.VBCache ? window.VBCache.carregar(chaveCacheInst) : null;
+    if (cache && cache.dados) {
+      mostrarAvisoOfflineTopo();
+      renderizar(cache.dados);
+      return;
+    }
+    mostrarNaoEncontrado();
+  });
 })();

@@ -512,6 +512,7 @@
   var ICONE_VAZIO_CLIENTES = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6"/><circle cx="17.5" cy="9" r="2.2"/><path d="M15 20c.2-2.6 1.7-4.6 4-5.2"/></svg>';
   var ICONE_VAZIO_CAIXA = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="19" height="13" rx="2"/><path d="M2.5 11h19"/><path d="M7 7V5.5A2.5 2.5 0 0 1 9.5 3h5A2.5 2.5 0 0 1 17 5.5V7"/><circle cx="12" cy="14.5" r="1.8"/></svg>';
   var ICONE_VAZIO_GRAFICO = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="22" y1="20" x2="22" y2="9"/></svg>';
+  var ICONE_VAZIO_COMUNIDADE = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5L14.5 8.7L21 10.5L14.5 12.3L12 19.5L9.5 12.3L3 10.5L9.5 8.7z"/></svg>';
 
   function blocoVazio(icone, titulo, texto) {
     return '<div class="dash-vazio"><span class="dash-vazio-icone">' + icone + '</span>' +
@@ -546,6 +547,7 @@
     else if (aba === 'agenda') renderizarDashAgenda();
     else if (aba === 'clientes') renderizarDashClientes();
     else if (aba === 'caixa') renderizarDashCaixa();
+    else if (aba === 'comunidade') renderizarDashComunidade();
   }
 
   function renderizarDashResumo() {
@@ -787,6 +789,179 @@
           if (container) container.innerHTML = '<p class="msg msg-erro">Não deu pra carregar o histórico agora.</p>';
         });
       });
+    }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
+  }
+
+  // ---- Comunidade: Status (24h, tipo Stories) e Promoções — antes o
+  // Status só existia como botão solto na barra de edição do próprio
+  // site; agora os dois moram aqui, junto com quem cuida do resto do
+  // negócio. Toda promoção ativa também entra na vitrine de promoções
+  // do catálogo (promocoes_vitrine_publica). ----
+  function horasRestantes(iso) {
+    var ms = new Date(iso).getTime() - Date.now();
+    return ms > 0 ? Math.max(1, Math.round(ms / 3600000)) : 0;
+  }
+
+  function abrirComposerStatus(estabId) {
+    function publicar(fotoUrl) {
+      window.VBDialogo.prompt('Escreva uma legenda' + (fotoUrl ? ' (opcional)' : ''), '').then(function (texto) {
+        if (!fotoUrl && !texto) return;
+        chamarComFila('tenant_admin_publicar_status', { p_estabelecimento_id: estabId, p_foto_url: fotoUrl || null, p_texto: texto || null }, 'Status novo').then(function (resultado) {
+          if (!resultado.offline && resultado.res.error) { window.VBDialogo.alert('Não deu pra publicar: ' + resultado.res.error.message); return; }
+          if (window.VBSalvo) window.VBSalvo.mostrar(resultado.offline ? 'Vai publicar ao reconectar' : 'Publicado');
+          if (dashAbaAtual === 'comunidade') renderizarDashComunidade();
+        });
+      });
+    }
+    window.VBDialogo.confirm('Publicar status com uma foto?').then(function (comFoto) {
+      if (!comFoto) { publicar(null); return; }
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+      input.addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        input.remove();
+        if (!file || !window.VBUpload) { publicar(null); return; }
+        window.VBUpload.uploadFoto(file, estabId, 'status').then(publicar, function (err) {
+          window.VBDialogo.alert(err.message || 'Falha ao enviar a foto — sem internet? Tenta de novo, ou publique só com legenda.');
+        });
+      });
+      input.click();
+    });
+  }
+
+  function ligarEventosComunidade(estabId) {
+    var publicarStatusBtn = document.getElementById('dashPublicarStatusBtn');
+    if (publicarStatusBtn) publicarStatusBtn.addEventListener('click', function () { abrirComposerStatus(estabId); });
+
+    var listaStatus = document.getElementById('dashListaStatus');
+    if (listaStatus) listaStatus.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-apagar-status]');
+      if (!btn) return;
+      window.VBDialogo.confirm('Apagar esse status?').then(function (ok) {
+        if (!ok) return;
+        db.rpc('tenant_admin_apagar_status', { p_id: btn.getAttribute('data-apagar-status') }).then(function () {
+          if (dashAbaAtual === 'comunidade') renderizarDashComunidade();
+        });
+      });
+    });
+
+    var criarPromoBtn = document.getElementById('dashCriarPromocaoBtn');
+    var formPromo = document.getElementById('dashPromocaoForm');
+    if (criarPromoBtn && formPromo) criarPromoBtn.addEventListener('click', function () {
+      formPromo.classList.toggle('oculto');
+    });
+    var cancelarPromoBtn = document.getElementById('dashPromocaoCancelar');
+    var msgPromo = document.getElementById('dashPromocaoMsg');
+    if (cancelarPromoBtn && formPromo) cancelarPromoBtn.addEventListener('click', function () {
+      formPromo.reset();
+      formPromo.classList.add('oculto');
+      if (msgPromo) msgPromo.textContent = '';
+    });
+    if (formPromo) formPromo.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var titulo = document.getElementById('dashPromoTitulo').value.trim();
+      var texto = document.getElementById('dashPromoTexto').value.trim();
+      var dias = document.getElementById('dashPromoValidade').value;
+      var file = document.getElementById('dashPromoFoto').files[0];
+      if (!titulo) { msgPromo.className = 'msg msg-erro'; msgPromo.textContent = 'Escreva um título pra promoção.'; return; }
+      var botaoSubmit = formPromo.querySelector('button[type="submit"]');
+      botaoSubmit.disabled = true;
+      msgPromo.className = 'msg';
+      msgPromo.textContent = 'Publicando…';
+
+      function publicar(fotoUrl) {
+        chamarComFila('tenant_admin_publicar_promocao', {
+          p_estabelecimento_id: estabId, p_titulo: titulo, p_foto_url: fotoUrl || null,
+          p_texto: texto || null, p_dias_validade: Number(dias)
+        }, 'Promoção: ' + titulo).then(function (resultado) {
+          botaoSubmit.disabled = false;
+          if (!resultado.offline && resultado.res.error) { msgPromo.className = 'msg msg-erro'; msgPromo.textContent = resultado.res.error.message; return; }
+          if (window.VBSalvo) window.VBSalvo.mostrar(resultado.offline ? 'Vai publicar ao reconectar' : 'Publicado');
+          formPromo.reset();
+          formPromo.classList.add('oculto');
+          msgPromo.textContent = '';
+          if (dashAbaAtual === 'comunidade') renderizarDashComunidade();
+        });
+      }
+      if (!file || !window.VBUpload) { publicar(null); return; }
+      window.VBUpload.uploadFoto(file, estabId, 'promocao').then(publicar, function (err) {
+        botaoSubmit.disabled = false;
+        msgPromo.className = 'msg msg-erro';
+        msgPromo.textContent = err.message || 'Falha ao enviar a foto — sem internet? Tenta sem foto, ou espera a conexão voltar.';
+      });
+    });
+
+    var listaPromocoes = document.getElementById('dashListaPromocoes');
+    if (listaPromocoes) listaPromocoes.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-apagar-promocao]');
+      if (!btn) return;
+      window.VBDialogo.confirm('Apagar essa promoção?').then(function (ok) {
+        if (!ok) return;
+        db.rpc('tenant_admin_apagar_promocao', { p_id: btn.getAttribute('data-apagar-promocao') }).then(function () {
+          if (dashAbaAtual === 'comunidade') renderizarDashComunidade();
+        });
+      });
+    });
+  }
+
+  function renderizarDashComunidade() {
+    var estabId = dashEstabId;
+    Promise.all([
+      db.rpc('tenant_admin_listar_status', { p_estabelecimento_id: estabId }),
+      db.rpc('tenant_admin_listar_promocoes', { p_estabelecimento_id: estabId })
+    ]).then(function (resultados) {
+      if (dashEstabId !== estabId) return;
+      var statusRes = resultados[0], promoRes = resultados[1];
+      if (statusRes.error || promoRes.error) {
+        dashboardCorpo.classList.remove('dash-carregando');
+        dashboardCorpo.innerHTML = '<p class="msg msg-erro">' + escapeHtml((statusRes.error || promoRes.error).message) + '</p>';
+        return;
+      }
+      var statusLista = statusRes.data || [];
+      var promoLista = promoRes.data || [];
+      dashboardCorpo.classList.remove('dash-carregando');
+      dashboardCorpo.innerHTML =
+        '<p class="dash-secao-intro" style="margin-top:0;">Status e promoções ajudam seu estabelecimento a aparecer ativo pra quem visita o VB Agenda. Status some sozinho em 24h; promoções ficam no ar pelo prazo que você escolher — e toda promoção ativa também entra na vitrine de promoções do catálogo, pra quem ainda não te conhece.</p>' +
+
+        '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Status (24h)</p>' +
+        '<button type="button" class="btn btn-primario" id="dashPublicarStatusBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Publicar</button></div>' +
+        (statusLista.length ? '<div id="dashListaStatus">' + statusLista.map(function (s) {
+          return '<div class="painel-lista-item">' +
+            '<span class="dash-comunidade-thumb' + (s.foto_url ? '' : ' dash-comunidade-thumb-vazia') + '"' + (s.foto_url ? ' style="background-image:url(\'' + s.foto_url + '\')"' : '') + '></span>' +
+            '<span style="flex:1; min-width:0;"><span class="principal">' + (s.texto ? escapeHtml(s.texto) : '<em>Sem legenda</em>') + '</span><br>' +
+            '<span class="secundario">' + (horasRestantes(s.expira_em) > 0 ? 'expira em ' + horasRestantes(s.expira_em) + 'h' : 'expirado') + '</span></span>' +
+            '<button type="button" class="dash-comunidade-apagar" data-apagar-status="' + s.id + '" aria-label="Apagar status">×</button>' +
+            '</div>';
+        }).join('') + '</div>' : blocoVazio(ICONE_VAZIO_COMUNIDADE, 'Nenhum status no ar', 'Publique uma foto do dia a dia — corte pronto, cliente satisfeito, bastidor — e ela fica visível por 24 horas no seu perfil, como Stories.')) +
+
+        '<div class="dash-lista-cabecalho" style="margin-top:1.6rem;"><p class="dash-resumo-subtitulo" style="margin:0;">Promoções</p>' +
+        '<button type="button" class="btn btn-primario" id="dashCriarPromocaoBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Criar</button></div>' +
+        '<form id="dashPromocaoForm" class="dash-campos-grid oculto" style="margin-bottom:1rem;">' +
+        '<div class="field field-full"><label for="dashPromoTitulo">Título da promoção</label><input type="text" id="dashPromoTitulo" placeholder="Ex: Corte + barba 20% OFF" maxlength="80"></div>' +
+        '<div class="field field-full"><label for="dashPromoTexto">Detalhes (opcional)</label><input type="text" id="dashPromoTexto" placeholder="Ex: Só às terças, sem agendamento prévio" maxlength="140"></div>' +
+        '<div class="field"><label for="dashPromoValidade">Fica no ar por</label><select id="dashPromoValidade"><option value="7">7 dias</option><option value="15">15 dias</option><option value="30">30 dias</option></select></div>' +
+        '<div class="field"><label for="dashPromoFoto">Foto (opcional)</label><input type="file" id="dashPromoFoto" accept="image/*"></div>' +
+        '<div class="field field-full" style="display:flex; gap:0.6rem;">' +
+        '<button type="submit" class="btn btn-primario" style="flex:1;">Publicar promoção</button>' +
+        '<button type="button" class="btn btn-ghost" id="dashPromocaoCancelar">Cancelar</button>' +
+        '</div>' +
+        '<p class="msg" id="dashPromocaoMsg" style="grid-column:1/-1;"></p>' +
+        '</form>' +
+        (promoLista.length ? '<div id="dashListaPromocoes">' + promoLista.map(function (p) {
+          var ativa = horasRestantes(p.expira_em) > 0;
+          return '<div class="painel-lista-item">' +
+            '<span class="dash-comunidade-thumb' + (p.foto_url ? '' : ' dash-comunidade-thumb-vazia') + '"' + (p.foto_url ? ' style="background-image:url(\'' + p.foto_url + '\')"' : '') + '></span>' +
+            '<span style="flex:1; min-width:0;"><span class="principal">' + escapeHtml(p.titulo) + '</span><br>' +
+            '<span class="secundario">' + (ativa ? 'válida até ' + new Date(p.expira_em).toLocaleDateString('pt-BR') : 'expirada em ' + new Date(p.expira_em).toLocaleDateString('pt-BR')) + '</span></span>' +
+            '<button type="button" class="dash-comunidade-apagar" data-apagar-promocao="' + p.id + '" aria-label="Apagar promoção">×</button>' +
+            '</div>';
+        }).join('') + '</div>' : blocoVazio(ICONE_VAZIO_COMUNIDADE, 'Nenhuma promoção ativa', 'Crie uma promoção com prazo — ela fica visível no seu site e também na vitrine de promoções do catálogo do VB Agenda, pra atrair gente nova.'));
+
+      if (window.VBSelect) window.VBSelect.enhanceTodos(dashboardCorpo);
+      ligarEventosComunidade(estabId);
     }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
   }
 
