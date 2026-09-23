@@ -63,7 +63,13 @@
     if (TEMPLATES_COM_TERRACOTTA.indexOf(templateAtualParaCor) > -1) {
       estilo.textContent = ':root{--terracotta:' + cor + '; --terracotta-deep:' + escuro + '; --terracotta-claro:' + claro + '; --terracotta-rgb:' + rgb.join(',') + ';}';
     } else {
-      estilo.textContent = ':root{--dourado:' + cor + '; --dourado-escuro:' + escuro + '; --dourado-claro:' + claro + '; --dourado-rgb:' + rgb.join(',') + ';}';
+      // mesma correção de perfil.js: classico-boiserie precisa sobrescrever
+      // --dourado E --terracotta, senão o botão/marca fica preso na cor
+      // fixa do gênero (feminino.css/base.css) em vez da cor editada.
+      estilo.textContent = ':root{' +
+        '--dourado:' + cor + '; --dourado-escuro:' + escuro + '; --dourado-claro:' + claro + '; --dourado-rgb:' + rgb.join(',') + ';' +
+        '--terracotta:' + cor + '; --terracotta-deep:' + escuro + '; --terracotta-claro:' + claro + '; --terracotta-rgb:' + rgb.join(',') + ';' +
+        '}';
     }
   }
   function salvarCor(cor, corSecundaria) {

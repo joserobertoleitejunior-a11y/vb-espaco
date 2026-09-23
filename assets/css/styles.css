@@ -546,7 +546,6 @@ img { max-width: 100%; display: block; }
    do card (senão a moldura "some" contra o fundo) — foi exatamente o
    que aconteceu antes: moldura simples dourada sobre capa dourada
    ficava ilegível. */
-@keyframes vbAvatarGirar { to { transform: rotate(360deg); } }
 .catalogo-avatar-anel {
   position: relative;
   flex-shrink: 0;
@@ -575,48 +574,15 @@ button.catalogo-avatar-anel { cursor: pointer; }
   position: relative;
   z-index: 1;
 }
+/* moldura fica só com 2 estados: "simples" (recorte redondo com um
+   anel fino, sem nenhuma opção de edição — decidido depois que os
+   estilos decorativos, como o anel giratório, ficaram artificiais em
+   cima de foto de verdade) e "aura", que não é escolha do dono: é o
+   indicador automático de status ativo (ver catalogo.js), igual ao
+   anel de story do Instagram. */
 .catalogo-avatar-anel.moldura-simples .catalogo-avatar {
   box-shadow: 0 0 0 3px var(--branco), 0 0 0 5px var(--avatar-cor, var(--branco)), 0 3px 8px rgba(20,20,30,.22);
 }
-.catalogo-avatar-anel.moldura-grossa .catalogo-avatar {
-  box-shadow: 0 0 0 3px var(--branco), 0 0 0 7.5px var(--avatar-cor, var(--branco)), 0 3px 8px rgba(20,20,30,.22);
-}
-.catalogo-avatar-anel.moldura-dupla .catalogo-avatar {
-  box-shadow: 0 0 0 2px var(--branco), 0 0 0 3.5px var(--avatar-cor, var(--branco)), 0 0 0 5.5px var(--branco), 0 3px 8px rgba(20,20,30,.22);
-}
-.catalogo-avatar-anel.moldura-metalica .catalogo-avatar {
-  box-shadow: 0 0 0 3px var(--branco), 0 0 0 4.5px #b8860b, 0 0 0 6px #f4e4b0, 0 3px 8px rgba(20,20,30,.22);
-}
-.catalogo-avatar-anel.moldura-pontilhada .catalogo-avatar {
-  box-shadow: 0 0 0 3px var(--branco), 0 3px 8px rgba(20,20,30,.22);
-}
-.catalogo-avatar-anel.moldura-pontilhada::after {
-  content: '';
-  position: absolute;
-  inset: -7px;
-  border-radius: 50%;
-  border: 1.5px dotted var(--avatar-cor, var(--branco));
-}
-/* "giratoria": anel de luz girando em volta da foto sem parar (efeito
-   3D), nas cores do próprio dono — a foto e o anel branco por baixo
-   ficam parados, só o brilho gira ao redor. */
-.catalogo-avatar-anel.moldura-giratoria .catalogo-avatar {
-  box-shadow: 0 0 0 3px var(--branco), 0 3px 8px rgba(20,20,30,.22);
-}
-.catalogo-avatar-anel.moldura-giratoria::before {
-  content: '';
-  position: absolute;
-  inset: -7px;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg,
-    var(--avatar-cor, #C9A227), color-mix(in srgb, var(--avatar-cor, #C9A227) 15%, white) 25%,
-    var(--avatar-cor, #C9A227) 50%, color-mix(in srgb, var(--avatar-cor, #C9A227) 15%, white) 75%,
-    var(--avatar-cor, #C9A227));
-  animation: vbAvatarGirar 3.5s linear infinite;
-  z-index: 0;
-}
-/* "aura": brilho suave ao redor, tipo destaque/novidade (referência
-   visual ao anel de "story" do Instagram) — estático, mais discreto. */
 .catalogo-avatar-anel.moldura-aura .catalogo-avatar {
   box-shadow: 0 0 0 3px var(--branco), 0 0 0 5px var(--avatar-cor, var(--branco)),
     0 0 14px 3px color-mix(in srgb, var(--avatar-cor, #C9A227) 55%, transparent),
@@ -1409,40 +1375,6 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 }
 .dash-card-avatar-anel.moldura-simples .dash-card-avatar {
   box-shadow: 0 0 0 3px var(--branco), 0 0 0 5px var(--avatar-cor, var(--branco)), 0 3px 8px rgba(20,20,30,.22);
-}
-.dash-card-avatar-anel.moldura-grossa .dash-card-avatar {
-  box-shadow: 0 0 0 3px var(--branco), 0 0 0 7.5px var(--avatar-cor, var(--branco)), 0 3px 8px rgba(20,20,30,.22);
-}
-.dash-card-avatar-anel.moldura-dupla .dash-card-avatar {
-  box-shadow: 0 0 0 2px var(--branco), 0 0 0 3.5px var(--avatar-cor, var(--branco)), 0 0 0 5.5px var(--branco), 0 3px 8px rgba(20,20,30,.22);
-}
-.dash-card-avatar-anel.moldura-metalica .dash-card-avatar {
-  box-shadow: 0 0 0 3px var(--branco), 0 0 0 4.5px #b8860b, 0 0 0 6px #f4e4b0, 0 3px 8px rgba(20,20,30,.22);
-}
-.dash-card-avatar-anel.moldura-pontilhada .dash-card-avatar {
-  box-shadow: 0 0 0 3px var(--branco), 0 3px 8px rgba(20,20,30,.22);
-}
-.dash-card-avatar-anel.moldura-pontilhada::after {
-  content: '';
-  position: absolute;
-  inset: -7px;
-  border-radius: 50%;
-  border: 1.5px dotted var(--avatar-cor, var(--branco));
-}
-.dash-card-avatar-anel.moldura-giratoria .dash-card-avatar {
-  box-shadow: 0 0 0 3px var(--branco), 0 3px 8px rgba(20,20,30,.22);
-}
-.dash-card-avatar-anel.moldura-giratoria::before {
-  content: '';
-  position: absolute;
-  inset: -7px;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg,
-    var(--avatar-cor, #C9A227), color-mix(in srgb, var(--avatar-cor, #C9A227) 15%, white) 25%,
-    var(--avatar-cor, #C9A227) 50%, color-mix(in srgb, var(--avatar-cor, #C9A227) 15%, white) 75%,
-    var(--avatar-cor, #C9A227));
-  animation: vbAvatarGirar 3.5s linear infinite;
-  z-index: 0;
 }
 .dash-card-avatar-anel.moldura-aura .dash-card-avatar {
   box-shadow: 0 0 0 3px var(--branco), 0 0 0 5px var(--avatar-cor, var(--branco)),

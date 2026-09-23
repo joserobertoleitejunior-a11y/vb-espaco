@@ -192,7 +192,10 @@
         var avatarConteudo = fotoAvatar
           ? '<span class="dash-card-avatar-foto"' + (fotoAvatar === fotoTopo ? ' data-alinhar-topo="' + fotoAvatar + '"' : ' style="background-image:url(\'' + fotoAvatar + '\');"') + '></span>'
           : escapeHtml(iniciais(e.nome));
-        var moldura = e.moldura_foto || 'simples';
+        // moldura decorativa foi removida da edição — sempre "simples"
+        // (recorte redondo com anel fino), independente do que estiver
+        // salvo de escolhas antigas no banco.
+        var moldura = 'simples';
         var trialData = e.trial_termina_em ? new Date(e.trial_termina_em + 'T00:00:00').toLocaleDateString('pt-BR') : '';
         var faltando = [];
         if (!e.total_servicos) faltando.push('nenhum serviço');
