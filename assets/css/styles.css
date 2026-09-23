@@ -5,8 +5,8 @@
   --linho-fundo: #eceaea;
   --branco: #ffffff;
   --destaque: #C9A227;
-  --vermelho: #EA1D2C;
-  --vermelho-escuro: #C11722;
+  --cor-marca: #0F6B5C;
+  --cor-marca-escura: #0B4F44;
   --erro: #c0392b;
   --borda: #e7e7ea;
   --raio: 14px;
@@ -71,7 +71,7 @@ img { max-width: 100%; display: block; }
   text-decoration: none;
   letter-spacing: -0.01em;
 }
-.brand em { color: var(--vermelho); font-style: normal; }
+.brand em { color: var(--cor-marca); font-style: normal; }
 
 .topbar-local {
   display: flex;
@@ -111,7 +111,7 @@ img { max-width: 100%; display: block; }
   min-width: 1.15rem;
   height: 1.15rem;
   border-radius: 999px;
-  background: var(--vermelho);
+  background: var(--cor-marca);
   color: #fff;
   font-size: 0.64rem;
   font-weight: 800;
@@ -170,7 +170,7 @@ img { max-width: 100%; display: block; }
   transition: background 0.12s ease;
 }
 .topbar-menu-nav a:hover { background: var(--linho); }
-.topbar-menu-nav a.is-atual { color: var(--vermelho); }
+.topbar-menu-nav a.is-atual { color: var(--cor-marca); }
 @media (min-width: 900px) {
   .topbar-dropdown { width: 340px; }
 }
@@ -220,7 +220,7 @@ img { max-width: 100%; display: block; }
 }
 .btn:active { transform: scale(0.98); }
 .btn:disabled { opacity: 0.6; cursor: default; }
-.btn-primario { background: var(--vermelho); color: var(--branco); }
+.btn-primario { background: var(--cor-marca); color: var(--branco); }
 .btn-google { background: var(--branco); color: var(--tinta); border: 1px solid var(--borda); width: 100%; }
 .btn-ghost { background: transparent; color: var(--tinta-suave); border: 1px solid var(--borda); }
 
@@ -252,7 +252,7 @@ img { max-width: 100%; display: block; }
   background: var(--linho);
 }
 .field input:focus,
-.field select:focus { outline: 2px solid var(--vermelho); outline-offset: 1px; }
+.field select:focus { outline: 2px solid var(--cor-marca); outline-offset: 1px; }
 
 /* ---- select customizado (vb-select.js) — troca a aparência crua e
    inconsistente do <select> nativo por um botão + lista no mesmo
@@ -289,7 +289,7 @@ img { max-width: 100%; display: block; }
 }
 .vb-select-btn svg { flex-shrink: 0; color: var(--tinta-suave); transition: transform 0.15s ease; }
 .vb-select.is-aberto .vb-select-btn svg { transform: rotate(180deg); }
-.vb-select.is-aberto .vb-select-btn { border-color: var(--destaque); outline: 2px solid var(--vermelho); outline-offset: 1px; }
+.vb-select.is-aberto .vb-select-btn { border-color: var(--destaque); outline: 2px solid var(--cor-marca); outline-offset: 1px; }
 .vb-select-lista {
   display: none;
   position: absolute;
@@ -399,13 +399,13 @@ img { max-width: 100%; display: block; }
   margin-bottom: 0.6rem;
 }
 #naoEncontrado .btn.btn-primario {
-  background: var(--vermelho);
+  background: var(--cor-marca);
   background-image: none;
   color: var(--branco);
   box-shadow: none;
 }
 #naoEncontrado .btn.btn-primario:hover {
-  background: var(--vermelho-escuro);
+  background: var(--cor-marca-escura);
   transform: none;
 }
 
@@ -480,7 +480,7 @@ img { max-width: 100%; display: block; }
   font-size: 0.95rem;
   font-family: inherit;
 }
-.busca-input:focus { outline: 2px solid var(--vermelho); outline-offset: 1px; }
+.busca-input:focus { outline: 2px solid var(--cor-marca); outline-offset: 1px; }
 
 .filtros {
   display: flex;
@@ -507,7 +507,7 @@ img { max-width: 100%; display: block; }
   cursor: pointer;
   white-space: nowrap;
 }
-.chip.is-ativo { background: var(--vermelho); color: var(--branco); border-color: var(--vermelho); }
+.chip.is-ativo { background: var(--cor-marca); color: var(--branco); border-color: var(--cor-marca); }
 
 .catalogo-card {
   display: block;
@@ -635,7 +635,7 @@ button.catalogo-avatar-anel { cursor: pointer; }
   text-align: center;
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--vermelho);
+  color: var(--cor-marca);
   text-decoration: none;
   margin: -0.5rem 0 1.25rem;
   padding: 0.5rem;
@@ -813,7 +813,7 @@ button.catalogo-avatar-anel { cursor: pointer; }
   font-weight: 700;
 }
 .tabbar-icone { display: block; }
-.tabbar-item.is-ativo { color: var(--vermelho); }
+.tabbar-item.is-ativo { color: var(--cor-marca); }
 .com-tabbar { padding-bottom: 4.5rem; }
 
 /* Ícones SVG inline (substituem os emojis de teclado) */
@@ -1435,8 +1435,8 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   transition: background 0.12s ease;
 }
 .dash-card-menu-linha.is-acao:hover { background: var(--linho); }
-.dash-card-menu-linha.is-principal .rotulo { color: var(--vermelho); font-weight: 800; }
-.dash-card-menu-linha.is-principal .rotulo svg { color: var(--vermelho); }
+.dash-card-menu-linha.is-principal .rotulo { color: var(--cor-marca); font-weight: 800; }
+.dash-card-menu-linha.is-principal .rotulo svg { color: var(--cor-marca); }
 .dash-card-menu-linha.is-perigo .rotulo { color: var(--erro); }
 .dash-card-menu-linha.is-perigo .rotulo svg { color: var(--erro); }
 
@@ -1455,7 +1455,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   transition: transform 0.15s ease;
 }
-.dash-card-switch input:checked + .dash-card-switch-trilho { background: var(--vermelho); }
+.dash-card-switch input:checked + .dash-card-switch-trilho { background: var(--cor-marca); }
 .dash-card-switch input:checked + .dash-card-switch-trilho::after { transform: translateX(0.9rem); }
 .dash-card-switch input:focus-visible + .dash-card-switch-trilho { outline: 2px solid var(--destaque); outline-offset: 2px; }
 
@@ -1546,7 +1546,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 }
 .tpl-print-card img { display: block; width: 100%; aspect-ratio: 640/441; object-fit: cover; }
 .tpl-print-card:hover { transform: translateY(-2px); }
-.tpl-print-card.is-selecionado { border-color: var(--vermelho); box-shadow: 0 0 0 2px rgba(214,60,44,0.18); }
+.tpl-print-card.is-selecionado { border-color: var(--cor-marca); box-shadow: 0 0 0 2px rgba(15,107,92,0.18); }
 .tpl-swatch-nome { display: block; font-size: 0.82rem; font-weight: 700; padding: 0.5rem 0.6rem; }
 
 /* fica acima do gate de gênero (z-index 200 no base.css do template) —
@@ -1619,7 +1619,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   text-overflow: ellipsis;
 }
 .criar-progresso-barra { height: 6px; border-radius: 999px; background: var(--borda); overflow: hidden; }
-.criar-progresso-fill { height: 100%; background: var(--vermelho); border-radius: 999px; transition: width 0.3s ease; }
+.criar-progresso-fill { height: 100%; background: var(--cor-marca); border-radius: 999px; transition: width 0.3s ease; }
 
 .criar-preview-full { position: fixed; inset: 0; z-index: 1; }
 .criar-preview-full iframe { width: 100%; height: 100%; border: 0; display: block; }
@@ -1663,7 +1663,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   transition: border-color 0.15s, transform 0.15s;
 }
 .criar-opcao-card:hover { transform: translateY(-2px); }
-.criar-opcao-card.is-selecionado { border-color: var(--vermelho); box-shadow: 0 0 0 2px rgba(214,60,44,0.18); }
+.criar-opcao-card.is-selecionado { border-color: var(--cor-marca); box-shadow: 0 0 0 2px rgba(15,107,92,0.18); }
 .criar-opcao-nome { font-weight: 700; font-size: 0.92rem; }
 .criar-opcao-desc { font-size: 0.78rem; color: var(--tinta-suave); }
 .criar-opcao-icone { font-size: 1.5rem; line-height: 1; }
@@ -1681,7 +1681,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 
 .criar-slug-status { display: inline-block; margin-top: 0.35rem; font-size: 0.78rem; font-weight: 600; }
 .criar-slug-status.ok { color: #1F8A6E; }
-.criar-slug-status.ocupado { color: var(--vermelho); }
+.criar-slug-status.ocupado { color: var(--cor-marca); }
 .criar-slug-status.checando { color: var(--tinta-suave); font-weight: 400; }
 
 .criar-logo-preview {
@@ -1772,7 +1772,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   color: var(--tinta-suave);
   border-bottom: 2px solid transparent;
 }
-.admin-painel-abas button.is-ativa { color: var(--tinta); border-bottom-color: var(--vermelho); }
+.admin-painel-abas button.is-ativa { color: var(--tinta); border-bottom-color: var(--cor-marca); }
 .admin-painel-fechar {
   background: none;
   border: none;
@@ -1873,7 +1873,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   padding: 0 0.35rem;
   border-radius: 999px;
   background: #fff;
-  color: var(--vermelho, #b33);
+  color: var(--cor-marca, #b33);
   font-size: 0.7rem;
   font-weight: 800;
   margin-left: 0.3rem;
@@ -2011,7 +2011,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   min-width: 1.4rem;
   height: 1.4rem;
   border-radius: 999px;
-  background: var(--vermelho);
+  background: var(--cor-marca);
   color: #fff;
   font-size: 0.72rem;
   font-weight: 800;
