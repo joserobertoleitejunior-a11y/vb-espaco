@@ -9,11 +9,14 @@
   var segmentoAtual = '';
   var todos = [];
   var estadoOffline = null; // null | 'com-cache' | 'sem-cache'
+  var pertoBtn = document.getElementById('buscaPertoBtn');
+  var pertoTexto = document.getElementById('buscaPertoTexto');
+  var localizacaoAtual = null; // { lat, lng } quando "Perto de mim" está ativo
 
   var ICONE_OFFLINE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.58 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
   var ICONE_OFFLINE_GRANDE = '<svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.58 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
 
-  function chaveCache() { return 'catalogo_' + (segmentoAtual || 'todos'); }
+  function chaveCache() { return 'catalogo_' + (localizacaoAtual ? 'perto' : (segmentoAtual || 'todos')); }
   function avisoOfflineHtml() {
     return estadoOffline === 'com-cache'
       ? '<div class="vb-offline-aviso">' + ICONE_OFFLINE + '<span>Sem conexão agora — mostrando o catálogo salvo, pode estar um pouco desatualizado.</span></div>'
@@ -141,6 +144,7 @@
         '<span class="catalogo-tags">' +
         '<span class="catalogo-tag">' + escapeHtml(SEGMENTOS[e.segmento] || 'Estabelecimento') + '</span>' +
         '<span class="catalogo-tag">' + SVG_PIN + ' ' + escapeHtml(e.cidade) + '</span>' +
+        (e.distancia_km != null ? '<span class="catalogo-tag catalogo-tag-distancia">' + SVG_PIN + ' ' + String(e.distancia_km).replace('.', ',') + ' km</span>' : '') +
         '</span>' +
         (selosSociais ? '<span class="catalogo-tags catalogo-tags-social">' + selosSociais + '</span>' : '') +
         '</span>' +
@@ -189,7 +193,11 @@
   function carregar() {
     listaEl.innerHTML = '<div class="card"><div class="skeleton" style="height:1.4rem; width:60%; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:1rem; width:35%;"></div></div>';
 
-    db.rpc('listar_estabelecimentos', { p_cidade: null, p_segmento: segmentoAtual || null }).then(function (res) {
+    var chamada = localizacaoAtual
+      ? db.rpc('listar_estabelecimentos_por_raio', { p_lat: localizacaoAtual.lat, p_lng: localizacaoAtual.lng, p_raio_km: 15, p_segmento: segmentoAtual || null })
+      : db.rpc('listar_estabelecimentos', { p_cidade: null, p_segmento: segmentoAtual || null });
+
+    chamada.then(function (res) {
       if (res.error) {
         listaEl.innerHTML = '<p class="msg msg-erro">' + escapeHtml(res.error.message || 'Não deu pra carregar agora.') + '</p>';
         return;
@@ -217,6 +225,34 @@
   });
 
   buscaEl.addEventListener('input', renderizar);
+
+  if (pertoBtn) pertoBtn.addEventListener('click', function () {
+    if (localizacaoAtual) {
+      localizacaoAtual = null;
+      pertoBtn.classList.remove('is-ativo');
+      pertoTexto.textContent = 'Perto de mim';
+      carregar();
+      return;
+    }
+    if (!navigator.geolocation) {
+      window.VBDialogo ? window.VBDialogo.alert('Seu navegador não permite localização.') : alert('Seu navegador não permite localização.');
+      return;
+    }
+    pertoBtn.disabled = true;
+    pertoTexto.textContent = 'Localizando…';
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      localizacaoAtual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      pertoBtn.disabled = false;
+      pertoBtn.classList.add('is-ativo');
+      pertoTexto.textContent = 'Perto de mim';
+      carregar();
+    }, function () {
+      pertoBtn.disabled = false;
+      pertoTexto.textContent = 'Perto de mim';
+      var msg = 'Não consegui acessar sua localização — verifica se o navegador tem permissão.';
+      if (window.VBDialogo) window.VBDialogo.alert(msg); else alert(msg);
+    }, { timeout: 10000 });
+  });
 
   carregar();
 })();
