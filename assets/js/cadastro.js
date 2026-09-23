@@ -348,7 +348,7 @@
           window.VBDialogo.alert('Não deu pra salvar agora — tenta de novo em instantes.');
           return;
         }
-        if (ligar) window.VBDialogo.alert('Pronto! O número de acessos já aparece publicamente no seu site, pra quem visitar.');
+        if (window.VBSalvo) window.VBSalvo.mostrar(ligar ? 'Agora é público' : 'Voltou a ser privado');
       }, function () {
         caixa.checked = !ligar;
         window.VBDialogo.alert('Não deu pra salvar agora — tenta de novo em instantes.');

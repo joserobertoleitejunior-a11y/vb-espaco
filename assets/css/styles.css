@@ -943,6 +943,92 @@ button.catalogo-avatar-anel { cursor: pointer; }
 }
 .vb-dialogo-acoes { display: flex; gap: 0.6rem; justify-content: flex-end; }
 .vb-dialogo-acoes .btn { padding: 0.55rem 1.1rem; font-size: 0.85rem; }
+
+/* ---- confirmação de "salvo" (vb-salvo.js): o cubo da marca gira cada
+   vez mais rápido e desaparece num ponto, igual TV antiga desligando.
+   Tudo em CSS (sem WebGL) pra disparar na hora, toda vez que algo salva. ---- */
+.vb-salvo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  background: rgba(8, 8, 10, 0.32);
+  pointer-events: none;
+  opacity: 0;
+  animation: vbSalvoOverlayFade 0.16s ease forwards, vbSalvoOverlayFade 0.18s ease 0.82s reverse forwards;
+}
+.vb-salvo-cena {
+  width: 72px;
+  height: 72px;
+  perspective: 380px;
+  animation:
+    vbSalvoColapsarV 0.16s ease-in 0.62s forwards,
+    vbSalvoColapsarH 0.2s ease-in 0.78s forwards;
+}
+.vb-salvo-cubo {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(20deg) rotateY(30deg);
+  animation: vbSalvoGirar 0.62s cubic-bezier(0.6, 0, 0.85, 0.3) forwards;
+}
+.vb-salvo-face {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--terracotta, var(--dourado, #C9A227));
+  background: transparent;
+}
+.vb-salvo-face-frente { transform: translateZ(36px); }
+.vb-salvo-face-tras { transform: translateZ(-36px) rotateY(180deg); }
+.vb-salvo-face-direita { transform: translateX(36px) rotateY(90deg); }
+.vb-salvo-face-esquerda { transform: translateX(-36px) rotateY(-90deg); }
+.vb-salvo-face-cima { transform: translateY(-36px) rotateX(90deg); }
+.vb-salvo-face-baixo { transform: translateY(36px) rotateX(-90deg); }
+.vb-salvo-texto {
+  margin: 0;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  animation: vbSalvoTextoSome 0.2s ease 0.66s forwards;
+}
+.vb-salvo-check {
+  margin: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--terracotta, var(--dourado, #C9A227));
+  color: var(--terracotta, var(--dourado, #C9A227));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.vb-salvo-overlay.reduz-movimento .vb-salvo-texto { animation: none; }
+
+@keyframes vbSalvoOverlayFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vbSalvoTextoSome { to { opacity: 0; } }
+@keyframes vbSalvoGirar {
+  0% { transform: rotateX(20deg) rotateY(30deg); }
+  100% { transform: rotateX(760deg) rotateY(1140deg); }
+}
+@keyframes vbSalvoColapsarV {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(0.045); }
+}
+@keyframes vbSalvoColapsarH {
+  0% { transform: scaleY(0.045) scaleX(1); filter: drop-shadow(0 0 0 transparent); }
+  75% { transform: scaleY(0.045) scaleX(0.06); filter: drop-shadow(0 0 9px var(--terracotta, var(--dourado, #C9A227))); }
+  100% { transform: scaleY(0.045) scaleX(0); filter: drop-shadow(0 0 0 transparent); }
+}
+
 .admin-pin-box {
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(20px) saturate(160%);

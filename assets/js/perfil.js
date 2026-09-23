@@ -110,7 +110,8 @@
     // expirada etc.), a cor mudava na tela mas nunca era salva de verdade,
     // e um F5 devolvia a cor antiga sem nenhum aviso do motivo.
     db.rpc('tenant_admin_atualizar_cor', { p_estabelecimento_id: estabId, p_cor_destaque: cor, p_cor_secundaria: corSecundaria || null }).then(function (res) {
-      if (res.error && window.VBDialogo) window.VBDialogo.alert('Não deu pra salvar a cor: ' + res.error.message);
+      if (res.error && window.VBDialogo) { window.VBDialogo.alert('Não deu pra salvar a cor: ' + res.error.message); return; }
+      if (!res.error && window.VBSalvo) window.VBSalvo.mostrar('Salvo');
     }, function () {
       if (window.VBDialogo) window.VBDialogo.alert('Sem conexão — a cor mudou na tela mas não foi salva. Tenta de novo.');
     });
