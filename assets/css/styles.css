@@ -619,13 +619,13 @@ img { max-width: 100%; display: block; }
 }
 .chip.is-ativo { background: var(--cor-marca); color: var(--branco); border-color: var(--cor-marca); }
 
+.catalogo-item { display: flex; flex-direction: column; margin: 0 0 1rem; }
 .catalogo-card {
   display: block;
   background: var(--branco);
   border: 1px solid rgba(20,20,30,0.05);
   border-radius: 16px;
   overflow: hidden;
-  margin: 0 0 1rem;
   text-decoration: none;
   color: inherit;
   cursor: pointer;
@@ -782,7 +782,7 @@ button.catalogo-avatar-anel { cursor: pointer; }
   font-weight: 700;
   color: var(--cor-marca);
   text-decoration: none;
-  margin: -0.5rem 0 1.25rem;
+  margin: -0.5rem 0 0;
   padding: 0.5rem;
 }
 
@@ -2625,4 +2625,37 @@ body.vb-modo-admin { padding-bottom: 3rem; }
     box-shadow: none;
   }
   #dashboardOverlay .admin-painel-box { max-width: 780px; }
+}
+
+/* ---- catálogo (index.html) em telas de desktop: mesma coluna de
+   celular esticada até então. A busca/filtros/promoções continuam
+   centralizados numa largura confortável de leitura, mas a lista de
+   estabelecimentos vira grade (largura mínima por card, tantas colunas
+   quanto couberem) em vez de uma pilha de cartões esticados. ---- */
+@media (min-width: 720px) {
+  .tela-catalogo .container { max-width: 50rem; }
+}
+@media (min-width: 1000px) {
+  .tela-catalogo .container { max-width: 78rem; }
+  #listaCatalogo {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 0 1.1rem;
+    align-items: start;
+  }
+  #listaCatalogo .catalogo-item { margin: 0 0 1.1rem; }
+  #listaCatalogo .catalogo-cta,
+  #listaCatalogo .vb-offline-aviso,
+  #listaCatalogo .vb-offline-vazio,
+  #listaCatalogo > p { grid-column: 1 / -1; }
+  /* mesma solução do painel de gestão: sem isso, a barra fixa no rodapé
+     (pensada pro celular) flutua por cima do fim da grade no desktop. */
+  .tela-catalogo.com-tabbar { padding-bottom: 0; }
+  .tela-catalogo .tabbar {
+    position: static;
+    max-width: 78rem;
+    margin: 2rem auto 0;
+    border-top: 1px solid var(--borda);
+    box-shadow: none;
+  }
 }

@@ -129,7 +129,8 @@
       var selosSociais = SOCIAL_ICONES.filter(function (s) { return s.href(e); }).map(function (s) {
         return '<a class="catalogo-selo-social" href="' + escapeHtml(s.href(e)) + '" target="_blank" rel="noopener" aria-label="' + s.rotulo + '" data-social-link>' + s.svg + '</a>';
       }).join('');
-      return '<div class="catalogo-card" role="link" tabindex="0" data-href="' + link + '" style="box-shadow:' + sombra + ';">' +
+      return '<div class="catalogo-item">' +
+        '<div class="catalogo-card" role="link" tabindex="0" data-href="' + link + '" style="box-shadow:' + sombra + ';">' +
         '<div class="catalogo-capa" style="' + capaStyle + '">' +
         '<span class="catalogo-capa-icone" aria-hidden="true">' + (fotoTopo ? '' : icone) + '</span>' +
         '</div>' +
@@ -151,7 +152,8 @@
         '<span class="catalogo-seta" aria-hidden="true">→</span>' +
         '</div>' +
         '</div>' +
-        '<a class="catalogo-criar-assim" href="criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') + '">+ Criar uma loja assim →</a>';
+        '<a class="catalogo-criar-assim" href="criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') + '">+ Criar uma loja assim →</a>' +
+        '</div>';
     }).join('') + CTA_CADASTRO;
   }
 
