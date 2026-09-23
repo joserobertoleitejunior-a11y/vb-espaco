@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /criar.html
+Disallow: /editar.html
+Disallow: /preview-embutido.html
+
+Sitemap: https://vb-espaco.joserobertoleitejunior.workers.dev/sitemap.xml
