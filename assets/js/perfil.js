@@ -988,11 +988,16 @@
 
     function renderBlocoFotoPerfil() {
       var fotoPerfil = linhaAtual.foto_perfil_url || fotoAtual;
-      // moldura não é mais escolha do dono — os estilos decorativos
-      // (giratória, metálica etc.) ficavam artificiais em cima de foto de
-      // verdade. Agora é sempre "simples": recorte redondo com um anel
-      // fino, sem edição nenhuma.
-      var molduraAtual = 'simples';
+      var molduraAtual = linhaAtual.moldura_foto || 'simples';
+      var MOLDURAS = [
+        { chave: 'simples', nome: 'Simples' },
+        { chave: 'dupla', nome: 'Dupla' },
+        { chave: 'grossa', nome: 'Grossa' },
+        { chave: 'pontilhada', nome: 'Pontilhada' },
+        { chave: 'metalica', nome: 'Metálica' },
+        { chave: 'giratoria', nome: 'Giratória ✨' },
+        { chave: 'aura', nome: 'Aura' }
+      ];
       var avatarConteudo = fotoPerfil
         ? '<span class="catalogo-avatar-foto" style="background-image:url(\'' + fotoPerfil + '\');"></span>'
         : escapeHtml((linhaAtual.nome || '?')[0].toUpperCase());
@@ -1009,6 +1014,12 @@
         (window.avataresParaSegmento ? window.avataresParaSegmento(linhaAtual.segmento) : []).map(function (f) {
           var sel = f.url === fotoPerfil;
           return '<img src="' + f.url + '" data-estoque-avatar-url="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:contain; background:var(--linho,#f2ede2); border-radius:10px; cursor:pointer; border:2px solid ' + (sel ? 'var(--terracotta, var(--dourado,#C9A227))' : 'transparent') + ';">';
+        }).join('') +
+        '</div>' +
+        '<p class="vb-servico-novo-legenda">Borda da foto:</p>' +
+        '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.4rem;">' +
+        MOLDURAS.map(function (m) {
+          return '<button type="button" class="vb-servico-chip" data-moldura="' + m.chave + '" style="' + (m.chave === molduraAtual ? 'background:var(--terracotta,var(--dourado,#C9A227)); color:#fff; border-color:transparent;' : '') + '">' + m.nome + '</button>';
         }).join('') +
         '</div>' +
         '<p class="msg" id="vbTutPerfilMsg"></p>';
@@ -1041,6 +1052,9 @@
     }
     container.querySelectorAll('[data-estoque-avatar-url]').forEach(function (img) {
       img.addEventListener('click', function () { salvarPerfil('p_foto_perfil_url', img.getAttribute('data-estoque-avatar-url')); });
+    });
+    container.querySelectorAll('[data-moldura]').forEach(function (btn) {
+      btn.addEventListener('click', function () { salvarPerfil('p_moldura_foto', btn.getAttribute('data-moldura')); });
     });
 
     function salvar(url) {

@@ -103,10 +103,8 @@
         : escapeHtml(iniciais(e.nome));
       // avatar tem status ativo (postado nas últimas 24h)? entra a moldura
       // de destaque nas cores do próprio site, tipo o anel de story do
-      // Instagram — e o avatar vira clicável pra abrir o status. Fora
-      // isso é sempre "simples" — moldura decorativa não é mais escolha
-      // do dono, independente do que estiver salvo no banco.
-      var moldura = e.tem_status_ativo ? 'aura' : 'simples';
+      // Instagram — e o avatar vira clicável pra abrir o status.
+      var moldura = e.tem_status_ativo ? 'aura' : (e.moldura_foto || 'simples');
       var selosSociais = SOCIAL_ICONES.filter(function (s) { return s.href(e); }).map(function (s) {
         return '<a class="catalogo-selo-social" href="' + escapeHtml(s.href(e)) + '" target="_blank" rel="noopener" aria-label="' + s.rotulo + '" data-social-link>' + s.svg + '</a>';
       }).join('');
