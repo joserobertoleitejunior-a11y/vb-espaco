@@ -155,6 +155,14 @@ img { max-width: 100%; display: block; }
 .topbar-dropdown-titulo { margin: 0 0 0.6rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-suave); }
 .topbar-dropdown-resumo { margin: 0 0 0.7rem; font-size: 0.86rem; font-weight: 600; color: var(--tinta); line-height: 1.4; }
 .topbar-dropdown-vazio { margin: 0; font-size: 0.85rem; color: var(--tinta-suave); text-align: center; padding: 0.6rem 0; }
+.topbar-notif-item {
+  padding: 0.55rem 0.6rem;
+  border-radius: 10px;
+  background: var(--linho);
+  margin-bottom: 0.4rem;
+}
+.topbar-notif-item:last-child { margin-bottom: 0; }
+.topbar-notif-item p { margin: 0; font-size: 0.84rem; color: var(--tinta); line-height: 1.35; }
 .topbar-menu-email { margin: 0 0 0.9rem; font-size: 0.84rem; font-weight: 700; color: var(--tinta); word-break: break-all; }
 .topbar-menu-nav { display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 0.6rem; }
 .topbar-menu-nav a {

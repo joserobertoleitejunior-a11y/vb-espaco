@@ -5,3 +5,7 @@
 
 /preview-embutido.html
   X-Frame-Options: SAMEORIGIN
+
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /

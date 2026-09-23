@@ -188,7 +188,7 @@ body.scroll-locked{position:fixed; left:0; right:0; overflow:hidden;}
   visibility:hidden; opacity:0;
   transition:opacity 0.35s ease, visibility 0.35s;
   background:linear-gradient(160deg,#000000 0%,#181818 55%,#000000 100%);
-  color:var(--linen);
+  color:var(--white);
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
   padding-top:env(safe-area-inset-top);
@@ -205,7 +205,7 @@ body.scroll-locked{position:fixed; left:0; right:0; overflow:hidden;}
   align-self:flex-end;
   width:50px; height:50px; border-radius:50%;
   border:1.5px solid rgba(255,255,255,0.4); background:transparent;
-  color:var(--linen); font-size:1.5rem; line-height:1; cursor:pointer;
+  color:var(--white); font-size:1.5rem; line-height:1; cursor:pointer;
 }
 .site-menu-close:active{transform:scale(0.9); transition:transform 0.1s ease;}
 .site-menu-list a:active, .site-menu-list button:active{opacity:0.55;}
@@ -215,7 +215,7 @@ body.scroll-locked{position:fixed; left:0; right:0; overflow:hidden;}
 .site-menu-list li{border-bottom:1px solid rgba(255,255,255,0.14);}
 .site-menu-list a, .site-menu-list button{
   display:flex; align-items:center; justify-content:space-between;
-  width:100%; background:none; border:none; color:var(--linen); text-align:left;
+  width:100%; background:none; border:none; color:var(--white); text-align:left;
   font-family:'Cormorant Garamond', serif; font-size:1.7rem;
   padding:1.05rem 0; cursor:pointer;
 }

@@ -4,6 +4,20 @@
 (function () {
   if (!window.db) return;
 
+  // Ação de escrita com suporte offline: tenta a rede, e só cai na fila
+  // local (vb-offline.js) se a falha for de conectividade — nunca perde
+  // uma venda/agendamento por falta de internet, nem finge sucesso.
+  // Retorna sempre { offline, res } — quando offline, "res" não existe
+  // ainda (só vai existir de verdade quando a fila sincronizar).
+  function chamarComFila(rpcNome, params, descricao) {
+    return window.VBOffline
+      ? window.VBOffline.executarOuEnfileirar(rpcNome, params, descricao)
+      : db.rpc(rpcNome, params).then(function (res) { return { offline: false, res: res }; });
+  }
+  function chamarVendaComFila(params) {
+    return chamarComFila('tenant_admin_registrar_venda', params, 'Venda: ' + params.p_descricao);
+  }
+
   // Login de verdade: precisa criar conta ou entrar (e-mail+senha, ou
   // Google) pra ver e criar estabelecimentos — a conta (dono_user_id) é
   // o que decide quem é dono de cada site, sem PIN nenhum envolvido.
@@ -16,6 +30,10 @@
   var listaMsg = document.getElementById('listaMsg');
   var listaEl = document.getElementById('listaEstabelecimentos');
   var topbarIcones = document.getElementById('topbarIcones');
+  var offlineBtn = document.getElementById('offlineBtn');
+  var offlineBadge = document.getElementById('offlineBadge');
+  var offlineDropdown = document.getElementById('offlineDropdown');
+  var offlineEl = document.getElementById('offlineDropdownConteudo');
   var notifBtn = document.getElementById('notifBtn');
   var notifBadge = document.getElementById('notifBadge');
   var notifDropdown = document.getElementById('notifDropdown');
@@ -24,9 +42,9 @@
   var menuDropdown = document.getElementById('menuDropdown');
   var topbarMenuEmail = document.getElementById('topbarMenuEmail');
 
-  // ---- dropdowns do topbar (notificações e menu): só um aberto por vez,
-  // fecha ao clicar fora ou apertar Esc — mesmo padrão de qualquer
-  // dropdown nativo, sem framework nenhum. ----
+  // ---- dropdowns do topbar (offline, notificações e menu): só um aberto
+  // por vez, fecha ao clicar fora ou apertar Esc — mesmo padrão de
+  // qualquer dropdown nativo, sem framework nenhum. ----
   function fecharDropdown(btn, dropdown) {
     if (dropdown.classList.contains('oculto')) return;
     dropdown.classList.remove('is-aberto');
@@ -34,6 +52,7 @@
     setTimeout(function () { dropdown.classList.add('oculto'); }, 160);
   }
   function fecharDropdowns() {
+    fecharDropdown(offlineBtn, offlineDropdown);
     fecharDropdown(notifBtn, notifDropdown);
     fecharDropdown(menuBtn, menuDropdown);
   }
@@ -51,8 +70,44 @@
       });
     }
   }
+  offlineBtn.addEventListener('click', function (e) { e.stopPropagation(); alternarDropdown(offlineBtn, offlineDropdown); });
   notifBtn.addEventListener('click', function (e) { e.stopPropagation(); alternarDropdown(notifBtn, notifDropdown); });
   menuBtn.addEventListener('click', function (e) { e.stopPropagation(); alternarDropdown(menuBtn, menuDropdown); });
+
+  // ---- fila offline: badge com quantidade pendente + lista no dropdown,
+  // com botão de "tentar de novo" pro item que ficou com problema de
+  // verdade (não é falta de rede) e "descartar" pra desistir dele. ----
+  function atualizarOfflineBarra(fila) {
+    if (!offlineBtn) return;
+    var pendentes = fila || [];
+    if (!pendentes.length) {
+      offlineBtn.classList.add('oculto');
+      return;
+    }
+    offlineBtn.classList.remove('oculto');
+    offlineBadge.textContent = pendentes.length;
+    offlineBadge.classList.remove('oculto');
+    offlineEl.innerHTML = pendentes.map(function (a) {
+      var quando = new Date(a.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      return '<div class="topbar-notif-item">' +
+        '<p>' + escapeHtml(a.descricao || a.rpcNome) + '</p>' +
+        '<p style="font-size:0.72rem; color:var(--tinta-suave);">' + quando + (a.problema ? ' · ' + escapeHtml(a.problema) : ' · aguardando conexão') + '</p>' +
+        (a.problema
+          ? '<div style="display:flex; gap:0.4rem; margin-top:0.3rem;">' +
+            '<button type="button" class="btn btn-ghost" data-offline-tentar="' + a.id + '" style="padding:0.25rem 0.6rem; font-size:0.72rem;">Tentar de novo</button>' +
+            '<button type="button" class="btn btn-ghost" data-offline-descartar="' + a.id + '" style="padding:0.25rem 0.6rem; font-size:0.72rem; color:var(--erro); border-color:var(--erro);">Descartar</button>' +
+            '</div>'
+          : '') +
+        '</div>';
+    }).join('');
+    offlineEl.querySelectorAll('[data-offline-tentar]').forEach(function (btn) {
+      btn.addEventListener('click', function () { window.VBOffline.tentarNovamente(btn.getAttribute('data-offline-tentar')); });
+    });
+    offlineEl.querySelectorAll('[data-offline-descartar]').forEach(function (btn) {
+      btn.addEventListener('click', function () { window.VBOffline.remover(Number(btn.getAttribute('data-offline-descartar'))); });
+    });
+  }
+  if (window.VBOffline) window.VBOffline.aoMudarFila(atualizarOfflineBarra);
   // conteúdo dos dois dropdowns é só texto e links/botões que navegam ou
   // disparam uma ação (abrir dashboard, sair) — faz sentido fechar o
   // dropdown nesses cliques também, então não trava a propagação aqui.
@@ -571,9 +626,10 @@
         var profOpt = profSelect.options[profSelect.selectedIndex];
         msg.className = 'msg';
         msg.textContent = 'Criando…';
-        db.rpc('tenant_admin_criar_agendamento', {
+        var clienteNome = document.getElementById('dashAgCliente').value.trim();
+        chamarComFila('tenant_admin_criar_agendamento', {
           p_estabelecimento_id: estabId,
-          p_cliente_nome: document.getElementById('dashAgCliente').value.trim(),
+          p_cliente_nome: clienteNome,
           p_cliente_telefone: document.getElementById('dashAgTelefone').value.trim(),
           p_staff_id: profSelect.value || null,
           p_staff_nome: profSelect.value ? profOpt.getAttribute('data-nome') : null,
@@ -581,28 +637,38 @@
           p_dia: dataInput,
           p_dia_label: diaLabel,
           p_horario: document.getElementById('dashAgHorario').value
-        }).then(function (res) {
-          if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
+        }, 'Agendamento novo: ' + clienteNome).then(function (resultado) {
           // renderizarDashAgenda() troca todo o innerHTML da aba (inclusive
           // esse próprio <p class="msg">), então a confirmação precisa
           // vir por fora desse re-render — VBDialogo, não o <p>.
+          if (resultado.offline) {
+            renderizarDashAgenda();
+            carregarEstabelecimentos();
+            window.VBDialogo.alert('Sem internet agora — agendamento salvo neste aparelho e sobe sozinho assim que a conexão voltar.');
+            return;
+          }
+          if (resultado.res.error) { msg.className = 'msg msg-erro'; msg.textContent = resultado.res.error.message; return; }
           renderizarDashAgenda();
           carregarEstabelecimentos();
           window.VBDialogo.alert('Agendamento criado!');
-        }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Sem conexão agora.'; });
+        });
       });
 
       document.getElementById('dashAgendaLista').addEventListener('click', function (e) {
         var btn = e.target.closest('[data-status-agendamento-id]');
         if (!btn) return;
         btn.disabled = true;
-        db.rpc('tenant_admin_atualizar_agendamento', {
+        var novoStatus = btn.getAttribute('data-status-novo');
+        chamarComFila('tenant_admin_atualizar_agendamento', {
           p_estabelecimento_id: estabId,
           p_id: btn.getAttribute('data-status-agendamento-id'),
-          p_status: btn.getAttribute('data-status-novo')
-        }).then(function () {
+          p_status: novoStatus
+        }, 'Agendamento: ' + (STATUS_LABEL[novoStatus] || novoStatus)).then(function (resultado) {
           renderizarDashAgenda();
           carregarEstabelecimentos();
+          if (resultado.offline && window.VBDialogo) {
+            window.VBDialogo.alert('Sem internet agora — a mudança foi salva neste aparelho e sobe sozinha assim que a conexão voltar.');
+          }
         });
       });
 
@@ -1019,7 +1085,7 @@
               p_forma_pagamento: forma,
               p_servico_id: item.servicoId
             });
-            return function () { return db.rpc('tenant_admin_registrar_venda', params); };
+            return function () { return chamarVendaComFila(params); };
           });
         } else {
           var tenders = lerSplitTenders().filter(function (t) { return t.valor > 0; });
@@ -1037,22 +1103,29 @@
               p_forma_pagamento: t.forma,
               p_servico_id: null
             });
-            return function () { return db.rpc('tenant_admin_registrar_venda', params); };
+            return function () { return chamarVendaComFila(params); };
           });
         }
         msg.className = 'msg';
         msg.textContent = 'Registrando…';
         registrarBtn.disabled = true;
+        var algumOffline = false;
         chamadas.reduce(function (promessa, chamar) {
           return promessa.then(function (erroAnterior) {
             if (erroAnterior) return erroAnterior;
-            return chamar().then(function (res) { return res.error || null; });
+            return chamar().then(function (resultado) {
+              if (resultado.offline) { algumOffline = true; return null; }
+              return resultado.res.error || null;
+            });
           });
         }, Promise.resolve(null)).then(function (erro) {
           if (erro) { msg.className = 'msg msg-erro'; msg.textContent = erro.message; registrarBtn.disabled = false; return; }
           renderizarDashCaixa();
           carregarEstabelecimentos();
-        }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Sem conexão agora.'; registrarBtn.disabled = false; });
+          if (algumOffline && window.VBDialogo) {
+            window.VBDialogo.alert('Sem internet agora — a venda foi salva neste aparelho e sobe sozinha assim que a conexão voltar.');
+          }
+        }, function () { msg.className = 'msg msg-erro'; msg.textContent = 'Não deu pra registrar.'; registrarBtn.disabled = false; });
       });
 
       document.getElementById('caixaLista').addEventListener('click', function (e) {
