@@ -213,6 +213,9 @@
   var ICONE_ACAO_VER = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
   var ICONE_ACAO_EDITAR = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
   var ICONE_ACAO_APAGAR = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+  var ICONE_ACAO_CAIXA = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6.5v11"/><path d="M15.5 9c0-1.4-1.6-2.5-3.5-2.5S8.5 7.6 8.5 9s1.6 2 3.5 2.5 3.5 1.1 3.5 2.5-1.6 2.5-3.5 2.5-3.5-1.1-3.5-2.5"/></svg>';
+  var ICONE_ACAO_COMUNIDADE = '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M12 2L14.3 7.7L20 10L14.3 12.3L12 18L9.7 12.3L4 10L9.7 7.7z"/></svg>';
+  var ICONE_ACAO_PERFIL = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2.2"/><path d="M5.5 17c.5-2.2 2-3.4 3.5-3.4s3 1.2 3.5 3.4"/><line x1="14.5" y1="9" x2="18.5" y2="9"/><line x1="14.5" y1="12.5" x2="18.5" y2="12.5"/></svg>';
   var ICONE_MENU_CHEVRON = '<svg class="dash-card-menu-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>';
   var ICONE_ACESSOS = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 
@@ -248,33 +251,20 @@
           ? '<span class="dash-card-avatar-foto"' + (fotoAvatar === fotoTopo ? ' data-alinhar-topo="' + fotoAvatar + '"' : ' style="background-image:url(\'' + fotoAvatar + '\');"') + '></span>'
           : escapeHtml(iniciais(e.nome));
         var moldura = e.moldura_foto || 'simples';
-        var trialData = e.trial_termina_em ? new Date(e.trial_termina_em + 'T00:00:00').toLocaleDateString('pt-BR') : '';
         var faltando = [];
         if (!e.total_servicos) faltando.push('nenhum serviço');
         if (!e.total_equipe) faltando.push('nenhum profissional');
         var configPendenteHtml = faltando.length
           ? '<div class="dash-card-config-pendente">' +
-            '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Clique em "Editar site" — como você já está logado na sua conta, o modo admin abre direto.</p>' +
+            '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Clique em "Perfil do site", aqui embaixo, pra completar.</p>' +
             '</div>'
           : '';
-        var mensalidadeTexto = formatarPreco(e.mensalidade || 39.9) + '/mês';
-        var pagamentoHtml;
-        if (e.pagamento_status === 'em_dia') {
-          pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-emdia">Assinatura em dia — ' + mensalidadeTexto + (e.forma_pagamento ? ' via ' + (e.forma_pagamento === 'pix' ? 'Pix' : 'cartão de crédito') : '') + '.</div>';
-        } else if (e.pagamento_status === 'atrasado') {
-          pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-urgente">Pagamento atrasado — regularize a assinatura (' + mensalidadeTexto + ') para não perder o acesso ao seu site.</div>';
-        } else if (e.pagamento_status === 'bloqueado') {
-          pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-urgente">Acesso bloqueado por falta de pagamento. Fale com o suporte do VB Agenda para regularizar.</div>';
-        } else if (e.forma_pagamento) {
-          pagamentoHtml = '<div class="dash-card-pagamento">Forma de pagamento: <strong>' + (e.forma_pagamento === 'pix' ? 'Pix' : 'Cartão de crédito') + '</strong> — cobrança automática ainda será ativada, por enquanto seu acesso segue liberado.</div>';
-        } else {
-          pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-pendente">' +
-            '<p>1º mês grátis' + (trialData ? ' até ' + trialData : '') + '. Depois, ' + mensalidadeTexto + '. Escolha como prefere pagar:</p>' +
-            '<div class="dash-card-pagamento-botoes">' +
-            '<button type="button" class="btn btn-ghost" data-forma-pagamento-id="' + e.id + '" data-forma="pix" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Pix</button>' +
-            '<button type="button" class="btn btn-ghost" data-forma-pagamento-id="' + e.id + '" data-forma="cartao" style="padding:0.4rem 0.8rem; font-size:0.8rem;">Cartão de crédito</button>' +
-            '</div></div>';
-        }
+        // beta: sem cobrança nenhuma por enquanto — os 20 primeiros
+        // estabelecimentos cadastrados (bonus_3_meses) ganham 3 meses
+        // grátis quando os planos pagos começarem de verdade.
+        var pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-emdia">🎉 Beta gratuito — sem cobrança por enquanto.' +
+          (e.bonus_3_meses ? ' Você é um dos 20 primeiros — quando os planos pagos começarem, ganha <strong>3 meses grátis</strong>.' : '') +
+          '</div>';
         // linha de menu genérica: ícone + rótulo à esquerda, valor à
         // direita — o mesmo formato pra estatística (só leitura) e pra
         // ação (link/botão clicável, com seta indicando que abre algo).
@@ -314,6 +304,10 @@
           '<p class="dash-card-menu-titulo">Ações</p>' +
           linhaMenu(ICONE_ACAO_GESTAO, 'Gestão', (e.total_pendentes ? '<span class="dash-badge-pendente">' + e.total_pendentes + '</span>' : ''),
             ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '"', 'is-principal') +
+          linhaMenu(ICONE_STAT_AGENDA, 'Agendamentos', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="agenda"') +
+          linhaMenu(ICONE_ACAO_CAIXA, 'Caixa', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="caixa"') +
+          linhaMenu(ICONE_ACAO_COMUNIDADE, 'Status e promoções', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="comunidade"') +
+          linhaMenu(ICONE_ACAO_PERFIL, 'Perfil do site', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="perfil"') +
           linhaMenu(ICONE_ACAO_VER, 'Ver site', '', ' href="' + link + '" target="_blank" rel="noopener"') +
           linhaMenu(ICONE_ACAO_EDITAR, 'Editar site', '', ' href="' + link + '"') +
           linhaMenu(ICONE_ACAO_APAGAR, 'Apagar site', '', ' data-apagar-id="' + e.id + '" data-apagar-nome="' + escapeHtml(e.nome) + '"', 'is-perigo') +
@@ -367,16 +361,6 @@
     } else {
       salvar();
     }
-  });
-
-  listaEl.addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-forma-pagamento-id]');
-    if (!btn) return;
-    btn.closest('.dash-card-pagamento-botoes').querySelectorAll('button').forEach(function (b) { b.disabled = true; });
-    db.rpc('tenant_cadastrar_forma_pagamento', {
-      p_estabelecimento_id: btn.getAttribute('data-forma-pagamento-id'),
-      p_forma_pagamento: btn.getAttribute('data-forma')
-    }).then(carregarEstabelecimentos);
   });
 
   // mesma lógica do catálogo: quando o avatar cai na mesma foto da capa
@@ -548,6 +532,7 @@
     else if (aba === 'clientes') renderizarDashClientes();
     else if (aba === 'caixa') renderizarDashCaixa();
     else if (aba === 'comunidade') renderizarDashComunidade();
+    else if (aba === 'perfil') renderizarDashPerfil();
   }
 
   function renderizarDashResumo() {
@@ -963,6 +948,313 @@
       if (window.VBSelect) window.VBSelect.enhanceTodos(dashboardCorpo);
       ligarEventosComunidade(estabId);
     }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
+  }
+
+  // ---- Perfil do site: fotos, localização, serviços e equipe — antes
+  // só dava pra mexer nisso entrando no "Editar site" (modo visual, em
+  // cima do próprio site); agora também dá pra fazer tudo aqui, direto
+  // no painel de gestão. ----
+  function geocodificarEnderecoDash(endereco, cidade) {
+    var semComplemento = (endereco || '').replace(/,?\s*(ap(?:t|to)?\.?|sala|loja|bloco|bl\.?|conjunto|cj\.?)\s*\.?\s*\d+\w*/gi, '').trim();
+    var soRua = semComplemento.replace(/,?\s*n[º°o]?\.?\s*\d+[\w-]*/gi, '').replace(/^\s*,\s*/, '').trim();
+    var tentativasBrutas = [endereco, semComplemento, soRua, ''];
+    var vistas = {};
+    var tentativas = [];
+    tentativasBrutas.forEach(function (texto) {
+      var consulta = [texto, cidade, 'Brasil'].filter(Boolean).join(', ');
+      if (!vistas[consulta]) { vistas[consulta] = true; tentativas.push(consulta); }
+    });
+    function tentar(i) {
+      if (i >= tentativas.length) return null;
+      var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(tentativas[i]);
+      return fetch(url).then(function (res) { return res.json(); }).then(function (dados) {
+        var achado = dados && dados[0];
+        if (achado) return { lat: parseFloat(achado.lat), lng: parseFloat(achado.lon) };
+        return tentar(i + 1);
+      }, function () { return tentar(i + 1); });
+    }
+    return Promise.resolve(tentar(0));
+  }
+
+  function formatarPrecoInput(v) { return (Number(v) || 0).toFixed(2).replace('.', ','); }
+
+  function renderizarDashPerfil() {
+    var estabId = dashEstabId;
+    Promise.all([
+      db.rpc('tenant_admin_obter_estabelecimento', { p_estabelecimento_id: estabId }),
+      db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }),
+      db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId })
+    ]).then(function (resultados) {
+      if (dashEstabId !== estabId) return;
+      var estabRes = resultados[0], servRes = resultados[1], equipeRes = resultados[2];
+      var estab = estabRes.data && estabRes.data[0];
+      if (estabRes.error || !estab) {
+        dashboardCorpo.classList.remove('dash-carregando');
+        dashboardCorpo.innerHTML = '<p class="msg msg-erro">Não deu pra carregar o perfil agora.</p>';
+        return;
+      }
+      var servicos = servRes.data || [];
+      var equipe = equipeRes.data || [];
+
+      function servicoItemHtml(s) {
+        return '<div class="painel-lista-item">' +
+          '<span style="flex:1; min-width:0;"><span class="principal">' + escapeHtml(s.nome) + '</span><br>' +
+          '<span class="secundario">' + escapeHtml(s.categoria || 'Geral') + ' · ' + formatarPreco(s.preco) + '</span></span>' +
+          '<button type="button" class="dash-comunidade-editar" data-editar-servico="' + s.id + '" data-nome="' + escapeHtml(s.nome) + '" data-preco="' + s.preco + '" data-categoria="' + escapeHtml(s.categoria || '') + '" aria-label="Editar serviço">' + ICONE_ACAO_EDITAR + '</button>' +
+          '<button type="button" class="dash-comunidade-apagar" data-apagar-servico="' + s.id + '" aria-label="Apagar serviço">×</button>' +
+          '</div>';
+      }
+      function staffItemHtml(s) {
+        return '<div class="painel-lista-item">' +
+          (s.foto_url ? '<span class="dash-comunidade-thumb" style="background-image:url(\'' + s.foto_url + '\'); border-radius:50%;"></span>' : '<span class="dash-comunidade-thumb dash-comunidade-thumb-vazia" style="border-radius:50%;"></span>') +
+          '<span style="flex:1; min-width:0;"><span class="principal">' + escapeHtml(s.nome) + '</span><br>' +
+          '<span class="secundario">' + escapeHtml(s.especialidade || (s.role === 'owner' ? 'Dono(a)' : 'Profissional')) + '</span></span>' +
+          (s.role === 'owner' ? '' :
+            '<button type="button" class="dash-comunidade-editar" data-editar-staff="' + s.id + '" data-nome="' + escapeHtml(s.nome) + '" data-especialidade="' + escapeHtml(s.especialidade || '') + '" aria-label="Editar profissional">' + ICONE_ACAO_EDITAR + '</button>' +
+            '<button type="button" class="dash-comunidade-apagar" data-apagar-staff="' + s.id + '" aria-label="Apagar profissional">×</button>') +
+          '</div>';
+      }
+
+      dashboardCorpo.classList.remove('dash-carregando');
+      dashboardCorpo.innerHTML =
+        '<p class="dash-secao-intro" style="margin-top:0;">Fotos, localização, serviços e equipe do seu site — tudo num lugar só.</p>' +
+
+        '<p class="dash-resumo-subtitulo" style="margin-top:0;">Fotos</p>' +
+        '<div class="dash-perfil-fotos">' +
+        '<label class="dash-perfil-foto-item">' +
+        '<span class="dash-perfil-foto-preview"' + (estab.foto_capa_url ? " style=\"background-image:url('" + estab.foto_capa_url + "')\"" : '') + '>' + (estab.foto_capa_url ? '' : 'Sem foto') + '</span>' +
+        '<span class="dash-perfil-foto-label">Foto de capa</span>' +
+        '<span class="btn btn-ghost dash-perfil-foto-trocar">Trocar</span>' +
+        '<input type="file" accept="image/*" id="dashFotoCapaInput" style="display:none;">' +
+        '</label>' +
+        '<label class="dash-perfil-foto-item">' +
+        '<span class="dash-perfil-foto-preview is-redonda"' + (estab.foto_perfil_url ? " style=\"background-image:url('" + estab.foto_perfil_url + "')\"" : '') + '>' + (estab.foto_perfil_url ? '' : 'Sem foto') + '</span>' +
+        '<span class="dash-perfil-foto-label">Foto de perfil</span>' +
+        '<span class="btn btn-ghost dash-perfil-foto-trocar">Trocar</span>' +
+        '<input type="file" accept="image/*" id="dashFotoPerfilInput" style="display:none;">' +
+        '</label>' +
+        '</div>' +
+        '<p class="msg" id="dashFotoMsg"></p>' +
+
+        '<p class="dash-resumo-subtitulo">Localização</p>' +
+        '<div class="field field-full"><label for="dashEnderecoInput">Endereço completo</label><input type="text" id="dashEnderecoInput" placeholder="Rua, número, bairro" value="' + escapeHtml(estab.endereco || '') + '"></div>' +
+        '<button type="button" class="btn btn-ghost" id="dashSalvarEnderecoBtn" style="margin-bottom:0.3rem;">Salvar localização</button>' +
+        '<p class="msg" id="dashEnderecoMsg"></p>' +
+
+        '<div class="dash-lista-cabecalho" style="margin-top:1.4rem;"><p class="dash-resumo-subtitulo" style="margin:0;">Serviços</p>' +
+        '<button type="button" class="btn btn-primario" id="dashAdicionarServicoBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Adicionar</button></div>' +
+        '<form id="dashServicoForm" class="dash-campos-grid oculto" style="margin-bottom:1rem;">' +
+        '<div class="field"><label for="dashServicoNome">Nome do serviço</label><input type="text" id="dashServicoNome" placeholder="Ex: Corte masculino" maxlength="60"></div>' +
+        '<div class="field"><label for="dashServicoPreco">Preço (R$)</label><input type="text" id="dashServicoPreco" inputmode="decimal" placeholder="Ex: 40,00"></div>' +
+        '<div class="field field-full"><label for="dashServicoCategoria">Categoria</label><input type="text" id="dashServicoCategoria" placeholder="Ex: Cabelo" maxlength="40"></div>' +
+        '<div class="field field-full" style="display:flex; gap:0.6rem;">' +
+        '<button type="submit" class="btn btn-primario" style="flex:1;" id="dashServicoSubmitBtn">Adicionar serviço</button>' +
+        '<button type="button" class="btn btn-ghost" id="dashServicoCancelar">Cancelar</button>' +
+        '</div>' +
+        '<p class="msg" id="dashServicoMsg" style="grid-column:1/-1;"></p>' +
+        '</form>' +
+        (servicos.length ? '<div id="dashListaServicosPerfil">' + servicos.map(servicoItemHtml).join('') + '</div>' : blocoVazio(ICONE_STAT_SERVICO, 'Nenhum serviço cadastrado', 'Adicione ao menos um serviço com preço — sem isso, seu site fica escondido de quem visita.')) +
+
+        '<div class="dash-lista-cabecalho" style="margin-top:1.4rem;"><p class="dash-resumo-subtitulo" style="margin:0;">Equipe</p>' +
+        '<button type="button" class="btn btn-primario" id="dashAdicionarStaffBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Adicionar</button></div>' +
+        '<form id="dashStaffForm" class="dash-campos-grid oculto" style="margin-bottom:1rem;">' +
+        '<div class="field"><label for="dashStaffNome">Nome</label><input type="text" id="dashStaffNome" placeholder="Ex: Maria Silva" maxlength="60"></div>' +
+        '<div class="field"><label for="dashStaffEspecialidade">Especialidade (opcional)</label><input type="text" id="dashStaffEspecialidade" placeholder="Ex: Coloração" maxlength="60"></div>' +
+        '<div class="field field-full"><label for="dashStaffFoto">Foto (opcional)</label><input type="file" id="dashStaffFoto" accept="image/*"></div>' +
+        '<div class="field field-full" style="display:flex; gap:0.6rem;">' +
+        '<button type="submit" class="btn btn-primario" style="flex:1;" id="dashStaffSubmitBtn">Adicionar profissional</button>' +
+        '<button type="button" class="btn btn-ghost" id="dashStaffCancelar">Cancelar</button>' +
+        '</div>' +
+        '<p class="msg" id="dashStaffMsg" style="grid-column:1/-1;"></p>' +
+        '</form>' +
+        (equipe.length ? '<div id="dashListaEquipePerfil">' + equipe.map(staffItemHtml).join('') + '</div>' : blocoVazio(ICONE_STAT_EQUIPE, 'Nenhum profissional cadastrado', 'Adicione ao menos um profissional — sem isso, seu site fica escondido de quem visita.'));
+
+      if (window.VBSelect) window.VBSelect.enhanceTodos(dashboardCorpo);
+      ligarEventosPerfil(estabId, estab);
+    }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
+  }
+
+  function ligarEventosPerfil(estabId, estab) {
+    var fotoMsg = document.getElementById('dashFotoMsg');
+    function trocarFoto(inputId, campo) {
+      var input = document.getElementById(inputId);
+      if (!input) return;
+      input.addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file || !window.VBUpload) return;
+        fotoMsg.className = 'msg'; fotoMsg.textContent = 'Enviando…';
+        window.VBUpload.uploadFoto(file, estabId, campo === 'p_foto_capa_url' ? 'capa' : 'perfil').then(function (url) {
+          var payload = { p_estabelecimento_id: estabId, p_foto_perfil_url: null, p_foto_capa_url: null, p_moldura_foto: null };
+          payload[campo] = url;
+          db.rpc('tenant_admin_atualizar_perfil_capa', payload).then(function (res) {
+            if (res.error) { fotoMsg.className = 'msg msg-erro'; fotoMsg.textContent = res.error.message; return; }
+            fotoMsg.textContent = '';
+            if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
+            renderizarDashPerfil();
+          });
+        }, function (err) {
+          fotoMsg.className = 'msg msg-erro';
+          fotoMsg.textContent = err.message || 'Falha ao enviar a foto.';
+        });
+      });
+    }
+    trocarFoto('dashFotoCapaInput', 'p_foto_capa_url');
+    trocarFoto('dashFotoPerfilInput', 'p_foto_perfil_url');
+
+    var enderecoBtn = document.getElementById('dashSalvarEnderecoBtn');
+    if (enderecoBtn) enderecoBtn.addEventListener('click', function () {
+      var endereco = document.getElementById('dashEnderecoInput').value.trim();
+      var msg = document.getElementById('dashEnderecoMsg');
+      if (!endereco) { msg.className = 'msg msg-erro'; msg.textContent = 'Escreva o endereço primeiro.'; return; }
+      enderecoBtn.disabled = true;
+      msg.className = 'msg'; msg.textContent = 'Localizando no mapa…';
+      db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: null, p_lng: null }).then(function () {
+        geocodificarEnderecoDash(endereco, estab.cidade).then(function (coord) {
+          enderecoBtn.disabled = false;
+          if (coord) {
+            db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: coord.lat, p_lng: coord.lng });
+          }
+          msg.textContent = '';
+          if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
+        });
+      });
+    });
+
+    // Serviços
+    var formServico = document.getElementById('dashServicoForm');
+    var servicoMsg = document.getElementById('dashServicoMsg');
+    function abrirFormServico(dados) {
+      formServico.classList.remove('oculto');
+      formServico.dataset.editandoId = (dados && dados.id) || '';
+      document.getElementById('dashServicoNome').value = (dados && dados.nome) || '';
+      document.getElementById('dashServicoPreco').value = dados ? formatarPrecoInput(dados.preco) : '';
+      document.getElementById('dashServicoCategoria').value = (dados && dados.categoria) || '';
+      document.getElementById('dashServicoSubmitBtn').textContent = dados ? 'Salvar alterações' : 'Adicionar serviço';
+    }
+    function fecharFormServico() {
+      formServico.reset();
+      formServico.classList.add('oculto');
+      formServico.dataset.editandoId = '';
+      servicoMsg.textContent = '';
+    }
+    var addServicoBtn = document.getElementById('dashAdicionarServicoBtn');
+    if (addServicoBtn) addServicoBtn.addEventListener('click', function () {
+      if (!formServico.classList.contains('oculto') && !formServico.dataset.editandoId) { fecharFormServico(); return; }
+      abrirFormServico(null);
+    });
+    var cancelarServicoBtn = document.getElementById('dashServicoCancelar');
+    if (cancelarServicoBtn) cancelarServicoBtn.addEventListener('click', fecharFormServico);
+    if (formServico) formServico.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nome = document.getElementById('dashServicoNome').value.trim();
+      var precoTexto = document.getElementById('dashServicoPreco').value.trim().replace(/\./g, '').replace(',', '.');
+      var preco = Number(precoTexto);
+      var categoria = document.getElementById('dashServicoCategoria').value.trim() || 'Geral';
+      if (!nome) { servicoMsg.className = 'msg msg-erro'; servicoMsg.textContent = 'Escreva o nome do serviço.'; return; }
+      if (!precoTexto || isNaN(preco) || preco < 0) { servicoMsg.className = 'msg msg-erro'; servicoMsg.textContent = 'Escreva um preço válido.'; return; }
+      var btn = document.getElementById('dashServicoSubmitBtn');
+      btn.disabled = true;
+      servicoMsg.className = 'msg'; servicoMsg.textContent = 'Salvando…';
+      db.rpc('tenant_admin_salvar_servico', {
+        p_estabelecimento_id: estabId,
+        p_id: formServico.dataset.editandoId || null,
+        p_nome: nome, p_preco: preco, p_categoria: categoria
+      }).then(function (res) {
+        btn.disabled = false;
+        if (res.error) { servicoMsg.className = 'msg msg-erro'; servicoMsg.textContent = res.error.message; return; }
+        if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
+        fecharFormServico();
+        renderizarDashPerfil();
+      });
+    });
+    var listaServicos = document.getElementById('dashListaServicosPerfil');
+    if (listaServicos) listaServicos.addEventListener('click', function (e) {
+      var editarBtn = e.target.closest('[data-editar-servico]');
+      if (editarBtn) {
+        abrirFormServico({ id: editarBtn.getAttribute('data-editar-servico'), nome: editarBtn.getAttribute('data-nome'), preco: editarBtn.getAttribute('data-preco'), categoria: editarBtn.getAttribute('data-categoria') });
+        formServico.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      var apagarBtn = e.target.closest('[data-apagar-servico]');
+      if (!apagarBtn) return;
+      window.VBDialogo.confirm('Apagar esse serviço?').then(function (ok) {
+        if (!ok) return;
+        db.rpc('tenant_admin_remover_servico', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-servico') }).then(function () {
+          renderizarDashPerfil();
+        });
+      });
+    });
+
+    // Equipe
+    var formStaff = document.getElementById('dashStaffForm');
+    var staffMsg = document.getElementById('dashStaffMsg');
+    function abrirFormStaff(dados) {
+      formStaff.classList.remove('oculto');
+      formStaff.dataset.editandoId = (dados && dados.id) || '';
+      document.getElementById('dashStaffNome').value = (dados && dados.nome) || '';
+      document.getElementById('dashStaffEspecialidade').value = (dados && dados.especialidade) || '';
+      document.getElementById('dashStaffSubmitBtn').textContent = dados ? 'Salvar alterações' : 'Adicionar profissional';
+    }
+    function fecharFormStaff() {
+      formStaff.reset();
+      formStaff.classList.add('oculto');
+      formStaff.dataset.editandoId = '';
+      staffMsg.textContent = '';
+    }
+    var addStaffBtn = document.getElementById('dashAdicionarStaffBtn');
+    if (addStaffBtn) addStaffBtn.addEventListener('click', function () {
+      if (!formStaff.classList.contains('oculto') && !formStaff.dataset.editandoId) { fecharFormStaff(); return; }
+      abrirFormStaff(null);
+    });
+    var cancelarStaffBtn = document.getElementById('dashStaffCancelar');
+    if (cancelarStaffBtn) cancelarStaffBtn.addEventListener('click', fecharFormStaff);
+    if (formStaff) formStaff.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nome = document.getElementById('dashStaffNome').value.trim();
+      var especialidade = document.getElementById('dashStaffEspecialidade').value.trim();
+      var file = document.getElementById('dashStaffFoto').files[0];
+      if (!nome) { staffMsg.className = 'msg msg-erro'; staffMsg.textContent = 'Escreva o nome do profissional.'; return; }
+      var btn = document.getElementById('dashStaffSubmitBtn');
+      btn.disabled = true;
+      staffMsg.className = 'msg'; staffMsg.textContent = 'Salvando…';
+
+      function salvar(fotoUrl) {
+        db.rpc('tenant_admin_salvar_staff', {
+          p_estabelecimento_id: estabId,
+          p_id: formStaff.dataset.editandoId || null,
+          p_nome: nome, p_especialidade: especialidade || null, p_foto_url: fotoUrl || null
+        }).then(function (res) {
+          btn.disabled = false;
+          if (res.error) { staffMsg.className = 'msg msg-erro'; staffMsg.textContent = res.error.message; return; }
+          if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
+          fecharFormStaff();
+          renderizarDashPerfil();
+        });
+      }
+      if (!file || !window.VBUpload) { salvar(null); return; }
+      window.VBUpload.uploadFoto(file, estabId, 'staff').then(salvar, function (err) {
+        btn.disabled = false;
+        staffMsg.className = 'msg msg-erro';
+        staffMsg.textContent = err.message || 'Falha ao enviar a foto.';
+      });
+    });
+    var listaStaff = document.getElementById('dashListaEquipePerfil');
+    if (listaStaff) listaStaff.addEventListener('click', function (e) {
+      var editarBtn = e.target.closest('[data-editar-staff]');
+      if (editarBtn) {
+        abrirFormStaff({ id: editarBtn.getAttribute('data-editar-staff'), nome: editarBtn.getAttribute('data-nome'), especialidade: editarBtn.getAttribute('data-especialidade') });
+        formStaff.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      var apagarBtn = e.target.closest('[data-apagar-staff]');
+      if (!apagarBtn) return;
+      window.VBDialogo.confirm('Apagar esse profissional?').then(function (ok) {
+        if (!ok) return;
+        db.rpc('tenant_admin_remover_staff', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-staff') }).then(function () {
+          renderizarDashPerfil();
+        });
+      });
+    });
   }
 
   function renderizarDashCaixa() {

@@ -26,7 +26,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="VB Agenda">
-<link rel="stylesheet" href="assets/css/styles.css?v=59">
+<link rel="stylesheet" href="assets/css/styles.css?v=60">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -141,13 +141,14 @@
 
   <nav class="tabbar">
     <a class="tabbar-item is-ativo" href="index.html"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>Catálogo</a>
-    <a class="tabbar-item" href="criar.html"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Criar meu site</a>
-    <a class="tabbar-item" href="parceiros.html"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>Cadastrar</a>
+    <a class="tabbar-item" href="criar.html" id="tabbarCriarSite"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Criar meu site</a>
+    <a class="tabbar-item" href="parceiros.html" id="tabbarCadastrar"><svg class="tabbar-icone" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg><span id="tabbarCadastrarTexto">Cadastrar</span></a>
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-client.js?v=1"></script>
   <script src="assets/js/vb-cache.js?v=1"></script>
+  <script src="assets/js/vb-dono-sessao.js?v=1"></script>
   <script src="assets/js/vb-status.js?v=1"></script>
   <script src="assets/js/outdoor-promocoes.js?v=1"></script>
   <script src="assets/js/catalogo.js?v=17"></script>
