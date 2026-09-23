@@ -8,9 +8,11 @@
 
    Bump o número da versão sempre que mudar a lista de arquivos aqui
    embaixo — isso descarta o cache antigo e busca tudo de novo. */
-var VERSAO = 'vb-cache-v1';
+var VERSAO = 'vb-cache-v2';
 
 var CASCO = [
+  '/',
+  '/index.html',
   '/cadastro.html',
   '/editar.html',
   '/manifest.json',
@@ -22,6 +24,11 @@ var CASCO = [
   '/assets/js/vb-dialogo.js',
   '/assets/js/vb-offline.js',
   '/assets/js/upload-fotos.js',
+  '/assets/js/vb-status.js',
+  '/assets/js/catalogo.js',
+  '/assets/js/vb-cliente-global.js',
+  '/assets/js/meus-agendamentos.js',
+  '/assets/js/vb-cliente-global-index.js',
   '/assets/img/favicon.svg',
   '/assets/img/icons/icon-192.png',
   '/assets/img/icons/icon-512.png'
@@ -73,7 +80,14 @@ self.addEventListener('fetch', function (evento) {
           caches.open(VERSAO).then(function (cache) { cache.put(req, copia); });
         }
         return resposta;
-      }).catch(function () { return emCache; });
+      }).catch(function () {
+        // offline e essa página nunca foi visitada/cacheada antes: cai
+        // pro "casco" da home em vez de deixar o navegador mostrar a
+        // tela de erro dele (ERR_FAILED) — pelo menos abre o app.
+        if (emCache) return emCache;
+        if (req.mode === 'navigate') return caches.match('/index.html');
+        return Promise.reject('offline-sem-cache');
+      });
       return emCache || buscaRede;
     })
   );

@@ -1495,6 +1495,14 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   text-align: left;
 }
 .dash-card-menu-grupo .dash-card-menu-linha:last-child { border-bottom: none; }
+.dash-card-menu-legenda {
+  margin: 0.35rem 0 0;
+  padding: 0 0 0.62rem;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--tinta-suave);
+}
+.dash-card-menu-legenda:last-child { padding-bottom: 0; }
 .dash-card-menu-linha .rotulo { display: flex; align-items: center; gap: 0.65rem; font-weight: 600; min-width: 0; }
 .dash-card-menu-linha .rotulo svg { color: var(--tinta-suave); flex-shrink: 0; }
 .dash-card-menu-linha .valor { display: flex; align-items: center; gap: 0.5rem; color: var(--tinta-suave); font-weight: 700; flex-shrink: 0; }

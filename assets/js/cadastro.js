@@ -308,6 +308,7 @@
           linhaMenu(ICONE_STAT_EQUIPE, 'Profissionais', '<strong>' + (e.total_equipe || 0) + '</strong>') +
           linhaMenu(ICONE_ACESSOS, 'Acessos ao site', '<strong>' + (e.total_acessos || 0) + '</strong>' +
             '<label class="dash-card-switch" title="Mostrar pro público"><input type="checkbox" data-toggle-contador-id="' + e.id + '"' + (e.mostrar_contador_publico ? ' checked' : '') + '><span class="dash-card-switch-trilho"></span></label>') +
+          '<p class="dash-card-menu-legenda">Ativar deixa esse número de acessos visível pra quem visita o site — público, não só pra você.</p>' +
           '</div>' +
           '<div class="dash-card-menu-grupo">' +
           '<p class="dash-card-menu-titulo">Ações</p>' +
@@ -334,10 +335,38 @@
   listaEl.addEventListener('change', function (e) {
     var caixa = e.target.closest('[data-toggle-contador-id]');
     if (!caixa) return;
-    db.rpc('tenant_admin_alternar_contador_publico', {
-      p_estabelecimento_id: caixa.getAttribute('data-toggle-contador-id'),
-      p_mostrar: caixa.checked
-    });
+    var estabIdAlvo = caixa.getAttribute('data-toggle-contador-id');
+    var ligar = caixa.checked;
+
+    function salvar() {
+      db.rpc('tenant_admin_alternar_contador_publico', {
+        p_estabelecimento_id: estabIdAlvo,
+        p_mostrar: ligar
+      }).then(function (res) {
+        if (res && res.error) {
+          caixa.checked = !ligar;
+          window.VBDialogo.alert('Não deu pra salvar agora — tenta de novo em instantes.');
+          return;
+        }
+        if (ligar) window.VBDialogo.alert('Pronto! O número de acessos já aparece publicamente no seu site, pra quem visitar.');
+      }, function () {
+        caixa.checked = !ligar;
+        window.VBDialogo.alert('Não deu pra salvar agora — tenta de novo em instantes.');
+      });
+    }
+
+    // ligar é uma decisão de privacidade (torna um dado público) — confirma
+    // antes; desligar (voltar a privado) não precisa de confirmação.
+    if (ligar) {
+      caixa.checked = false;
+      window.VBDialogo.confirm('Isso deixa o número de acessos ao site visível publicamente, pra qualquer pessoa que visitar — não só pra você. Quer ativar?').then(function (ok) {
+        if (!ok) return;
+        caixa.checked = true;
+        salvar();
+      });
+    } else {
+      salvar();
+    }
   });
 
   listaEl.addEventListener('click', function (e) {
