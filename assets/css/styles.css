@@ -2673,6 +2673,39 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   line-height: 1.45;
 }
 
+/* ---- mapa com pino arrastável na Localização — funciona pra
+   qualquer endereço, mesmo os que nenhum serviço de busca reconhece,
+   porque quem decide a posição final é o próprio dono arrastando. ---- */
+.dash-mapa-localizar-link {
+  display: inline-block;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0.3rem 0 0.7rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--cor-marca, #0F6B5C);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dash-mapa-localizacao {
+  width: 100%;
+  height: 220px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  margin-bottom: 0.5rem;
+  background: var(--linho);
+}
+.dash-mapa-dica {
+  font-size: 0.78rem;
+  color: var(--tinta-suave);
+  margin: 0 0 0.7rem;
+  line-height: 1.4;
+}
+
 /* ---- estado vazio didático: ícone + explicação, em vez de uma
    frase solta ("Nenhum cliente registrado ainda."). ---- */
 .dash-vazio {

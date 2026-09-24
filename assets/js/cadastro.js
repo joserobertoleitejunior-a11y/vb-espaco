@@ -1038,6 +1038,9 @@
 
         '<p class="dash-resumo-subtitulo">Localização</p>' +
         '<div class="field field-full"><label for="dashEnderecoInput">Endereço completo</label><input type="text" id="dashEnderecoInput" placeholder="Rua, número, bairro" value="' + escapeHtml(estab.endereco || '') + '"></div>' +
+        '<button type="button" class="dash-mapa-localizar-link" id="dashLocalizarEnderecoBtn">🔍 Tentar localizar esse endereço no mapa</button>' +
+        '<div id="dashMapaLocalizacao" class="dash-mapa-localizacao" data-lat="' + (estab.endereco_lat != null ? estab.endereco_lat : '') + '" data-lng="' + (estab.endereco_lng != null ? estab.endereco_lng : '') + '"></div>' +
+        '<p class="dash-mapa-dica">Não achou certinho? Arraste o pino até o local exato — é a posição dele que vale, não o texto digitado.</p>' +
         '<button type="button" class="btn btn-ghost" id="dashSalvarEnderecoBtn" style="margin-bottom:0.3rem;">Salvar localização</button>' +
         '<p class="msg" id="dashEnderecoMsg"></p>' +
 
@@ -1101,22 +1104,63 @@
     trocarFoto('dashFotoCapaInput', 'p_foto_capa_url');
     trocarFoto('dashFotoPerfilInput', 'p_foto_perfil_url');
 
+    // Mapa com pino arrastável — sempre funciona, mesmo quando o texto do
+    // endereço não bate com nada num serviço de geocodificação (rua nova,
+    // condomínio sem nome oficial etc.): o dono ajusta manualmente e a
+    // posição do pino é o que vale de verdade na hora de salvar.
+    var COORD_PADRAO = { lat: -23.5917, lng: -48.0531 }; // Itapetininga, usado só até ter algo melhor
+    var mapaLocalizacao = null;
+    var marcadorLocalizacao = null;
+    var mapaEl = document.getElementById('dashMapaLocalizacao');
+    if (mapaEl && window.L) {
+      if (!L.Icon.Default.imagePath) L.Icon.Default.imagePath = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/';
+      var latSalvo = mapaEl.getAttribute('data-lat');
+      var lngSalvo = mapaEl.getAttribute('data-lng');
+      var temCoordSalva = latSalvo !== '' && lngSalvo !== '';
+      var latInicial = temCoordSalva ? parseFloat(latSalvo) : COORD_PADRAO.lat;
+      var lngInicial = temCoordSalva ? parseFloat(lngSalvo) : COORD_PADRAO.lng;
+      mapaLocalizacao = L.map(mapaEl, { attributionControl: false }).setView([latInicial, lngInicial], temCoordSalva ? 16 : 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapaLocalizacao);
+      marcadorLocalizacao = L.marker([latInicial, lngInicial], { draggable: true }).addTo(mapaLocalizacao);
+      setTimeout(function () { mapaLocalizacao.invalidateSize(); }, 150);
+    }
+
+    var localizarBtn = document.getElementById('dashLocalizarEnderecoBtn');
+    if (localizarBtn) localizarBtn.addEventListener('click', function () {
+      var endereco = document.getElementById('dashEnderecoInput').value.trim();
+      var msg = document.getElementById('dashEnderecoMsg');
+      if (!endereco) { msg.className = 'msg msg-erro'; msg.textContent = 'Escreva o endereço primeiro.'; return; }
+      localizarBtn.disabled = true;
+      msg.className = 'msg'; msg.textContent = 'Procurando no mapa…';
+      geocodificarEnderecoDash(endereco, estab.cidade).then(function (coord) {
+        localizarBtn.disabled = false;
+        if (coord && mapaLocalizacao && marcadorLocalizacao) {
+          mapaLocalizacao.setView([coord.lat, coord.lng], 16);
+          marcadorLocalizacao.setLatLng([coord.lat, coord.lng]);
+          msg.textContent = '';
+        } else {
+          msg.className = 'msg msg-erro';
+          msg.textContent = 'Não achamos automaticamente — arraste o pino até o lugar certo no mapa.';
+        }
+      });
+    });
+
     var enderecoBtn = document.getElementById('dashSalvarEnderecoBtn');
     if (enderecoBtn) enderecoBtn.addEventListener('click', function () {
       var endereco = document.getElementById('dashEnderecoInput').value.trim();
       var msg = document.getElementById('dashEnderecoMsg');
       if (!endereco) { msg.className = 'msg msg-erro'; msg.textContent = 'Escreva o endereço primeiro.'; return; }
+      var pos = marcadorLocalizacao ? marcadorLocalizacao.getLatLng() : null;
       enderecoBtn.disabled = true;
-      msg.className = 'msg'; msg.textContent = 'Localizando no mapa…';
-      db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: null, p_lng: null }).then(function () {
-        geocodificarEnderecoDash(endereco, estab.cidade).then(function (coord) {
-          enderecoBtn.disabled = false;
-          if (coord) {
-            db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: coord.lat, p_lng: coord.lng });
-          }
-          msg.textContent = '';
-          if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
-        });
+      msg.className = 'msg'; msg.textContent = 'Salvando…';
+      db.rpc('tenant_admin_atualizar_endereco', {
+        p_estabelecimento_id: estabId, p_endereco: endereco,
+        p_lat: pos ? pos.lat : null, p_lng: pos ? pos.lng : null
+      }).then(function (res) {
+        enderecoBtn.disabled = false;
+        if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
+        msg.textContent = '';
+        if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
       });
     });
 
