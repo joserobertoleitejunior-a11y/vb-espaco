@@ -557,7 +557,7 @@ img { max-width: 100%; display: block; }
 }
 .busca-input {
   width: 100%;
-  padding: 0.85rem 6.6rem 0.85rem 2.4rem;
+  padding: 0.85rem 3.1rem 0.85rem 2.4rem;
   border-radius: 999px;
   border: 1px solid var(--borda);
   background: var(--branco);
@@ -573,17 +573,16 @@ img { max-width: 100%; display: block; }
   transform: translateY(-50%);
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.45rem 0.7rem;
-  border-radius: 999px;
+  justify-content: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  padding: 0;
+  border-radius: 50%;
   border: 1px solid var(--borda);
   background: var(--branco);
   color: var(--tinta-suave);
-  font-size: 0.74rem;
-  font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  white-space: nowrap;
 }
 .busca-perto-btn.is-ativo {
   background: var(--cor-marca);
