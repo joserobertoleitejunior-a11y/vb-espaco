@@ -38,6 +38,7 @@
   var SVG_LOJA = '<svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>';
   var SVG_CARRO = '<svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l1.5-4.5A2 2 0 0 1 6.4 6h11.2a2 2 0 0 1 1.9 1.5L21 12"/><path d="M3 12h18v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/></svg>';
   var SVG_PIN = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z"/></svg>';
+  var SVG_FOGO = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="#ff6a1a" d="M12.5 1.5c1.2 3.4-3.2 4.6-3.2 8.2a3.2 3.2 0 006.4 0c0-1-0.6-1.8-0.9-2.6 2.4 1.4 4.2 4 4.2 6.9a6.5 6.5 0 01-13 0c0-5.6 4.4-7.3 6.5-12.5z"/><path fill="#ffcf40" d="M12.3 10.2c0.7 1.4-1.5 2-1.5 3.7a1.7 1.7 0 003.4 0c0-0.5-0.3-0.9-0.5-1.3 1 0.7 1.6 1.8 1.6 2.9a3 3 0 01-6 0c0-2.6 1.9-3.8 3-5.3z"/></svg>';
   var SVG_ESTRELA_CTA = '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 2L14.3 7.7L20 10L14.3 12.3L12 18L9.7 12.3L4 10L9.7 7.7z"/></svg>';
 
   var ICONES = {
@@ -126,6 +127,7 @@
       // de destaque nas cores do próprio site, tipo o anel de story do
       // Instagram — e o avatar vira clicável pra abrir o status.
       var moldura = e.tem_status_ativo ? 'aura' : (e.moldura_foto || 'simples');
+      var avatarAcao = e.tem_status_ativo ? 'status' : (fotoAvatar ? 'foto' : null);
       var selosSociais = SOCIAL_ICONES.filter(function (s) { return s.href(e); }).map(function (s) {
         return '<a class="catalogo-selo-social" href="' + escapeHtml(s.href(e)) + '" target="_blank" rel="noopener" aria-label="' + s.rotulo + '" data-social-link>' + s.svg + '</a>';
       }).join('');
@@ -134,17 +136,25 @@
         ? 'https://www.google.com/maps/search/?api=1&query=' + e.endereco_lat + ',' + e.endereco_lng
         : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([e.nome, e.endereco, e.cidade].filter(Boolean).join(' '));
       var tagMapa = '<a class="catalogo-tag catalogo-tag-mapa" href="' + mapaHref + '" target="_blank" rel="noopener" aria-label="Abrir endereço no mapa" data-mapa-link style="background:' + hexParaRgba(cor, 0.15) + '; color:' + cor + ';">' + SVG_PIN + ' ' + escapeHtml(enderecoTexto) + '</a>';
+      var avisoPromo = e.tem_promocao_ativa
+        ? '<button type="button" class="catalogo-promo-aviso" data-abrir-promocoes="' + e.id + '" aria-label="Ver promoções de ' + escapeHtml(e.nome) + '">' +
+          '<span class="catalogo-promo-fogo" aria-hidden="true">' + SVG_FOGO + '</span>' +
+          'Essa loja contém promoções, <u>clique para saber mais</u>' +
+          '</button>'
+        : '';
       return '<div class="catalogo-item">' +
         '<div class="catalogo-card" role="link" tabindex="0" data-href="' + link + '" style="box-shadow:' + sombra + ';">' +
         '<div class="catalogo-capa" style="' + capaStyle + '">' +
         '<span class="catalogo-capa-icone" aria-hidden="true">' + (fotoTopo ? '' : icone) + '</span>' +
         '</div>' +
         '<div class="catalogo-corpo">' +
-        (e.tem_status_ativo
+        (avatarAcao === 'status'
           ? '<button type="button" class="catalogo-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';" data-abrir-status="' + e.id + '" aria-label="Ver status de ' + escapeHtml(e.nome) + '">'
-          : '<span class="catalogo-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';">') +
+          : avatarAcao === 'foto'
+            ? '<button type="button" class="catalogo-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';" data-zoom-foto="' + escapeHtml(fotoAvatar) + '" aria-label="Ver foto de ' + escapeHtml(e.nome) + '">'
+            : '<span class="catalogo-avatar-anel moldura-' + moldura + '" style="--avatar-cor:' + cor + ';">') +
         '<span class="catalogo-avatar" style="background:' + cor + ';">' + avatarConteudo + '</span>' +
-        (e.tem_status_ativo ? '</button>' : '</span>') +
+        (avatarAcao ? '</button>' : '</span>') +
         '<span class="catalogo-info">' +
         '<span class="catalogo-nome">' + escapeHtml(e.nome) + '</span>' +
         '<span class="catalogo-tags">' +
@@ -153,6 +163,7 @@
         (e.distancia_km != null ? '<span class="catalogo-tag catalogo-tag-distancia">' + SVG_PIN + ' ' + String(e.distancia_km).replace('.', ',') + ' km</span>' : '') +
         '</span>' +
         (selosSociais ? '<span class="catalogo-tags catalogo-tags-social">' + selosSociais + '</span>' : '') +
+        avisoPromo +
         '</span>' +
         '<span class="catalogo-seta" aria-hidden="true">→</span>' +
         '</div>' +
@@ -173,17 +184,81 @@
       if (window.VBStatus) window.VBStatus.abrir(abrirStatus.getAttribute('data-abrir-status'));
       return;
     }
+    var zoomFoto = e.target.closest('[data-zoom-foto]');
+    if (zoomFoto) {
+      if (window.VBFotoZoom) window.VBFotoZoom.abrir(zoomFoto.getAttribute('data-zoom-foto'));
+      return;
+    }
+    var abrirPromo = e.target.closest('[data-abrir-promocoes]');
+    if (abrirPromo) {
+      abrirPromoPopover(abrirPromo, abrirPromo.getAttribute('data-abrir-promocoes'));
+      return;
+    }
     var card = e.target.closest('.catalogo-card');
     if (card && card.getAttribute('data-href')) window.location.href = card.getAttribute('data-href');
   });
   listaEl.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    if (e.target.closest('[data-social-link], [data-abrir-status], [data-mapa-link]')) return;
+    if (e.target.closest('[data-social-link], [data-abrir-status], [data-mapa-link], [data-zoom-foto], [data-abrir-promocoes]')) return;
     var card = e.target.closest('.catalogo-card');
     if (!card) return;
     e.preventDefault();
     window.location.href = card.getAttribute('data-href');
   });
+
+  // ---- balãozinho de promoções: um popover pequeno, ancorado no botão
+  // que foi clicado, mostrando os banners de promoção ativa daquele
+  // estabelecimento (busca sob demanda, só quando abre). ----
+  var promoPopover = null;
+  function construirPromoPopover() {
+    if (promoPopover) return promoPopover;
+    promoPopover = document.createElement('div');
+    promoPopover.className = 'catalogo-promo-popover oculto';
+    promoPopover.innerHTML =
+      '<span class="catalogo-promo-popover-seta"></span>' +
+      '<button type="button" class="catalogo-promo-popover-fechar" aria-label="Fechar">×</button>' +
+      '<div class="catalogo-promo-popover-corpo" id="catalogoPromoPopoverCorpo"></div>';
+    document.body.appendChild(promoPopover);
+    promoPopover.querySelector('.catalogo-promo-popover-fechar').addEventListener('click', fecharPromoPopover);
+    document.addEventListener('click', function (e) {
+      if (!promoPopover || promoPopover.classList.contains('oculto')) return;
+      if (promoPopover.contains(e.target) || e.target.closest('[data-abrir-promocoes]')) return;
+      fecharPromoPopover();
+    });
+    window.addEventListener('resize', fecharPromoPopover);
+    return promoPopover;
+  }
+  function fecharPromoPopover() { if (promoPopover) promoPopover.classList.add('oculto'); }
+  function posicionarPromoPopover(botao) {
+    var rect = botao.getBoundingClientRect();
+    var largura = Math.min(300, document.documentElement.clientWidth - 24);
+    var esquerda = window.scrollX + rect.left;
+    var maxEsquerda = window.scrollX + document.documentElement.clientWidth - largura - 12;
+    if (esquerda > maxEsquerda) esquerda = Math.max(window.scrollX + 12, maxEsquerda);
+    promoPopover.style.width = largura + 'px';
+    promoPopover.style.top = (window.scrollY + rect.bottom + 10) + 'px';
+    promoPopover.style.left = esquerda + 'px';
+    promoPopover.querySelector('.catalogo-promo-popover-seta').style.left = Math.max(12, (window.scrollX + rect.left + rect.width / 2) - esquerda - 7) + 'px';
+  }
+  function abrirPromoPopover(botao, estabId) {
+    construirPromoPopover();
+    var estab = todos.filter(function (t) { return t.id === estabId; })[0];
+    var link = estab ? '/' + encodeURIComponent(estab.slug) + '/' + encodeURIComponent(estab.cidade) : '#';
+    var corpoEl = promoPopover.querySelector('#catalogoPromoPopoverCorpo');
+    corpoEl.innerHTML = '<div class="skeleton" style="height:1rem; width:70%; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:3.2rem;"></div>';
+    posicionarPromoPopover(botao);
+    promoPopover.classList.remove('oculto');
+    db.rpc('estabelecimento_promocoes_publicas', { p_estabelecimento_id: estabId }).then(function (res) {
+      var lista = res.data || [];
+      if (!lista.length) { corpoEl.innerHTML = '<p class="catalogo-promo-popover-vazio">Sem promoções ativas no momento.</p>'; return; }
+      corpoEl.innerHTML = lista.map(function (p) {
+        return '<a class="catalogo-promo-banner" href="' + link + '#promocoesSecao">' +
+          (p.foto_url ? '<span class="catalogo-promo-banner-foto" style="background-image:url(\'' + p.foto_url + '\')"></span>' : '') +
+          '<span class="catalogo-promo-banner-texto"><strong>' + escapeHtml(p.titulo) + '</strong>' + (p.texto ? '<br>' + escapeHtml(p.texto) : '') + '</span>' +
+          '</a>';
+      }).join('');
+    }, function () { corpoEl.innerHTML = '<p class="catalogo-promo-popover-vazio">Sem conexão agora.</p>'; });
+  }
 
   function usarCacheOuOffline() {
     var cache = window.VBCache ? window.VBCache.carregar(chaveCache()) : null;

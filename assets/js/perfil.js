@@ -1723,6 +1723,26 @@
     });
   }
 
+  // ---- promoções ativas (público) — o dono cadastra no painel de
+  // gestão (aba Comunidade); aqui só mostramos quem já tem promoção
+  // vigente, escondendo a seção inteira quando não há nenhuma. ----
+  function carregarPromocoesPublicas() {
+    var secao = document.getElementById('promocoesSecao');
+    var lista = document.getElementById('tplListaPromocoes');
+    if (!secao || !lista) return;
+    db.rpc('estabelecimento_promocoes_publicas', { p_estabelecimento_id: estabId }).then(function (res) {
+      var linhas = res.data || [];
+      if (!linhas.length) { secao.classList.add('oculto'); return; }
+      secao.classList.remove('oculto');
+      lista.innerHTML = linhas.map(function (p) {
+        return '<div class="promocao-card">' +
+          (p.foto_url ? '<span class="promocao-card-foto" style="background-image:url(\'' + escapeHtml(p.foto_url) + '\')"></span>' : '') +
+          '<span class="promocao-card-texto"><strong>' + escapeHtml(p.titulo) + '</strong>' + (p.texto ? '<br>' + escapeHtml(p.texto) : '') + '</span>' +
+          '</div>';
+      }).join('');
+    }, function () { secao.classList.add('oculto'); });
+  }
+
   // ---- equipe (aparece só pro admin nesta página — o público vê a
   // equipe no site institucional, mas o dono gerencia direto por aqui) ----
   var equipeCache = [];
@@ -2298,6 +2318,7 @@
     carregarServicos();
     carregarGaleria();
     carregarRedesSociais();
+    carregarPromocoesPublicas();
     iniciarModoAdmin();
     iniciarWizard();
     iniciarClienteGlobal();

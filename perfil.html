@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=64">
+<link rel="stylesheet" href="/assets/css/styles.css?v=65">
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=5" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
 <link rel="stylesheet" href="/assets/tpl-classico/css/widget.css?v=5" id="tplWidget">
@@ -57,6 +57,7 @@
         <ul class="site-menu-list">
           <li><a href="#servicosSecao"><span>Serviços</span><span class="num">06</span></a></li>
           <li><a id="tplLinkInstitucional" href="#"><span>Quem somos</span><span class="num">07</span></a></li>
+          <li><a href="#promocoesSecao"><span>Promoções</span><span class="num">08</span></a></li>
         </ul>
 
         <p class="site-menu-secao">VB Agenda</p>
@@ -91,6 +92,11 @@
       <section id="servicosSecao" class="container" style="padding:2.5rem 0;">
         <p class="eyebrow">Serviços</p>
         <ul class="lista-estabelecimentos" id="tplListaServicos" style="margin-top:1rem;"></ul>
+      </section>
+
+      <section id="promocoesSecao" class="container oculto" style="padding:0 0 2.5rem;">
+        <p class="eyebrow">Promoções</p>
+        <div id="tplListaPromocoes" class="promocoes-lista" style="margin-top:1rem;"></div>
       </section>
 
       <section id="equipeSecaoAdmin" class="container oculto" style="padding:0 0 2.5rem;">
@@ -328,7 +334,7 @@
   <script src="/assets/js/vb-salvo.js?v=1"></script>
   <script src="/assets/js/frases-efeito.js?v=1"></script>
   <script src="/assets/js/meus-agendamentos.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=47"></script>
+  <script src="/assets/js/perfil.js?v=48"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
