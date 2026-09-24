@@ -533,6 +533,7 @@
     else if (aba === 'caixa') renderizarDashCaixa();
     else if (aba === 'comunidade') renderizarDashComunidade();
     else if (aba === 'perfil') renderizarDashPerfil();
+    else if (aba === 'galeria') renderizarDashGaleria();
   }
 
   function renderizarDashResumo() {
@@ -1296,6 +1297,418 @@
         if (!ok) return;
         db.rpc('tenant_admin_remover_staff', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-staff') }).then(function () {
           renderizarDashPerfil();
+        });
+      });
+    });
+  }
+
+  // ---- Galeria: cardápio/catálogo com categorias, itens, bordas
+  // (opcionais) e combos (faixa de preço fixa cobrindo um grupo de
+  // itens) — pensado pro cardápio de pizzaria, mas serve pra qualquer
+  // nicho que queira vender além dos serviços agendáveis (ex: petshop
+  // vendendo ração). Bordas e combos são totalmente opcionais. Pedido
+  // vai pelo WhatsApp — sem carrinho persistente nem gateway ainda. ----
+  var ICONE_VAZIO_GALERIA = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>';
+
+  function renderizarDashGaleria() {
+    var estabId = dashEstabId;
+    Promise.all([
+      db.rpc('tenant_admin_listar_cardapio_categorias', { p_estabelecimento_id: estabId }),
+      db.rpc('tenant_admin_listar_cardapio_itens', { p_estabelecimento_id: estabId }),
+      db.rpc('tenant_admin_listar_cardapio_bordas', { p_estabelecimento_id: estabId }),
+      db.rpc('tenant_admin_listar_cardapio_combos', { p_estabelecimento_id: estabId })
+    ]).then(function (resultados) {
+      if (dashEstabId !== estabId) return;
+      var catRes = resultados[0], itemRes = resultados[1], bordaRes = resultados[2], comboRes = resultados[3];
+      if (catRes.error || itemRes.error) {
+        dashboardCorpo.classList.remove('dash-carregando');
+        dashboardCorpo.innerHTML = '<p class="msg msg-erro">' + escapeHtml((catRes.error || itemRes.error).message) + '</p>';
+        return;
+      }
+      var categorias = catRes.data || [];
+      var itens = itemRes.data || [];
+      var bordas = bordaRes.data || [];
+      var combos = comboRes.data || [];
+
+      function nomeCategoria(id) {
+        var c = categorias.filter(function (c) { return c.id === id; })[0];
+        return c ? c.nome : 'Sem categoria';
+      }
+      var opcoesCategoria = '<option value="">Sem categoria</option>' + categorias.map(function (c) {
+        return '<option value="' + c.id + '">' + escapeHtml(c.nome) + '</option>';
+      }).join('');
+
+      dashboardCorpo.classList.remove('dash-carregando');
+      dashboardCorpo.innerHTML =
+        '<p class="dash-secao-intro" style="margin-top:0;">Cardápio ou catálogo com categorias, opcionais (tipo "borda") e combos de faixa de preço fixa — aparece no seu site com botão de pedir pelo WhatsApp. Bordas e combos são opcionais, deixa vazio se não fizer sentido pro seu negócio.</p>' +
+
+        '<p class="dash-resumo-subtitulo" style="margin-top:0;">Categorias</p>' +
+        '<div class="dash-lista-cabecalho"><p class="secundario" style="margin:0;">Ex: Tradicionais, Especiais, Bebidas</p>' +
+        '<button type="button" class="btn btn-primario" id="dashAdicionarCategoriaBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Adicionar</button></div>' +
+        '<form id="dashCategoriaForm" class="dash-campos-grid oculto" style="margin-bottom:1rem;">' +
+        '<div class="field field-full"><label for="dashCategoriaNome">Nome da categoria</label><input type="text" id="dashCategoriaNome" placeholder="Ex: Pizzas tradicionais" maxlength="40"></div>' +
+        '<div class="field field-full" style="display:flex; gap:0.6rem;">' +
+        '<button type="submit" class="btn btn-primario" style="flex:1;" id="dashCategoriaSubmitBtn">Adicionar categoria</button>' +
+        '<button type="button" class="btn btn-ghost" id="dashCategoriaCancelar">Cancelar</button>' +
+        '</div>' +
+        '<p class="msg" id="dashCategoriaMsg" style="grid-column:1/-1;"></p>' +
+        '</form>' +
+        (categorias.length ? '<div id="dashListaCategorias">' + categorias.map(function (c) {
+          return '<div class="painel-lista-item">' +
+            '<span style="flex:1; min-width:0;"><span class="principal">' + escapeHtml(c.nome) + '</span></span>' +
+            '<button type="button" class="dash-comunidade-editar" data-editar-categoria="' + c.id + '" data-nome="' + escapeHtml(c.nome) + '" aria-label="Editar categoria">' + ICONE_ACAO_EDITAR + '</button>' +
+            '<button type="button" class="dash-comunidade-apagar" data-apagar-categoria="' + c.id + '" aria-label="Apagar categoria">×</button>' +
+            '</div>';
+        }).join('') + '</div>' : '<p class="secundario" style="margin:0 0 1rem;">Nenhuma categoria ainda — os itens aparecem como "Sem categoria" até você criar uma.</p>') +
+
+        '<div class="dash-lista-cabecalho" style="margin-top:1.4rem;"><p class="dash-resumo-subtitulo" style="margin:0;">Itens</p>' +
+        '<button type="button" class="btn btn-primario" id="dashAdicionarItemBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Adicionar</button></div>' +
+        '<form id="dashItemForm" class="dash-campos-grid oculto" style="margin-bottom:1rem;">' +
+        '<div class="field field-full"><label for="dashItemNome">Nome</label><input type="text" id="dashItemNome" placeholder="Ex: Toscana" maxlength="60"></div>' +
+        '<div class="field"><label for="dashItemPreco">Preço (R$)</label><input type="text" id="dashItemPreco" inputmode="decimal" placeholder="Ex: 40,99"></div>' +
+        '<div class="field"><label for="dashItemCategoria">Categoria</label><select id="dashItemCategoria">' + opcoesCategoria + '</select></div>' +
+        '<div class="field field-full"><label for="dashItemDescricao">Descrição (opcional)</label><input type="text" id="dashItemDescricao" placeholder="Ex: Molho, mussarela, presunto, milho" maxlength="140"></div>' +
+        '<div class="field field-full"><label for="dashItemFoto">Foto (opcional)</label><input type="file" id="dashItemFoto" accept="image/*"></div>' +
+        '<label class="field field-full" style="display:flex; align-items:center; gap:0.5rem; font-weight:600;"><input type="checkbox" id="dashItemMeioAMeio" style="width:auto;"> Pode entrar no "meio a meio" (metade desse, metade de outro)</label>' +
+        '<div class="field field-full" style="display:flex; gap:0.6rem;">' +
+        '<button type="submit" class="btn btn-primario" style="flex:1;" id="dashItemSubmitBtn">Adicionar item</button>' +
+        '<button type="button" class="btn btn-ghost" id="dashItemCancelar">Cancelar</button>' +
+        '</div>' +
+        '<p class="msg" id="dashItemMsg" style="grid-column:1/-1;"></p>' +
+        '</form>' +
+        (itens.length ? '<div id="dashListaItens">' + itens.map(function (it) {
+          return '<div class="painel-lista-item">' +
+            '<span class="dash-comunidade-thumb' + (it.foto_url ? '' : ' dash-comunidade-thumb-vazia') + '"' + (it.foto_url ? ' style="background-image:url(\'' + it.foto_url + '\')"' : '') + '></span>' +
+            '<span style="flex:1; min-width:0;"><span class="principal">' + escapeHtml(it.nome) + (it.permite_meio_a_meio ? ' · <span class="secundario">meio a meio</span>' : '') + '</span><br>' +
+            '<span class="secundario">' + nomeCategoria(it.categoria_id) + ' · ' + formatarPreco(it.preco) + '</span></span>' +
+            '<button type="button" class="dash-comunidade-editar" data-editar-item="' + it.id + '" data-nome="' + escapeHtml(it.nome) + '" data-preco="' + it.preco + '" data-categoria="' + (it.categoria_id || '') + '" data-descricao="' + escapeHtml(it.descricao || '') + '" data-meio="' + (it.permite_meio_a_meio ? '1' : '0') + '" aria-label="Editar item">' + ICONE_ACAO_EDITAR + '</button>' +
+            '<button type="button" class="dash-comunidade-apagar" data-apagar-item="' + it.id + '" aria-label="Apagar item">×</button>' +
+            '</div>';
+        }).join('') + '</div>' : blocoVazio(ICONE_VAZIO_GALERIA, 'Nenhum item cadastrado', 'Adicione os itens do seu cardápio ou catálogo — eles aparecem no seu site com um botão de pedir pelo WhatsApp.')) +
+
+        '<div class="dash-lista-cabecalho" style="margin-top:1.4rem;"><p class="dash-resumo-subtitulo" style="margin:0;">Bordas (opcional)</p>' +
+        '<button type="button" class="btn btn-primario" id="dashAdicionarBordaBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Adicionar</button></div>' +
+        '<p class="dash-secao-intro" style="margin-top:0;">Se seu negócio não usa "borda recheada" ou opcional parecido, pode deixar vazio.</p>' +
+        '<form id="dashBordaForm" class="dash-campos-grid oculto" style="margin-bottom:1rem;">' +
+        '<div class="field"><label for="dashBordaNome">Nome</label><input type="text" id="dashBordaNome" placeholder="Ex: Catupiry" maxlength="40"></div>' +
+        '<div class="field"><label for="dashBordaPreco">Preço extra (R$)</label><input type="text" id="dashBordaPreco" inputmode="decimal" placeholder="Ex: 8,00"></div>' +
+        '<div class="field field-full" style="display:flex; gap:0.6rem;">' +
+        '<button type="submit" class="btn btn-primario" style="flex:1;" id="dashBordaSubmitBtn">Adicionar borda</button>' +
+        '<button type="button" class="btn btn-ghost" id="dashBordaCancelar">Cancelar</button>' +
+        '</div>' +
+        '<p class="msg" id="dashBordaMsg" style="grid-column:1/-1;"></p>' +
+        '</form>' +
+        (bordas.length ? '<div id="dashListaBordas">' + bordas.map(function (b) {
+          return '<div class="painel-lista-item">' +
+            '<span style="flex:1; min-width:0;"><span class="principal">' + escapeHtml(b.nome) + '</span><br>' +
+            '<span class="secundario">+ ' + formatarPreco(b.preco) + '</span></span>' +
+            '<button type="button" class="dash-comunidade-editar" data-editar-borda="' + b.id + '" data-nome="' + escapeHtml(b.nome) + '" data-preco="' + b.preco + '" aria-label="Editar borda">' + ICONE_ACAO_EDITAR + '</button>' +
+            '<button type="button" class="dash-comunidade-apagar" data-apagar-borda="' + b.id + '" aria-label="Apagar borda">×</button>' +
+            '</div>';
+        }).join('') + '</div>' : '') +
+
+        '<div class="dash-lista-cabecalho" style="margin-top:1.4rem;"><p class="dash-resumo-subtitulo" style="margin:0;">Combos (opcional)</p>' +
+        (itens.length >= 2 ? '<button type="button" class="btn btn-primario" id="dashAdicionarComboBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Adicionar</button>' : '') + '</div>' +
+        '<p class="dash-secao-intro" style="margin-top:0;">Ex: "2 por R$ 65" — um preço fixo cobrindo um grupo de itens (o cliente escolhe 2 deles no site).</p>' +
+        (itens.length < 2 ? '<p class="secundario">Cadastre pelo menos 2 itens antes de criar um combo.</p>' :
+        '<form id="dashComboForm" class="dash-campos-grid oculto" style="margin-bottom:1rem;">' +
+        '<div class="field field-full"><label for="dashComboTitulo">Título</label><input type="text" id="dashComboTitulo" placeholder="Ex: 2 Por R$ 65,00" maxlength="60"></div>' +
+        '<div class="field field-full"><label for="dashComboPreco">Preço do combo (R$)</label><input type="text" id="dashComboPreco" inputmode="decimal" placeholder="Ex: 65,00"></div>' +
+        '<div class="field field-full"><label>Itens elegíveis pra essa faixa</label>' +
+        '<div class="dash-combo-checklist" id="dashComboChecklist">' + itens.map(function (it) {
+          return '<label class="dash-combo-check-item"><input type="checkbox" value="' + it.id + '"> ' + escapeHtml(it.nome) + ' · ' + formatarPreco(it.preco) + '</label>';
+        }).join('') + '</div></div>' +
+        '<div class="field field-full" style="display:flex; gap:0.6rem;">' +
+        '<button type="submit" class="btn btn-primario" style="flex:1;" id="dashComboSubmitBtn">Adicionar combo</button>' +
+        '<button type="button" class="btn btn-ghost" id="dashComboCancelar">Cancelar</button>' +
+        '</div>' +
+        '<p class="msg" id="dashComboMsg" style="grid-column:1/-1;"></p>' +
+        '</form>') +
+        (combos.length ? '<div id="dashListaCombos">' + combos.map(function (co) {
+          var nomes = (co.item_ids || []).map(function (id) {
+            var it = itens.filter(function (i) { return i.id === id; })[0];
+            return it ? it.nome : null;
+          }).filter(Boolean).join(', ');
+          return '<div class="painel-lista-item">' +
+            '<span style="flex:1; min-width:0;"><span class="principal">' + escapeHtml(co.titulo) + ' · ' + formatarPreco(co.preco) + '</span><br>' +
+            '<span class="secundario">' + escapeHtml(nomes || 'Nenhum item') + '</span></span>' +
+            '<button type="button" class="dash-comunidade-editar" data-editar-combo="' + co.id + '" data-titulo="' + escapeHtml(co.titulo) + '" data-preco="' + co.preco + '" data-itens="' + (co.item_ids || []).join(',') + '" aria-label="Editar combo">' + ICONE_ACAO_EDITAR + '</button>' +
+            '<button type="button" class="dash-comunidade-apagar" data-apagar-combo="' + co.id + '" aria-label="Apagar combo">×</button>' +
+            '</div>';
+        }).join('') + '</div>' : '');
+
+      if (window.VBSelect) window.VBSelect.enhanceTodos(dashboardCorpo);
+      ligarEventosGaleria(estabId);
+    }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
+  }
+
+  function ligarEventosGaleria(estabId) {
+    // Categorias
+    var formCategoria = document.getElementById('dashCategoriaForm');
+    var categoriaMsg = document.getElementById('dashCategoriaMsg');
+    function abrirFormCategoria(dados) {
+      formCategoria.classList.remove('oculto');
+      formCategoria.dataset.editandoId = (dados && dados.id) || '';
+      document.getElementById('dashCategoriaNome').value = (dados && dados.nome) || '';
+      document.getElementById('dashCategoriaSubmitBtn').textContent = dados ? 'Salvar alterações' : 'Adicionar categoria';
+    }
+    function fecharFormCategoria() {
+      formCategoria.reset();
+      formCategoria.classList.add('oculto');
+      formCategoria.dataset.editandoId = '';
+      categoriaMsg.textContent = '';
+    }
+    var addCategoriaBtn = document.getElementById('dashAdicionarCategoriaBtn');
+    if (addCategoriaBtn) addCategoriaBtn.addEventListener('click', function () {
+      if (!formCategoria.classList.contains('oculto') && !formCategoria.dataset.editandoId) { fecharFormCategoria(); return; }
+      abrirFormCategoria(null);
+    });
+    var cancelarCategoriaBtn = document.getElementById('dashCategoriaCancelar');
+    if (cancelarCategoriaBtn) cancelarCategoriaBtn.addEventListener('click', fecharFormCategoria);
+    if (formCategoria) formCategoria.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nome = document.getElementById('dashCategoriaNome').value.trim();
+      if (!nome) { categoriaMsg.className = 'msg msg-erro'; categoriaMsg.textContent = 'Escreva o nome da categoria.'; return; }
+      var btn = document.getElementById('dashCategoriaSubmitBtn');
+      btn.disabled = true;
+      categoriaMsg.className = 'msg'; categoriaMsg.textContent = 'Salvando…';
+      db.rpc('tenant_admin_salvar_cardapio_categoria', { p_estabelecimento_id: estabId, p_id: formCategoria.dataset.editandoId || null, p_nome: nome, p_ordem: 0 }).then(function (res) {
+        btn.disabled = false;
+        if (res.error) { categoriaMsg.className = 'msg msg-erro'; categoriaMsg.textContent = res.error.message; return; }
+        if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
+        fecharFormCategoria();
+        renderizarDashGaleria();
+      });
+    });
+    var listaCategorias = document.getElementById('dashListaCategorias');
+    if (listaCategorias) listaCategorias.addEventListener('click', function (e) {
+      var editarBtn = e.target.closest('[data-editar-categoria]');
+      if (editarBtn) {
+        abrirFormCategoria({ id: editarBtn.getAttribute('data-editar-categoria'), nome: editarBtn.getAttribute('data-nome') });
+        formCategoria.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      var apagarBtn = e.target.closest('[data-apagar-categoria]');
+      if (!apagarBtn) return;
+      window.VBDialogo.confirm('Apagar essa categoria? Os itens dela ficam sem categoria, não são apagados.').then(function (ok) {
+        if (!ok) return;
+        db.rpc('tenant_admin_remover_cardapio_categoria', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-categoria') }).then(function () {
+          renderizarDashGaleria();
+        });
+      });
+    });
+
+    // Itens
+    var formItem = document.getElementById('dashItemForm');
+    var itemMsg = document.getElementById('dashItemMsg');
+    function abrirFormItem(dados) {
+      formItem.classList.remove('oculto');
+      formItem.dataset.editandoId = (dados && dados.id) || '';
+      document.getElementById('dashItemNome').value = (dados && dados.nome) || '';
+      document.getElementById('dashItemPreco').value = dados ? formatarPrecoInput(dados.preco) : '';
+      document.getElementById('dashItemCategoria').value = (dados && dados.categoria_id) || '';
+      document.getElementById('dashItemDescricao').value = (dados && dados.descricao) || '';
+      document.getElementById('dashItemMeioAMeio').checked = !!(dados && dados.meio);
+      document.getElementById('dashItemSubmitBtn').textContent = dados ? 'Salvar alterações' : 'Adicionar item';
+    }
+    function fecharFormItem() {
+      formItem.reset();
+      formItem.classList.add('oculto');
+      formItem.dataset.editandoId = '';
+      itemMsg.textContent = '';
+    }
+    var addItemBtn = document.getElementById('dashAdicionarItemBtn');
+    if (addItemBtn) addItemBtn.addEventListener('click', function () {
+      if (!formItem.classList.contains('oculto') && !formItem.dataset.editandoId) { fecharFormItem(); return; }
+      abrirFormItem(null);
+    });
+    var cancelarItemBtn = document.getElementById('dashItemCancelar');
+    if (cancelarItemBtn) cancelarItemBtn.addEventListener('click', fecharFormItem);
+    if (formItem) formItem.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nome = document.getElementById('dashItemNome').value.trim();
+      var precoTexto = document.getElementById('dashItemPreco').value.trim().replace(/\./g, '').replace(',', '.');
+      var preco = Number(precoTexto);
+      var categoriaId = document.getElementById('dashItemCategoria').value || null;
+      var descricao = document.getElementById('dashItemDescricao').value.trim();
+      var meio = document.getElementById('dashItemMeioAMeio').checked;
+      var file = document.getElementById('dashItemFoto').files[0];
+      if (!nome) { itemMsg.className = 'msg msg-erro'; itemMsg.textContent = 'Escreva o nome do item.'; return; }
+      if (!precoTexto || isNaN(preco) || preco < 0) { itemMsg.className = 'msg msg-erro'; itemMsg.textContent = 'Escreva um preço válido.'; return; }
+      var btn = document.getElementById('dashItemSubmitBtn');
+      btn.disabled = true;
+      itemMsg.className = 'msg'; itemMsg.textContent = 'Salvando…';
+
+      function salvar(fotoUrl) {
+        db.rpc('tenant_admin_salvar_cardapio_item', {
+          p_estabelecimento_id: estabId, p_id: formItem.dataset.editandoId || null,
+          p_categoria_id: categoriaId, p_nome: nome, p_descricao: descricao || null,
+          p_preco: preco, p_foto_url: fotoUrl || null, p_permite_meio_a_meio: meio
+        }).then(function (res) {
+          btn.disabled = false;
+          if (res.error) { itemMsg.className = 'msg msg-erro'; itemMsg.textContent = res.error.message; return; }
+          if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
+          fecharFormItem();
+          renderizarDashGaleria();
+        });
+      }
+      if (!file || !window.VBUpload) { salvar(null); return; }
+      window.VBUpload.uploadFoto(file, estabId, 'cardapio').then(salvar, function (err) {
+        btn.disabled = false;
+        itemMsg.className = 'msg msg-erro';
+        itemMsg.textContent = err.message || 'Falha ao enviar a foto.';
+      });
+    });
+    var listaItens = document.getElementById('dashListaItens');
+    if (listaItens) listaItens.addEventListener('click', function (e) {
+      var editarBtn = e.target.closest('[data-editar-item]');
+      if (editarBtn) {
+        abrirFormItem({
+          id: editarBtn.getAttribute('data-editar-item'), nome: editarBtn.getAttribute('data-nome'),
+          preco: editarBtn.getAttribute('data-preco'), categoria_id: editarBtn.getAttribute('data-categoria') || null,
+          descricao: editarBtn.getAttribute('data-descricao'), meio: editarBtn.getAttribute('data-meio') === '1'
+        });
+        formItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      var apagarBtn = e.target.closest('[data-apagar-item]');
+      if (!apagarBtn) return;
+      window.VBDialogo.confirm('Apagar esse item?').then(function (ok) {
+        if (!ok) return;
+        db.rpc('tenant_admin_remover_cardapio_item', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-item') }).then(function () {
+          renderizarDashGaleria();
+        });
+      });
+    });
+
+    // Bordas
+    var formBorda = document.getElementById('dashBordaForm');
+    var bordaMsg = document.getElementById('dashBordaMsg');
+    function abrirFormBorda(dados) {
+      formBorda.classList.remove('oculto');
+      formBorda.dataset.editandoId = (dados && dados.id) || '';
+      document.getElementById('dashBordaNome').value = (dados && dados.nome) || '';
+      document.getElementById('dashBordaPreco').value = dados ? formatarPrecoInput(dados.preco) : '';
+      document.getElementById('dashBordaSubmitBtn').textContent = dados ? 'Salvar alterações' : 'Adicionar borda';
+    }
+    function fecharFormBorda() {
+      formBorda.reset();
+      formBorda.classList.add('oculto');
+      formBorda.dataset.editandoId = '';
+      bordaMsg.textContent = '';
+    }
+    var addBordaBtn = document.getElementById('dashAdicionarBordaBtn');
+    if (addBordaBtn) addBordaBtn.addEventListener('click', function () {
+      if (!formBorda.classList.contains('oculto') && !formBorda.dataset.editandoId) { fecharFormBorda(); return; }
+      abrirFormBorda(null);
+    });
+    var cancelarBordaBtn = document.getElementById('dashBordaCancelar');
+    if (cancelarBordaBtn) cancelarBordaBtn.addEventListener('click', fecharFormBorda);
+    if (formBorda) formBorda.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nome = document.getElementById('dashBordaNome').value.trim();
+      var precoTexto = document.getElementById('dashBordaPreco').value.trim().replace(/\./g, '').replace(',', '.');
+      var preco = Number(precoTexto || '0');
+      if (!nome) { bordaMsg.className = 'msg msg-erro'; bordaMsg.textContent = 'Escreva o nome da borda.'; return; }
+      if (isNaN(preco) || preco < 0) { bordaMsg.className = 'msg msg-erro'; bordaMsg.textContent = 'Escreva um preço válido.'; return; }
+      var btn = document.getElementById('dashBordaSubmitBtn');
+      btn.disabled = true;
+      bordaMsg.className = 'msg'; bordaMsg.textContent = 'Salvando…';
+      db.rpc('tenant_admin_salvar_cardapio_borda', { p_estabelecimento_id: estabId, p_id: formBorda.dataset.editandoId || null, p_nome: nome, p_preco: preco }).then(function (res) {
+        btn.disabled = false;
+        if (res.error) { bordaMsg.className = 'msg msg-erro'; bordaMsg.textContent = res.error.message; return; }
+        if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
+        fecharFormBorda();
+        renderizarDashGaleria();
+      });
+    });
+    var listaBordas = document.getElementById('dashListaBordas');
+    if (listaBordas) listaBordas.addEventListener('click', function (e) {
+      var editarBtn = e.target.closest('[data-editar-borda]');
+      if (editarBtn) {
+        abrirFormBorda({ id: editarBtn.getAttribute('data-editar-borda'), nome: editarBtn.getAttribute('data-nome'), preco: editarBtn.getAttribute('data-preco') });
+        formBorda.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      var apagarBtn = e.target.closest('[data-apagar-borda]');
+      if (!apagarBtn) return;
+      window.VBDialogo.confirm('Apagar essa borda?').then(function (ok) {
+        if (!ok) return;
+        db.rpc('tenant_admin_remover_cardapio_borda', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-borda') }).then(function () {
+          renderizarDashGaleria();
+        });
+      });
+    });
+
+    // Combos
+    var formCombo = document.getElementById('dashComboForm');
+    var comboMsg = document.getElementById('dashComboMsg');
+    function abrirFormCombo(dados) {
+      if (!formCombo) return;
+      formCombo.classList.remove('oculto');
+      formCombo.dataset.editandoId = (dados && dados.id) || '';
+      document.getElementById('dashComboTitulo').value = (dados && dados.titulo) || '';
+      document.getElementById('dashComboPreco').value = dados ? formatarPrecoInput(dados.preco) : '';
+      var idsSelecionados = (dados && dados.itens) || [];
+      formCombo.querySelectorAll('#dashComboChecklist input[type="checkbox"]').forEach(function (cb) {
+        cb.checked = idsSelecionados.indexOf(cb.value) > -1;
+      });
+      document.getElementById('dashComboSubmitBtn').textContent = dados ? 'Salvar alterações' : 'Adicionar combo';
+    }
+    function fecharFormCombo() {
+      if (!formCombo) return;
+      formCombo.reset();
+      formCombo.classList.add('oculto');
+      formCombo.dataset.editandoId = '';
+      comboMsg.textContent = '';
+    }
+    var addComboBtn = document.getElementById('dashAdicionarComboBtn');
+    if (addComboBtn) addComboBtn.addEventListener('click', function () {
+      if (!formCombo.classList.contains('oculto') && !formCombo.dataset.editandoId) { fecharFormCombo(); return; }
+      abrirFormCombo(null);
+    });
+    var cancelarComboBtn = document.getElementById('dashComboCancelar');
+    if (cancelarComboBtn) cancelarComboBtn.addEventListener('click', fecharFormCombo);
+    if (formCombo) formCombo.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var titulo = document.getElementById('dashComboTitulo').value.trim();
+      var precoTexto = document.getElementById('dashComboPreco').value.trim().replace(/\./g, '').replace(',', '.');
+      var preco = Number(precoTexto);
+      var idsSelecionados = Array.prototype.slice.call(formCombo.querySelectorAll('#dashComboChecklist input[type="checkbox"]:checked')).map(function (cb) { return cb.value; });
+      if (!titulo) { comboMsg.className = 'msg msg-erro'; comboMsg.textContent = 'Escreva o título do combo.'; return; }
+      if (!precoTexto || isNaN(preco) || preco < 0) { comboMsg.className = 'msg msg-erro'; comboMsg.textContent = 'Escreva um preço válido.'; return; }
+      if (idsSelecionados.length < 2) { comboMsg.className = 'msg msg-erro'; comboMsg.textContent = 'Marque pelo menos 2 itens elegíveis.'; return; }
+      var btn = document.getElementById('dashComboSubmitBtn');
+      btn.disabled = true;
+      comboMsg.className = 'msg'; comboMsg.textContent = 'Salvando…';
+      db.rpc('tenant_admin_salvar_cardapio_combo', {
+        p_estabelecimento_id: estabId, p_id: formCombo.dataset.editandoId || null,
+        p_titulo: titulo, p_preco: preco, p_item_ids: idsSelecionados
+      }).then(function (res) {
+        btn.disabled = false;
+        if (res.error) { comboMsg.className = 'msg msg-erro'; comboMsg.textContent = res.error.message; return; }
+        if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
+        fecharFormCombo();
+        renderizarDashGaleria();
+      });
+    });
+    var listaCombos = document.getElementById('dashListaCombos');
+    if (listaCombos) listaCombos.addEventListener('click', function (e) {
+      var editarBtn = e.target.closest('[data-editar-combo]');
+      if (editarBtn) {
+        abrirFormCombo({
+          id: editarBtn.getAttribute('data-editar-combo'), titulo: editarBtn.getAttribute('data-titulo'),
+          preco: editarBtn.getAttribute('data-preco'), itens: (editarBtn.getAttribute('data-itens') || '').split(',').filter(Boolean)
+        });
+        formCombo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      var apagarBtn = e.target.closest('[data-apagar-combo]');
+      if (!apagarBtn) return;
+      window.VBDialogo.confirm('Apagar esse combo?').then(function (ok) {
+        if (!ok) return;
+        db.rpc('tenant_admin_remover_cardapio_combo', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-combo') }).then(function () {
+          renderizarDashGaleria();
         });
       });
     });

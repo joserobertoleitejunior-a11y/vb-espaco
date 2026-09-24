@@ -39,6 +39,8 @@
     manicure_pedicure: 'Manicure e pedicure',
     estetica: 'Estética',
     estetica_automotiva: 'Estética automotiva',
+    pizzaria: 'Pizzaria',
+    petshop: 'Petshop',
     outro: 'Estabelecimento'
   };
   // mesmos ícones de linha do catálogo (index.html) — nada de emoji, pra
@@ -49,6 +51,8 @@
     manicure_pedicure: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6v3l1.5 2v13a1 1 0 01-1 1h-7a1 1 0 01-1-1V7L9 5V2z"/><path d="M9 2h6"/></svg>',
     estetica: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M12 2L14.3 7.7L20 10L14.3 12.3L12 18L9.7 12.3L4 10L9.7 7.7z"/></svg>',
     estetica_automotiva: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12l1.5-4.5A2 2 0 0 1 6.4 6h11.2a2 2 0 0 1 1.9 1.5L21 12"/><path d="M3 12h18v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/></svg>',
+    pizzaria: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2c5.5 0 10 4.5 10 10 0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2C2 6.5 6.5 2 12 2z"/><circle cx="9" cy="9" r="1"/><circle cx="14" cy="7" r="1"/><circle cx="16" cy="11" r="1"/></svg>',
+    petshop: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="9.5" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="9.5" r="2"/><path d="M12 12c-3.5 0-6.5 2.2-6.5 5.2 0 1.5 1.2 2.8 2.8 2.8.9 0 1.7-.4 2.3-1 .4-.4 1-.6 1.4-.6s1 .2 1.4.6c.6.6 1.4 1 2.3 1 1.6 0 2.8-1.3 2.8-2.8 0-3-3-5.2-6.5-5.2z"/></svg>',
     outro: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>'
   };
   // exemplo de nome mostrado no campo — sempre do MESMO nicho escolhido,
@@ -60,6 +64,8 @@
     manicure_pedicure: 'Ex: Espaço Unhas & Cia',
     estetica: 'Ex: Clínica Estética Renove',
     estetica_automotiva: 'Ex: Auto Estética Prime',
+    pizzaria: 'Ex: Pizza em Dobro',
+    petshop: 'Ex: Petshop Amigo Fiel',
     outro: 'Ex: Nome do seu negócio'
   };
 
@@ -193,9 +199,9 @@
       var btn = e.target.closest('[data-segmento]');
       if (!btn) return;
       estado.segmento = btn.getAttribute('data-segmento');
-      // estética automotiva não tem sentido de atendimento
-      // masculino/feminino — pula essa pergunta pra esse nicho
-      if (estado.segmento === 'estetica_automotiva') estado.genero_atendimento = 'ambos';
+      // estética automotiva e pizzaria não têm sentido de atendimento
+      // masculino/feminino — pula essa pergunta pra esses nichos
+      if (estado.segmento === 'estetica_automotiva' || estado.segmento === 'pizzaria') estado.genero_atendimento = 'ambos';
       desenhar();
       postEstado();
     });
@@ -365,7 +371,7 @@
       { chave: 'template', titulo: 'Estilo do site', render: renderPassoTemplate },
       { chave: 'segmento', titulo: 'Tipo de negócio', render: renderPassoSegmento }
     ];
-    if (estado.segmento !== 'estetica_automotiva') {
+    if (estado.segmento !== 'estetica_automotiva' && estado.segmento !== 'pizzaria') {
       passos.push({ chave: 'atendimento', titulo: 'Atendimento', render: renderPassoAtendimento });
     }
     passos.push(
