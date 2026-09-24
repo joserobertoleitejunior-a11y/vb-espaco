@@ -1003,16 +1003,23 @@ button.catalogo-avatar-anel { cursor: pointer; }
 .catalogo-promo-banner-texto strong { display: block; font-size: 0.88rem; }
 .catalogo-promo-popover-vazio { font-size: 0.85rem; color: var(--tinta-suave); text-align: center; padding: 0.6rem 0; margin-top: 1.1rem; }
 
-/* Lista pública de promoções no site do estabelecimento (perfil.html) */
+/* Lista pública de promoções e Cardápio no site do estabelecimento
+   (perfil.html) — usa os TOKENS DO TEMPLATE (--superficie, --ink,
+   --stone, --terracotta...), nunca cor fixa: essas seções vivem dentro
+   da página com template do tenant (que pode ser claro OU escuro), não
+   dentro do app de gestão — cor fixa quebra contraste em template escuro
+   (ex: tpl-escuro, tpl-pizza). Os "|| valor" são só fallback caso
+   alguma página ainda não tenha esses tokens carregados. */
 .promocoes-lista { display: flex; flex-direction: column; gap: 0.8rem; }
 .promocao-card {
   display: flex;
   gap: 0.8rem;
   align-items: center;
-  background: #fff;
-  border: 1px solid var(--borda);
+  background: var(--superficie, var(--white, #fff));
+  border: 1px solid var(--stone, var(--borda));
   border-radius: 14px;
   padding: 0.7rem;
+  color: var(--ink, inherit);
 }
 .promocao-card-foto {
   width: 64px;
@@ -1021,10 +1028,10 @@ button.catalogo-avatar-anel { cursor: pointer; }
   flex-shrink: 0;
   background-size: cover;
   background-position: center;
-  background-color: var(--linho);
+  background-color: var(--linen-deep, var(--linho));
 }
-.promocao-card-texto { font-size: 0.92rem; line-height: 1.4; }
-.promocao-card-texto strong { display: block; font-size: 1rem; margin-bottom: 0.15rem; }
+.promocao-card-texto { font-size: 0.92rem; line-height: 1.4; color: var(--ink-soft, inherit); }
+.promocao-card-texto strong { display: block; font-size: 1rem; margin-bottom: 0.15rem; color: var(--ink, inherit); }
 
 /* ---- Cardápio público no site do estabelecimento:
    itens em grade, "monte seu meio a meio" e combos, cada um com botão
@@ -1033,6 +1040,7 @@ button.catalogo-avatar-anel { cursor: pointer; }
   font-weight: 800;
   font-size: 0.95rem;
   margin: 1.4rem 0 0.7rem;
+  color: var(--ink, inherit);
 }
 .cardapio-categoria-titulo:first-child { margin-top: 0; }
 .cardapio-itens-grid {
@@ -1044,8 +1052,8 @@ button.catalogo-avatar-anel { cursor: pointer; }
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  background: #fff;
-  border: 1px solid var(--borda);
+  background: var(--superficie, var(--white, #fff));
+  border: 1px solid var(--stone, var(--borda));
   border-radius: 14px;
   padding: 0.7rem;
 }
@@ -1055,19 +1063,25 @@ button.catalogo-avatar-anel { cursor: pointer; }
   border-radius: 10px;
   background-size: cover;
   background-position: center;
-  background-color: var(--linho);
+  background-color: var(--linen-deep, var(--linho));
   margin-bottom: 0.2rem;
 }
-.cardapio-item-nome { font-weight: 800; font-size: 0.9rem; }
-.cardapio-item-descricao { font-size: 0.78rem; color: var(--tinta-suave); line-height: 1.35; }
-.cardapio-item-preco { font-weight: 700; color: var(--cor-marca, #0F6B5C); }
+.cardapio-item-nome { font-weight: 800; font-size: 0.9rem; color: var(--ink, inherit); }
+.cardapio-item-descricao { font-size: 0.78rem; color: var(--ink-soft, var(--tinta-suave)); line-height: 1.35; }
+.cardapio-item-preco { font-weight: 700; color: var(--terracotta-deep, var(--cor-marca, #0F6B5C)); }
 .cardapio-item-pedir, .field-select-cardapio { margin-top: 0.3rem; }
 .cardapio-item-pedir { text-align: center; padding: 0.5rem; font-size: 0.82rem; text-decoration: none; }
-.field-select-cardapio { width: 100%; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--borda); font-family: inherit; font-size: 0.8rem; }
+.field-select-cardapio {
+  width: 100%; padding: 0.4rem; border-radius: 8px;
+  background: var(--superficie, var(--white, #fff));
+  border: 1px solid var(--stone, var(--borda));
+  color: var(--ink, inherit);
+  font-family: inherit; font-size: 0.8rem;
+}
 
 .cardapio-meio-card, .cardapio-combo-card {
-  background: #fff;
-  border: 1px solid var(--borda);
+  background: var(--superficie, var(--white, #fff));
+  border: 1px solid var(--stone, var(--borda));
   border-radius: 14px;
   padding: 0.9rem;
   display: flex;
@@ -1081,18 +1095,19 @@ button.catalogo-avatar-anel { cursor: pointer; }
   gap: 0.3rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--tinta-suave);
+  color: var(--ink-soft, var(--tinta-suave));
 }
 .cardapio-meio-card select, .cardapio-combo-card select {
   padding: 0.5rem;
   border-radius: 8px;
-  border: 1px solid var(--borda);
+  background: var(--superficie, var(--white, #fff));
+  border: 1px solid var(--stone, var(--borda));
   font-family: inherit;
   font-size: 0.88rem;
   color: var(--ink, #1a1a1a);
 }
-.cardapio-meio-total { font-weight: 700; margin: 0; }
-.cardapio-combo-titulo { font-weight: 800; margin: 0; }
+.cardapio-meio-total { font-weight: 700; margin: 0; color: var(--ink, inherit); }
+.cardapio-combo-titulo { font-weight: 800; margin: 0; color: var(--ink, inherit); }
 
 /* Link "voltar ao catálogo" — usado no perfil genérico e nos sites
    próprios dos estabelecimentos (ex: Rafael Cabeleireiros). */

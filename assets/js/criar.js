@@ -155,7 +155,8 @@
     { chave: 'escuro-premium', nome: 'Escuro', print: '/assets/img/templates/escuro.jpg' },
     { chave: 'automotivo-carbono', nome: 'Automotivo', print: '/assets/img/templates/automotivo.jpg' },
     { chave: 'boho-terracota', nome: 'Boho', print: '/assets/img/templates/boho.jpg' },
-    { chave: 'vidro-fosco', nome: 'Vidro', print: '/assets/img/templates/vidro.jpg' }
+    { chave: 'vidro-fosco', nome: 'Vidro', print: '/assets/img/templates/vidro.jpg' },
+    { chave: 'pizza-forno', nome: 'Forno', print: '/assets/img/templates/pizza.jpg' }
   ];
   function renderPassoTemplate(container) {
     container.innerHTML =

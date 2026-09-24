@@ -9,7 +9,8 @@
     'escuro-premium': 'tpl-escuro',
     'automotivo-carbono': 'tpl-automotivo',
     'boho-terracota': 'tpl-boho',
-    'vidro-fosco': 'tpl-vidro'
+    'vidro-fosco': 'tpl-vidro',
+    'pizza-forno': 'tpl-pizza'
   };
 
   var COPY = {
@@ -24,6 +25,8 @@
     manicure_pedicure: 'Manicure e pedicure',
     estetica: 'Estética',
     estetica_automotiva: 'Estética automotiva',
+    pizzaria: 'Pizzaria',
+    petshop: 'Petshop',
     outro: 'Estabelecimento'
   };
 
@@ -93,7 +96,7 @@
     }
   }
 
-  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota', 'vidro-fosco'];
+  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota', 'vidro-fosco', 'pizza-forno'];
   var templateAtual = null;
   function aplicarTemplateCss(templateKey) {
     if (templateKey === templateAtual) return;

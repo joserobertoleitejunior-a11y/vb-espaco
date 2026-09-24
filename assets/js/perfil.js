@@ -24,10 +24,11 @@
     'escuro-premium': 'tpl-escuro',
     'automotivo-carbono': 'tpl-automotivo',
     'boho-terracota': 'tpl-boho',
-    'vidro-fosco': 'tpl-vidro'
+    'vidro-fosco': 'tpl-vidro',
+    'pizza-forno': 'tpl-pizza'
   };
   var templateAtualParaCor = 'classico-boiserie';
-  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota', 'vidro-fosco'];
+  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota', 'vidro-fosco', 'pizza-forno'];
   function aplicarTemplateCss(templateKey) {
     templateAtualParaCor = templateKey || 'classico-boiserie';
     var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
@@ -1468,7 +1469,7 @@
     }
 
     var trocaBtn = document.getElementById('tplTrocaGenero');
-    if (linhaAtual.genero_atendimento === 'ambos' && linhaAtual.segmento !== 'estetica_automotiva') {
+    if (linhaAtual.genero_atendimento === 'ambos' && linhaAtual.segmento !== 'estetica_automotiva' && linhaAtual.segmento !== 'pizzaria') {
       var outro = g === 'masculino' ? 'feminino' : 'masculino';
       document.getElementById('tplTrocaGlifo').textContent = outro === 'feminino' ? 'F' : 'M';
       document.getElementById('tplTrocaLabel').textContent = outro === 'feminino' ? 'Área feminina' : 'Área masculina';
@@ -1496,11 +1497,11 @@
   }
 
   function iniciarGenero() {
-    // estética automotiva não distingue público por gênero — o campo
-    // genero_atendimento é gravado como 'ambos' só como valor técnico
-    // padrão desde a criação (criar.js), mas aqui isso nunca deve abrir
-    // o portão de escolha nem mostrar o botão de trocar de área.
-    if (linhaAtual.segmento === 'estetica_automotiva') {
+    // estética automotiva e pizzaria não distinguem público por gênero —
+    // o campo genero_atendimento é gravado como 'ambos' só como valor
+    // técnico padrão desde a criação (criar.js), mas aqui isso nunca deve
+    // abrir o portão de escolha nem mostrar o botão de trocar de área.
+    if (linhaAtual.segmento === 'estetica_automotiva' || linhaAtual.segmento === 'pizzaria') {
       document.getElementById('genderGate').remove();
       mostrarSplashSeNecessario();
       aplicarGenero('masculino');
