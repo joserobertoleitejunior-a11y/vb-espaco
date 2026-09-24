@@ -129,6 +129,11 @@
       var selosSociais = SOCIAL_ICONES.filter(function (s) { return s.href(e); }).map(function (s) {
         return '<a class="catalogo-selo-social" href="' + escapeHtml(s.href(e)) + '" target="_blank" rel="noopener" aria-label="' + s.rotulo + '" data-social-link>' + s.svg + '</a>';
       }).join('');
+      var enderecoTexto = e.endereco || e.cidade;
+      var mapaHref = (e.endereco_lat != null && e.endereco_lng != null)
+        ? 'https://www.google.com/maps/search/?api=1&query=' + e.endereco_lat + ',' + e.endereco_lng
+        : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([e.nome, e.endereco, e.cidade].filter(Boolean).join(' '));
+      var tagMapa = '<a class="catalogo-tag catalogo-tag-mapa" href="' + mapaHref + '" target="_blank" rel="noopener" aria-label="Abrir endereço no mapa" data-mapa-link style="background:' + hexParaRgba(cor, 0.15) + '; color:' + cor + ';">' + SVG_PIN + ' ' + escapeHtml(enderecoTexto) + '</a>';
       return '<div class="catalogo-item">' +
         '<div class="catalogo-card" role="link" tabindex="0" data-href="' + link + '" style="box-shadow:' + sombra + ';">' +
         '<div class="catalogo-capa" style="' + capaStyle + '">' +
@@ -144,7 +149,7 @@
         '<span class="catalogo-nome">' + escapeHtml(e.nome) + '</span>' +
         '<span class="catalogo-tags">' +
         '<span class="catalogo-tag">' + escapeHtml(SEGMENTOS[e.segmento] || 'Estabelecimento') + '</span>' +
-        '<span class="catalogo-tag">' + SVG_PIN + ' ' + escapeHtml(e.cidade) + '</span>' +
+        tagMapa +
         (e.distancia_km != null ? '<span class="catalogo-tag catalogo-tag-distancia">' + SVG_PIN + ' ' + String(e.distancia_km).replace('.', ',') + ' km</span>' : '') +
         '</span>' +
         (selosSociais ? '<span class="catalogo-tags catalogo-tags-social">' + selosSociais + '</span>' : '') +
@@ -162,7 +167,7 @@
   // eles ficariam presos dentro de um <a> gigante (inválido em HTML e
   // pouco confiável) ou nunca seriam clicáveis de verdade.
   listaEl.addEventListener('click', function (e) {
-    if (e.target.closest('[data-social-link]')) return;
+    if (e.target.closest('[data-social-link], [data-mapa-link]')) return;
     var abrirStatus = e.target.closest('[data-abrir-status]');
     if (abrirStatus) {
       if (window.VBStatus) window.VBStatus.abrir(abrirStatus.getAttribute('data-abrir-status'));
@@ -173,7 +178,7 @@
   });
   listaEl.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    if (e.target.closest('[data-social-link], [data-abrir-status]')) return;
+    if (e.target.closest('[data-social-link], [data-abrir-status], [data-mapa-link]')) return;
     var card = e.target.closest('.catalogo-card');
     if (!card) return;
     e.preventDefault();

@@ -759,6 +759,15 @@ button.catalogo-avatar-anel { cursor: pointer; }
 }
 .catalogo-tag svg { flex-shrink: 0; }
 .catalogo-tag-distancia { background: rgba(15, 107, 92, 0.12); color: var(--cor-marca, #0F6B5C); }
+.catalogo-tag-mapa {
+  text-decoration: none;
+  cursor: pointer;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.catalogo-tag-mapa:active { transform: scale(0.97); }
 .catalogo-tags-social { gap: 0.5rem; }
 .catalogo-selo-social {
   display: inline-flex;
