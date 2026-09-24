@@ -533,7 +533,7 @@
     else if (aba === 'caixa') renderizarDashCaixa();
     else if (aba === 'comunidade') renderizarDashComunidade();
     else if (aba === 'perfil') renderizarDashPerfil();
-    else if (aba === 'galeria') renderizarDashGaleria();
+    else if (aba === 'cardapio') renderizarDashCardapio();
   }
 
   function renderizarDashResumo() {
@@ -1302,15 +1302,15 @@
     });
   }
 
-  // ---- Galeria: cardápio/catálogo com categorias, itens, bordas
+  // ---- Cardápio: cardápio/catálogo com categorias, itens, bordas
   // (opcionais) e combos (faixa de preço fixa cobrindo um grupo de
   // itens) — pensado pro cardápio de pizzaria, mas serve pra qualquer
   // nicho que queira vender além dos serviços agendáveis (ex: petshop
   // vendendo ração). Bordas e combos são totalmente opcionais. Pedido
   // vai pelo WhatsApp — sem carrinho persistente nem gateway ainda. ----
-  var ICONE_VAZIO_GALERIA = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>';
+  var ICONE_VAZIO_CARDAPIO = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>';
 
-  function renderizarDashGaleria() {
+  function renderizarDashCardapio() {
     var estabId = dashEstabId;
     Promise.all([
       db.rpc('tenant_admin_listar_cardapio_categorias', { p_estabelecimento_id: estabId }),
@@ -1384,7 +1384,7 @@
             '<button type="button" class="dash-comunidade-editar" data-editar-item="' + it.id + '" data-nome="' + escapeHtml(it.nome) + '" data-preco="' + it.preco + '" data-categoria="' + (it.categoria_id || '') + '" data-descricao="' + escapeHtml(it.descricao || '') + '" data-meio="' + (it.permite_meio_a_meio ? '1' : '0') + '" aria-label="Editar item">' + ICONE_ACAO_EDITAR + '</button>' +
             '<button type="button" class="dash-comunidade-apagar" data-apagar-item="' + it.id + '" aria-label="Apagar item">×</button>' +
             '</div>';
-        }).join('') + '</div>' : blocoVazio(ICONE_VAZIO_GALERIA, 'Nenhum item cadastrado', 'Adicione os itens do seu cardápio ou catálogo — eles aparecem no seu site com um botão de pedir pelo WhatsApp.')) +
+        }).join('') + '</div>' : blocoVazio(ICONE_VAZIO_CARDAPIO, 'Nenhum item cadastrado', 'Adicione os itens do seu cardápio ou catálogo — eles aparecem no seu site com um botão de pedir pelo WhatsApp.')) +
 
         '<div class="dash-lista-cabecalho" style="margin-top:1.4rem;"><p class="dash-resumo-subtitulo" style="margin:0;">Bordas (opcional)</p>' +
         '<button type="button" class="btn btn-primario" id="dashAdicionarBordaBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Adicionar</button></div>' +
@@ -1438,11 +1438,11 @@
         }).join('') + '</div>' : '');
 
       if (window.VBSelect) window.VBSelect.enhanceTodos(dashboardCorpo);
-      ligarEventosGaleria(estabId);
+      ligarEventosCardapio(estabId);
     }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
   }
 
-  function ligarEventosGaleria(estabId) {
+  function ligarEventosCardapio(estabId) {
     // Categorias
     var formCategoria = document.getElementById('dashCategoriaForm');
     var categoriaMsg = document.getElementById('dashCategoriaMsg');
@@ -1477,7 +1477,7 @@
         if (res.error) { categoriaMsg.className = 'msg msg-erro'; categoriaMsg.textContent = res.error.message; return; }
         if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
         fecharFormCategoria();
-        renderizarDashGaleria();
+        renderizarDashCardapio();
       });
     });
     var listaCategorias = document.getElementById('dashListaCategorias');
@@ -1493,7 +1493,7 @@
       window.VBDialogo.confirm('Apagar essa categoria? Os itens dela ficam sem categoria, não são apagados.').then(function (ok) {
         if (!ok) return;
         db.rpc('tenant_admin_remover_cardapio_categoria', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-categoria') }).then(function () {
-          renderizarDashGaleria();
+          renderizarDashCardapio();
         });
       });
     });
@@ -1549,7 +1549,7 @@
           if (res.error) { itemMsg.className = 'msg msg-erro'; itemMsg.textContent = res.error.message; return; }
           if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
           fecharFormItem();
-          renderizarDashGaleria();
+          renderizarDashCardapio();
         });
       }
       if (!file || !window.VBUpload) { salvar(null); return; }
@@ -1576,7 +1576,7 @@
       window.VBDialogo.confirm('Apagar esse item?').then(function (ok) {
         if (!ok) return;
         db.rpc('tenant_admin_remover_cardapio_item', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-item') }).then(function () {
-          renderizarDashGaleria();
+          renderizarDashCardapio();
         });
       });
     });
@@ -1619,7 +1619,7 @@
         if (res.error) { bordaMsg.className = 'msg msg-erro'; bordaMsg.textContent = res.error.message; return; }
         if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
         fecharFormBorda();
-        renderizarDashGaleria();
+        renderizarDashCardapio();
       });
     });
     var listaBordas = document.getElementById('dashListaBordas');
@@ -1635,7 +1635,7 @@
       window.VBDialogo.confirm('Apagar essa borda?').then(function (ok) {
         if (!ok) return;
         db.rpc('tenant_admin_remover_cardapio_borda', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-borda') }).then(function () {
-          renderizarDashGaleria();
+          renderizarDashCardapio();
         });
       });
     });
@@ -1689,7 +1689,7 @@
         if (res.error) { comboMsg.className = 'msg msg-erro'; comboMsg.textContent = res.error.message; return; }
         if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
         fecharFormCombo();
-        renderizarDashGaleria();
+        renderizarDashCardapio();
       });
     });
     var listaCombos = document.getElementById('dashListaCombos');
@@ -1708,7 +1708,7 @@
       window.VBDialogo.confirm('Apagar esse combo?').then(function (ok) {
         if (!ok) return;
         db.rpc('tenant_admin_remover_cardapio_combo', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-combo') }).then(function () {
-          renderizarDashGaleria();
+          renderizarDashCardapio();
         });
       });
     });

@@ -776,7 +776,7 @@
     var gate = document.getElementById('incompletoGate');
     if (!gate || !linhaAtual) return;
     // pizzaria (e outros nichos de cardápio, no futuro) não usa agendamento
-    // com profissional — "pronto" pra eles é ter algo na Galeria, não
+    // com profissional — "pronto" pra eles é ter algo no Cardápio, não
     // serviço/equipe, que nem existem nesse fluxo.
     var incompleto = linhaAtual.segmento === 'pizzaria'
       ? !linhaAtual.tem_cardapio
@@ -1535,7 +1535,7 @@
 
   // ---------- serviços, galeria, agenda ----------
   var ICONE_TESOURA = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="23" r="3.2"/><circle cx="9" cy="9" r="3.2"/><line x1="11.5" y1="11" x2="26" y2="23"/><line x1="11.5" y1="21" x2="26" y2="9"/></svg>';
-  var ICONE_GALERIA_BADGE = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><rect x="18" y="5" width="9" height="9" rx="1.5"/><rect x="5" y="18" width="9" height="9" rx="1.5"/><rect x="18" y="18" width="9" height="9" rx="1.5"/></svg>';
+  var ICONE_CARDAPIO_BADGE = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><rect x="18" y="5" width="9" height="9" rx="1.5"/><rect x="5" y="18" width="9" height="9" rx="1.5"/><rect x="18" y="18" width="9" height="9" rx="1.5"/></svg>';
   var ICONE_AGENDA = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="9" width="20" height="16" rx="2"/><line x1="6" y1="14" x2="26" y2="14"/><line x1="11" y1="6" x2="11" y2="11"/><line x1="21" y1="6" x2="21" y2="11"/></svg>';
 
   // ---------- redes sociais (mesmo padrão em todas as réplicas) ----------
@@ -1637,14 +1637,14 @@
   function carregarServicos() {
     var lista = document.getElementById('tplListaServicos');
     var strip = document.getElementById('tplServiceStrip');
-    // pizzaria (cardápio/Galeria) não usa agendamento com profissional —
+    // pizzaria (cardápio) não usa agendamento com profissional —
     // esconde a seção de Serviços inteira em vez de mostrar "em breve"
     // pra sempre num nicho que nunca vai ter serviço cadastrado.
     if (linhaAtual.segmento === 'pizzaria') {
       var secaoServicos = document.getElementById('servicosSecao');
       if (secaoServicos) secaoServicos.classList.add('oculto');
       strip.innerHTML =
-        '<button type="button" class="service-badge" onclick="document.getElementById(\'galeriaSecao\').scrollIntoView({behavior:\'smooth\'})"><span class="mark">' + ICONE_GALERIA_BADGE + '</span><strong>Ver</strong><span>Galeria</span></button>';
+        '<button type="button" class="service-badge" onclick="document.getElementById(\'cardapioSecao\').scrollIntoView({behavior:\'smooth\'})"><span class="mark">' + ICONE_CARDAPIO_BADGE + '</span><strong>Ver</strong><span>Cardápio</span></button>';
       return;
     }
     db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }).then(function (res) {
@@ -1759,14 +1759,14 @@
     }, function () { secao.classList.add('oculto'); });
   }
 
-  // ---- Galeria pública (cardápio/catálogo) — categorias, itens, meio
+  // ---- Cardápio público — categorias, itens, meio
   // a meio (regra oficial: cobra o valor da metade mais cara + borda) e
-  // combos de faixa de preço fixa. O dono cadastra na aba Galeria do
+  // combos de faixa de preço fixa. O dono cadastra na aba Cardápio do
   // painel de gestão; aqui só exibimos e montamos o link de pedido pelo
   // WhatsApp — sem carrinho persistente ainda. ----
-  function carregarGaleriaPublica() {
-    var secao = document.getElementById('galeriaSecao');
-    var conteudo = document.getElementById('tplGaleriaConteudo');
+  function carregarCardapioPublico() {
+    var secao = document.getElementById('cardapioSecao');
+    var conteudo = document.getElementById('tplCardapioConteudo');
     if (!secao || !conteudo) return;
     db.rpc('estabelecimento_cardapio_publico', { p_estabelecimento_id: estabId }).then(function (res) {
       var dados = res.data || {};
@@ -1786,7 +1786,7 @@
       }
       function opcoesBorda(idCompleto) {
         if (!bordas.length) return '';
-        return '<select class="field-select-galeria" id="' + idCompleto + '"><option value="">Sem borda</option>' +
+        return '<select class="field-select-cardapio" id="' + idCompleto + '"><option value="">Sem borda</option>' +
           bordas.map(function (b) { return '<option value="' + b.id + '">' + escapeHtml(b.nome) + ' (+' + formatarPreco(b.preco) + ')</option>'; }).join('') +
           '</select>';
       }
@@ -1803,16 +1803,16 @@
       if (semCategoria.length) grupos.push({ nome: categorias.length ? 'Outros' : null, lista: semCategoria });
 
       htmlItens = grupos.map(function (g) {
-        return (g.nome ? '<p class="galeria-categoria-titulo">' + escapeHtml(g.nome) + '</p>' : '') +
-          '<div class="galeria-itens-grid">' + g.lista.map(function (it) {
+        return (g.nome ? '<p class="cardapio-categoria-titulo">' + escapeHtml(g.nome) + '</p>' : '') +
+          '<div class="cardapio-itens-grid">' + g.lista.map(function (it) {
             var idPrefixo = 'galItem' + it.id.replace(/-/g, '');
-            return '<div class="galeria-item-card">' +
-              (it.foto_url ? '<span class="galeria-item-foto" style="background-image:url(\'' + it.foto_url + '\')"></span>' : '') +
-              '<span class="galeria-item-nome">' + escapeHtml(it.nome) + '</span>' +
-              (it.descricao ? '<span class="galeria-item-descricao">' + escapeHtml(it.descricao) + '</span>' : '') +
-              '<span class="galeria-item-preco">' + formatarPreco(it.preco) + '</span>' +
+            return '<div class="cardapio-item-card">' +
+              (it.foto_url ? '<span class="cardapio-item-foto" style="background-image:url(\'' + it.foto_url + '\')"></span>' : '') +
+              '<span class="cardapio-item-nome">' + escapeHtml(it.nome) + '</span>' +
+              (it.descricao ? '<span class="cardapio-item-descricao">' + escapeHtml(it.descricao) + '</span>' : '') +
+              '<span class="cardapio-item-preco">' + formatarPreco(it.preco) + '</span>' +
               (bordas.length ? opcoesBorda(idPrefixo + 'Borda') : '') +
-              '<a class="btn btn-primario galeria-item-pedir" data-pedir-item="' + it.id + '" data-prefixo="' + idPrefixo + '" href="#" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>' +
+              '<a class="btn btn-primario cardapio-item-pedir" data-pedir-item="' + it.id + '" data-prefixo="' + idPrefixo + '" href="#" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>' +
               '</div>';
           }).join('') + '</div>';
       }).join('');
@@ -1822,27 +1822,27 @@
       if (itensMeio.length >= 2) {
         var opcoesSabor = itensMeio.map(function (i) { return '<option value="' + i.id + '">' + escapeHtml(i.nome) + ' — ' + formatarPreco(i.preco) + '</option>'; }).join('');
         htmlMeio =
-          '<p class="galeria-categoria-titulo">Monte seu meio a meio</p>' +
-          '<div class="galeria-meio-card">' +
+          '<p class="cardapio-categoria-titulo">Monte seu meio a meio</p>' +
+          '<div class="cardapio-meio-card">' +
           '<label>1ª metade<select id="galMeioA">' + opcoesSabor + '</select></label>' +
           '<label>2ª metade<select id="galMeioB">' + opcoesSabor + '</select></label>' +
           (bordas.length ? '<label>Borda' + opcoesBorda('galMeioBordaSelect') + '</label>' : '') +
-          '<p class="galeria-meio-total">Total: <strong id="galMeioTotal">' + formatarPreco(itensMeio[0].preco) + '</strong></p>' +
-          '<a class="btn btn-primario galeria-item-pedir" id="galMeioPedir" href="#" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>' +
+          '<p class="cardapio-meio-total">Total: <strong id="galMeioTotal">' + formatarPreco(itensMeio[0].preco) + '</strong></p>' +
+          '<a class="btn btn-primario cardapio-item-pedir" id="galMeioPedir" href="#" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>' +
           '</div>';
       }
 
       var htmlCombos = '';
       if (combos.length) {
-        htmlCombos = '<p class="galeria-categoria-titulo">Combos</p>' + combos.map(function (co) {
+        htmlCombos = '<p class="cardapio-categoria-titulo">Combos</p>' + combos.map(function (co) {
           var elegiveis = (co.item_ids || []).map(function (id) { return itens.filter(function (i) { return i.id === id; })[0]; }).filter(Boolean);
           if (elegiveis.length < 2) return '';
           var opcoes = elegiveis.map(function (i) { return '<option value="' + i.id + '">' + escapeHtml(i.nome) + '</option>'; }).join('');
-          return '<div class="galeria-combo-card">' +
-            '<p class="galeria-combo-titulo">' + escapeHtml(co.titulo) + ' · ' + formatarPreco(co.preco) + '</p>' +
+          return '<div class="cardapio-combo-card">' +
+            '<p class="cardapio-combo-titulo">' + escapeHtml(co.titulo) + ' · ' + formatarPreco(co.preco) + '</p>' +
             '<label>1º sabor<select class="gal-combo-s1" data-combo="' + co.id + '">' + opcoes + '</select></label>' +
             '<label>2º sabor<select class="gal-combo-s2" data-combo="' + co.id + '">' + opcoes + '</select></label>' +
-            '<a class="btn btn-primario galeria-item-pedir" data-pedir-combo="' + co.id + '" href="#" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>' +
+            '<a class="btn btn-primario cardapio-item-pedir" data-pedir-combo="' + co.id + '" href="#" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>' +
             '</div>';
         }).join('');
       }
@@ -2463,13 +2463,13 @@
     document.getElementById('tplCtaTexto').textContent = linha.texto_cta || (linha.segmento === 'pizzaria' ? 'Ver cardápio' : 'Agendar horário');
     // pizzaria não agenda com profissional — o botão principal do hero
     // (e qualquer outro atalho "Agendar horário" do site) leva direto
-    // pra Galeria em vez de abrir o assistente de agendamento.
+    // pro Cardápio em vez de abrir o assistente de agendamento.
     if (linha.segmento === 'pizzaria') {
       document.querySelectorAll('[data-open-widget]').forEach(function (el) {
         el.removeAttribute('data-open-widget');
         el.addEventListener('click', function (e) {
           e.preventDefault();
-          var secao = document.getElementById('galeriaSecao');
+          var secao = document.getElementById('cardapioSecao');
           if (secao) secao.scrollIntoView({ behavior: 'smooth' });
         });
       });
@@ -2503,7 +2503,7 @@
     carregarGaleria();
     carregarRedesSociais();
     carregarPromocoesPublicas();
-    carregarGaleriaPublica();
+    carregarCardapioPublico();
     iniciarModoAdmin();
     iniciarWizard();
     iniciarClienteGlobal();

@@ -1026,21 +1026,21 @@ button.catalogo-avatar-anel { cursor: pointer; }
 .promocao-card-texto { font-size: 0.92rem; line-height: 1.4; }
 .promocao-card-texto strong { display: block; font-size: 1rem; margin-bottom: 0.15rem; }
 
-/* ---- Galeria pública (cardápio/catálogo) no site do estabelecimento:
+/* ---- Cardápio público no site do estabelecimento:
    itens em grade, "monte seu meio a meio" e combos, cada um com botão
    de pedir pelo WhatsApp. ---- */
-.galeria-categoria-titulo {
+.cardapio-categoria-titulo {
   font-weight: 800;
   font-size: 0.95rem;
   margin: 1.4rem 0 0.7rem;
 }
-.galeria-categoria-titulo:first-child { margin-top: 0; }
-.galeria-itens-grid {
+.cardapio-categoria-titulo:first-child { margin-top: 0; }
+.cardapio-itens-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0.8rem;
 }
-.galeria-item-card {
+.cardapio-item-card {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -1049,7 +1049,7 @@ button.catalogo-avatar-anel { cursor: pointer; }
   border-radius: 14px;
   padding: 0.7rem;
 }
-.galeria-item-foto {
+.cardapio-item-foto {
   width: 100%;
   aspect-ratio: 4 / 3;
   border-radius: 10px;
@@ -1058,14 +1058,14 @@ button.catalogo-avatar-anel { cursor: pointer; }
   background-color: var(--linho);
   margin-bottom: 0.2rem;
 }
-.galeria-item-nome { font-weight: 800; font-size: 0.9rem; }
-.galeria-item-descricao { font-size: 0.78rem; color: var(--tinta-suave); line-height: 1.35; }
-.galeria-item-preco { font-weight: 700; color: var(--cor-marca, #0F6B5C); }
-.galeria-item-pedir, .field-select-galeria { margin-top: 0.3rem; }
-.galeria-item-pedir { text-align: center; padding: 0.5rem; font-size: 0.82rem; text-decoration: none; }
-.field-select-galeria { width: 100%; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--borda); font-family: inherit; font-size: 0.8rem; }
+.cardapio-item-nome { font-weight: 800; font-size: 0.9rem; }
+.cardapio-item-descricao { font-size: 0.78rem; color: var(--tinta-suave); line-height: 1.35; }
+.cardapio-item-preco { font-weight: 700; color: var(--cor-marca, #0F6B5C); }
+.cardapio-item-pedir, .field-select-cardapio { margin-top: 0.3rem; }
+.cardapio-item-pedir { text-align: center; padding: 0.5rem; font-size: 0.82rem; text-decoration: none; }
+.field-select-cardapio { width: 100%; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--borda); font-family: inherit; font-size: 0.8rem; }
 
-.galeria-meio-card, .galeria-combo-card {
+.cardapio-meio-card, .cardapio-combo-card {
   background: #fff;
   border: 1px solid var(--borda);
   border-radius: 14px;
@@ -1075,7 +1075,7 @@ button.catalogo-avatar-anel { cursor: pointer; }
   gap: 0.6rem;
   margin-bottom: 0.8rem;
 }
-.galeria-meio-card label, .galeria-combo-card label {
+.cardapio-meio-card label, .cardapio-combo-card label {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -1083,7 +1083,7 @@ button.catalogo-avatar-anel { cursor: pointer; }
   font-weight: 600;
   color: var(--tinta-suave);
 }
-.galeria-meio-card select, .galeria-combo-card select {
+.cardapio-meio-card select, .cardapio-combo-card select {
   padding: 0.5rem;
   border-radius: 8px;
   border: 1px solid var(--borda);
@@ -1091,8 +1091,8 @@ button.catalogo-avatar-anel { cursor: pointer; }
   font-size: 0.88rem;
   color: var(--ink, #1a1a1a);
 }
-.galeria-meio-total { font-weight: 700; margin: 0; }
-.galeria-combo-titulo { font-weight: 800; margin: 0; }
+.cardapio-meio-total { font-weight: 700; margin: 0; }
+.cardapio-combo-titulo { font-weight: 800; margin: 0; }
 
 /* Link "voltar ao catálogo" — usado no perfil genérico e nos sites
    próprios dos estabelecimentos (ex: Rafael Cabeleireiros). */
@@ -2774,7 +2774,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   line-height: 1.4;
 }
 
-/* ---- checklist de itens elegíveis num combo da Galeria ---- */
+/* ---- checklist de itens elegíveis num combo do Cardápio ---- */
 .dash-combo-checklist {
   display: flex;
   flex-direction: column;
