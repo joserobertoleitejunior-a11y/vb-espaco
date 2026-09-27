@@ -229,6 +229,14 @@
         return;
       }
       var linhas = res.data || [];
+      // negócio só de Delivery/Serviços (sem agenda) usa o painel da área dele;
+      // ?abrir=<id> (volta do painel de outra área) abre direto o painel de gestão
+      carregarMeuNegocio().then(function (n) {
+        var abrirId = new URLSearchParams(location.search).get('abrir');
+        if (n && n.areas && n.areas.indexOf('agenda') === -1) { location.replace('/painel-area.html?id=' + encodeURIComponent(n.id)); return; }
+        var alvo = abrirId && linhas.find(function (l) { return l.id === abrirId; });
+        if (alvo) abrirDashboard(alvo.id, alvo.nome, new URLSearchParams(location.search).get('aba'));
+      });
       // quem já tem um site não precisa ver "criar outro" toda hora — some
       // sozinho assim que existe pelo menos um estabelecimento cadastrado.
       var ctaCard = document.querySelector('.criar-cta-card');
@@ -504,10 +512,43 @@
       '<p class="dash-vazio-texto">' + texto + '</p></div>';
   }
 
+  // áreas do negócio (Agenda · Delivery · Serviços) — o cubo do cabeçalho
+  // do painel troca de área; Delivery/Serviços têm o painel próprio.
+  var meuNegocio = null;
+  function carregarMeuNegocio() {
+    return db.rpc('vibe_meu_negocio').then(function (r) { meuNegocio = r.data || null; return meuNegocio; }, function () { return null; });
+  }
+  function montarCuboAreas(estabId) {
+    var alvo = document.getElementById('dashAreas');
+    if (!alvo || !window.VibeAreas) return;
+    var negocio = meuNegocio && meuNegocio.id === estabId ? meuNegocio : { id: estabId, areas: ['agenda'] };
+    var contagens = {};
+    if (negocio.pedidos_novos) contagens[negocio.areas.indexOf('servicos') !== -1 ? 'servicos' : 'delivery'] = negocio.pedidos_novos + ' novo' + (negocio.pedidos_novos > 1 ? 's' : '');
+    window.VibeAreas.montar(alvo, {
+      negocio: negocio, atual: 'agenda', contagens: contagens,
+      alvoTinta: document.getElementById('dashboardOverlay'),
+      aoEscolher: function () { location.href = '/painel-area.html?id=' + encodeURIComponent(estabId); },
+      aoAtivar: function (area) {
+        var nome = area === 'delivery' ? 'Delivery (pedidos com entrega e retirada)' : 'Serviços (chamados e orçamentos no local do cliente)';
+        var perguntar = window.VBDialogo ? window.VBDialogo.confirm('Ativar ' + nome + ' no seu negócio? A agenda continua igual.') : Promise.resolve(window.confirm('Ativar ' + nome + '?'));
+        perguntar.then(function (ok) {
+          if (!ok) { montarCuboAreas(estabId); return; }
+          var areas = (negocio.areas || ['agenda']).filter(function (a) { return a === 'agenda'; }).concat([area]);
+          db.rpc('estabelecimento_definir_areas', { p_estabelecimento_id: estabId, p_areas: areas }).then(function (r) {
+            if (r.error) { if (window.VBDialogo) window.VBDialogo.alert(r.error.message); montarCuboAreas(estabId); return; }
+            location.href = '/painel-area.html?id=' + encodeURIComponent(estabId) + '&nova=1';
+          });
+        });
+      }
+    });
+  }
+
   function abrirDashboard(estabId, nome, abaInicial) {
     dashEstabId = estabId;
     dashboardTitulo.textContent = nome;
     dashboardOverlay.classList.remove('oculto');
+    if (meuNegocio) montarCuboAreas(estabId);
+    else carregarMeuNegocio().then(function () { if (dashEstabId === estabId) montarCuboAreas(estabId); });
     // Caixa é a aba mais usada no dia a dia (registrar uma venda é rápido
     // e constante) — abre direto nela, em vez do Resumo.
     mostrarAbaDashboard(abaInicial || 'caixa');

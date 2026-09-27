@@ -2986,3 +2986,57 @@ body.vb-modo-admin { padding-bottom: 3rem; }
   text-decoration: none;
 }
 .hero-cta .btn-outra-area:hover { transform: translateY(-2px); }
+
+/* ---- Botão-cubo das áreas (Agenda · Delivery · Serviços) ----
+   O cubo do logo gira e abre a lista das áreas do negócio. Cada área
+   tinge o painel bem de leve (--area-rgb, posto por vibe-areas.js). */
+:root { --area-rgb: 15, 107, 92; }
+.vibe-areas { position: relative; display: inline-flex; }
+.vibe-areas-btn {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.3rem 0.75rem 0.3rem 0.35rem;
+  border: 1px solid var(--borda); border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  font: inherit; color: var(--tinta); cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.vibe-areas-btn:hover, .vibe-areas.aberto .vibe-areas-btn { border-color: rgba(var(--area-rgb), 0.45); box-shadow: 0 0 0 3px rgba(var(--area-rgb), 0.1); }
+.vibe-areas-cubo { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; }
+.vibe-areas-cubo canvas { display: block; width: 34px; height: 34px; }
+.vibe-areas-rotulo { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+.vibe-areas-rotulo small { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-suave); }
+.vibe-areas-rotulo strong { font-size: 0.92rem; color: rgb(var(--area-rgb)); }
+.vibe-areas-seta { color: var(--tinta-suave); transition: transform 0.2s ease; }
+.vibe-areas.aberto .vibe-areas-seta { transform: rotate(180deg); }
+.vibe-areas-menu {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 400;
+  width: min(300px, calc(100vw - 32px));
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--borda); border-radius: var(--raio);
+  box-shadow: 0 16px 40px rgba(20, 20, 30, 0.14);
+  animation: vibeMenuEntra 0.2s ease both;
+}
+@keyframes vibeMenuEntra { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.vibe-areas-titulo { margin: 0.2rem 0.5rem 0.4rem; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-suave); }
+.vibe-areas-op {
+  display: flex; align-items: center; gap: 0.7rem; width: 100%;
+  padding: 0.65rem 0.6rem; border: 0; border-radius: 10px;
+  background: none; font: inherit; color: var(--tinta); text-align: left; cursor: pointer;
+}
+.vibe-areas-op:hover, .vibe-areas-op:focus-visible { background: rgba(var(--op-rgb), 0.08); }
+.vibe-areas-op.atual { background: rgba(var(--op-rgb), 0.1); }
+.vibe-areas-bolinha { width: 12px; height: 12px; flex-shrink: 0; border-radius: 3px; background: rgba(var(--op-rgb), 0.85); box-shadow: 0 0 0 3px rgba(var(--op-rgb), 0.15); transform: rotate(45deg); }
+.vibe-areas-op.nova .vibe-areas-bolinha { background: transparent; border: 1.5px dashed rgba(var(--op-rgb), 0.9); box-shadow: none; }
+.vibe-areas-op-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.vibe-areas-op-txt strong { font-size: 0.93rem; display: flex; align-items: center; gap: 0.4rem; }
+.vibe-areas-op-txt strong em { font-style: normal; font-size: 0.7rem; font-weight: 800; padding: 0.05rem 0.45rem; border-radius: 999px; background: rgb(var(--op-rgb)); color: #fff; }
+.vibe-areas-op-txt small { font-size: 0.78rem; color: var(--tinta-suave); }
+.vibe-areas-op.nova strong { color: rgb(var(--op-rgb)); }
+.vibe-areas-aqui { font-size: 0.7rem; font-weight: 700; color: rgb(var(--op-rgb)); }
+
+/* painel de gestão ganha o véu da área (bem sutil) */
+.admin-painel-overlay .admin-painel-box { background-image: linear-gradient(180deg, rgba(var(--area-rgb), 0.07), rgba(var(--area-rgb), 0) 260px); }
+.dash-cabecalho-linha .vibe-areas { margin-right: auto; }

@@ -14,7 +14,7 @@
 
   var DADOS = {
     pizzaria: {
-      nome: 'Pizza em Dobro', descricao: 'Pizza de fermentação natural, forno a lenha e borda recheada. Meio a meio sem pagar mais por isso.',
+      nome: 'Nome da sua pizzaria', descricao: 'Pizza de fermentação natural, forno a lenha e borda recheada. Meio a meio sem pagar mais por isso.',
       aviso: 'Terça é dia de rodízio de bordas: todas pela metade do preço.',
       horarios: HORARIO_NOITE,
       categorias: [{ id: 'c1', nome: 'Tradicionais' }, { id: 'c2', nome: 'Especiais' }, { id: 'c3', nome: 'Doces' }, { id: 'c4', nome: 'Bebidas' }],
@@ -35,7 +35,7 @@
       combos: [{ id: 'k1', nome: 'Combo Dobro', preco: 89.9, qtd_sabores: 2, itens_permitidos: ['p1', 'p2', 'p3', 'p4'] }]
     },
     hamburgueria: {
-      nome: 'Brasa Burger', descricao: 'Smash burger na chapa, pão brioche e batata cortada na hora.',
+      nome: 'Nome da sua hamburgueria', descricao: 'Smash burger na chapa, pão brioche e batata cortada na hora.',
       horarios: HORARIO_NOITE,
       categorias: [{ id: 'c1', nome: 'Burgers' }, { id: 'c2', nome: 'Acompanhamentos' }, { id: 'c3', nome: 'Bebidas' }],
       itens: [
@@ -50,7 +50,7 @@
       bordas: [], combos: [{ id: 'k1', nome: 'Dupla da madrugada', preco: 64.9, qtd_sabores: 2, itens_permitidos: ['h1', 'h2', 'h3'] }]
     },
     petshop: {
-      nome: 'Mundo Pet', descricao: 'Ração, petiscos e acessórios com entrega no mesmo dia.',
+      nome: 'Nome do seu petshop', descricao: 'Ração, petiscos e acessórios com entrega no mesmo dia.',
       horarios: HORARIO_COMERCIAL,
       categorias: [{ id: 'c1', nome: 'Rações' }, { id: 'c2', nome: 'Petiscos' }, { id: 'c3', nome: 'Higiene' }, { id: 'c4', nome: 'Brinquedos' }],
       itens: [
@@ -65,7 +65,7 @@
       bordas: [], combos: []
     },
     mercado: {
-      nome: 'Hortifruti da Praça', descricao: 'Frutas, verduras e mercearia fresquinhos, direto do produtor.',
+      nome: 'Nome do seu mercado', descricao: 'Frutas, verduras e mercearia fresquinhos, direto do produtor.',
       horarios: HORARIO_COMERCIAL,
       categorias: [{ id: 'c1', nome: 'Frutas' }, { id: 'c2', nome: 'Verduras' }, { id: 'c3', nome: 'Mercearia' }],
       itens: [
@@ -80,7 +80,7 @@
       bordas: [], combos: []
     },
     acaiteria: {
-      nome: 'Açaí da Lagoa', descricao: 'Açaí batido na hora, do jeito que você montar.',
+      nome: 'Nome da sua açaiteria', descricao: 'Açaí batido na hora, do jeito que você montar.',
       horarios: { '0': [['13:00', '22:00']], '2': [['13:00', '22:00']], '3': [['13:00', '22:00']], '4': [['13:00', '22:00']], '5': [['13:00', '23:00']], '6': [['13:00', '23:00']] },
       categorias: [{ id: 'c1', nome: 'Açaí' }, { id: 'c2', nome: 'Cremes' }, { id: 'c3', nome: 'Adicionais' }],
       itens: [
@@ -93,7 +93,7 @@
       bordas: [], combos: []
     },
     japonesa: {
-      nome: 'Kaizen Sushi', descricao: 'Peças montadas na hora com peixe fresco todos os dias.',
+      nome: 'Nome do seu restaurante', descricao: 'Peças montadas na hora com peixe fresco todos os dias.',
       horarios: HORARIO_NOITE,
       categorias: [{ id: 'c1', nome: 'Combinados' }, { id: 'c2', nome: 'Temakis' }, { id: 'c3', nome: 'Quentes' }],
       itens: [
@@ -108,7 +108,7 @@
   };
   var H24 = { '0': [['00:00', '24:00']], '1': [['00:00', '24:00']], '2': [['00:00', '24:00']], '3': [['00:00', '24:00']], '4': [['00:00', '24:00']], '5': [['00:00', '24:00']], '6': [['00:00', '24:00']] };
   DADOS.borracharia = {
-    nome: 'Borracharia Móvel 24h', descricao: 'Pneu furou? A gente vai até você em qualquer bairro da cidade, 24 horas. Carro, moto, caminhonete e caminhão.',
+    nome: 'Nome da sua borracharia', descricao: 'Pneu furou? A gente vai até você em qualquer bairro da cidade, 24 horas. Carro, moto, caminhonete e caminhão.',
     aviso: 'Socorro 24h em toda a cidade — mande sua localização que a gente chega.',
     horarios: H24, taxa_entrega: 15, tempo_min: 20, tempo_max: 40,
     categorias: [{ id: 'c1', nome: 'Socorro no local' }, { id: 'c2', nome: 'Reparos' }, { id: 'c3', nome: 'Pneus' }, { id: 'c4', nome: 'Na borracharia' }],
@@ -127,7 +127,7 @@
     bordas: [], combos: []
   };
   DADOS.chaveiro = {
-    nome: 'Chaveiro Centro 24h', descricao: 'Ficou trancado pra fora? Abertura de porta, carro e cópia de chave — a gente vai até você.',
+    nome: 'Nome do seu chaveiro', descricao: 'Ficou trancado pra fora? Abertura de porta, carro e cópia de chave — a gente vai até você.',
     horarios: H24, taxa_entrega: 20, tempo_min: 20, tempo_max: 40,
     categorias: [{ id: 'c1', nome: 'Emergência' }, { id: 'c2', nome: 'Na loja' }],
     itens: [
@@ -140,7 +140,7 @@
     bordas: [], combos: []
   };
   DADOS.pedreiro = {
-    nome: 'Reformas Silva', descricao: 'Pequenas e grandes reformas em Itapetininga e região. Visita pra orçamento sem compromisso.',
+    nome: 'Nome da sua empresa de reformas', descricao: 'Pequenas e grandes reformas em Itapetininga e região. Visita pra orçamento sem compromisso.',
     horarios: HORARIO_COMERCIAL, taxa_entrega: 0, tempo_min: 1, tempo_max: 3,
     categorias: [{ id: 'c1', nome: 'Reforma' }, { id: 'c2', nome: 'Acabamento' }, { id: 'c3', nome: 'Reparos' }],
     itens: [

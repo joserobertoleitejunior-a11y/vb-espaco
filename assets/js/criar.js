@@ -56,18 +56,18 @@
     outro: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>'
   };
   // exemplo de nome mostrado no campo — sempre do MESMO nicho escolhido,
-  // pra nunca sugerir "Rafael Cabeleireiros" (barbearia) pra quem está
+  // pra nunca sugerir nome de barbearia pra quem está
   // criando um site de estética automotiva, por exemplo
   var NOME_EXEMPLO_POR_SEGMENTO = {
-    barbearia: 'Ex: Rafael Cabeleireiros',
-    salao: 'Ex: Studio Bella Hair',
-    manicure_pedicure: 'Ex: Espaço Unhas & Cia',
-    estetica: 'Ex: Clínica Estética Renove',
-    estetica_automotiva: 'Ex: Auto Estética Prime',
-    pizzaria: 'Ex: Pizza em Dobro',
-    petshop: 'Ex: Petshop Amigo Fiel',
-    outro: 'Ex: Nome do seu negócio'
-  };
+    barbearia: 'Nome da sua barbearia',
+    salao: 'Nome do seu salão',
+    manicure_pedicure: 'Nome do seu espaço',
+    estetica: 'Nome da sua clínica',
+    estetica_automotiva: 'Nome da sua estética automotiva',
+    pizzaria: 'Nome da sua pizzaria',
+    petshop: 'Nome do seu petshop',
+    outro: 'Nome do seu negócio'
+  }
 
   var MAPA_ACENTOS = {
     'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a',

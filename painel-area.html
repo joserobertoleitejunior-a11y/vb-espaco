@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Painel · Pedidos</title>
+<meta name="theme-color" content="#ffffff">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/assets/css/styles.css?v=74">
+<link rel="stylesheet" href="/assets/pedidos/loja.css?v=2">
+<link rel="stylesheet" href="/assets/pedidos/painel.css?v=1">
+</head>
+<body class="painel">
+
+<!-- ============ carregando (mesmo esqueleto do app) ============ -->
+<main id="telaCarregando" class="p-aba">
+  <div class="p-secao"><div class="skeleton" style="height:1.4rem;width:55%;margin-bottom:.7rem"></div><div class="skeleton" style="height:1rem;width:35%"></div></div>
+  <div class="p-secao"><div class="skeleton" style="height:4rem;width:100%"></div></div>
+</main>
+
+<!-- ============ ativar a área ============ -->
+<main id="telaAtivar" class="p-aba oculto">
+  <div class="p-secao ativar-area">
+    <span class="hero-cubo" id="pullRefreshCubo" aria-hidden="true"></span>
+    <h1>Pedidos ou chamados no mesmo site</h1>
+    <p class="p-ajuda">Seu negócio pode receber pedidos com entrega (Delivery) ou chamados e orçamentos no local do cliente (Serviços). A agenda continua igual.</p>
+    <div class="layouts" id="ativarOpcoes">
+      <button type="button" class="layout-op" data-ativar="delivery"><span class="ativar-bolinha" style="--op-rgb:196,85,58"></span><span><strong>Delivery</strong><small>Cardápio, sacola e pedido no WhatsApp e no painel. Entrega e/ou retirada.</small></span></button>
+      <button type="button" class="layout-op" data-ativar="servicos"><span class="ativar-bolinha" style="--op-rgb:47,93,124"></span><span><strong>Serviços</strong><small>Chamado com localização (socorro) ou pedido de orçamento com visita.</small></span></button>
+    </div>
+    <div class="grupo oculto" id="ativarOnde"><div class="grupo-titulo">Onde você atende?</div>
+      <div class="seg" id="segOnde">
+        <button type="button" data-onde="cliente" class="ativo">No local do cliente</button>
+        <button type="button" data-onde="loja">Na minha loja</button>
+        <button type="button" data-onde="ambos">Nos dois</button>
+      </div>
+    </div>
+    <p class="p-msg" id="ativarMsg"></p>
+    <button type="button" class="btn cheio" id="ativarBtn" disabled>Ativar</button>
+  </div>
+</main>
+
+<!-- ============ app ============ -->
+<div id="app" class="oculto">
+  <header class="topbar p-topo-app">
+    <div id="pAreas"></div>
+    <div class="p-marca">
+      <span class="p-logo" id="pLogo"></span>
+      <div style="min-width:0"><strong id="pNome">Seu negócio</strong><span class="p-seg" id="pSegmento"></span></div>
+    </div>
+    <a class="icon-btn" id="pVerSite" target="_blank" rel="noopener" aria-label="Ver meu site" title="Ver meu site"></a>
+    <button type="button" class="icon-btn" id="pMenuBtn" aria-label="Menu" title="Menu"></button>
+  </header>
+
+  <div class="p-menu" id="pMenu" role="menu">
+    <a class="drawer-link" href="/cadastro.html"><span>Meus estabelecimentos</span></a>
+    <a class="drawer-link" id="pMenuSite" target="_blank" rel="noopener"><span>Ver meu site</span></a>
+    <button type="button" class="drawer-link" id="pDesativarArea"><span>Desativar esta área</span></button>
+    <button type="button" class="drawer-link" data-sair><span>Sair</span></button>
+  </div>
+
+  <nav class="p-abas" id="pAbas" aria-label="Seções do painel">
+    <button type="button" class="p-aba-btn ativa" data-aba="pedidos"><span data-icone="pedidos"></span>Pedidos<span class="badge" id="badgeNovos"></span></button>
+    <button type="button" class="p-aba-btn" data-aba="cardapio"><span data-icone="menu"></span>Cardápio</button>
+    <button type="button" class="p-aba-btn" data-aba="loja"><span data-icone="loja"></span>Loja</button>
+    <button type="button" class="p-aba-btn" data-aba="resumo"><span data-icone="moeda"></span>Resumo</button>
+  </nav>
+
+  <!-- PEDIDOS / CAIXA -->
+  <section class="p-aba" id="abaPedidos">
+    <div class="p-secao">
+      <div class="p-status-loja" id="stLoja"><span class="dot"></span><div><strong id="stLojaTxt">Aberta</strong><small id="stLojaSub">pelo horário</small></div></div>
+      <div class="seg" id="segStatus">
+        <button type="button" data-status-manual="auto">Pelo horário</button>
+        <button type="button" data-status-manual="aberto">Abrir agora</button>
+        <button type="button" data-status-manual="fechado">Fechar agora</button>
+      </div>
+      <div class="p-ferramentas">
+        <button type="button" class="chip-btn" id="btnImpressora"><span data-icone="impressora"></span><span id="impTxt">Impressora</span></button>
+        <button type="button" class="chip-btn" id="btnSom"><span id="somIcone"></span><span id="somTxt">Ativar som</span></button>
+      </div>
+    </div>
+    <div class="p-filtros" id="filtrosPedidos">
+      <button type="button" class="p-filtro ativo" data-filtro="ativos">Em andamento<span id="nAtivos"></span></button>
+      <button type="button" class="p-filtro" data-filtro="novo">Novos<span id="nNovos"></span></button>
+      <button type="button" class="p-filtro" data-filtro="concluido">Concluídos</button>
+      <button type="button" class="p-filtro" data-filtro="cancelado">Cancelados</button>
+      <button type="button" class="p-filtro" data-filtro="todos">Todos</button>
+    </div>
+    <div id="listaPedidos"></div>
+  </section>
+
+  <!-- CARDÁPIO -->
+  <section class="p-aba oculto" id="abaCardapio">
+    <div class="p-secao">
+      <div class="p-secao-topo"><h2 id="tituloItens">Itens</h2><button type="button" class="btn mini" id="novoItemBtn">+ Novo item</button></div>
+      <p class="p-ajuda">Toque num item pra editar. A chave liga/desliga na hora (acabou o ingrediente? desliga que some do site).</p>
+      <div id="listaItens"></div>
+    </div>
+    <div class="p-secao">
+      <div class="p-secao-topo"><h2>Categorias</h2></div>
+      <form class="linha-flex" id="formCategoria" style="margin-bottom:.6rem"><div class="campo"><input id="catNome" maxlength="40" placeholder="Nome da categoria" aria-label="Nova categoria"></div><button class="btn mini" type="submit">Adicionar</button></form>
+      <div id="listaCategorias"></div>
+    </div>
+    <div class="p-secao" data-so-cardapio>
+      <div class="p-secao-topo"><h2>Bordas</h2></div>
+      <p class="p-ajuda">Aparecem pra escolher nos itens marcados como "aceita borda" ou "meio a meio".</p>
+      <form class="linha-flex" id="formBorda" style="margin-bottom:.6rem">
+        <div class="campo"><input id="bordaNome" maxlength="40" placeholder="Nome da borda" aria-label="Nome da borda"></div>
+        <div class="campo" style="max-width:110px"><input id="bordaPreco" type="number" inputmode="decimal" min="0" step="0.01" placeholder="R$" aria-label="Preço da borda"></div>
+        <button class="btn mini" type="submit">Adicionar</button>
+      </form>
+      <div id="listaBordas"></div>
+    </div>
+    <div class="p-secao" data-so-cardapio>
+      <div class="p-secao-topo"><h2>Combos</h2><button type="button" class="btn mini" id="novoComboBtn">+ Novo combo</button></div>
+      <p class="p-ajuda">Preço fixo: o cliente escolhe os sabores dentro dos itens que você liberar.</p>
+      <div id="listaCombos"></div>
+    </div>
+  </section>
+
+  <!-- LOJA -->
+  <section class="p-aba oculto" id="abaLoja">
+    <div class="p-secao">
+      <div class="p-secao-topo"><h2>Seu link</h2></div>
+      <div class="link-site"><code id="linkSite"></code></div>
+      <div class="linha-flex" style="margin-top:.6rem;flex-wrap:wrap">
+        <button type="button" class="btn mini" id="copiarLinkBtn">Copiar link</button>
+        <button type="button" class="btn mini sec" id="compartilharBtn">Compartilhar</button>
+        <a class="btn mini sec" id="abrirSiteBtn" target="_blank" rel="noopener">Abrir</a>
+      </div>
+      <div class="qr-box"><div id="qrCodigo"></div><div><p class="p-ajuda" style="margin:0 0 .6rem">QR Code pra colar no balcão, nas embalagens e no carro.</p><button type="button" class="btn mini sec" id="baixarQrBtn">Baixar QR Code</button></div></div>
+    </div>
+
+    <div class="p-secao">
+      <div class="p-secao-topo"><h2>Aparência</h2></div>
+      <p class="p-ajuda">Visual claro com um toque da cor da sua marca. A prévia lá embaixo mostra o seu site de verdade.</p>
+      <div class="grupo-titulo">Tom</div>
+      <div class="layouts" id="gradeTons"></div>
+      <div class="grupo"><div class="grupo-titulo" id="tituloLayouts">Como os itens aparecem</div><div class="layouts" id="gradeLayouts"></div></div>
+      <div class="grupo"><div class="grupo-titulo">Cor de destaque</div><div class="cores" id="cores"></div></div>
+      <div class="grupo"><div class="grupo-titulo">Prévia do seu site</div><iframe class="preview-real" id="previewReal" title="Prévia do seu site" loading="lazy"></iframe></div>
+    </div>
+
+    <div class="p-secao">
+      <div class="p-secao-topo"><h2>Fotos</h2></div>
+      <div class="fotos-loja">
+        <div><div class="grupo-titulo">Capa</div><label class="foto-upload" id="upCapa">Toque pra enviar a capa<input type="file" accept="image/*" data-upload="capa"></label><button type="button" class="link-acao foto-remover oculto" data-remover-foto="capa">Remover capa</button></div>
+        <div><div class="grupo-titulo">Logo</div><label class="foto-upload logo" id="upLogo">Logo<input type="file" accept="image/*" data-upload="logo"></label><button type="button" class="link-acao foto-remover oculto" data-remover-foto="logo">Remover</button></div>
+      </div>
+    </div>
+
+    <form id="formLoja" novalidate>
+      <div class="p-secao">
+        <div class="p-secao-topo"><h2>Dados da loja</h2></div>
+        <div class="campo"><label for="lNome">Nome</label><input id="lNome" maxlength="80" data-campo-loja="nome"></div>
+        <div class="campo"><label for="lDescricao">Descrição curta</label><textarea id="lDescricao" maxlength="300" rows="2" data-campo-loja="descricao" placeholder="Em uma frase: o que você faz de melhor"></textarea></div>
+        <div class="campo"><label for="lWhats">WhatsApp que recebe os pedidos</label><input id="lWhats" type="tel" inputmode="numeric" data-campo-loja="telefone_whatsapp"></div>
+        <div class="campo"><label for="lEndereco">Endereço</label><input id="lEndereco" maxlength="200" data-campo-loja="endereco" placeholder="Rua, número, bairro"></div>
+        <div class="campo"><label for="lInsta">Instagram</label><input id="lInsta" maxlength="200" data-campo-loja="instagram_url" placeholder="@sualoja"></div>
+        <div class="campo"><label for="lAviso">Aviso no topo do cardápio <span style="font-weight:500;color:var(--ink-faint)">(promoção, recado)</span></label><input id="lAviso" maxlength="140" data-campo-loja="aviso" placeholder="Ex.: Terça tem borda grátis!"></div>
+        <div class="linha-campos">
+          <div class="campo"><label for="lSlug">Endereço do site</label><input id="lSlug" maxlength="60" data-campo-loja="slug"></div>
+          <div class="campo"><label for="lSegmento">Segmento</label><select id="lSegmento" data-campo-loja="segmento"></select></div>
+        </div>
+      </div>
+
+      <div class="p-secao">
+        <div class="p-secao-topo"><h2 id="tituloEntrega">Entrega e retirada</h2></div>
+        <div class="switches">
+          <label class="switch"><input type="checkbox" id="lEntrega" data-campo-loja="aceita_entrega"><span class="trilho"></span><span id="rotuloEntrega">Faço entrega</span></label>
+          <label class="switch"><input type="checkbox" id="lRetirada" data-campo-loja="aceita_retirada"><span class="trilho"></span><span id="rotuloRetirada">Cliente pode retirar na loja</span></label>
+        </div>
+        <div class="linha-campos">
+          <div class="campo"><label for="lTaxa" id="rotuloTaxa">Taxa de entrega (R$)</label><input id="lTaxa" type="number" inputmode="decimal" min="0" step="0.01" data-campo-loja="taxa_entrega" placeholder="0 = grátis"></div>
+          <div class="campo"><label for="lMinimo">Pedido mínimo (R$)</label><input id="lMinimo" type="number" inputmode="decimal" min="0" step="0.01" data-campo-loja="pedido_minimo" placeholder="Sem mínimo"></div>
+        </div>
+        <div class="linha-campos">
+          <div class="campo"><label for="lTempoMin" id="rotuloTempoMin">Tempo mín. (min)</label><input id="lTempoMin" type="number" inputmode="numeric" min="0" data-campo-loja="tempo_entrega_min"></div>
+          <div class="campo"><label for="lTempoMax" id="rotuloTempoMax">Tempo máx. (min)</label><input id="lTempoMax" type="number" inputmode="numeric" min="0" data-campo-loja="tempo_entrega_max"></div>
+        </div>
+      </div>
+
+      <div class="p-secao">
+        <div class="p-secao-topo"><h2>Pagamento</h2></div>
+        <div class="switches" id="formasPagamento">
+          <label class="switch"><input type="checkbox" value="pix" data-pagamento><span class="trilho"></span>Pix</label>
+          <label class="switch"><input type="checkbox" value="cartao" data-pagamento><span class="trilho"></span>Cartão na entrega/retirada</label>
+          <label class="switch"><input type="checkbox" value="dinheiro" data-pagamento><span class="trilho"></span>Dinheiro</label>
+        </div>
+        <div class="campo"><label for="lPix">Chave Pix <span style="font-weight:500;color:var(--ink-faint)">(aparece pro cliente copiar)</span></label><input id="lPix" maxlength="120" data-campo-loja="chave_pix"></div>
+      </div>
+
+      <div class="p-secao">
+        <div class="p-secao-topo"><h2>Horário de funcionamento</h2><button type="button" class="link-acao" id="copiarHorarioBtn">Copiar o de seg. pra todos</button></div>
+        <p class="p-ajuda">Fora do horário o site mostra "Fechado" e não aceita pedido. Se fechar depois da meia-noite, é só pôr o horário normal (ex.: 18:00 às 01:00).</p>
+        <div id="gradeHorarios"></div>
+      </div>
+    </form>
+  </section>
+
+  <!-- RESUMO -->
+  <section class="p-aba oculto" id="abaResumo">
+    <div class="p-filtros" id="filtroPeriodo">
+      <button type="button" class="p-filtro" data-dias="7">7 dias</button>
+      <button type="button" class="p-filtro ativo" data-dias="30">30 dias</button>
+      <button type="button" class="p-filtro" data-dias="90">90 dias</button>
+    </div>
+    <div id="conteudoResumo"></div>
+  </section>
+
+  <div class="barra-salvar" id="barraSalvar">
+    <span>Alterações não salvas</span>
+    <button type="button" class="btn mini sec" id="descartarBtn">Descartar</button>
+    <button type="button" class="btn mini" id="salvarLojaBtn">Salvar</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" aria-hidden="true">
+  <div class="sheet-backdrop" data-fechar-sheet></div>
+  <section class="sheet-painel" role="dialog" aria-modal="true" aria-labelledby="sheetTitulo">
+    <div class="sheet-alca"></div>
+    <div class="sheet-conteudo" id="sheetConteudo"></div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/js/supabase-client.js?v=1"></script>
+<script src="/assets/pedidos/util.js?v=2"></script>
+<script src="/assets/pedidos/tema.js?v=1"></script>
+<script src="/assets/pedidos/impressora.js?v=1"></script>
+<script src="/assets/pedidos/demo.js?v=2"></script>
+<script src="/assets/js/vibe-areas.js?v=1"></script>
+<script src="/assets/pedidos/painel.js?v=1"></script>
+<script type="module" src="/assets/js/vb-pull-refresh.js?v=2"></script>
+</body>
+</html>
