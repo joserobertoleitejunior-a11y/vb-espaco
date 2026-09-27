@@ -1,5 +1,5 @@
 /* "Outdoor de promoções" — vitrine de promoções ativas de QUALQUER
-   estabelecimento do VB Agenda, não só o do próprio dono. Fica no topo
+   estabelecimento do Vibe, não só o do próprio dono. Fica no topo
    do catálogo, feito billboard: rola na horizontal, some sozinha se
    não tiver nenhuma promoção ativa (nunca mostra uma seção vazia). */
 (function () {

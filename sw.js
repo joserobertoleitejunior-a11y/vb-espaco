@@ -1,4 +1,4 @@
-/* Service worker do VB Agenda — deixa o "casco" do app (HTML/CSS/JS)
+/* Service worker do Vibe — deixa o "casco" do app (HTML/CSS/JS)
    abrir mesmo sem internet, pra quem já instalou como app conseguir
    trabalhar (caixa, agenda) offline. NUNCA mexe em chamada pro
    Supabase nem pro CDN — essas sempre vão direto pra rede, sem cache,
@@ -8,11 +8,12 @@
 
    Bump o número da versão sempre que mudar a lista de arquivos aqui
    embaixo — isso descarta o cache antigo e busca tudo de novo. */
-var VERSAO = 'vb-cache-v7';
+var VERSAO = 'vb-cache-v8';
 
 var CASCO = [
   '/',
   '/index.html',
+  '/explorar.html',
   '/cadastro.html',
   '/editar.html',
   '/manifest.json',
@@ -27,7 +28,9 @@ var CASCO = [
   '/assets/js/vb-cache.js',
   '/assets/js/vb-dono-sessao.js',
   '/assets/js/upload-fotos.js',
-  '/assets/js/plataforma.js',
+  '/assets/js/marca.js',
+  '/assets/js/vibe-toggle.js',
+  '/assets/css/vibe-toggle.css',
   '/assets/js/vb-status.js',
   '/assets/js/outdoor-promocoes.js',
   '/assets/js/catalogo.js',

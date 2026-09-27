@@ -1,4 +1,4 @@
-/* Fila offline do VB Agenda — quando uma venda ou um agendamento (criar,
+/* Fila offline do Vibe — quando uma venda ou um agendamento (criar,
    confirmar, cancelar, concluir) falha por falta de internet, cai aqui
    (IndexedDB) em vez de se perder. Assim que a conexão volta, tenta de
    novo sozinho, na mesma ordem em que foi feito. Se o problema não for

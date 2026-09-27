@@ -1,4 +1,4 @@
-/* Logo 3D do VB Agenda — selo pequeno ao lado do nome: só as arestas
+/* Logo 3D do Vibe — selo pequeno ao lado do nome: só as arestas
    douradas (sem preenchimento, 100% transparente por dentro), câmera
    ortográfica pra nunca "perder ponta" do cubo em nenhum ângulo (numa
    câmera comum de perspectiva, o vértice mais próximo cresce e pode

@@ -1,4 +1,4 @@
-/* Identidade do cliente na VB Agenda — guardada uma única vez por
+/* Identidade do cliente no Vibe — guardada uma única vez por
    telefone (não por estabelecimento), pra a mesma pessoa ser reconhecida
    em qualquer site da plataforma. Como todos os estabelecimentos vivem
    na mesma origem (vb-espaco...workers.dev/:slug/:cidade), um único

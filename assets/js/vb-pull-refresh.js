@@ -1,5 +1,5 @@
 /* Cubo do hero, sempre visível, girando devagar sozinho (igual o do
-   topo, só que maior e dentro do hero, acima do "VB Agenda" dourado).
+   topo, só que maior e dentro do hero, acima do "Vibe" dourado).
    Puxar a página pra baixo (só quando já está no topo do scroll) estica
    as LINHAS do cubo feito elástico, sem mexer em mais nada do layout —
    nada de área branca aparecendo, nada de site "sumindo e voltando".

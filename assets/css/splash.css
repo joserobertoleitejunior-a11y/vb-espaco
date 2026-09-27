@@ -1,0 +1,195 @@
+/* Splash do Vibe — a ÚNICA tela da plataforma em si: pergunta o que a
+   pessoa precisa e leva pra área certa. Clara, translúcida, a mesma letra
+   do app (a do sistema); cada opção tem o tom sutil da própria área. */
+:root {
+  --tinta: #1f2024;
+  --tinta-suave: #6b6d76;
+  --linho: #f4f4f6;
+  --dourado: #C9A227;
+  --rgb-negocio: 31, 32, 36;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+.sp-corpo {
+  min-height: 100vh; min-height: 100svh;
+  background: var(--linho);
+  color: var(--tinta);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ---------- fundo: três luzes bem fracas, uma por área ---------- */
+.sp-fundo { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.sp-luz {
+  position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%;
+  filter: blur(60px); opacity: 0.55;
+  transition: opacity 0.6s ease, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sp-luz-agenda { top: -38vmax; left: -30vmax; background: radial-gradient(closest-side, rgba(var(--vt-rgb-agenda), 0.16), transparent); }
+.sp-luz-delivery { top: 10vh; right: -40vmax; background: radial-gradient(closest-side, rgba(var(--vt-rgb-delivery), 0.13), transparent); }
+.sp-luz-servicos { bottom: -42vmax; left: -10vmax; background: radial-gradient(closest-side, rgba(var(--vt-rgb-servicos), 0.13), transparent); }
+/* passar o dedo/mouse numa opção acende a luz daquela área */
+.sp-corpo[data-foco="agenda"] .sp-luz-agenda,
+.sp-corpo[data-foco="delivery"] .sp-luz-delivery,
+.sp-corpo[data-foco="servicos"] .sp-luz-servicos { opacity: 1; transform: scale(1.08); }
+@media (prefers-reduced-motion: no-preference) {
+  .sp-luz-agenda { animation: spDeriva 18s ease-in-out infinite alternate; }
+  .sp-luz-delivery { animation: spDeriva 22s ease-in-out -6s infinite alternate-reverse; }
+  .sp-luz-servicos { animation: spDeriva 20s ease-in-out -11s infinite alternate; }
+}
+@keyframes spDeriva { to { translate: 4vmax 3vmax; } }
+
+/* ---------- estrutura: uma tela só ---------- */
+.sp {
+  position: relative; z-index: 1;
+  min-height: 100vh; min-height: 100svh;
+  max-width: 30rem; margin: 0 auto;
+  display: flex; flex-direction: column;
+  padding: calc(1.6rem + env(safe-area-inset-top)) 1.1rem calc(1rem + env(safe-area-inset-bottom));
+}
+
+/* ---------- marca ---------- */
+.sp-topo { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-top: auto; }
+.sp-cubo { --mira: 0deg; display: block; width: 58px; height: 58px; perspective: 260px; transition: --mira 0.9s var(--vt-mola); }
+.sp-cubo-3d {
+  --lado: 30px;
+  position: relative; display: block; width: var(--lado); height: var(--lado); margin: 14px;
+  transform-style: preserve-3d;
+  transform: rotateX(-24deg) rotateY(calc(35deg + var(--giro, 0deg) + var(--mira, 0deg)));
+}
+.sp-cubo-3d i {
+  position: absolute; inset: 0;
+  border: 1.6px solid var(--dourado);
+  background: rgba(201, 162, 39, 0.05);
+}
+.sp-cubo-3d .f1 { transform: translateZ(calc(var(--lado) / 2)); }
+.sp-cubo-3d .f2 { transform: rotateY(180deg) translateZ(calc(var(--lado) / 2)); }
+.sp-cubo-3d .f3 { transform: rotateY(90deg) translateZ(calc(var(--lado) / 2)); }
+.sp-cubo-3d .f4 { transform: rotateY(-90deg) translateZ(calc(var(--lado) / 2)); }
+.sp-cubo-3d .f5 { transform: rotateX(90deg) translateZ(calc(var(--lado) / 2)); }
+.sp-cubo-3d .f6 { transform: rotateX(-90deg) translateZ(calc(var(--lado) / 2)); }
+.sp-nome { margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.01em; }
+.sp-local {
+  margin: 0; display: inline-flex; align-items: center; gap: 0.25rem;
+  font-size: 0.74rem; font-weight: 700; color: var(--tinta-suave);
+}
+
+/* ---------- pergunta ---------- */
+.sp-pergunta { text-align: center; margin: 0 0 1.3rem; padding-top: 1.8rem; }
+.sp-ola { margin: 0 0 0.3rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #8f7318; }
+.sp-pergunta h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 7.4vw, 2.15rem);
+  font-weight: 800; line-height: 1.15; letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* ---------- opções ---------- */
+.sp-opcoes { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: auto; }
+.sp-op {
+  --area: var(--vt-rgb-agenda);
+  position: relative;
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.85rem 0.9rem 0.85rem 0.8rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(14px) saturate(150%); backdrop-filter: blur(14px) saturate(150%);
+  box-shadow: inset 0 0 0 1px rgba(var(--area), 0.14), 0 1px 2px rgba(31, 32, 36, 0.04);
+  color: var(--tinta); text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.25s var(--vt-ease), box-shadow 0.25s ease, background-color 0.25s ease;
+}
+.sp-op[data-area="delivery"] { --area: var(--vt-rgb-delivery); }
+.sp-op[data-area="servicos"] { --area: var(--vt-rgb-servicos); }
+.sp-op[data-area="negocio"] { --area: var(--rgb-negocio); }
+.sp-op:hover, .sp-op.sp-foco {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(var(--area), 0.3), 0 8px 22px rgba(var(--area), 0.12);
+  transform: translateY(-1px);
+}
+.sp-op:active, .sp-op.sp-indo { transform: scale(0.985); }
+.sp-op:focus-visible { outline: 2px solid rgb(var(--area)); outline-offset: 3px; }
+
+.sp-ic {
+  flex-shrink: 0;
+  width: 46px; height: 46px; border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(var(--area), 0.09);
+  color: rgb(var(--area));
+}
+.sp-ic svg { width: 24px; height: 24px; overflow: visible; }
+.sp-ic svg * { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.sp-op-negocio .sp-ic { background: rgba(201, 162, 39, 0.12); color: #8f7318; }
+
+.sp-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.sp-txt strong { font-size: 1rem; font-weight: 800; letter-spacing: -0.005em; }
+.sp-txt small { font-size: 0.8rem; color: var(--tinta-suave); line-height: 1.35; }
+.sp-selo {
+  position: absolute; top: -0.55rem; right: 1rem;
+  font-size: 0.62rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.12rem 0.5rem; border-radius: 999px;
+  background: rgb(var(--area)); color: #fff;
+  box-shadow: 0 2px 6px rgba(var(--area), 0.3);
+}
+.sp-op-negocio .sp-selo { background: #8f7318; }
+
+.sp-seta { flex-shrink: 0; width: 18px; height: 18px; color: rgba(var(--area), 0.55); transition: transform 0.3s var(--vt-ease), color 0.2s ease; }
+.sp-seta svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sp-op:hover .sp-seta, .sp-op.sp-foco .sp-seta { transform: translateX(3px); color: rgb(var(--area)); }
+
+/* ---------- rodapé ---------- */
+.sp-rodape {
+  display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+  padding-top: 1.4rem;
+  font-size: 0.8rem; color: var(--tinta-suave);
+}
+.sp-rodape a { color: var(--tinta-suave); text-decoration: none; font-weight: 700; padding: 0.3rem 0.2rem; }
+.sp-rodape a:hover { color: var(--tinta); }
+.sp-rodape a:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- entrada: marca, pergunta e as opções uma a uma ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .sp-cubo { animation: spCubo 0.9s cubic-bezier(0.34, 1.45, 0.64, 1) both; }
+  .sp-cubo-3d { animation: spGira 16s linear 1s infinite; }
+  .sp-nome, .sp-local { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both; }
+  .sp-pergunta { animation: spSobe 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; }
+  .sp-op { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) calc(0.4s + var(--i, 0) * 0.07s) both; }
+  .sp-rodape { animation: spSobe 0.6s ease 0.75s both; }
+  .sp-op { --d: calc(0.45s + var(--i, 0) * 0.07s); }
+  .sp-ic svg * { animation: vtDesenha 0.7s var(--vt-ease) var(--d) both; }
+  .sp-ic .vt-check { animation-delay: calc(var(--d) + 0.25s); }
+  .sp-ic .vt-alca { animation: vtDesenha 0.5s var(--vt-ease) calc(var(--d) + 0.15s) both, vtBalanca 0.7s var(--vt-mola) calc(var(--d) + 0.4s) both; transform-origin: 12px 10px; }
+  .sp-ic .vt-pino { animation: vtCai 0.6s var(--vt-mola) var(--d) both; }
+  .sp-ic .vt-pino * { animation-delay: calc(var(--d) + 0.05s); }
+  .sp-ic .vt-chao { animation-delay: calc(var(--d) + 0.3s); }
+}
+@keyframes spCubo { from { opacity: 0; transform: scale(0.6) rotate(-12deg); } to { opacity: 1; transform: none; } }
+@keyframes spGira { from { --giro: 0deg; } to { --giro: 360deg; } }
+@keyframes spSobe { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@property --giro { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+@property --mira { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+
+/* ---------- telas maiores: opções em 2×2 ---------- */
+@media (min-width: 720px) {
+  .sp { max-width: 46rem; padding-top: 2.6rem; }
+  .sp-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+  .sp-op { padding: 1.1rem 1rem; align-items: flex-start; }
+  .sp-op .sp-seta { align-self: center; }
+  .sp-pergunta h1 { font-size: 2.5rem; }
+}
+@media (max-height: 640px) and (max-width: 719px) {
+  .sp { padding-top: calc(0.9rem + env(safe-area-inset-top)); }
+  .sp-cubo { width: 44px; height: 44px; }
+  .sp-cubo-3d { --lado: 22px; margin: 11px; }
+  .sp-pergunta { padding-top: 0.9rem; margin-bottom: 0.9rem; }
+  .sp-pergunta h1 { font-size: 1.55rem; }
+  .sp-opcoes { gap: 0.5rem; }
+  .sp-txt small { font-size: 0.76rem; }
+  .sp-rodape { padding-top: 0.8rem; }
+  .sp-op { padding-top: 0.65rem; padding-bottom: 0.65rem; }
+  .sp-ic { width: 40px; height: 40px; }
+}

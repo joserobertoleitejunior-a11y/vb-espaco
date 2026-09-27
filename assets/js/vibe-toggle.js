@@ -216,5 +216,5 @@
     el.setAttribute('data-area', RGB[area] ? area : 'agenda');
   }
 
-  global.VibeToggle = { montar: montar, marcarDirecao: marcarDirecao, tingir: tingir, NOMES: NOMES };
+  global.VibeToggle = { montar: montar, marcarDirecao: marcarDirecao, tingir: tingir, NOMES: NOMES, ICONES: ICONES, RGB: RGB };
 })(window);

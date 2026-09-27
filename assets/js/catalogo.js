@@ -1,5 +1,8 @@
-/* Home do VB Agenda = catálogo estilo iFood: busca por nome + filtro
-   por segmento, cada card levando pro link público (/:slug/:cidade). */
+/* Explorar = catálogo estilo iFood por ÁREA (explorar.html?area=…):
+   agenda (agendar), delivery (pedir) ou servicos (chamar um profissional).
+   Busca por nome + filtro por segmento; o card leva pro site da área
+   certa (/:slug/:cidade pra agendar, /:slug/:cidade/pedir pra pedir/chamar).
+   O toggle do topo troca de área deslizando a tela. */
 (function () {
   if (!window.db) return;
 
@@ -7,6 +10,31 @@
   var filtrosEl = document.getElementById('filtros');
   var buscaEl = document.getElementById('buscaInput');
   var segmentoAtual = '';
+  var AREA = new URLSearchParams(location.search).get('area');
+  if (['agenda', 'delivery', 'servicos'].indexOf(AREA) === -1) AREA = 'agenda';
+
+  // textos e filtros de cada área (os chips só mostram segmentos daquela área)
+  var AREAS = {
+    agenda: {
+      titulo: 'Seu próximo horário está a um toque',
+      sub: 'Barbearias, salões, manicure, estética e mais em Itapetininga — agende direto com quem atende.',
+      chips: ['barbearia', 'salao', 'manicure_pedicure', 'estetica', 'estetica_automotiva', 'petshop'],
+      vazio: 'Tem um salão, barbearia ou estúdio? Seja um dos primeiros por aqui.'
+    },
+    delivery: {
+      titulo: 'Peça direto da loja',
+      sub: 'Pizzaria, lanche, açaí, mercado e petshop de Itapetininga — o pedido vai pro WhatsApp da loja, sem taxa de aplicativo.',
+      chips: ['pizzaria', 'hamburgueria', 'lanchonete', 'acaiteria', 'japonesa', 'marmitaria', 'mercado', 'padaria', 'doceria', 'adega', 'petshop'],
+      vazio: 'Tem pizzaria, lanchonete, mercado ou loja? Receba pedidos direto no seu WhatsApp.'
+    },
+    servicos: {
+      titulo: 'Quem vai até você',
+      sub: 'Borracheiro, chaveiro, guincho, eletricista, pedreiro e mais — chame na hora ou peça orçamento sem sair de casa.',
+      chips: ['borracharia', 'chaveiro', 'guincho', 'eletricista', 'encanador', 'pedreiro', 'vidraceiro', 'ar_condicionado', 'montador', 'diarista', 'jardinagem', 'dedetizacao', 'assistencia_tecnica'],
+      vazio: 'Atende no local do cliente? Receba chamados e pedidos de orçamento com localização.'
+    }
+  };
+  var CFG = AREAS[AREA];
   var todos = [];
   var estadoOffline = null; // null | 'com-cache' | 'sem-cache'
   var pertoBtn = document.getElementById('buscaPertoBtn');
@@ -16,7 +44,7 @@
   var ICONE_OFFLINE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.58 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
   var ICONE_OFFLINE_GRANDE = '<svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.58 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
 
-  function chaveCache() { return 'catalogo_' + (localizacaoAtual ? 'perto' : (segmentoAtual || 'todos')); }
+  function chaveCache() { return 'catalogo_' + AREA + '_' + (localizacaoAtual ? 'perto' : (segmentoAtual || 'todos')); }
   function avisoOfflineHtml() {
     return estadoOffline === 'com-cache'
       ? '<div class="vb-offline-aviso">' + ICONE_OFFLINE + '<span>Sem conexão agora — mostrando o catálogo salvo, pode estar um pouco desatualizado.</span></div>'
@@ -29,8 +57,12 @@
     manicure_pedicure: 'Manicure e pedicure',
     estetica: 'Estética',
     estetica_automotiva: 'Estética automotiva',
-    pizzaria: 'Pizzaria',
-    petshop: 'Petshop',
+    pizzaria: 'Pizzaria', hamburgueria: 'Hamburgueria', lanchonete: 'Lanchonete', restaurante: 'Restaurante',
+    japonesa: 'Japonesa', marmitaria: 'Marmitaria', acaiteria: 'Açaí', sorveteria: 'Sorveteria', doceria: 'Doceria',
+    padaria: 'Padaria', mercado: 'Mercado', adega: 'Adega', petshop: 'Petshop',
+    borracharia: 'Borracharia', chaveiro: 'Chaveiro', guincho: 'Guincho', eletricista: 'Eletricista', encanador: 'Encanador',
+    pedreiro: 'Pedreiro e reformas', vidraceiro: 'Vidraçaria', ar_condicionado: 'Ar-condicionado', dedetizacao: 'Dedetização',
+    montador: 'Montador de móveis', diarista: 'Diarista', jardinagem: 'Jardinagem', assistencia_tecnica: 'Assistência técnica',
     outro: 'Estabelecimento'
   };
   var SVG_TESOURA = '<svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><line x1="8.1" y1="7.5" x2="20" y2="19"/><line x1="8.1" y1="16.5" x2="20" y2="5"/></svg>';
@@ -56,6 +88,36 @@
     outro: SVG_LOJA
   };
 
+  // ícones pequenos (18px, só traço) dos chips de filtro
+  function mini(d) { return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; }
+  function reduzir(svg) { return svg.replace('width="42" height="42"', 'width="18" height="18" aria-hidden="true"'); }
+  var ICONES_CHIP = {
+    barbearia: reduzir(SVG_TESOURA), salao: reduzir(SVG_CABELO), manicure_pedicure: reduzir(SVG_ESMALTE),
+    estetica: reduzir(SVG_SPARKLE), estetica_automotiva: reduzir(SVG_CARRO), pizzaria: reduzir(SVG_PIZZA), petshop: reduzir(SVG_PATA),
+    hamburgueria: mini('<path d="M4 10a8 5 0 0116 0z"/><path d="M3 13.5h18"/><path d="M4 17h16a0 0 0 010 0 2 2 0 01-2 2H6a2 2 0 01-2-2z"/>'),
+    lanchonete: mini('<path d="M6 8h12l-1.2 12H7.2z"/><path d="M9 8V5a3 3 0 016 0v3"/>'),
+    acaiteria: mini('<path d="M5 10h14l-2 10H7z"/><path d="M8 10a4 4 0 018 0"/><path d="M12 4v2"/>'),
+    japonesa: mini('<path d="M3 13h18a9 6 0 01-18 0z"/><path d="M14 3l-4 10"/><path d="M18 4l-5 9"/>'),
+    marmitaria: mini('<rect x="3" y="8" width="18" height="11" rx="2"/><path d="M3 12h18"/><path d="M9 8V6h6v2"/>'),
+    mercado: mini('<path d="M3 4h2l2.4 11h10.8L20 7H6.2"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>'),
+    padaria: mini('<path d="M4 14c0-5 3.6-8 8-8s8 3 8 8v4H4z"/><path d="M9 10l1 4"/><path d="M15 10l-1 4"/>'),
+    doceria: mini('<path d="M4 12h16v8H4z"/><path d="M4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1.5 4 0"/><path d="M12 12V8"/><path d="M12 5.5v.01"/>'),
+    adega: mini('<path d="M10 3h4v4l2 3v10a1 1 0 01-1 1H9a1 1 0 01-1-1V10l2-3z"/><path d="M8 14h8"/>'),
+    borracharia: mini('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3.5v5M12 15.5v5M3.5 12h5M15.5 12h5"/>'),
+    chaveiro: mini('<circle cx="8" cy="12" r="4"/><path d="M12 12h9"/><path d="M18 12v3"/><path d="M15.5 12v2"/>'),
+    guincho: mini('<path d="M2 16V9h9v7"/><path d="M11 12h5l3 4"/><path d="M11 16h11"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/><path d="M4 9l5-5"/>'),
+    eletricista: mini('<path d="M13 2L5 13.5h6L10 22l8-11.5h-6z"/>'),
+    encanador: mini('<path d="M12 3s6 6.4 6 10.5a6 6 0 01-12 0C6 9.4 12 3 12 3z"/>'),
+    pedreiro: mini('<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9.7h18M3 14.3h18M9 5v4.7M15 5v4.7M6 9.7v4.6M12 9.7v4.6M18 9.7v4.6M9 14.3V19M15 14.3V19"/>'),
+    vidraceiro: mini('<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 13l4-4M11 16l6-6"/>'),
+    ar_condicionado: mini('<rect x="2.5" y="4" width="19" height="9" rx="2"/><path d="M6 10h12"/><path d="M8 16.5c0 1.5-1 2.5-1 3.5M12 16.5v3.5M16 16.5c0 1.5 1 2.5 1 3.5"/>'),
+    montador: mini('<path d="M14.7 6.3a4 4 0 015 5L9 22l-3-3L16.7 8.3"/><path d="M4 20l2-2"/>'),
+    diarista: mini('<path d="M12 3v9"/><path d="M7 12h10l1.5 9h-13z"/><path d="M10 16v5M14 16v5"/>'),
+    jardinagem: mini('<path d="M12 21v-9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7z"/><path d="M12 15c0-3-2.4-5.5-6-5.5 0 3 2.4 5.5 6 5.5z"/>'),
+    dedetizacao: mini('<ellipse cx="12" cy="14" rx="4" ry="6"/><path d="M12 8V4M8 11l-4-2M16 11l4-2M8 15H4M16 15h4M8.5 18.5L5 21M15.5 18.5L19 21"/>'),
+    assistencia_tecnica: mini('<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>')
+  };
+
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -76,7 +138,7 @@
     { campo: 'instagram_url', svg: SVG_INSTAGRAM, rotulo: 'Instagram', href: function (e) { return e.instagram_url; } },
     { campo: 'facebook_url', svg: SVG_FACEBOOK, rotulo: 'Facebook', href: function (e) { return e.facebook_url; } },
     { campo: 'tiktok_url', svg: SVG_TIKTOK, rotulo: 'TikTok', href: function (e) { return e.tiktok_url; } },
-    { campo: 'telefone_whatsapp', svg: SVG_WHATSAPP, rotulo: 'WhatsApp', href: function (e) { return 'https://wa.me/55' + soNumeros(e.telefone_whatsapp); } }
+    { campo: 'telefone_whatsapp', svg: SVG_WHATSAPP, rotulo: 'WhatsApp', href: function (e) { return e.telefone_whatsapp ? 'https://wa.me/55' + soNumeros(e.telefone_whatsapp) : null; } }
   ];
 
   function soNumeros(str) { return String(str || '').replace(/\D/g, ''); }
@@ -94,8 +156,8 @@
     '<div class="catalogo-cta">' +
     '<span class="catalogo-cta-emoji" aria-hidden="true">' + SVG_ESTRELA_CTA + '</span>' +
     '<p class="catalogo-cta-titulo">Mais estabelecimentos chegando em breve</p>' +
-    '<p class="catalogo-cta-texto">Tem um salão, barbearia ou estúdio? Seja um dos primeiros no VB Agenda.</p>' +
-    '<a class="btn btn-primario" href="criar.html">Quero cadastrar o meu →</a>' +
+    '<p class="catalogo-cta-texto">' + escapeHtml(CFG.vazio) + '</p>' +
+    '<a class="btn btn-primario" href="criar.html?area=' + AREA + '">Quero cadastrar o meu →</a>' +
     '</div>';
 
   function renderizar() {
@@ -117,7 +179,7 @@
     }
 
     listaEl.innerHTML = avisoOfflineHtml() + linhas.map(function (e) {
-      var link = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade);
+      var link = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade) + (AREA === 'agenda' ? '' : '/pedir');
       var cor = e.cor_destaque || '#C9A227';
       var icone = ICONES[e.segmento] || SVG_LOJA;
       var sombra = '0 1px 2px rgba(20,20,30,.05), 0 16px 26px -14px ' + hexParaRgba(cor, 0.45);
@@ -174,7 +236,7 @@
         '<span class="catalogo-seta" aria-hidden="true">→</span>' +
         '</div>' +
         '</div>' +
-        '<a class="catalogo-criar-assim" href="criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') + '">+ Criar uma loja assim →</a>' +
+        '<a class="catalogo-criar-assim" href="' + (AREA === 'agenda' ? 'criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') : 'criar.html?area=' + AREA + '&segmento=' + encodeURIComponent(e.segmento || '')) + '">+ Criar ' + (AREA === 'agenda' ? 'um site assim' : 'uma loja assim') + ' →</a>' +
         '</div>';
     }).join('') + CTA_CADASTRO;
   }
@@ -201,7 +263,7 @@
       return;
     }
     var card = e.target.closest('.catalogo-card');
-    if (card && card.getAttribute('data-href')) window.location.href = card.getAttribute('data-href');
+    if (card && card.getAttribute('data-href')) abrirCard(card);
   });
   listaEl.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -209,8 +271,12 @@
     var card = e.target.closest('.catalogo-card');
     if (!card) return;
     e.preventDefault();
-    window.location.href = card.getAttribute('data-href');
+    abrirCard(card);
   });
+  function abrirCard(card) {
+    if (window.VibeToggle) window.VibeToggle.marcarDirecao('avanca');
+    window.location.href = card.getAttribute('data-href');
+  }
 
   // ---- balãozinho de promoções: um popover pequeno, ancorado no botão
   // que foi clicado, mostrando os banners de promoção ativa daquele
@@ -282,8 +348,8 @@
     listaEl.innerHTML = '<div class="card"><div class="skeleton" style="height:1.4rem; width:60%; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:1rem; width:35%;"></div></div>';
 
     var chamada = localizacaoAtual
-      ? db.rpc('listar_estabelecimentos_por_raio', { p_lat: localizacaoAtual.lat, p_lng: localizacaoAtual.lng, p_raio_km: 15, p_segmento: segmentoAtual || null })
-      : db.rpc('listar_estabelecimentos', { p_cidade: null, p_segmento: segmentoAtual || null });
+      ? db.rpc('listar_estabelecimentos_por_raio', { p_lat: localizacaoAtual.lat, p_lng: localizacaoAtual.lng, p_raio_km: 15, p_segmento: segmentoAtual || null, p_area: AREA })
+      : db.rpc('listar_estabelecimentos', { p_cidade: null, p_segmento: segmentoAtual || null, p_area: AREA });
 
     chamada.then(function (res) {
       if (res.error) {
@@ -296,6 +362,26 @@
       renderizar();
     }, function () {
       usarCacheOuOffline();
+    });
+  }
+
+  // topo da área: textos, chips e o toggle pra trocar de área
+  document.getElementById('explorarTitulo').textContent = CFG.titulo;
+  document.getElementById('explorarSub').textContent = CFG.sub;
+  document.documentElement.setAttribute('data-area', AREA);
+  filtrosEl.innerHTML = '<button class="chip is-ativo" type="button" data-segmento="" aria-pressed="true">Tudo</button>' +
+    CFG.chips.map(function (seg) {
+      return '<button class="chip" type="button" data-segmento="' + seg + '" aria-pressed="false">' + (ICONES_CHIP[seg] || '') + escapeHtml(SEGMENTOS[seg] || seg) + '</button>';
+    }).join('');
+  if (window.VibeToggle) {
+    window.VibeToggle.tingir(AREA);
+    window.VibeToggle.montar(document.getElementById('explorarAreas'), {
+      tema: 'claro', atual: AREA, swipe: true, semCubo: true, rotulo: 'O que você procura',
+      opcoes: [
+        { chave: 'agenda', rotulo: 'Agendar', href: 'explorar.html?area=agenda' },
+        { chave: 'delivery', rotulo: 'Pedir', href: 'explorar.html?area=delivery' },
+        { chave: 'servicos', rotulo: 'Chamar', href: 'explorar.html?area=servicos' }
+      ]
     });
   }
 

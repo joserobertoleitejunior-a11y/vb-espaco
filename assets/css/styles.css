@@ -2978,3 +2978,10 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 .admin-painel-overlay .admin-painel-box { background-image: linear-gradient(180deg, rgba(var(--area-rgb), 0.07), rgba(var(--area-rgb), 0) 260px); }
 .dash-cabecalho-linha .vt { margin-right: auto; }
 .dash-cabecalho-linha { flex-wrap: wrap; row-gap: 0.6rem; }
+
+/* ---------- Explorar por área (explorar.html?area=…) ---------- */
+.explorar-areas { display: flex; justify-content: center; padding: 1rem 1rem 0; }
+.explorar-areas .vt-op { padding: 0.5rem 1rem; font-size: 0.86rem; }
+/* a cor de destaque da página segue a área escolhida (tom sutil) */
+html[data-area="delivery"] .tela-catalogo { --cor-marca: #B5502F; --cor-marca-escura: #8E3E24; }
+html[data-area="servicos"] .tela-catalogo { --cor-marca: #2F5D7C; --cor-marca-escura: #234862; }
