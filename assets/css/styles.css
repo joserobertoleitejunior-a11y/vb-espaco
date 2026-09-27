@@ -2971,3 +2971,18 @@ body.vb-modo-admin { padding-bottom: 3rem; }
     box-shadow: none;
   }
 }
+
+/* ---- site do estabelecimento com Agenda + Delivery/Serviços: segundo
+   botão no hero, contornado, ao lado do "Agendar horário" ---- */
+.hero-cta { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.hero-cta .btn-outra-area,
+.hero-cta .btn-outra-area:hover,
+.hero-cta .btn-outra-area:focus-visible {
+  background: transparent;
+  background-image: none;
+  color: inherit;
+  border: 1.5px solid currentColor;
+  box-shadow: none;
+  text-decoration: none;
+}
+.hero-cta .btn-outra-area:hover { transform: translateY(-2px); }

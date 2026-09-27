@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Carregando…</title>
+<meta name="description" content="Faça seu pedido direto com a loja, sem taxa de aplicativo.">
+<meta name="theme-color" content="#f4f4f6">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="stylesheet" href="/assets/pedidos/loja.css?v=1">
+<script src="/assets/pedidos/tema.js?v=1"></script>
+<script>
+  /* aplica o visual o quanto antes pra não piscar a cor errada: o último
+     visto dessa loja, ou o que veio no link (prévia do painel/demo) */
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (q.get('mini') === '1') document.documentElement.classList.add('mini');
+    var salvo = null;
+    try { salvo = JSON.parse(localStorage.getItem('vb_visual_' + location.pathname) || 'null'); } catch (e) {}
+    salvo = salvo || {};
+    VBTema.aplicar({ area: q.get('area') || salvo.a, cor: q.get('cor') ? '#' + q.get('cor') : salvo.c, layout: q.get('layout') || salvo.l, tom: q.get('tom') || salvo.t });
+  })();
+</script>
+</head>
+<body>
+<header id="topbar">
+  <button type="button" class="icon-btn" id="tbMenuBtn" aria-label="Abrir menu"></button>
+  <div class="tb-brand"><span class="tb-logo" id="tbLogo"></span><span id="tbNome">Carregando…</span></div>
+  <span class="tb-status oculto" id="tbStatus"></span>
+</header>
+
+<div id="drawer" aria-hidden="true">
+  <div class="backdrop" id="drawerBackdrop"></div>
+  <nav class="painel" aria-label="Menu">
+    <div class="drawer-topo"><span class="tb-logo tem" id="drawerLogo" style="display:block;width:40px;height:40px;"></span><strong id="drawerNome"></strong></div>
+    <p class="drawer-rotulo">Cardápio</p>
+    <div id="drawerLinks"></div>
+    <p class="drawer-rotulo">Você</p>
+    <button type="button" class="drawer-link" data-abrir="meusPedidos"><span>Meus pedidos</span><span class="badge" id="badgePedidos"></span></button>
+    <button type="button" class="drawer-link" data-abrir="sobre"><span>Sobre a loja</span></button>
+    <a class="drawer-link" id="drawerWhats" target="_blank" rel="noopener"><span>Falar no WhatsApp</span></a>
+    <div class="drawer-rodape">Feito com VB</div>
+  </nav>
+</div>
+
+<main id="estadoCarregando" aria-busy="true">
+  <div style="padding:1.6rem var(--g) 1.4rem;">
+    <div class="skeleton-linha" style="width:58%;height:30px;margin-bottom:.7rem;"></div>
+    <div class="skeleton-linha" style="width:36%;height:14px;margin-bottom:1.6rem;"></div>
+    <div class="skeleton-linha" style="width:100%;height:48px;"></div>
+  </div>
+  <div class="skeleton-cartoes">
+    <div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div>
+  </div>
+</main>
+
+<main id="estadoNaoEncontrado" class="oculto estado-vazio">
+  <h1 class="hero-titulo">Não achamos esse cardápio</h1>
+  <p class="hero-sub">Confere o link com quem te enviou.</p>
+</main>
+
+<div id="estadoPronto" class="oculto">
+  <header class="loja" id="heroSecao">
+    <div class="loja-capa" id="heroCapa"></div>
+    <div style="padding:1.1rem var(--g) 0"><span class="hero-cubo" id="pullRefreshCubo" aria-hidden="true"></span></div>
+    <div class="loja-cabeca">
+      <div class="hero-logo" id="heroLogo"></div>
+      <div class="loja-id">
+        <h1 class="hero-titulo" id="heroTitulo"></h1>
+        <p class="hero-eyebrow" id="heroEyebrow"></p>
+      </div>
+    </div>
+    <p class="hero-sub" id="heroSub"></p>
+    <p class="loja-status" id="heroStatus"></p>
+    <div class="hero-info" id="heroInfo"></div>
+    <button type="button" class="loja-mais" data-abrir="sobre" id="heroMais">Horários, endereço e pagamento</button>
+  </header>
+
+  <div class="aviso-loja oculto" id="avisoFechado" role="status"></div>
+  <div class="promo-banner oculto" id="promoBanner"></div>
+
+  <div class="busca-wrap">
+    <span id="buscaIcone"></span>
+    <input type="search" class="busca-box" id="buscaBox" placeholder="Buscar no cardápio" autocomplete="off" aria-label="Buscar no cardápio">
+  </div>
+
+  <nav class="nav-pills oculto" id="navPills" aria-label="Categorias"></nav>
+
+  <div id="cardapioConteudo"></div>
+  <p class="busca-vazia oculto" id="buscaVazia">Nada encontrado com esse nome.</p>
+
+  <footer class="rodape-loja" id="rodapeLoja"></footer>
+</div>
+
+<div id="cartBar" class="vazio">
+  <button type="button" class="cart-resumo" id="cartResumo">
+    <span class="cart-qtd" id="cartQtd">0</span>
+    <span class="cart-rotulo">Ver pedido</span>
+    <span id="cartTotal">R$ 0,00</span>
+  </button>
+</div>
+
+<div class="sheet" id="sheet" aria-hidden="true">
+  <div class="sheet-backdrop" data-fechar-sheet></div>
+  <section class="sheet-painel" role="dialog" aria-modal="true" aria-labelledby="sheetTitulo">
+    <div class="sheet-alca" id="sheetAlca"></div>
+    <div class="sheet-conteudo" id="sheetConteudo"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/js/supabase-client.js?v=1"></script>
+<script src="/assets/pedidos/util.js?v=1"></script>
+<script src="/assets/pedidos/demo.js?v=1"></script>
+<script src="/assets/pedidos/loja.js?v=2"></script>
+<script type="module" src="/assets/js/vb-pull-refresh.js?v=2"></script>
+</body>
+</html>

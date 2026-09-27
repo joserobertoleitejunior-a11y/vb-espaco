@@ -20,6 +20,10 @@ export default {
     if (partes.length === 3 && partes[2] === 'institucional') {
       return servirComo(request, env, '/institucional.html');
     }
+    // área Delivery/Serviços do mesmo estabelecimento (loja, chamado, orçamento)
+    if (partes.length === 3 && (partes[2] === 'pedir' || partes[2] === 'chamar' || partes[2] === 'orcamento')) {
+      return servirComo(request, env, '/pedir.html');
+    }
     if (partes.length === 2) {
       return servirComo(request, env, '/perfil.html');
     }

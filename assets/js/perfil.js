@@ -2475,6 +2475,7 @@
         });
       });
     }
+    ligarOutraArea(linha);
     document.getElementById('tplCidadeRodape').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';
     document.getElementById('tplEnderecoMenu').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';
     document.getElementById('tplCopyright').textContent = '© ' + new Date().getFullYear() + ' ' + linha.nome + ' — todos os direitos reservados';
@@ -2525,6 +2526,32 @@
     }
   }
 
+  // Agenda + Delivery/Serviços no mesmo estabelecimento: botão do lado do
+  // "Agendar horário" leva pra loja/chamado (mesmo app, /:slug/:cidade/pedir)
+  var SEG_URGENTE = ['borracharia', 'chaveiro', 'guincho', 'eletricista', 'encanador', 'assistencia_tecnica'];
+  function ligarOutraArea(linha) {
+    var areas = linha.areas || [];
+    var temPedido = areas.indexOf('delivery') !== -1, temServico = areas.indexOf('servicos') !== -1;
+    if (!temPedido && !temServico) return;
+    var texto = temPedido ? 'Fazer pedido' : (SEG_URGENTE.indexOf(linha.segmento) !== -1 ? 'Chamar agora' : 'Pedir orçamento');
+    var href = '/' + encodeURIComponent(linha.slug) + '/' + encodeURIComponent(linha.cidade) + '/pedir';
+    var cta = document.querySelector('.hero-cta');
+    if (cta && !document.getElementById('tplCtaOutraArea')) {
+      var a = document.createElement('a');
+      a.id = 'tplCtaOutraArea';
+      a.className = 'btn btn-outra-area';
+      a.href = href;
+      a.textContent = texto + ' →';
+      cta.appendChild(a);
+    }
+    var lista = document.querySelector('#siteMenu .site-menu-list');
+    if (lista && !document.getElementById('menuOutraArea')) {
+      var li = document.createElement('li');
+      li.innerHTML = '<a id="menuOutraArea" href="' + href + '"><span>' + (temPedido ? 'Fazer pedido' : 'Serviços') + '</span><span class="num">↗</span></a>';
+      lista.appendChild(li);
+    }
+  }
+
   var chaveCachePerfil = 'perfil_' + slug + '_' + cidade;
   db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }).then(function (res) {
     var linha = res.data && res.data[0];
@@ -2533,6 +2560,12 @@
       return;
     }
     if (window.VBCache) window.VBCache.salvar(chaveCachePerfil, linha);
+    // estabelecimento só de Delivery/Serviços (sem agenda): o site é a loja/chamado
+    var areasLinha = linha.areas || ['agenda'];
+    if (areasLinha.indexOf('agenda') === -1 && !/[?&]tutorial=1/.test(location.search)) {
+      location.replace('/' + encodeURIComponent(slug) + '/' + encodeURIComponent(cidade) + '/pedir');
+      return;
+    }
     renderizar(linha);
   }, function () {
     var cache = window.VBCache ? window.VBCache.carregar(chaveCachePerfil) : null;
