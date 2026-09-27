@@ -26,7 +26,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="VB Agenda">
-<link rel="stylesheet" href="assets/css/styles.css?v=70">
+<link rel="stylesheet" href="assets/css/styles.css?v=71">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 </head>
 <body class="com-tabbar tela-interna">
@@ -64,6 +64,7 @@
             <a href="index.html"><svg class="icone-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg> Catálogo</a>
             <a href="cadastro.html" class="is-atual"><svg class="icone-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg> Seus estabelecimentos</a>
           </nav>
+          <div id="vbPlataformaMenu"></div>
           <button class="btn btn-ghost" id="sairBtn" type="button" style="width:100%; margin-top:0.6rem;">Sair</button>
         </div>
       </div>
@@ -182,7 +183,19 @@
   <script src="assets/js/vb-salvo.js?v=1"></script>
   <script src="assets/js/vb-select.js?v=1"></script>
   <script src="assets/js/upload-fotos.js?v=1"></script>
+  <script src="assets/js/plataforma.js?v=1"></script>
   <script src="assets/js/cadastro.js?v=35"></script>
+  <script>
+    // Plataforma VB: lista os negócios do mesmo login nos outros apps
+    // (Delivery…) quando o menu da conta abre. Carrega uma vez só.
+    document.getElementById('menuBtn').addEventListener('click', function () {
+      if (this.dataset.vbPlataforma) return;
+      this.dataset.vbPlataforma = '1';
+      window.VBPlataforma.montarMenu(document.getElementById('vbPlataformaMenu'), 'agenda', null, function () {
+        location.href = 'cadastro.html';
+      }).catch(function () {});
+    });
+  </script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {

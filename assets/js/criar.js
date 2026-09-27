@@ -187,7 +187,24 @@
   function renderPassoSegmento(container) {
     container.innerHTML =
       '<p class="criar-passo-intro">Qual desses combina mais com o seu negócio?</p>' +
-      '<div id="criarOpcoesSegmento" class="criar-opcoes-segmento"></div>';
+      '<div id="criarOpcoesSegmento" class="criar-opcoes-segmento"></div>' +
+      '<div id="criarAvisoApp"></div>';
+    // Pizzaria e petshop também têm o VB Delivery (cardápio + pedido).
+    // Só aparece se o app já tiver URL cadastrada em vb_apps.
+    function avisoDelivery(rolar) {
+      var alvo = document.getElementById('criarAvisoApp');
+      if (!alvo) return;
+      var textos = { pizzaria: 'Quer receber pedidos de pizza?', petshop: 'Quer vender ração e produtos com entrega?' };
+      if (!textos[estado.segmento] || !window.VBPlataforma) { alvo.innerHTML = ''; return; }
+      window.VBPlataforma.carregar().then(function (d) {
+        var url = window.VBPlataforma.urlDoApp(d.apps, 'delivery');
+        if (!url || !textos[estado.segmento]) { alvo.innerHTML = ''; return; }
+        alvo.innerHTML = '<div class="criar-aviso-app"><span><strong>' + textos[estado.segmento] + '</strong>' +
+          'O VB Delivery tem cardápio, carrinho e pedido no WhatsApp — com o mesmo login.</span>' +
+          '<a href="' + url + '/criar.html" target="_blank" rel="noopener">Conhecer o Delivery →</a></div>';
+        if (rolar && alvo.firstChild.scrollIntoView) alvo.firstChild.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }).catch(function () { alvo.innerHTML = ''; });
+    }
     function desenhar() {
       document.getElementById('criarOpcoesSegmento').innerHTML = Object.keys(SEGMENTOS_LABEL).map(function (k) {
         return '<button type="button" class="criar-opcao-card' + (k === estado.segmento ? ' is-selecionado' : '') + '" data-segmento="' + k + '">' +
@@ -196,6 +213,7 @@
       }).join('');
     }
     desenhar();
+    avisoDelivery();
     document.getElementById('criarOpcoesSegmento').addEventListener('click', function (e) {
       var btn = e.target.closest('[data-segmento]');
       if (!btn) return;
@@ -205,6 +223,7 @@
       if (estado.segmento === 'estetica_automotiva' || estado.segmento === 'pizzaria') estado.genero_atendimento = 'ambos';
       desenhar();
       postEstado();
+      avisoDelivery(true);
     });
   }
 

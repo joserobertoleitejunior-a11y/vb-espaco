@@ -179,6 +179,20 @@ img { max-width: 100%; display: block; }
 }
 .topbar-menu-nav a:hover { background: var(--linho); }
 .topbar-menu-nav a.is-atual { color: var(--cor-marca); }
+/* Plataforma VB — outros negócios do mesmo login (Agenda, Delivery…) */
+#vbPlataformaMenu:empty { display: none; }
+#vbPlataformaMenu { border-top: 1px solid var(--linho); padding-top: 0.5rem; margin-bottom: 0.4rem; }
+#vbPlataformaMenu .drawer-rotulo { margin: 0.35rem 0.5rem 0.25rem; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-suave); }
+#vbPlataformaMenu .drawer-link {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+  width: 100%; padding: 0.55rem 0.5rem; border: 0; border-radius: 10px; background: none;
+  color: var(--tinta); font: inherit; font-weight: 700; font-size: 0.88rem; text-align: left;
+  text-decoration: none; cursor: pointer; transition: background 0.12s ease;
+}
+#vbPlataformaMenu .drawer-link:hover { background: var(--linho); }
+#vbPlataformaMenu .drawer-link small { font-weight: 600; font-size: 0.74rem; color: var(--tinta-suave); }
+#vbPlataformaMenu .drawer-link[aria-current="true"] { color: var(--cor-marca); }
+#vbPlataformaMenu .app-tag { flex-shrink: 0; padding: 0.15rem 0.5rem; border-radius: 999px; background: var(--linho); font-size: 0.7rem; font-weight: 800; color: var(--tinta-suave); }
 @media (min-width: 900px) {
   .topbar-dropdown { width: 340px; }
 }
@@ -2152,6 +2166,11 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 }
 .criar-titulo-passo { font-size: 1.2rem; margin: 0 0 0.7rem; }
 .criar-passo-intro { color: var(--tinta-suave); font-size: 0.88rem; margin: 0 0 1rem; line-height: 1.5; }
+.criar-aviso-app { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; margin-top: 1rem; padding: 0.85rem 1rem; border-radius: 14px; background: var(--linho); font-size: 0.86rem; line-height: 1.45; color: var(--tinta); animation: criarAvisoEntra 0.25s ease both; }
+.criar-aviso-app strong { display: block; }
+.criar-aviso-app a { flex-shrink: 0; font-weight: 800; color: var(--cor-marca); text-decoration: none; }
+@keyframes criarAvisoEntra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .criar-aviso-app { animation: none; } }
 .criar-nav { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 1.2rem; }
 
 @media (max-width: 600px) {
