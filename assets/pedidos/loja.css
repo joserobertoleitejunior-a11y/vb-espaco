@@ -649,18 +649,13 @@ body.travado .toast.mostra { transform: translate(-50%, 0); }
   .anim-entra, .anim-entra-2 { animation: vbSobe 0.35s var(--ease) both; }
 }
 
-/* ============ Cubo (logo) no topo da loja ============ */
-.hero-cubo { display: block; width: 36px; height: 36px; margin: 0 0 0.5rem; }
-.hero-cubo:empty { display: none; }
-html[data-layout="cardapio"] .hero-cubo { margin: 0 auto 0.5rem; }
-.loja-cabeca .hero-cubo { margin: 0; }
-
-/* ============ Troca de área (Agendar / Pedir / Chamar) no site ============ */
-.areas-site { display: flex; gap: 6px; margin: 1rem var(--g) 0; padding: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); -webkit-backdrop-filter: var(--vidro); backdrop-filter: var(--vidro); width: fit-content; }
-.areas-site a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.88rem; font-weight: 700; color: var(--ink-soft); }
-.areas-site a svg { width: 16px; height: 16px; }
-.areas-site a.ativo { background: var(--accent); color: var(--on-accent); }
-html[data-layout="cardapio"] .areas-site { margin-left: auto; margin-right: auto; }
+/* ============ Faixa da plataforma por cima de tudo (vibe-toggle.css) ============ */
+body.com-faixa { padding-top: var(--faixa-h); }
+body.com-faixa #topbar { top: var(--faixa-h); transition: top 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease, background-color 0.2s ease; }
+body.com-faixa.faixa-sumiu #topbar { top: 0; }
+body.com-faixa .nav-pills { top: calc(var(--faixa-h) + var(--topbar-h)); transition: top 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+body.com-faixa.faixa-sumiu .nav-pills { top: var(--topbar-h); }
+html[data-layout="vitrine"] body.com-faixa .loja.com-capa { margin-top: calc(-1 * var(--topbar-h)); }
 
 /* ============ Tom vibrante: faixa na cor da marca, cartões translúcidos ============ */
 html[data-tom="vibrante"] body {
@@ -681,9 +676,6 @@ html[data-tom="vibrante"] .hero-info {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 html[data-tom="vibrante"] .loja-mais { color: var(--on-accent); text-decoration: underline; text-underline-offset: 3px; }
-html[data-tom="vibrante"] .areas-site { background: rgba(255, 255, 255, 0.22); border-color: rgba(255, 255, 255, 0.35); }
-html[data-tom="vibrante"] .areas-site a { color: var(--on-accent); }
-html[data-tom="vibrante"] .areas-site a.ativo { background: #fff; color: var(--accent-texto); }
 html[data-tom="vibrante"] .hero-socorro { background: #fff; color: var(--accent-texto); }
 
 /* cartões translúcidos (grade e cabeçalho) */

@@ -102,15 +102,19 @@
     Tema.aplicar({ area: AREA, cor: cor, layout: layout, tom: tom });
   }
 
-  // o mesmo estabelecimento pode ter Agenda + (Delivery ou Serviços): troca de área no site
-  function barraAreas() {
+  // o mesmo estabelecimento pode ter Agenda + (Delivery ou Serviços): o toggle
+  // da faixa (espaço da plataforma, fora da área da loja) troca de área
+  function montarToggleAreas() {
     var areas = estab.areas || [];
-    if (areas.indexOf('agenda') === -1 || MODO_DEMO) return '';
+    if (areas.indexOf('agenda') === -1 || MODO_DEMO || !window.VibeToggle) return;
     var base = '/' + encodeURIComponent(estab.slug) + '/' + encodeURIComponent(estab.cidade);
-    var icAgenda = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
-    return '<nav class="areas-site" aria-label="O que você quer fazer">' +
-      '<a href="' + base + '">' + icAgenda + 'Agendar</a>' +
-      '<a href="' + base + '/pedir" class="ativo" aria-current="page">' + (SERVICO ? U.ICONES.gps : U.ICONES.sacola) + (SERVICO ? (URGENTE ? 'Chamar' : 'Orçamento') : 'Pedir') + '</a></nav>';
+    window.VibeToggle.montar($('faixaAreas'), {
+      tema: 'escuro', atual: AREA, swipe: true, semCubo: true, rotulo: 'O que você quer fazer',
+      opcoes: [
+        { chave: 'agenda', rotulo: 'Agendar', href: base },
+        { chave: AREA, rotulo: SERVICO ? (URGENTE ? 'Chamar' : 'Orçamento') : 'Pedir', href: base + '/pedir' }
+      ]
+    });
   }
 
   /* ===================== loja (topo) ===================== */
@@ -164,8 +168,7 @@
         : estab.segmento === 'guincho' ? 'Carro parado? Chamar agora' : 'Chamar agora';
       $('heroInfo').insertAdjacentHTML('afterend', '<button type="button" class="hero-socorro" id="btnSocorro">' + (URGENTE ? U.ICONES.alerta : U.ICONES.pedidos) + textoBtn + '</button>');
     }
-    var areasHtml = barraAreas();
-    if (areasHtml && !document.querySelector('.areas-site')) $('heroStatus').insertAdjacentHTML('afterend', areasHtml);
+    montarToggleAreas();
     if (!Object.keys(estab.horarios || {}).length && !estab.endereco && !(estab.formas_pagamento || []).length) $('heroMais').textContent = 'Sobre a loja';
 
     if (estab.aviso) {

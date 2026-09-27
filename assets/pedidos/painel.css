@@ -347,7 +347,7 @@ body.painel {
 .p-topo-app .p-marca strong { display: block; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .p-topo-app .p-seg { display: block; font-size: 0.75rem; color: var(--tinta-suave); }
 .p-topo-app .p-logo { width: 34px; height: 34px; font-size: 0.95rem; }
-@media (max-width: 480px) { .p-topo-app .p-logo { display: none; } .vibe-areas-rotulo small { display: none; } }
+@media (max-width: 480px) { .p-topo-app .p-logo { display: none; } .vt-op .vt-txt { max-width: 5.5rem; } }
 
 /* tela de ativar Delivery/Serviços */
 .ativar-area { text-align: left; }

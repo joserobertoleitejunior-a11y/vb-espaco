@@ -8,7 +8,9 @@
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&family=Oswald:wght@300;400;500;600;700&family=Bangers&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=73">
+<link rel="stylesheet" href="/assets/css/styles.css?v=75">
+<link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=2">
+<script src="/assets/js/vibe-toggle.js?v=1"></script>
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=5" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
 <link rel="stylesheet" href="/assets/tpl-classico/css/widget.css?v=5" id="tplWidget">
@@ -27,7 +29,13 @@
 
   <!-- ===== Template "classico-boiserie" (idêntico ao Rafael Cabeleireiros) ===== -->
   <div id="tplClassico" class="oculto">
-    <a class="faixa-voltar" id="faixaVoltar" href="/index.html">&larr; Voltar pro VB Agenda</a>
+    <div class="faixa-vibe" id="faixaVoltar">
+    <a class="faixa-marca" href="/" aria-label="Voltar pro início">
+      <span class="vt-cubo" aria-hidden="true"><span class="vt-cubo-3d"><i class="f1"></i><i class="f2"></i><i class="f3"></i><i class="f4"></i><i class="f5"></i><i class="f6"></i></span></span>
+      <span class="faixa-nome" data-vibe-marca>Vibe</span>
+    </a>
+    <div id="faixaAreas"></div>
+  </div>
 
     <header class="site-topbar on-hero">
       <a class="brand" href="#"><span class="brand-mark">❧</span> <span id="tplNomeTopo"></span></a>
@@ -57,7 +65,6 @@
         <ul class="site-menu-list">
           <li><a href="#servicosSecao"><span>Serviços</span><span class="num">06</span></a></li>
           <li><a id="tplLinkInstitucional" href="#"><span>Quem somos</span><span class="num">07</span></a></li>
-          <li><a href="#cardapioSecao"><span>Cardápio</span><span class="num">08</span></a></li>
           <li><a href="#promocoesSecao"><span>Promoções</span><span class="num">09</span></a></li>
         </ul>
 
@@ -93,11 +100,6 @@
       <section id="servicosSecao" class="container" style="padding:2.5rem 0;">
         <p class="eyebrow">Serviços</p>
         <ul class="lista-estabelecimentos" id="tplListaServicos" style="margin-top:1rem;"></ul>
-      </section>
-
-      <section id="cardapioSecao" class="container oculto" style="padding:0 0 2.5rem;">
-        <p class="eyebrow">Cardápio</p>
-        <div id="tplCardapioConteudo" style="margin-top:1rem;"></div>
       </section>
 
       <section id="promocoesSecao" class="container oculto" style="padding:0 0 2.5rem;">
@@ -335,12 +337,12 @@
   <script src="/assets/js/cor-da-imagem.js?v=1"></script>
   <script src="/assets/js/servicos-sugeridos.js?v=1"></script>
   <script src="/assets/js/vb-cliente-global.js?v=1"></script>
-  <script src="/assets/js/faixa-voltar.js?v=2"></script>
+  <script src="/assets/js/faixa-voltar.js?v=3"></script>
   <script src="/assets/js/vb-dialogo.js?v=1"></script>
   <script src="/assets/js/vb-salvo.js?v=1"></script>
   <script src="/assets/js/frases-efeito.js?v=1"></script>
   <script src="/assets/js/meus-agendamentos.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=54"></script>
+  <script src="/assets/js/perfil.js?v=55"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {

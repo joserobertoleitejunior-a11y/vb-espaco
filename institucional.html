@@ -8,7 +8,9 @@
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&family=Oswald:wght@300;400;500;600;700&family=Bangers&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=73">
+<link rel="stylesheet" href="/assets/css/styles.css?v=75">
+<link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=2">
+<script src="/assets/js/vibe-toggle.js?v=1"></script>
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=5" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
 </head>
@@ -25,7 +27,13 @@
   </div>
 
   <div id="tplClassico" class="oculto">
-    <a class="faixa-voltar" id="faixaVoltar" href="/index.html">&larr; Voltar pro VB Agenda</a>
+    <div class="faixa-vibe" id="faixaVoltar">
+    <a class="faixa-marca" href="/" aria-label="Voltar pro início">
+      <span class="vt-cubo" aria-hidden="true"><span class="vt-cubo-3d"><i class="f1"></i><i class="f2"></i><i class="f3"></i><i class="f4"></i><i class="f5"></i><i class="f6"></i></span></span>
+      <span class="faixa-nome" data-vibe-marca>Vibe</span>
+    </a>
+    <div id="faixaAreas"></div>
+  </div>
 
     <header class="site-topbar">
       <a class="brand" id="tplLinkPerfil" href="#"><span class="brand-mark">❧</span> <span id="tplNomeTopo"></span></a>
@@ -119,7 +127,7 @@
   <script src="/assets/js/vb-cache.js?v=1"></script>
   <script src="/assets/tpl-classico/js/menu.js?v=1"></script>
   <script src="/assets/js/upload-fotos.js?v=1"></script>
-  <script src="/assets/js/faixa-voltar.js?v=2"></script>
+  <script src="/assets/js/faixa-voltar.js?v=3"></script>
   <script src="/assets/js/vb-dialogo.js?v=1"></script>
   <script src="/assets/js/vb-salvo.js?v=1"></script>
   <script src="/assets/js/institucional.js?v=13"></script>

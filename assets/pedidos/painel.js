@@ -119,16 +119,21 @@
   function areaAtual() { return (negocio.areas || []).indexOf('servicos') !== -1 ? 'servicos' : 'delivery'; }
 
   function montarCubo() {
-    VibeAreas.montar($('pAreas'), {
-      negocio: negocio, atual: areaAtual(),
-      aoEscolher: function (area) { if (area === 'agenda') location.href = '/cadastro.html?abrir=' + encodeURIComponent(negocio.id); },
-      aoAtivar: function (area) {
-        if (area === 'agenda') {
-          if (!confirmar('Ativar a Agenda (horários online) neste negócio?')) { montarCubo(); return; }
-          definirAreas(negocio.areas.concat(['agenda'])).then(function (ok) { if (ok) location.href = '/cadastro.html?abrir=' + encodeURIComponent(negocio.id); });
-        }
-      }
+    var N = VibeToggle.NOMES;
+    var temAgenda = (negocio.areas || []).indexOf('agenda') !== -1;
+    var opcoes = [{ chave: areaAtual(), rotulo: N[areaAtual()] }];
+    if (temAgenda) opcoes.unshift({ chave: 'agenda', rotulo: N.agenda });
+    VibeToggle.montar($('pAreas'), {
+      tema: 'claro', atual: areaAtual(), swipe: temAgenda, rotulo: 'Áreas do negócio', opcoes: opcoes,
+      aoTrocar: function (area) { if (area === 'agenda') location.href = '/cadastro.html?abrir=' + encodeURIComponent(negocio.id); },
+      extra: temAgenda ? null : { rotulo: 'Ativar a Agenda', aoClicar: function () {
+        if (!confirmar('Ativar a Agenda (horários online) neste negócio?')) return;
+        definirAreas(negocio.areas.concat(['agenda'])).then(function (ok) {
+          if (ok) { VibeToggle.marcarDirecao('volta'); location.href = '/cadastro.html?abrir=' + encodeURIComponent(negocio.id); }
+        });
+      } }
     });
+    VibeToggle.tingir(areaAtual());
   }
 
   async function definirAreas(areas, onde) {
@@ -141,14 +146,14 @@
   var ativarEscolha = null, ativarOnde = 'cliente';
   function mostrarTelaAtivar() {
     mostrarTela('telaAtivar');
-    VibeAreas.aplicarTinta('agenda');
+    VibeToggle.tingir('delivery');
     $('ativarOpcoes').addEventListener('click', function (e) {
       var b = e.target.closest('[data-ativar]');
       if (!b) return;
       ativarEscolha = b.getAttribute('data-ativar');
       document.querySelectorAll('[data-ativar]').forEach(function (x) { x.classList.toggle('ativo', x === b); });
       $('ativarOnde').classList.toggle('oculto', ativarEscolha !== 'servicos');
-      VibeAreas.aplicarTinta(ativarEscolha);
+      VibeToggle.tingir(ativarEscolha);
       $('ativarBtn').disabled = false;
       $('ativarBtn').textContent = 'Ativar ' + (ativarEscolha === 'delivery' ? 'Delivery' : 'Serviços');
     });

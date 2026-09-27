@@ -7,7 +7,9 @@
 <meta name="description" content="Faça seu pedido direto com a loja, sem taxa de aplicativo.">
 <meta name="theme-color" content="#f4f4f6">
 <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
-<link rel="stylesheet" href="/assets/pedidos/loja.css?v=1">
+<link rel="stylesheet" href="/assets/pedidos/loja.css?v=3">
+<link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=2">
+<script src="/assets/js/vibe-toggle.js?v=1"></script>
 <script src="/assets/pedidos/tema.js?v=1"></script>
 <script>
   /* aplica o visual o quanto antes pra não piscar a cor errada: o último
@@ -22,7 +24,14 @@
   })();
 </script>
 </head>
-<body>
+<body class="com-faixa">
+<div class="faixa-vibe" id="faixaVoltar">
+  <a class="faixa-marca" href="/" aria-label="Voltar pro início">
+    <span class="vt-cubo" aria-hidden="true"><span class="vt-cubo-3d"><i class="f1"></i><i class="f2"></i><i class="f3"></i><i class="f4"></i><i class="f5"></i><i class="f6"></i></span></span>
+    <span class="faixa-nome" data-vibe-marca>Vibe</span>
+  </a>
+  <div id="faixaAreas"></div>
+</div>
 <header id="topbar">
   <button type="button" class="icon-btn" id="tbMenuBtn" aria-label="Abrir menu"></button>
   <div class="tb-brand"><span class="tb-logo" id="tbLogo"></span><span id="tbNome">Carregando…</span></div>
@@ -62,7 +71,6 @@
 <div id="estadoPronto" class="oculto">
   <header class="loja" id="heroSecao">
     <div class="loja-capa" id="heroCapa"></div>
-    <div style="padding:1.1rem var(--g) 0"><span class="hero-cubo" id="pullRefreshCubo" aria-hidden="true"></span></div>
     <div class="loja-cabeca">
       <div class="hero-logo" id="heroLogo"></div>
       <div class="loja-id">
@@ -114,7 +122,7 @@
 <script src="/assets/js/supabase-client.js?v=1"></script>
 <script src="/assets/pedidos/util.js?v=2"></script>
 <script src="/assets/pedidos/demo.js?v=2"></script>
-<script src="/assets/pedidos/loja.js?v=2"></script>
-<script type="module" src="/assets/js/vb-pull-refresh.js?v=2"></script>
+<script src="/assets/pedidos/loja.js?v=3"></script>
+<script src="/assets/js/faixa-voltar.js?v=3"></script>
 </body>
 </html>

@@ -776,12 +776,9 @@
   function atualizarGateIncompleto() {
     var gate = document.getElementById('incompletoGate');
     if (!gate || !linhaAtual) return;
-    // pizzaria (e outros nichos de cardápio, no futuro) não usa agendamento
-    // com profissional — "pronto" pra eles é ter algo no Cardápio, não
-    // serviço/equipe, que nem existem nesse fluxo.
-    var incompleto = linhaAtual.segmento === 'pizzaria'
-      ? !linhaAtual.tem_cardapio
-      : (!linhaAtual.tem_servico || !linhaAtual.tem_equipe);
+    // a Agenda precisa de pelo menos um serviço e um profissional pra
+    // agendar (cardápio e pedido agora são a área Delivery, em /pedir)
+    var incompleto = !linhaAtual.tem_servico || !linhaAtual.tem_equipe;
     if (incompleto && !modoAdmin) {
       document.getElementById('incompletoTitulo').textContent = linhaAtual.nome + ' está quase pronto';
       gate.classList.add('open');
@@ -1536,7 +1533,6 @@
 
   // ---------- serviços, galeria, agenda ----------
   var ICONE_TESOURA = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="23" r="3.2"/><circle cx="9" cy="9" r="3.2"/><line x1="11.5" y1="11" x2="26" y2="23"/><line x1="11.5" y1="21" x2="26" y2="9"/></svg>';
-  var ICONE_CARDAPIO_BADGE = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><rect x="18" y="5" width="9" height="9" rx="1.5"/><rect x="5" y="18" width="9" height="9" rx="1.5"/><rect x="18" y="18" width="9" height="9" rx="1.5"/></svg>';
   var ICONE_AGENDA = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="9" width="20" height="16" rx="2"/><line x1="6" y1="14" x2="26" y2="14"/><line x1="11" y1="6" x2="11" y2="11"/><line x1="21" y1="6" x2="21" y2="11"/></svg>';
 
   // ---------- redes sociais (mesmo padrão em todas as réplicas) ----------
@@ -1638,16 +1634,6 @@
   function carregarServicos() {
     var lista = document.getElementById('tplListaServicos');
     var strip = document.getElementById('tplServiceStrip');
-    // pizzaria (cardápio) não usa agendamento com profissional —
-    // esconde a seção de Serviços inteira em vez de mostrar "em breve"
-    // pra sempre num nicho que nunca vai ter serviço cadastrado.
-    if (linhaAtual.segmento === 'pizzaria') {
-      var secaoServicos = document.getElementById('servicosSecao');
-      if (secaoServicos) secaoServicos.classList.add('oculto');
-      strip.innerHTML =
-        '<button type="button" class="service-badge" onclick="document.getElementById(\'cardapioSecao\').scrollIntoView({behavior:\'smooth\'})"><span class="mark">' + ICONE_CARDAPIO_BADGE + '</span><strong>Ver</strong><span>Cardápio</span></button>';
-      return;
-    }
     db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }).then(function (res) {
       var linhas = res.data || [];
       servicosCache = linhas;
@@ -1757,161 +1743,6 @@
           '<span class="promocao-card-texto"><strong>' + escapeHtml(p.titulo) + '</strong>' + (p.texto ? '<br>' + escapeHtml(p.texto) : '') + '</span>' +
           '</div>';
       }).join('');
-    }, function () { secao.classList.add('oculto'); });
-  }
-
-  // ---- Cardápio público — categorias, itens, meio
-  // a meio (regra oficial: cobra o valor da metade mais cara + borda) e
-  // combos de faixa de preço fixa. O dono cadastra na aba Cardápio do
-  // painel de gestão; aqui só exibimos e montamos o link de pedido pelo
-  // WhatsApp — sem carrinho persistente ainda. ----
-  function carregarCardapioPublico() {
-    var secao = document.getElementById('cardapioSecao');
-    var conteudo = document.getElementById('tplCardapioConteudo');
-    if (!secao || !conteudo) return;
-    db.rpc('estabelecimento_cardapio_publico', { p_estabelecimento_id: estabId }).then(function (res) {
-      var dados = res.data || {};
-      var categorias = dados.categorias || [];
-      var itens = dados.itens || [];
-      var bordas = dados.bordas || [];
-      var combos = dados.combos || [];
-      if (!itens.length) { secao.classList.add('oculto'); return; }
-      secao.classList.remove('oculto');
-
-      var tel = (linhaAtual.telefone_whatsapp || '').replace(/\D/g, '');
-      function linkPedido(descricaoLinha, total) {
-        if (!tel) return null;
-        var msg = 'Olá! Quero fazer um pedido:%0A' + encodeURIComponent('• ' + descricaoLinha) +
-          '%0A' + encodeURIComponent('💰 Total: ' + formatarPreco(total));
-        return 'https://wa.me/55' + tel + '?text=' + msg;
-      }
-      function opcoesBorda(idCompleto) {
-        if (!bordas.length) return '';
-        return '<select class="field-select-cardapio" id="' + idCompleto + '"><option value="">Sem borda</option>' +
-          bordas.map(function (b) { return '<option value="' + b.id + '">' + escapeHtml(b.nome) + ' (+' + formatarPreco(b.preco) + ')</option>'; }).join('') +
-          '</select>';
-      }
-      function bordaPorId(id) { return bordas.filter(function (b) { return b.id === id; })[0] || null; }
-
-      var htmlItens = '';
-      var categoriasComItem = categorias.filter(function (c) {
-        return itens.some(function (i) { return i.categoria_id === c.id; });
-      });
-      var semCategoria = itens.filter(function (i) { return !categorias.some(function (c) { return c.id === i.categoria_id; }); });
-      var grupos = categoriasComItem.map(function (c) {
-        return { nome: c.nome, lista: itens.filter(function (i) { return i.categoria_id === c.id; }) };
-      });
-      if (semCategoria.length) grupos.push({ nome: categorias.length ? 'Outros' : null, lista: semCategoria });
-
-      htmlItens = grupos.map(function (g) {
-        return (g.nome ? '<p class="cardapio-categoria-titulo">' + escapeHtml(g.nome) + '</p>' : '') +
-          '<div class="cardapio-itens-grid">' + g.lista.map(function (it) {
-            var idPrefixo = 'galItem' + it.id.replace(/-/g, '');
-            return '<div class="cardapio-item-card">' +
-              (it.foto_url ? '<span class="cardapio-item-foto" style="background-image:url(\'' + it.foto_url + '\')"></span>' : '') +
-              '<span class="cardapio-item-nome">' + escapeHtml(it.nome) + '</span>' +
-              (it.descricao ? '<span class="cardapio-item-descricao">' + escapeHtml(it.descricao) + '</span>' : '') +
-              '<span class="cardapio-item-preco">' + formatarPreco(it.preco) + '</span>' +
-              (bordas.length ? opcoesBorda(idPrefixo + 'Borda') : '') +
-              '<a class="btn btn-primario cardapio-item-pedir" data-pedir-item="' + it.id + '" data-prefixo="' + idPrefixo + '" href="#" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>' +
-              '</div>';
-          }).join('') + '</div>';
-      }).join('');
-
-      var itensMeio = itens.filter(function (i) { return i.permite_meio_a_meio; });
-      var htmlMeio = '';
-      if (itensMeio.length >= 2) {
-        var opcoesSabor = itensMeio.map(function (i) { return '<option value="' + i.id + '">' + escapeHtml(i.nome) + ' — ' + formatarPreco(i.preco) + '</option>'; }).join('');
-        htmlMeio =
-          '<p class="cardapio-categoria-titulo">Monte seu meio a meio</p>' +
-          '<div class="cardapio-meio-card">' +
-          '<label>1ª metade<select id="galMeioA">' + opcoesSabor + '</select></label>' +
-          '<label>2ª metade<select id="galMeioB">' + opcoesSabor + '</select></label>' +
-          (bordas.length ? '<label>Borda' + opcoesBorda('galMeioBordaSelect') + '</label>' : '') +
-          '<p class="cardapio-meio-total">Total: <strong id="galMeioTotal">' + formatarPreco(itensMeio[0].preco) + '</strong></p>' +
-          '<a class="btn btn-primario cardapio-item-pedir" id="galMeioPedir" href="#" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>' +
-          '</div>';
-      }
-
-      var htmlCombos = '';
-      if (combos.length) {
-        htmlCombos = '<p class="cardapio-categoria-titulo">Combos</p>' + combos.map(function (co) {
-          var elegiveis = (co.item_ids || []).map(function (id) { return itens.filter(function (i) { return i.id === id; })[0]; }).filter(Boolean);
-          if (elegiveis.length < 2) return '';
-          var opcoes = elegiveis.map(function (i) { return '<option value="' + i.id + '">' + escapeHtml(i.nome) + '</option>'; }).join('');
-          return '<div class="cardapio-combo-card">' +
-            '<p class="cardapio-combo-titulo">' + escapeHtml(co.titulo) + ' · ' + formatarPreco(co.preco) + '</p>' +
-            '<label>1º sabor<select class="gal-combo-s1" data-combo="' + co.id + '">' + opcoes + '</select></label>' +
-            '<label>2º sabor<select class="gal-combo-s2" data-combo="' + co.id + '">' + opcoes + '</select></label>' +
-            '<a class="btn btn-primario cardapio-item-pedir" data-pedir-combo="' + co.id + '" href="#" target="_blank" rel="noopener">Pedir pelo WhatsApp</a>' +
-            '</div>';
-        }).join('');
-      }
-
-      conteudo.innerHTML = htmlItens + htmlMeio + htmlCombos;
-      if (window.VBSelect) window.VBSelect.enhanceTodos(conteudo);
-
-      // pedido de item avulso (com borda opcional)
-      conteudo.querySelectorAll('[data-pedir-item]').forEach(function (a) {
-        a.addEventListener('click', function (e) {
-          var it = itens.filter(function (i) { return i.id === a.getAttribute('data-pedir-item'); })[0];
-          if (!it) return;
-          var prefixo = a.getAttribute('data-prefixo');
-          var bordaSel = document.getElementById(prefixo + 'Borda');
-          var borda = bordaSel ? bordaPorId(bordaSel.value) : null;
-          var total = it.preco + (borda ? borda.preco : 0);
-          var descricao = it.nome + (borda ? ' (Borda: ' + borda.nome + ')' : '');
-          var link = linkPedido(descricao, total);
-          if (!link) { e.preventDefault(); window.VBDialogo.alert('Esse estabelecimento ainda não configurou o WhatsApp.'); return; }
-          a.href = link;
-        });
-      });
-
-      // monte seu meio a meio
-      var selA = document.getElementById('galMeioA'), selB = document.getElementById('galMeioB');
-      var bordaMeioSel = document.getElementById('galMeioBordaSelect');
-      var totalMeioEl = document.getElementById('galMeioTotal');
-      var pedirMeioBtn = document.getElementById('galMeioPedir');
-      function atualizarTotalMeio() {
-        if (!selA || !selB) return;
-        var itA = itens.filter(function (i) { return i.id === selA.value; })[0];
-        var itB = itens.filter(function (i) { return i.id === selB.value; })[0];
-        var borda = bordaMeioSel ? bordaPorId(bordaMeioSel.value) : null;
-        var total = Math.max(itA ? itA.preco : 0, itB ? itB.preco : 0) + (borda ? borda.preco : 0);
-        if (totalMeioEl) totalMeioEl.textContent = formatarPreco(total);
-        return { itA: itA, itB: itB, borda: borda, total: total };
-      }
-      if (selA) { selA.addEventListener('change', atualizarTotalMeio); selB.addEventListener('change', atualizarTotalMeio); if (bordaMeioSel) bordaMeioSel.addEventListener('change', atualizarTotalMeio); atualizarTotalMeio(); }
-      if (pedirMeioBtn) pedirMeioBtn.addEventListener('click', function (e) {
-        var estado = atualizarTotalMeio();
-        if (!estado || !estado.itA || !estado.itB || estado.itA.id === estado.itB.id) {
-          e.preventDefault();
-          window.VBDialogo.alert('Escolha 2 sabores diferentes.');
-          return;
-        }
-        var descricao = 'Meio a meio: ' + estado.itA.nome + ' / ' + estado.itB.nome + (estado.borda ? ' (Borda: ' + estado.borda.nome + ')' : '');
-        var link = linkPedido(descricao, estado.total);
-        if (!link) { e.preventDefault(); window.VBDialogo.alert('Esse estabelecimento ainda não configurou o WhatsApp.'); return; }
-        pedirMeioBtn.href = link;
-      });
-
-      // combos
-      conteudo.querySelectorAll('[data-pedir-combo]').forEach(function (a) {
-        a.addEventListener('click', function (e) {
-          var comboId = a.getAttribute('data-pedir-combo');
-          var combo = combos.filter(function (c) { return c.id === comboId; })[0];
-          var s1 = conteudo.querySelector('.gal-combo-s1[data-combo="' + comboId + '"]');
-          var s2 = conteudo.querySelector('.gal-combo-s2[data-combo="' + comboId + '"]');
-          if (!combo || !s1 || !s2) return;
-          if (s1.value === s2.value) { e.preventDefault(); window.VBDialogo.alert('Escolha 2 sabores diferentes — o combo é uma unidade de cada.'); return; }
-          var it1 = itens.filter(function (i) { return i.id === s1.value; })[0];
-          var it2 = itens.filter(function (i) { return i.id === s2.value; })[0];
-          var descricao = combo.titulo + ' — ' + (it1 ? it1.nome : '') + ' + ' + (it2 ? it2.nome : '');
-          var link = linkPedido(descricao, combo.preco);
-          if (!link) { e.preventDefault(); window.VBDialogo.alert('Esse estabelecimento ainda não configurou o WhatsApp.'); return; }
-          a.href = link;
-        });
-      });
     }, function () { secao.classList.add('oculto'); });
   }
 
@@ -2458,23 +2289,10 @@
     var adminWidgetsTranslucidosBtn = document.getElementById('adminWidgetsTranslucidosBtn');
     if (adminWidgetsTranslucidosBtn) adminWidgetsTranslucidosBtn.classList.toggle('is-ativo', !!linha.widgets_translucidos);
 
-    document.title = linha.nome + ' — VB Agenda';
+    document.title = linha.nome;
     document.getElementById('tplNomeTopo').textContent = linha.nome;
     document.getElementById('tplNomeRodape').textContent = linha.nome;
-    document.getElementById('tplCtaTexto').textContent = linha.texto_cta || (linha.segmento === 'pizzaria' ? 'Ver cardápio' : 'Agendar horário');
-    // pizzaria não agenda com profissional — o botão principal do hero
-    // (e qualquer outro atalho "Agendar horário" do site) leva direto
-    // pro Cardápio em vez de abrir o assistente de agendamento.
-    if (linha.segmento === 'pizzaria') {
-      document.querySelectorAll('[data-open-widget]').forEach(function (el) {
-        el.removeAttribute('data-open-widget');
-        el.addEventListener('click', function (e) {
-          e.preventDefault();
-          var secao = document.getElementById('cardapioSecao');
-          if (secao) secao.scrollIntoView({ behavior: 'smooth' });
-        });
-      });
-    }
+    document.getElementById('tplCtaTexto').textContent = linha.texto_cta || 'Agendar horário';
     ligarOutraArea(linha);
     document.getElementById('tplCidadeRodape').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';
     document.getElementById('tplEnderecoMenu').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';
@@ -2505,7 +2323,6 @@
     carregarGaleria();
     carregarRedesSociais();
     carregarPromocoesPublicas();
-    carregarCardapioPublico();
     iniciarModoAdmin();
     iniciarWizard();
     iniciarClienteGlobal();
@@ -2526,28 +2343,27 @@
     }
   }
 
-  // Agenda + Delivery/Serviços no mesmo estabelecimento: botão do lado do
-  // "Agendar horário" leva pra loja/chamado (mesmo app, /:slug/:cidade/pedir)
+  // Agenda + Delivery/Serviços no mesmo estabelecimento: o toggle da faixa
+  // (espaço da plataforma, fora da área do estabelecimento) troca de área
   var SEG_URGENTE = ['borracharia', 'chaveiro', 'guincho', 'eletricista', 'encanador', 'assistencia_tecnica'];
   function ligarOutraArea(linha) {
     var areas = linha.areas || [];
     var temPedido = areas.indexOf('delivery') !== -1, temServico = areas.indexOf('servicos') !== -1;
-    if (!temPedido && !temServico) return;
-    var texto = temPedido ? 'Fazer pedido' : (SEG_URGENTE.indexOf(linha.segmento) !== -1 ? 'Chamar agora' : 'Pedir orçamento');
-    var href = '/' + encodeURIComponent(linha.slug) + '/' + encodeURIComponent(linha.cidade) + '/pedir';
-    var cta = document.querySelector('.hero-cta');
-    if (cta && !document.getElementById('tplCtaOutraArea')) {
-      var a = document.createElement('a');
-      a.id = 'tplCtaOutraArea';
-      a.className = 'btn btn-outra-area';
-      a.href = href;
-      a.textContent = texto + ' →';
-      cta.appendChild(a);
-    }
+    if ((!temPedido && !temServico) || !window.VibeToggle) return;
+    var base = '/' + encodeURIComponent(linha.slug) + '/' + encodeURIComponent(linha.cidade);
+    var urgente = SEG_URGENTE.indexOf(linha.segmento) !== -1;
+    window.VibeToggle.montar(document.getElementById('faixaAreas'), {
+      tema: 'escuro', atual: 'agenda', swipe: true, semCubo: true, rotulo: 'O que você quer fazer',
+      opcoes: [
+        { chave: 'agenda', rotulo: 'Agendar', href: base },
+        temPedido ? { chave: 'delivery', rotulo: 'Pedir', href: base + '/pedir' }
+                  : { chave: 'servicos', rotulo: urgente ? 'Chamar' : 'Orçamento', href: base + '/pedir' }
+      ]
+    });
     var lista = document.querySelector('#siteMenu .site-menu-list');
     if (lista && !document.getElementById('menuOutraArea')) {
       var li = document.createElement('li');
-      li.innerHTML = '<a id="menuOutraArea" href="' + href + '"><span>' + (temPedido ? 'Fazer pedido' : 'Serviços') + '</span><span class="num">↗</span></a>';
+      li.innerHTML = '<a id="menuOutraArea" href="' + base + '/pedir"><span>' + (temPedido ? 'Fazer pedido' : urgente ? 'Chamar agora' : 'Pedir orçamento') + '</span><span class="num">↗</span></a>';
       lista.appendChild(li);
     }
   }
