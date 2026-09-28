@@ -166,7 +166,7 @@
     authMsg.className = 'msg';
     authMsg.textContent = 'Criando sua conta…';
 
-    db.auth.signUp({ email: email, password: senha }).then(function (res) {
+    db.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: window.location.origin + '/cadastro.html' } }).then(function (res) {
       btn.disabled = false;
       if (res.error) {
         authMsg.className = 'msg msg-erro';

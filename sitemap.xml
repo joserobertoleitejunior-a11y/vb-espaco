@@ -6,14 +6,24 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://vb-espaco.joserobertoleitejunior.workers.dev/parceiros.html</loc>
-    <changefreq>weekly</changefreq>
+    <loc>https://vb-espaco.joserobertoleitejunior.workers.dev/explorar.html?area=agenda</loc>
+    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://vb-espaco.joserobertoleitejunior.workers.dev/cadastro.html</loc>
+    <loc>https://vb-espaco.joserobertoleitejunior.workers.dev/explorar.html?area=delivery</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://vb-espaco.joserobertoleitejunior.workers.dev/explorar.html?area=servicos</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://vb-espaco.joserobertoleitejunior.workers.dev/parceiros.html</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://vb-espaco.joserobertoleitejunior.workers.dev/termos.html</loc>

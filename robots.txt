@@ -2,5 +2,7 @@ User-agent: *
 Disallow: /criar.html
 Disallow: /editar.html
 Disallow: /preview-embutido.html
+Disallow: /painel-area.html
+Disallow: /cadastro.html
 
 Sitemap: https://vb-espaco.joserobertoleitejunior.workers.dev/sitemap.xml

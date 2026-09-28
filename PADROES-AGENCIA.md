@@ -9,7 +9,7 @@
 ## 0. Contexto do projeto (preencher a cada novo projeto)
 
 ```
-Nome do projeto: VB Agenda
+Nome do projeto: Vibe (nome provisório; antes "VB Agenda")
 Cliente: Agência própria (José) — plataforma white-label multi-tenant
 Modelo de negócio: R$40/mês por estabelecimento (assinatura da plataforma) + 5% de comissão sobre toda transação dentro do app, via split automático (Mercado Pago Marketplace, cada dono conecta a própria conta MP)
 Stack principal: Site estático (HTML/JS puro, sem build/bundler) + Supabase (banco/auth/RLS) + Mercado Pago (pagamento + split) + Cloudflare Workers (hospedagem)
@@ -17,7 +17,7 @@ Repositório: github.com/joserobertoleitejunior-a11y/vb-espaco
 Ambiente de produção: Cloudflare Workers (git-conectado ao branch main, deploy automático a cada push). Netlify foi usado antes e foi abandonado (ficou sem créditos de deploy); não sobrou nenhum arquivo dele no repo.
 Domínio(s) de produção: vb-espaco.joserobertoleitejunior.workers.dev (domínio próprio ainda não registrado) — link de cada estabelecimento no formato /:slug/:cidade
 Responsável técnico: José
-Escopo inicial: barbearias, salões de beleza, manicure e pedicure, estética — só Itapetininga/SP por enquanto
+Escopo: um app só com três áreas por negócio — Agenda (barbearia, salão, manicure, estética…), Delivery (pizzaria, lanche, mercado…) e No local (borracheiro, chaveiro, pedreiro… com chamado e orçamento) — só Itapetininga/SP e região por enquanto
 Data de início: 2026-09-17
 Projeto anterior de origem: Rafael Cabeleireiros (github.com/joserobertoleitejunior-a11y/rafael-cabeleireiros-) — vira o primeiro estabelecimento cadastrado aqui dentro, o motor de agendamento/pagamento dele é a base técnica sendo portada pro modelo multi-tenant
 ```
@@ -139,8 +139,8 @@ Antes de escrever a primeira linha de funcionalidade:
 - [x] `.env`: não se aplica — chave anon do Supabase é pública por design (protegida por RLS), sem segredo no frontend ainda
 - [ ] Stack de observabilidade (Sentry) — ainda não plugada, pendente pra quando sair do MVP de teste
 - [ ] Lint — ainda não configurado
-- [x] RLS ativa em toda tabela criada até agora (`estabelecimentos`) — sem policy pública nenhuma, todo acesso via RPC `SECURITY DEFINER` (mesmo padrão validado no Rafael Cabeleireiros)
-- [ ] Testes automatizados — ainda não criados (MVP sendo validado manualmente primeiro)
+- [x] RLS ativa em toda tabela — sem policy pública nenhuma, todo acesso via RPC `SECURITY DEFINER`; toda função `tenant_admin_*` começa com `vibe_exigir_dono(id)` (dono comprovado no banco, não no front). Bucket `tenant-fotos`: só o dono escreve na pasta do próprio negócio
+- [~] Testes automatizados — E2E com Playwright (Supabase simulado) cobrindo splash, Explorar, funil nas 3 áreas, loja/chamado/orçamento, painel das áreas, toggle e estilos; testes de banco em transação que desfaz tudo. Ainda rodam fora do repositório (falta trazer pra `tests/` e rodar no deploy)
 - [x] Definido: SaaS multi-tenant da agência (não projeto único de cliente) — núcleo fixo, `estabelecimento_id` implícito via RLS por dono, dado de configuração por cliente
 - [ ] Autenticação de rota administrativa separada da autenticação do cliente final — o painel do dono já usa Supabase Auth (e-mail/senha + Google, este último precisa ser habilitado manualmente no dashboard do Supabase com credenciais OAuth do Google Cloud); falta ainda o papel de equipe/staff por estabelecimento
 - [ ] Definido: quem tem acesso a produção e onde ficam as chaves de verdade — José, mesma conta usada no Rafael Cabeleireiros
@@ -168,11 +168,26 @@ Todo projeto com página voltada ao cliente final (não só ferramenta interna) 
 - [ ] Domínio próprio (não subdomínio de plataforma tipo `.netlify.app`/`.vercel.app`) — pesa pra confiança do cliente final e pra ranqueamento
 - [ ] Palavra-chave principal do negócio definida (com o cliente, não advinhada) — título, descrição e conteúdo da home devem mirar nela
 
-**Status neste projeto (Pizza em Dobro)** — auditado em 2026-08-16:
-- ✅ `robots.txt`, `sitemap.xml`, meta description, Open Graph, `og:image`, `twitter:card`, dados estruturados (`Restaurant`), canonical, `lang`, `keywords` já implementados
-- ✅ Logo que estava embutida em base64 em 5 páginas (index, Caixa, Relatórios, Clientes, painel) extraída pra `assets/logo.png` — tirou ~900KB de HTML duplicado do site inteiro
-- ⏳ Pendente (só o José pode fazer, contas externas): Google Search Console, Google Meu Negócio, Google Analytics, domínio próprio
-- ⏳ Pendente (técnico, precisa de ambiente com ffmpeg pra comprimir sem perder qualidade): vídeo de fundo do fogo (2,7MB)
+**Status neste projeto (Vibe)** — revisado em 2026-09-28:
+- ✅ `robots.txt` (bloqueia criar, editar, cadastro, painel e preview) e `sitemap.xml` (splash + Explorar por área + parceiros + termos)
+- ✅ `<title>`, description, Open Graph, `twitter:card`, canonical e `lang` na splash e no Explorar; `WebSite` em JSON-LD
+- ✅ Nenhuma imagem em base64 grande no HTML; prints dos estilos em `assets/img/templates/` (JPG ~40 KB cada)
+- ⏳ Site de cada negócio: `LocalBusiness`/`Restaurant` em JSON-LD por negócio ainda não gerado
+- ⏳ Pendente (só o José pode fazer, contas externas): domínio próprio, Google Search Console, Google Meu Negócio, Google Analytics
+
+---
+
+## 10. Identidade visual da plataforma (Vibe)
+
+Regras que valem pra toda tela nova do app:
+
+- **Logo = cubo** (só arestas douradas `#C9A227`, CSS 3D ou three.js). A plataforma nunca invade o espaço do negócio: no site do negócio ela aparece só na **faixa fina do topo** (cubo minúsculo + nome + toggle das áreas). Nada de logo no hero do negócio.
+- **Letra do sistema** (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`) em tudo que é da plataforma (splash, Explorar, funil, painéis). Fontes especiais só dentro dos estilos do site do negócio.
+- **Cores claras e translúcidas**: fundo `#f4f4f6`, cartões brancos translúcidos com blur, borda fina. Cada área tem um tom sutil: Agenda `15,107,92` (verde), Delivery `196,85,58` (tomate), No local `47,93,124` (azul aço). Nada escandaloso.
+- **Carregamento**: skeleton em tudo que vem do banco; o cubo é o indicador de "puxar pra atualizar".
+- **Transições**: trocar de área = deslizar pro lado (View Transitions entre páginas, fallback CSS); respeitar `prefers-reduced-motion` sempre.
+- **Nomes de exemplo neutros**: "Nome da sua barbearia", "Nome da sua pizzaria"… nunca nome de cliente real.
+- Os nomes das áreas nos painéis (`Agenda`, `Delivery`, `No local`) ficam em `VibeToggle.NOMES`; o nome da plataforma em `assets/js/marca.js`.
 
 ---
 
