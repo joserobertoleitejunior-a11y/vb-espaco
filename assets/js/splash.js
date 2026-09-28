@@ -1,4 +1,4 @@
-/* Tela inicial do Vibe (splash) + troca de telas sem recarregar.
+/* Tela inicial do Pertin (splash) + troca de telas sem recarregar.
 
    A splash e o Explorar moram na mesma página (index.html). Escolher
    Agendar / Pedir / Chamar só desliza a tela pro lado e mostra a lista
@@ -15,9 +15,9 @@
   var AREAS = ['agenda', 'delivery', 'servicos'];
   var TITULOS = {
     splash: document.title,
-    agenda: 'Agendar horário em Itapetininga — Cadê? Achei!',
-    delivery: 'Pedir delivery em Itapetininga — Cadê? Achei!',
-    servicos: 'Chamar um profissional em Itapetininga — Cadê? Achei!'
+    agenda: 'Agendar horário em Itapetininga — Pertin',
+    delivery: 'Pedir delivery em Itapetininga — Pertin',
+    servicos: 'Chamar um profissional em Itapetininga — Pertin'
   };
   var T = window.VibeToggle || {};
   var ICONES = T.ICONES || {};

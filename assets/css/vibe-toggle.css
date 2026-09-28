@@ -140,6 +140,20 @@
 .faixa-marca .vt-cubo { width: 18px; height: 18px; }
 .faixa-marca .vt-cubo-3d { --lado: 10px; margin: 4px; }
 .faixa-vibe .vt { margin-left: auto; }
+
+/* ---------- logotipo (cubo + nome) ---------- */
+/* montado pelo marca.js em todo elemento [data-vibe-marca-logo]: o
+   nome fica na letra do sistema, com o "i" sem ponto e um pino fino
+   dourado no lugar — o mesmo traço do cubo, sem preenchimento. Escala
+   sozinho com o tamanho da letra (splash grande, faixa pequena). */
+.pt-idot { position: relative; display: inline-block; }
+.pt-pin {
+  position: absolute; left: 50%; bottom: 0.6em;
+  width: 0.46em; height: 0.6em;
+  transform: translateX(-50%);
+  color: #C9A227;
+  pointer-events: none;
+}
 @media (max-width: 380px) {
   .faixa-marca .faixa-nome { display: none; }
   .vt-op { padding: 0.36rem 0.6rem; }

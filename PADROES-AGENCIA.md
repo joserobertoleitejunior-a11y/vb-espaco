@@ -9,7 +9,7 @@
 ## 0. Contexto do projeto (preencher a cada novo projeto)
 
 ```
-Nome do projeto: Vibe (nome provisório; antes "VB Agenda")
+Nome do projeto: Pertin (antes "Vibe", e antes disso "VB Agenda")
 Cliente: Agência própria (José) — plataforma white-label multi-tenant
 Modelo de negócio: R$40/mês por estabelecimento (assinatura da plataforma) + 5% de comissão sobre toda transação dentro do app, via split automático (Mercado Pago Marketplace, cada dono conecta a própria conta MP)
 Stack principal: Site estático (HTML/JS puro, sem build/bundler) + Supabase (banco/auth/RLS) + Mercado Pago (pagamento + split) + Cloudflare Workers (hospedagem)
@@ -177,7 +177,7 @@ Todo projeto com página voltada ao cliente final (não só ferramenta interna) 
 
 ---
 
-## 10. Identidade visual da plataforma (Vibe)
+## 10. Identidade visual da plataforma (Pertin)
 
 Regras que valem pra toda tela nova do app:
 

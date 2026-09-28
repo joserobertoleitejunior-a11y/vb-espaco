@@ -449,7 +449,7 @@
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(107, 109, 118);
-      doc.text('Cadê? Achei! · página ' + p + ' de ' + totalPaginas, 40, doc.internal.pageSize.getHeight() - 18);
+      doc.text('Pertin · página ' + p + ' de ' + totalPaginas, 40, doc.internal.pageSize.getHeight() - 18);
     }
     doc.save(nomeArquivo);
   }
@@ -945,7 +945,7 @@
       var promoLista = promoRes.data || [];
       dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
-        '<p class="dash-secao-intro" style="margin-top:0;">Status e promoções ajudam seu estabelecimento a aparecer ativo pra quem procura no Cadê? Achei! Status some sozinho em 24h; promoções ficam no ar pelo prazo que você escolher — e toda promoção ativa também entra na vitrine de promoções do catálogo, pra quem ainda não te conhece.</p>' +
+        '<p class="dash-secao-intro" style="margin-top:0;">Status e promoções ajudam seu estabelecimento a aparecer ativo pra quem procura no Pertin Status some sozinho em 24h; promoções ficam no ar pelo prazo que você escolher — e toda promoção ativa também entra na vitrine de promoções do catálogo, pra quem ainda não te conhece.</p>' +
 
         '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Status (24h)</p>' +
         '<button type="button" class="btn btn-primario" id="dashPublicarStatusBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Publicar</button></div>' +
@@ -979,7 +979,7 @@
             '<span class="secundario">' + (ativa ? 'válida até ' + new Date(p.expira_em).toLocaleDateString('pt-BR') : 'expirada em ' + new Date(p.expira_em).toLocaleDateString('pt-BR')) + '</span></span>' +
             '<button type="button" class="dash-comunidade-apagar" data-apagar-promocao="' + p.id + '" aria-label="Apagar promoção">×</button>' +
             '</div>';
-        }).join('') + '</div>' : blocoVazio(ICONE_VAZIO_COMUNIDADE, 'Nenhuma promoção ativa', 'Crie uma promoção com prazo — ela fica visível no seu site e também na vitrine de promoções do catálogo do Cadê? Achei!, pra atrair gente nova.'));
+        }).join('') + '</div>' : blocoVazio(ICONE_VAZIO_COMUNIDADE, 'Nenhuma promoção ativa', 'Crie uma promoção com prazo — ela fica visível no seu site e também na vitrine de promoções do catálogo do Pertin, pra atrair gente nova.'));
 
       if (window.VBSelect) window.VBSelect.enhanceTodos(dashboardCorpo);
       ligarEventosComunidade(estabId);
