@@ -124,6 +124,36 @@
     if (document.hidden) video.pause(); else videoConforme(corpo.getAttribute('data-tela'));
   });
 
+  // ---------- celular: a splash cabe inteira na tela, sem rolar ----------
+  // Mede o conteúdo e, se passar da altura da tela, reduz tudo por igual
+  // (--z, lido pelo splash.css) até caber. Mais larga que a tela na mesma
+  // proporção, o texto quebra menos: por isso confere de novo depois.
+  var telaSplash = document.getElementById('telaSplash');
+  function encaixarSplash() {
+    if (!telaSplash) return;
+    telaSplash.style.removeProperty('--z');
+    if (corpo.getAttribute('data-tela') !== 'splash' || window.innerWidth >= 720) return;
+    var z = 1;
+    for (var i = 0; i < 3; i++) {
+      var falta = telaSplash.scrollHeight - telaSplash.clientHeight;
+      if (falta <= 1) break;
+      z = Math.max(0.7, z * telaSplash.clientHeight / telaSplash.scrollHeight);
+      telaSplash.style.setProperty('--z', z.toFixed(4));
+    }
+  }
+  var encaixePendente = 0;
+  function encaixarDepois() {
+    cancelAnimationFrame(encaixePendente);
+    encaixePendente = requestAnimationFrame(encaixarSplash);
+  }
+  window.addEventListener('resize', encaixarDepois);
+  window.addEventListener('orientationchange', encaixarDepois);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(encaixarDepois);
+  // os textos do "Meus agendamentos"/"Tenho um negócio" mudam depois do login
+  if (window.MutationObserver && telaSplash) {
+    new MutationObserver(encaixarDepois).observe(telaSplash, { childList: true, characterData: true, subtree: true });
+  }
+
   // ---------- telas: splash ↔ lista da área (sem recarregar) ----------
   var slotHero = document.getElementById('explorarCuboSlot');
   var slotSplash = document.querySelector('.sp-topo');
@@ -159,6 +189,7 @@
     videoConforme(ehSplash ? 'splash' : 'lista');
     moverCubo(tela);
     window.scrollTo(0, 0);
+    encaixarSplash();
   }
 
   // desliza pro lado: View Transition dentro da página, ou CSS como reserva

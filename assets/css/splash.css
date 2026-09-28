@@ -191,7 +191,7 @@ body[data-tela="explorar"] .sp-video { display: none; }
   .sp-op .sp-seta { align-self: center; }
   .sp-pergunta h1 { font-size: 2.5rem; }
 }
-@media (max-height: 640px) and (max-width: 719px) {
+@media (max-height: 760px) and (max-width: 719px) {
   .sp { padding-top: calc(0.9rem + env(safe-area-inset-top)); }
   .sp-cubo { width: 44px; height: 44px; }
   .sp-pergunta { padding-top: 0.9rem; margin-bottom: 0.9rem; }
@@ -225,3 +225,20 @@ body[data-tela="explorar"] .sp-video { display: none; }
 .sp-corpo .sp-nome, .sp-corpo .sp-local, .sp-corpo .sp-ola, .sp-corpo .sp-pergunta h1 { text-shadow: 0 1px 12px rgba(255, 255, 255, 0.55); }
 .sp-corpo .sp-rodape { margin: 0.7rem auto 0; padding: 0.35rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 @media (prefers-reduced-motion: reduce) { .sp-video video { display: none; } }
+
+/* celular: a splash cabe inteira na tela e não rola nem pra cima nem pra
+   baixo. Se ainda faltar espaço (celular baixinho), o splash.js reduz
+   tudo por igual (--z) até caber; o puxar pra atualizar do cubo segue
+   funcionando porque é feito à mão, com os eventos de toque. */
+@media (max-width: 719px) {
+  html:has(> body[data-tela="splash"]),
+  body[data-tela="splash"] { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  body[data-tela="splash"] .sp {
+    --z: 1;
+    position: fixed; top: 0; left: 50%;
+    width: calc(100vw / var(--z)); max-width: none;
+    height: calc(100vh / var(--z)); height: calc(100svh / var(--z)); min-height: 0;
+    overflow: hidden; touch-action: none;
+    transform: translateX(-50%) scale(var(--z)); transform-origin: top center;
+  }
+}
