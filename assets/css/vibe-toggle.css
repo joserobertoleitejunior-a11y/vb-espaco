@@ -153,6 +153,14 @@ html:active-view-transition-type(avanca)::view-transition-new(root) { animation:
 html:active-view-transition-type(volta)::view-transition-old(root) { animation: vtSaiDir 0.42s var(--vt-ease) both; }
 html:active-view-transition-type(volta)::view-transition-new(root) { animation: vtEntraEsq 0.42s var(--vt-ease) both; }
 ::view-transition-group(faixa-vibe) { animation-duration: 0.2s; }
+/* troca de tela dentro da mesma página (splash ↔ lista, área ↔ área) */
+html.vt-dir-avanca::view-transition-old(root) { animation: vtSaiEsq 0.42s var(--vt-ease) both; }
+html.vt-dir-avanca::view-transition-new(root) { animation: vtEntraDir 0.42s var(--vt-ease) both; }
+html.vt-dir-volta::view-transition-old(root) { animation: vtSaiDir 0.42s var(--vt-ease) both; }
+html.vt-dir-volta::view-transition-new(root) { animation: vtEntraEsq 0.42s var(--vt-ease) both; }
+/* navegador sem View Transitions: a tela nova entra deslizando */
+.vt-entra-avanca { animation: vtEntraDir 0.42s var(--vt-ease) both; }
+.vt-entra-volta { animation: vtEntraEsq 0.42s var(--vt-ease) both; }
 @keyframes vtSaiEsq { to { transform: translateX(-28%); opacity: 0; } }
 @keyframes vtSaiDir { to { transform: translateX(28%); opacity: 0; } }
 @keyframes vtEntraDir { from { transform: translateX(34%); opacity: 0; } }
@@ -169,4 +177,5 @@ html.vt-entrando.vt-entrou body > *:not(.faixa-vibe) { transform: none; opacity:
   .vt-op.desenhando .vt-ic svg * { animation: none !important; }
   .vt-cubo { animation: none; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+  .vt-entra-avanca, .vt-entra-volta { animation: none; }
 }

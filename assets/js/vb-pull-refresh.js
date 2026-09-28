@@ -9,7 +9,7 @@
 (function () {
   var alvo = document.getElementById('pullRefreshCubo');
   if (!alvo || !window.requestAnimationFrame) return;
-  if (!('ontouchstart' in window)) return; // gesto de puxar só faz sentido em touch
+  var temToque = 'ontouchstart' in window; // o cubo aparece sempre; o gesto de puxar só em touch
 
   var reduzMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -24,8 +24,13 @@
     .catch(function () { /* sem three.js: o cubo simplesmente não aparece, o resto do site segue normal */ });
 
   function iniciarCubo(THREE) {
-    var tam = 40;
+    // tamanho vem do próprio lugar do cubo (40px no hero, maior na splash);
+    // o canvas acompanha o elemento se ele mudar de lugar/tamanho
+    var tam = 64; // desenha em 64px e o CSS encaixa no lugar (40px no hero, 58px na splash)
     var canvas = document.createElement('canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
     alvo.appendChild(canvas);
 
     var scene = new THREE.Scene();
@@ -39,7 +44,7 @@
 
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(tam, tam);
+    renderer.setSize(tam, tam, false); // false: não mexe no tamanho CSS (100% do lugar do cubo)
     renderer.setClearColor(0x000000, 0);
 
     var geometria = new THREE.BoxGeometry(1.15, 1.15, 1.15);
@@ -111,7 +116,9 @@
   var puxadoPx = 0;
 
   function podeComecarArrasto() {
-    return window.scrollY <= 0 && !carregando;
+    // só com o cubo na tela e sem nenhuma janela aberta por cima
+    return temToque && window.scrollY <= 0 && !carregando && alvo.offsetParent !== null &&
+      !document.querySelector('.admin-pin-overlay:not(.oculto), .admin-painel-overlay:not(.oculto)');
   }
 
   document.addEventListener('touchstart', function (e) {

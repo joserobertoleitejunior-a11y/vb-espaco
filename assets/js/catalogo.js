@@ -1,8 +1,10 @@
-/* Explorar = catálogo estilo iFood por ÁREA (explorar.html?area=…):
-   agenda (agendar), delivery (pedir) ou servicos (chamar um profissional).
+/* Explorar = catálogo estilo iFood por ÁREA: agenda (agendar), delivery
+   (pedir) ou servicos (chamar um profissional). Mora na mesma página da
+   splash (index.html; /explorar.html?area=… também cai nela pelo worker):
+   trocar de área não recarrega nada — só troca textos, filtros e lista.
    Busca por nome + filtro por segmento; o card leva pro site da área
    certa (/:slug/:cidade pra agendar, /:slug/:cidade/pedir pra pedir/chamar).
-   O toggle do topo troca de área deslizando a tela. */
+   API: window.VBExplorar.abrir(area) / .prebuscar() / .area() */
 (function () {
   if (!window.db) return;
 
@@ -10,8 +12,9 @@
   var filtrosEl = document.getElementById('filtros');
   var buscaEl = document.getElementById('buscaInput');
   var segmentoAtual = '';
-  var AREA = new URLSearchParams(location.search).get('area');
-  if (['agenda', 'delivery', 'servicos'].indexOf(AREA) === -1) AREA = 'agenda';
+  var AREA = null;
+  function areaValida(a) { return ['agenda', 'delivery', 'servicos'].indexOf(a) > -1; }
+  var memo = {}; // listas já buscadas nesta visita: trocar de área mostra na hora
 
   // textos e filtros de cada área (os chips só mostram segmentos daquela área)
   var AREAS = {
@@ -34,7 +37,7 @@
       vazio: 'Atende no local do cliente? Receba chamados e pedidos de orçamento com localização.'
     }
   };
-  var CFG = AREAS[AREA];
+  var CFG = null;
   var todos = [];
   var estadoOffline = null; // null | 'com-cache' | 'sem-cache'
   var pertoBtn = document.getElementById('buscaPertoBtn');
@@ -126,13 +129,14 @@
     return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
   }
 
-  var CTA_CADASTRO =
+  // convite pra cadastrar, com o texto e o link da área aberta agora
+  function ctaCadastro() { return (
     '<div class="catalogo-cta">' +
     '<span class="catalogo-cta-emoji" aria-hidden="true">' + SVG_ESTRELA_CTA + '</span>' +
     '<p class="catalogo-cta-titulo">Mais estabelecimentos chegando em breve</p>' +
     '<p class="catalogo-cta-texto">' + escapeHtml(CFG.vazio) + '</p>' +
     '<a class="btn btn-primario" href="criar.html?area=' + AREA + '">Quero cadastrar o meu →</a>' +
-    '</div>';
+    '</div>'); }
 
   function renderizar() {
     if (estadoOffline === 'sem-cache') {
@@ -148,7 +152,7 @@
     });
 
     if (!linhas.length) {
-      listaEl.innerHTML = avisoOfflineHtml() + '<p style="color:var(--tinta-suave); text-align:center; padding:2rem 0;">Nenhum estabelecimento encontrado.</p>' + CTA_CADASTRO;
+      listaEl.innerHTML = avisoOfflineHtml() + '<p style="color:var(--tinta-suave); text-align:center; padding:2rem 0;">Nenhum estabelecimento encontrado.</p>' + ctaCadastro();
       return;
     }
 
@@ -212,7 +216,7 @@
         '</div>' +
         '<a class="catalogo-criar-assim" href="' + (AREA === 'agenda' ? 'criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') : 'criar.html?area=' + AREA + '&segmento=' + encodeURIComponent(e.segmento || '')) + '">+ Criar ' + (AREA === 'agenda' ? 'um site assim' : 'uma loja assim') + ' →</a>' +
         '</div>';
-    }).join('') + CTA_CADASTRO;
+    }).join('') + ctaCadastro();
   }
 
   // o card inteiro age como link (acessível por teclado também), mas os
@@ -318,20 +322,39 @@
     renderizar();
   }
 
+  function buscar(area, segmento) {
+    return localizacaoAtual
+      ? db.rpc('listar_estabelecimentos_por_raio', { p_lat: localizacaoAtual.lat, p_lng: localizacaoAtual.lng, p_raio_km: 15, p_segmento: segmento || null, p_area: area })
+      : db.rpc('listar_estabelecimentos', { p_cidade: null, p_segmento: segmento || null, p_area: area });
+  }
+  // busca as três áreas em segundo plano enquanto a pessoa está na splash
+  function prebuscar() {
+    ['agenda', 'delivery', 'servicos'].forEach(function (a) {
+      var chave = 'catalogo_' + a + '_todos';
+      if (memo[chave]) return;
+      buscar(a, '').then(function (res) { if (!res.error && res.data) memo[chave] = res.data; }, function () {});
+    });
+  }
+
   function carregar() {
-    listaEl.innerHTML = '<div class="card"><div class="skeleton" style="height:1.4rem; width:60%; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:1rem; width:35%;"></div></div>';
+    var chave = chaveCache();
+    if (memo[chave]) { todos = memo[chave]; estadoOffline = null; renderizar(); }
+    else listaEl.innerHTML = '<div class="card"><div class="skeleton" style="height:1.4rem; width:60%; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:1rem; width:35%;"></div></div>';
+    var areaPedida = AREA;
 
     var chamada = localizacaoAtual
       ? db.rpc('listar_estabelecimentos_por_raio', { p_lat: localizacaoAtual.lat, p_lng: localizacaoAtual.lng, p_raio_km: 15, p_segmento: segmentoAtual || null, p_area: AREA })
       : db.rpc('listar_estabelecimentos', { p_cidade: null, p_segmento: segmentoAtual || null, p_area: AREA });
 
     chamada.then(function (res) {
+      if (areaPedida !== AREA || chave !== chaveCache()) return; // trocou de área no meio do caminho
       if (res.error) {
         listaEl.innerHTML = '<p class="msg msg-erro">' + escapeHtml(res.error.message || 'Não deu pra carregar agora.') + '</p>';
         return;
       }
       todos = res.data || [];
       estadoOffline = null;
+      memo[chave] = todos;
       if (window.VBCache) window.VBCache.salvar(chaveCache(), todos);
       renderizar();
     }, function () {
@@ -339,39 +362,60 @@
     });
   }
 
-  // topo da área: textos, chips e o toggle pra trocar de área
-  document.getElementById('explorarTitulo').textContent = CFG.titulo;
-  document.getElementById('explorarSub').textContent = CFG.sub;
-  document.documentElement.setAttribute('data-area', AREA);
-  var criarTab = document.getElementById('tabbarCriarSite');
-  if (criarTab) criarTab.href = 'criar.html?area=' + AREA;
-  filtrosEl.innerHTML = '<button class="chip is-ativo" type="button" data-segmento="" aria-pressed="true">Tudo</button>' +
-    CFG.chips.map(function (seg) {
-      return '<button class="chip" type="button" data-segmento="' + seg + '" aria-pressed="false">' + iconeChip(seg) + escapeHtml(SEGMENTOS[seg] || seg) + '</button>';
-    }).join('');
-  if (window.VibeToggle) {
-    window.VibeToggle.tingir(AREA);
-    window.VibeToggle.montar(document.getElementById('explorarAreas'), {
+  // topo da área: textos, filtros e o toggle (montado uma vez só)
+  var toggle = null;
+  function montarToggle() {
+    if (toggle || !window.VibeToggle) return;
+    toggle = window.VibeToggle.montar(document.getElementById('explorarAreas'), {
       tema: 'claro', atual: AREA, swipe: true, semCubo: true, rotulo: 'O que você procura',
+      gestoAtivo: function () { return document.body.getAttribute('data-tela') === 'explorar'; },
       opcoes: [
-        { chave: 'agenda', rotulo: 'Agendar', href: 'explorar.html?area=agenda' },
-        { chave: 'delivery', rotulo: 'Pedir', href: 'explorar.html?area=delivery' },
-        { chave: 'servicos', rotulo: 'Chamar', href: 'explorar.html?area=servicos' }
-      ]
+        { chave: 'agenda', rotulo: 'Agendar', href: '/explorar.html?area=agenda' },
+        { chave: 'delivery', rotulo: 'Pedir', href: '/explorar.html?area=delivery' },
+        { chave: 'servicos', rotulo: 'Chamar', href: '/explorar.html?area=servicos' }
+      ],
+      aoTrocar: function (chave, o, dir) {
+        if (window.VBInicio) window.VBInicio.irPara(chave, dir); else abrir(chave);
+      }
     });
   }
+  function aplicarArea(area) {
+    AREA = area;
+    CFG = AREAS[area];
+    segmentoAtual = '';
+    document.getElementById('explorarTitulo').textContent = CFG.titulo;
+    document.getElementById('explorarSub').textContent = CFG.sub;
+    if (window.VibeToggle) window.VibeToggle.tingir(AREA);
+    var criarTab = document.getElementById('tabbarCriarSite');
+    if (criarTab) criarTab.href = 'criar.html?area=' + AREA;
+    filtrosEl.innerHTML = '<button class="chip is-ativo" type="button" data-segmento="" aria-pressed="true">Tudo</button>' +
+      CFG.chips.map(function (seg) {
+        return '<button class="chip" type="button" data-segmento="' + seg + '" aria-pressed="false">' + iconeChip(seg) + escapeHtml(SEGMENTOS[seg] || seg) + '</button>';
+      }).join('');
+    filtrosEl.scrollLeft = 0;
+    montarToggle();
+    if (toggle && toggle.atual() !== AREA) toggle.definir(AREA);
+  }
+  // abre (ou troca) a área mostrada — sem recarregar a página
+  function abrir(area) {
+    if (!areaValida(area)) area = 'agenda';
+    if (area === AREA) return;
+    aplicarArea(area);
+    carregar();
+  }
+  window.VBExplorar = { abrir: abrir, prebuscar: prebuscar, area: function () { return AREA; } };
 
-  filtrosEl.querySelectorAll('.chip').forEach(function (chip) {
-    chip.addEventListener('click', function () {
-      filtrosEl.querySelectorAll('.chip').forEach(function (c) {
-        c.classList.remove('is-ativo');
-        c.setAttribute('aria-pressed', 'false');
-      });
-      chip.classList.add('is-ativo');
-      chip.setAttribute('aria-pressed', 'true');
-      segmentoAtual = chip.getAttribute('data-segmento') || '';
-      carregar();
+  filtrosEl.addEventListener('click', function (e) {
+    var chip = e.target.closest('.chip');
+    if (!chip) return;
+    filtrosEl.querySelectorAll('.chip').forEach(function (c) {
+      c.classList.remove('is-ativo');
+      c.setAttribute('aria-pressed', 'false');
     });
+    chip.classList.add('is-ativo');
+    chip.setAttribute('aria-pressed', 'true');
+    segmentoAtual = chip.getAttribute('data-segmento') || '';
+    carregar();
   });
 
   buscaEl.addEventListener('input', renderizar);
@@ -404,5 +448,6 @@
     }, { timeout: 10000 });
   });
 
-  carregar();
+  var areaUrl = new URLSearchParams(location.search).get('area');
+  if (areaValida(areaUrl)) abrir(areaUrl);
 })();

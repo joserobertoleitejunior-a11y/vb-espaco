@@ -139,7 +139,7 @@
       var dir = i > idx ? 'avanca' : 'volta';
       ativar(i, true);
       var o = opcoes[i];
-      marcarDirecao(dir);
+      if (!opts.aoTrocar) marcarDirecao(dir); // troca dentro da mesma página não precisa
       // deixa a bolha chegar antes de trocar de tela
       setTimeout(function () {
         if (opts.aoTrocar) opts.aoTrocar(o.chave, o, dir);
@@ -163,9 +163,14 @@
     posicionar(idx, false);
     requestAnimationFrame(function () { bolha.classList.remove('sem-anim'); });
 
-    if (opts.swipe && n > 1) ligarGesto(escolher, function () { return idx; }, n, bolha);
+    if (opts.swipe && n > 1) ligarGesto(escolher, function () { return idx; }, n, bolha, opts.gestoAtivo);
 
-    return { escolher: escolher, atual: function () { return opcoes[idx].chave; } };
+    // definir: muda a opção ativa sem disparar a troca (ex.: voltar do histórico)
+    function definir(chave, animar) {
+      var i = opcoes.findIndex(function (o) { return o.chave === chave; });
+      if (i > -1 && i !== idx) ativar(i, animar !== false);
+    }
+    return { escolher: escolher, definir: definir, atual: function () { return opcoes[idx].chave; } };
   }
 
   /* ---------- gesto: arrastar a tela pro lado ---------- */
@@ -178,10 +183,10 @@
     }
     return false;
   }
-  function ligarGesto(escolher, atual, n, bolha) {
+  function ligarGesto(escolher, atual, n, bolha, ativo) {
     var x0 = null, y0 = 0, t0 = 0, cancelado = false;
     document.addEventListener('touchstart', function (e) {
-      if (e.touches.length !== 1) { x0 = null; return; }
+      if (e.touches.length !== 1 || (ativo && !ativo())) { x0 = null; return; }
       var alvo = e.target;
       if (alvo.closest('input, textarea, select, [data-sem-gesto], .sheet.aberto, .admin-painel-overlay:not(.oculto) .dash-abas') || rolaNaHorizontal(alvo) || document.body.classList.contains('travado')) { x0 = null; return; }
       x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); cancelado = false;

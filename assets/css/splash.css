@@ -12,6 +12,15 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+/* app de verdade: sem zoom de pinça/duplo toque e sem o "puxar pra
+   atualizar" do navegador (o nosso é o do cubo) */
+html { overscroll-behavior-y: none; -webkit-text-size-adjust: 100%; }
+body { touch-action: pan-x pan-y; }
+
+/* splash e Explorar moram na mesma página: uma tela por vez */
+body[data-tela="splash"] .tela-explorar,
+body[data-tela="explorar"] #telaSplash,
+body[data-tela="explorar"] .sp-fundo { display: none; }
 .sp-corpo {
   min-height: 100vh; min-height: 100svh;
   background: var(--linho);
@@ -54,24 +63,8 @@ html, body { margin: 0; }
 
 /* ---------- marca ---------- */
 .sp-topo { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-top: auto; }
-.sp-cubo { --mira: 0deg; display: block; width: 58px; height: 58px; perspective: 260px; transition: --mira 0.9s var(--vt-mola); }
-.sp-cubo-3d {
-  --lado: 30px;
-  position: relative; display: block; width: var(--lado); height: var(--lado); margin: 14px;
-  transform-style: preserve-3d;
-  transform: rotateX(-24deg) rotateY(calc(35deg + var(--giro, 0deg) + var(--mira, 0deg)));
-}
-.sp-cubo-3d i {
-  position: absolute; inset: 0;
-  border: 1.6px solid var(--dourado);
-  background: rgba(201, 162, 39, 0.05);
-}
-.sp-cubo-3d .f1 { transform: translateZ(calc(var(--lado) / 2)); }
-.sp-cubo-3d .f2 { transform: rotateY(180deg) translateZ(calc(var(--lado) / 2)); }
-.sp-cubo-3d .f3 { transform: rotateY(90deg) translateZ(calc(var(--lado) / 2)); }
-.sp-cubo-3d .f4 { transform: rotateY(-90deg) translateZ(calc(var(--lado) / 2)); }
-.sp-cubo-3d .f5 { transform: rotateX(90deg) translateZ(calc(var(--lado) / 2)); }
-.sp-cubo-3d .f6 { transform: rotateX(-90deg) translateZ(calc(var(--lado) / 2)); }
+.sp-cubo { display: block; width: 58px; height: 58px; }
+.cubo-no-hero { display: block; width: 100%; height: 100%; }
 .sp-nome { margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.01em; }
 .sp-local {
   margin: 0; display: inline-flex; align-items: center; gap: 0.25rem;
@@ -141,6 +134,25 @@ html, body { margin: 0; }
 .sp-seta svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .sp-op:hover .sp-seta, .sp-op.sp-foco .sp-seta { transform: translateX(3px); color: rgb(var(--area)); }
 
+/* ---------- meus agendamentos (cliente final) ---------- */
+.sp-meus {
+  display: flex; align-items: center; gap: 0.7rem;
+  margin: 0.9rem auto 0; padding: 0.55rem 1rem 0.55rem 0.7rem;
+  border: 1px solid rgba(31, 32, 36, 0.1); border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  font: inherit; color: var(--tinta); text-align: left; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.2s ease, transform 0.2s var(--vt-ease), box-shadow 0.2s ease;
+}
+.sp-meus:hover { background: rgba(255, 255, 255, 0.9); box-shadow: 0 6px 18px rgba(31, 32, 36, 0.08); }
+.sp-meus:active { transform: scale(0.98); }
+.sp-meus:focus-visible { outline: 2px solid var(--tinta); outline-offset: 3px; }
+.sp-meus svg { width: 22px; height: 22px; flex-shrink: 0; fill: none; stroke: rgb(var(--vt-rgb-agenda)); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sp-meus span { display: flex; flex-direction: column; line-height: 1.25; }
+.sp-meus strong { font-size: 0.86rem; font-weight: 800; }
+.sp-meus small { font-size: 0.72rem; color: var(--tinta-suave); }
+
 /* ---------- rodapé ---------- */
 .sp-rodape {
   display: flex; justify-content: center; align-items: center; gap: 0.5rem;
@@ -154,11 +166,11 @@ html, body { margin: 0; }
 /* ---------- entrada: marca, pergunta e as opções uma a uma ---------- */
 @media (prefers-reduced-motion: no-preference) {
   .sp-cubo { animation: spCubo 0.9s cubic-bezier(0.34, 1.45, 0.64, 1) both; }
-  .sp-cubo-3d { animation: spGira 16s linear 1s infinite; }
   .sp-nome, .sp-local { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both; }
   .sp-pergunta { animation: spSobe 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; }
   .sp-op { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) calc(0.4s + var(--i, 0) * 0.07s) both; }
-  .sp-rodape { animation: spSobe 0.6s ease 0.75s both; }
+  .sp-meus { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.72s both; }
+  .sp-rodape { animation: spSobe 0.6s ease 0.8s both; }
   .sp-op { --d: calc(0.45s + var(--i, 0) * 0.07s); }
   .sp-ic svg * { animation: vtDesenha 0.7s var(--vt-ease) var(--d) both; }
   .sp-ic .vt-check { animation-delay: calc(var(--d) + 0.25s); }
@@ -168,10 +180,7 @@ html, body { margin: 0; }
   .sp-ic .vt-chao { animation-delay: calc(var(--d) + 0.3s); }
 }
 @keyframes spCubo { from { opacity: 0; transform: scale(0.6) rotate(-12deg); } to { opacity: 1; transform: none; } }
-@keyframes spGira { from { --giro: 0deg; } to { --giro: 360deg; } }
 @keyframes spSobe { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@property --giro { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
-@property --mira { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
 
 /* ---------- telas maiores: opções em 2×2 ---------- */
 @media (min-width: 720px) {
@@ -184,7 +193,6 @@ html, body { margin: 0; }
 @media (max-height: 640px) and (max-width: 719px) {
   .sp { padding-top: calc(0.9rem + env(safe-area-inset-top)); }
   .sp-cubo { width: 44px; height: 44px; }
-  .sp-cubo-3d { --lado: 22px; margin: 11px; }
   .sp-pergunta { padding-top: 0.9rem; margin-bottom: 0.9rem; }
   .sp-pergunta h1 { font-size: 1.55rem; }
   .sp-opcoes { gap: 0.5rem; }

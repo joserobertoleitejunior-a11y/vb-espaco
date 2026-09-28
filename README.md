@@ -17,7 +17,7 @@ Produção: `https://vb-espaco.joserobertoleitejunior.workers.dev` (Cloudflare W
 | Caminho | Página | O que é |
 |---|---|---|
 | `/` | `index.html` | **Splash única do Vibe**: "O que você precisa agora?" → Agendar, Pedir, Chamar um profissional, Tenho um negócio/Meu painel. É o único lugar em que a plataforma aparece como site próprio. |
-| `/explorar.html?area=agenda\|delivery\|servicos` | `explorar.html` | Catálogo de negócios por área, com busca, "perto de mim", filtros por tipo e o toggle das áreas. |
+| `/explorar.html?area=agenda\|delivery\|servicos` | `index.html` (mesma página) | Lista de negócios por área, com busca, "perto de mim", filtros e o toggle. Mora na mesma página da splash: trocar de tela ou de área não recarrega nada (o worker serve `index.html` nesse endereço). |
 | `/:slug/:cidade` | `perfil.html` | Site do negócio na Agenda (estilo escolhido pelo dono). |
 | `/:slug/:cidade/pedir` (também `/chamar` e `/orcamento`) | `pedir.html` | Loja (Delivery) ou chamado/orçamento (No local) do mesmo negócio. |
 | `/:slug/:cidade/institucional` | `institucional.html` | Página institucional do negócio. |

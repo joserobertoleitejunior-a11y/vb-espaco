@@ -1,4 +1,4 @@
-/* Login por WhatsApp na página inicial (index.html) — mesma identidade
+/* Login por WhatsApp na página inicial (index.html: splash + Explorar) — mesma identidade
    global usada dentro de cada estabelecimento (ver vb-cliente-global.js),
    só que aqui não há um estabelecimento aberto pra registrar visita.
    "Entrar" no topo pergunta primeiro quem tá entrando — cliente (segue
@@ -38,6 +38,16 @@
     var nomeInput = document.getElementById('clienteGlobalNomeInput');
     var msg = document.getElementById('clienteGlobalMsg');
     var telefonePendente = '';
+    var depoisDeEntrar = null; // ex.: abrir "Meus agendamentos" logo após o login
+    function entrou(cliente) {
+      aplicarNaTela(cliente);
+      fechar();
+      if (window.VBInicio && window.VBInicio.atualizarCliente) window.VBInicio.atualizarCliente();
+      var f = depoisDeEntrar; depoisDeEntrar = null;
+      if (f) f();
+    }
+    // outras telas (a splash) podem pedir o login do cliente e seguir depois
+    window.VBClienteEntrar = function (fn) { depoisDeEntrar = fn || null; abrirLoginCliente(); };
 
     aplicarNaTela(window.VBClienteGlobal.obter());
 
@@ -62,6 +72,8 @@
       setTimeout(function () { telefoneInput.focus(); }, 50);
     }
     function fechar() { overlay.classList.add('oculto'); }
+    var cancelarTel = document.getElementById('clienteGlobalCancelar');
+    if (cancelarTel) cancelarTel.addEventListener('click', function () { depoisDeEntrar = null; });
 
     var escolherClienteBtn = document.getElementById('clienteGlobalEscolherCliente');
     if (escolherClienteBtn) escolherClienteBtn.addEventListener('click', abrirLoginCliente);
@@ -103,8 +115,7 @@
         var achou = res.data && res.data.length > 0 ? res.data[0] : null;
         if (achou) {
           window.VBClienteGlobal.salvar(achou.telefone, achou.nome);
-          aplicarNaTela({ telefone: achou.telefone, nome: achou.nome });
-          fechar();
+          entrou({ telefone: achou.telefone, nome: achou.nome });
         } else {
           msg.textContent = '';
           msg.className = 'msg';
@@ -129,8 +140,7 @@
       db.rpc('vb_login_cliente_global', { p_telefone: telefonePendente, p_nome: nome }).then(function (res) {
         var criado = res.data && res.data.length > 0 ? res.data[0] : { telefone: telefonePendente, nome: nome };
         window.VBClienteGlobal.salvar(criado.telefone, criado.nome);
-        aplicarNaTela({ telefone: criado.telefone, nome: criado.nome });
-        fechar();
+        entrou({ telefone: criado.telefone, nome: criado.nome });
       }, function () {
         msg.className = 'msg msg-erro';
         msg.textContent = 'Sem conexão agora.';

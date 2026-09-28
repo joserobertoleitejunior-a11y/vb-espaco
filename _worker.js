@@ -17,6 +17,11 @@ export default {
     if (partes.length === 0) {
       return servirComo(request, env, '/index.html');
     }
+    // a lista por área (Explorar) mora na mesma página da splash: trocar de
+    // tela não recarrega nada; o endereço /explorar.html?area=… só diz qual abrir
+    if (partes.length === 1 && (partes[0] === 'explorar.html' || partes[0] === 'explorar')) {
+      return servirComo(request, env, '/index.html');
+    }
     if (partes.length === 3 && partes[2] === 'institucional') {
       return servirComo(request, env, '/institucional.html');
     }
