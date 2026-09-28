@@ -67,6 +67,7 @@ body[data-tela="explorar"] .sp-video { display: none; }
 .sp-cubo { display: block; width: 58px; height: 58px; }
 .cubo-no-hero { display: block; width: 100%; height: 100%; }
 .sp-nome { margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.01em; }
+.sp-slogan { margin: -0.15rem 0 0; font-size: 0.86rem; font-weight: 600; font-style: italic; letter-spacing: 0.01em; color: #8f7318; }
 .sp-local {
   margin: 0; display: inline-flex; align-items: center; gap: 0.25rem;
   font-size: 0.74rem; font-weight: 700; color: var(--tinta-suave);
@@ -167,7 +168,7 @@ body[data-tela="explorar"] .sp-video { display: none; }
 /* ---------- entrada: marca, pergunta e as opções uma a uma ---------- */
 @media (prefers-reduced-motion: no-preference) {
   .sp-cubo { animation: spCubo 0.9s cubic-bezier(0.34, 1.45, 0.64, 1) both; }
-  .sp-nome, .sp-local { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both; }
+  .sp-nome, .sp-slogan, .sp-local { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both; }
   .sp-pergunta { animation: spSobe 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; }
   .sp-op { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) calc(0.4s + var(--i, 0) * 0.07s) both; }
   .sp-meus { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.72s both; }
@@ -222,23 +223,53 @@ body[data-tela="explorar"] .sp-video { display: none; }
   .sp-video video { filter: blur(3px) saturate(1.05); transform: scale(1.04); }
 }
 /* texto sobre o vídeo */
-.sp-corpo .sp-nome, .sp-corpo .sp-local, .sp-corpo .sp-ola, .sp-corpo .sp-pergunta h1 { text-shadow: 0 1px 12px rgba(255, 255, 255, 0.55); }
+.sp-corpo .sp-nome, .sp-corpo .sp-slogan, .sp-corpo .sp-local, .sp-corpo .sp-ola, .sp-corpo .sp-pergunta h1 { text-shadow: 0 1px 12px rgba(255, 255, 255, 0.55); }
 .sp-corpo .sp-rodape { margin: 0.7rem auto 0; padding: 0.35rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 @media (prefers-reduced-motion: reduce) { .sp-video video { display: none; } }
 
-/* celular: a splash cabe inteira na tela e não rola nem pra cima nem pra
-   baixo. Se ainda faltar espaço (celular baixinho), o splash.js reduz
-   tudo por igual (--z) até caber; o puxar pra atualizar do cubo segue
+/* em qualquer aparelho (celular em pé ou deitado, dobrável, tablet,
+   janela pequena no computador) a splash ocupa exatamente a área visível
+   e não rola. --altura-tela vem do splash.js (altura real da janela, sem
+   as barras do navegador); se o conteúdo não couber, o splash.js reduz
+   tudo por igual (--z) até caber. O puxar pra atualizar do cubo segue
    funcionando porque é feito à mão, com os eventos de toque. */
-@media (max-width: 719px) {
-  html:has(> body[data-tela="splash"]),
-  body[data-tela="splash"] { height: 100%; overflow: hidden; overscroll-behavior: none; }
+html:has(> body[data-tela="splash"]),
+body[data-tela="splash"] { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body[data-tela="splash"] .sp {
+  --z: 1;
+  position: fixed; top: 0; left: 50%;
+  width: calc(100vw / var(--z)); max-width: none;
+  height: calc(100vh / var(--z));
+  height: calc(var(--altura-tela, 100svh) / var(--z));
+  min-height: 0;
+  overflow: hidden; touch-action: none;
+  transform: translateX(-50%) scale(var(--z)); transform-origin: top center;
+}
+@media (min-width: 720px) {
+  body[data-tela="splash"] .sp { width: min(calc(100vw / var(--z)), 46rem); }
+}
+
+/* celular deitado (tela baixinha): duas colunas — marca e pergunta à
+   esquerda, as opções à direita — pra caber sem encolher demais */
+@media (orientation: landscape) and (max-height: 500px) {
   body[data-tela="splash"] .sp {
-    --z: 1;
-    position: fixed; top: 0; left: 50%;
-    width: calc(100vw / var(--z)); max-width: none;
-    height: calc(100vh / var(--z)); height: calc(100svh / var(--z)); min-height: 0;
-    overflow: hidden; touch-action: none;
-    transform: translateX(-50%) scale(var(--z)); transform-origin: top center;
+    display: grid; grid-template-columns: 1fr 1.3fr; grid-template-rows: auto auto 1fr auto;
+    column-gap: 1.4rem; align-content: center;
+    width: calc(100vw / var(--z));
+    padding: calc(0.7rem + env(safe-area-inset-top)) calc(1.2rem + env(safe-area-inset-right))
+      calc(0.7rem + env(safe-area-inset-bottom)) calc(1.2rem + env(safe-area-inset-left));
   }
+  body[data-tela="splash"] .sp-topo { grid-column: 1; grid-row: 1; margin-top: 0; }
+  body[data-tela="splash"] .sp-cubo { width: 40px; height: 40px; }
+  body[data-tela="splash"] .sp-pergunta { grid-column: 1; grid-row: 2; padding-top: 0.6rem; margin-bottom: 0; }
+  body[data-tela="splash"] .sp-pergunta h1 { font-size: 1.35rem; }
+  body[data-tela="splash"] .sp-opcoes {
+    grid-column: 2; grid-row: 1 / span 4; align-self: center;
+    display: flex; flex-direction: column; gap: 0.45rem; margin: 0;
+  }
+  body[data-tela="splash"] .sp-op { padding: 0.5rem 0.85rem; align-items: center; }
+  body[data-tela="splash"] .sp-ic { width: 36px; height: 36px; border-radius: 11px; }
+  body[data-tela="splash"] .sp-txt small { font-size: 0.74rem; }
+  body[data-tela="splash"] .sp-meus { grid-column: 1; grid-row: 3; align-self: end; margin: 0.6rem auto 0; }
+  body[data-tela="splash"] .sp-rodape { grid-column: 1; grid-row: 4; margin-top: 0.5rem; }
 }

@@ -108,7 +108,7 @@
     fechar.addEventListener('click', function () { overlay.classList.add('oculto'); });
     overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.classList.add('oculto'); });
     sairBtn.addEventListener('click', function () {
-      window.VBDialogo.confirm('Sair da sua conta Vibe neste site?').then(function (ok) {
+      window.VBDialogo.confirm('Sair da sua conta neste site?').then(function (ok) {
         if (!ok) return;
         window.VBClienteGlobal.limpar();
         overlay.classList.add('oculto');

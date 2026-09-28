@@ -459,7 +459,7 @@
     }
 
     var base = '/' + encodeURIComponent(slug) + '/' + encodeURIComponent(cidade);
-    document.title = linha.nome + ' — Site institucional — Vibe';
+    document.title = linha.nome + ' — Site institucional — Cadê? Achei!';
     document.getElementById('tplNomeTopo').textContent = linha.nome;
     document.getElementById('tplNomeRodape').textContent = linha.nome;
     document.getElementById('tplTituloInstitucional').textContent = linha.titulo_institucional || ('Conheça a ' + linha.nome);

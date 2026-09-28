@@ -317,7 +317,7 @@
       var atual = window.VBClienteGlobal.obter();
       if (atual) {
         if (window.VBMeusAgendamentos) { window.VBMeusAgendamentos.abrir(); return; }
-        window.VBDialogo.confirm('Sair da sua conta Vibe neste site?').then(function (ok) {
+        window.VBDialogo.confirm('Sair da sua conta neste site?').then(function (ok) {
           if (!ok) return;
           window.VBClienteGlobal.limpar();
           aplicarClienteGlobalNaTela(null);

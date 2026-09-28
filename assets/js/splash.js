@@ -15,9 +15,9 @@
   var AREAS = ['agenda', 'delivery', 'servicos'];
   var TITULOS = {
     splash: document.title,
-    agenda: 'Agendar horário em Itapetininga — Vibe',
-    delivery: 'Pedir delivery em Itapetininga — Vibe',
-    servicos: 'Chamar um profissional em Itapetininga — Vibe'
+    agenda: 'Agendar horário em Itapetininga — Cadê? Achei!',
+    delivery: 'Pedir delivery em Itapetininga — Cadê? Achei!',
+    servicos: 'Chamar um profissional em Itapetininga — Cadê? Achei!'
   };
   var T = window.VibeToggle || {};
   var ICONES = T.ICONES || {};
@@ -124,22 +124,35 @@
     if (document.hidden) video.pause(); else videoConforme(corpo.getAttribute('data-tela'));
   });
 
-  // ---------- celular: a splash cabe inteira na tela, sem rolar ----------
+  // ---------- qualquer aparelho: a splash cabe inteira na tela, sem rolar ----------
   // Mede o conteúdo e, se passar da altura da tela, reduz tudo por igual
   // (--z, lido pelo splash.css) até caber. Mais larga que a tela na mesma
   // proporção, o texto quebra menos: por isso confere de novo depois.
   var telaSplash = document.getElementById('telaSplash');
   function encaixarSplash() {
     if (!telaSplash) return;
+    // altura que está de fato visível (sem barras do navegador/teclado)
+    var alturaVisivel = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    document.documentElement.style.setProperty('--altura-tela', Math.round(alturaVisivel) + 'px');
     telaSplash.style.removeProperty('--z');
-    if (corpo.getAttribute('data-tela') !== 'splash' || window.innerWidth >= 720) return;
-    var z = 1;
-    for (var i = 0; i < 3; i++) {
-      var falta = telaSplash.scrollHeight - telaSplash.clientHeight;
-      if (falta <= 1) break;
-      z = Math.max(0.7, z * telaSplash.clientHeight / telaSplash.scrollHeight);
-      telaSplash.style.setProperty('--z', z.toFixed(4));
+    if (corpo.getAttribute('data-tela') !== 'splash') return;
+    function cabe() { return telaSplash.scrollHeight - telaSplash.clientHeight <= 1; }
+    function usar(z) { telaSplash.style.setProperty('--z', z.toFixed(4)); }
+    if (cabe()) return;
+    // primeiro acha um tamanho que caiba; depois aproxima do maior possível
+    var MIN = 0.6, cabeZ = 1, grande = 1;
+    for (var i = 0; i < 4 && cabeZ > MIN; i++) {
+      grande = cabeZ;
+      cabeZ = Math.max(MIN, cabeZ * telaSplash.clientHeight / telaSplash.scrollHeight);
+      usar(cabeZ);
+      if (cabe()) break;
     }
+    for (var j = 0; j < 5; j++) {
+      var meio = (cabeZ + grande) / 2;
+      usar(meio);
+      if (cabe()) cabeZ = meio; else grande = meio;
+    }
+    usar(cabeZ);
   }
   var encaixePendente = 0;
   function encaixarDepois() {
@@ -148,6 +161,7 @@
   }
   window.addEventListener('resize', encaixarDepois);
   window.addEventListener('orientationchange', encaixarDepois);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', encaixarDepois);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(encaixarDepois);
   // os textos do "Meus agendamentos"/"Tenho um negócio" mudam depois do login
   if (window.MutationObserver && telaSplash) {
