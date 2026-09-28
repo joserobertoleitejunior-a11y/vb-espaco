@@ -1,0 +1,24 @@
+/* Estilo "Papel" (camada sobre tpl-claro): editorial, fundo de papel
+   creme, títulos com serifa (Fraunces), filetes finos em vez de sombra. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap');
+:root{
+  --linen:#FBF8F2; --linen-deep:#F3EEE3; --stone:rgba(43,38,30,0.14);
+  --ink:#231F1A; --ink-soft:rgba(35,31,26,0.64);
+  --terracotta:#2B4C7E; --terracotta-deep:#1F3960; --terracotta-claro:#9FB2D2; --terracotta-rgb:43,76,126;
+  --radius:6px; --gloss:none; --gloss-hover:none;
+  --shadow-soft:none;
+}
+body{font-family:'Manrope', sans-serif;}
+h1, h2, h3, .display, .brand{font-family:'Fraunces', serif; font-weight:600; letter-spacing:-0.01em;}
+.brand{font-size:1.3rem;}
+.eyebrow{font-family:'Manrope', sans-serif; letter-spacing:0.2em; font-weight:600;}
+.eyebrow::before{width:28px; height:1px; background:currentColor; opacity:0.6;}
+.hero-split-frame{inset:14px; border:1px solid rgba(35,31,26,0.35); border-radius:2px; box-shadow:0 0 0 5px var(--linen), 0 0 0 6px rgba(35,31,26,0.18);}
+.hero-split-photo{border:none; box-shadow:none;}
+.hero-split-photo::before{display:none;}
+.hero-split-copy h1{font-size:clamp(2.4rem,6vw,3.9rem); font-weight:600; font-style:normal;}
+.btn{border-radius:var(--radius); box-shadow:none; padding:0.95rem 1.8rem; font-weight:600;}
+.btn:hover, .btn:focus-visible{box-shadow:0 0 0 3px rgba(var(--terracotta-rgb),0.18);}
+.team-preview-card{border-radius:var(--radius); background:#fff; box-shadow:none;}
+main > section.container + section.container{border-top:1px solid var(--stone);}
+footer.site-footer{background:#231F1A; border-top:3px double rgba(251,248,242,0.25);}

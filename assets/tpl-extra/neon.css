@@ -1,0 +1,20 @@
+/* Estilo "Neon" (camada sobre tpl-escuro): vibrante no escuro — a cor de
+   destaque vira luz (brilho nos botões, na foto e nas bordas). */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+:root{
+  --linen:#0B0B10; --linen-deep:#12121A; --superficie:#15151F;
+  --stone:rgba(255,255,255,0.1); --white:#F4F3FF; --ink:#F4F3FF; --ink-soft:rgba(244,243,255,0.66);
+  --terracotta:#7C5CFF; --terracotta-deep:#5B3DE0; --terracotta-claro:#B7A6FF; --terracotta-rgb:124,92,255;
+  --radius:16px;
+}
+body{font-family:'Manrope', sans-serif; background:radial-gradient(900px 520px at 85% -10%, rgba(var(--terracotta-rgb),0.28), transparent 60%), radial-gradient(700px 520px at -10% 110%, rgba(0,220,200,0.14), transparent 60%), var(--linen); background-attachment:fixed;}
+h1, h2, h3, .display, .brand{font-family:'Space Grotesk', sans-serif; font-weight:700; letter-spacing:-0.02em;}
+.hero-split{background:transparent;}
+.hero-split-copy h1{background:linear-gradient(100deg, #fff 30%, var(--terracotta-claro)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.hero-split-frame{border:1px solid rgba(var(--terracotta-rgb),0.7); border-radius:18px; box-shadow:0 0 24px rgba(var(--terracotta-rgb),0.35), inset 0 0 24px rgba(var(--terracotta-rgb),0.15);}
+.hero-split-photo{border:none; box-shadow:0 0 70px rgba(var(--terracotta-rgb),0.45);}
+.eyebrow{color:var(--terracotta-claro);}
+.btn{background:var(--terracotta); color:#fff; box-shadow:0 0 0 1px rgba(255,255,255,0.18) inset, 0 10px 34px -6px rgba(var(--terracotta-rgb),0.85);}
+.btn:hover, .btn:focus-visible{box-shadow:0 0 0 1px rgba(255,255,255,0.3) inset, 0 12px 44px -4px rgba(var(--terracotta-rgb),1);}
+.team-preview-card{background:rgba(255,255,255,0.04); border-color:rgba(var(--terracotta-rgb),0.35);}
+footer.site-footer{background:#07070B; border-top:1px solid rgba(var(--terracotta-rgb),0.45);}

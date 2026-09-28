@@ -18,24 +18,10 @@
 
   // ---------- template visual: cada estabelecimento escolhe uma pasta
   // de CSS (mesma estrutura de HTML/classes, só trocam tokens/fonte) ----------
-  var TEMPLATE_PASTAS = {
-    'classico-boiserie': 'tpl-classico',
-    'claro-minimal': 'tpl-claro',
-    'escuro-premium': 'tpl-escuro',
-    'automotivo-carbono': 'tpl-automotivo',
-    'boho-terracota': 'tpl-boho',
-    'vidro-fosco': 'tpl-vidro',
-    'pizza-forno': 'tpl-pizza'
-  };
+  // lista de estilos e pastas de CSS: assets/js/templates.js (VibeTemplates)
   var templateAtualParaCor = 'classico-boiserie';
-  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota', 'vidro-fosco', 'pizza-forno'];
   function aplicarTemplateCss(templateKey) {
-    templateAtualParaCor = templateKey || 'classico-boiserie';
-    var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
-    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=4';
-    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
-    var widget = document.getElementById('tplWidget');
-    if (widget) widget.href = '/assets/' + pasta + '/css/widget.css?v=5';
+    templateAtualParaCor = window.VibeTemplates.aplicar(templateKey).chave;
   }
 
   // ---- cor de destaque: sobrescreve os tokens de acento do template ativo
@@ -90,7 +76,7 @@
       estilo.id = 'tplCorDinamica';
       document.head.appendChild(estilo);
     }
-    if (TEMPLATES_COM_TERRACOTTA.indexOf(templateAtualParaCor) > -1) {
+    if (window.VibeTemplates.usaTerracotta(templateAtualParaCor)) {
       estilo.textContent = ':root{--terracotta:' + cor + '; --terracotta-deep:' + escuro + '; --terracotta-claro:' + claro + '; --terracotta-rgb:' + rgb.join(',') + ';}';
     } else {
       // classico-boiserie usa --dourado nos detalhes (borda, canto, rodapé)
@@ -124,6 +110,13 @@
 
   // "seguir cor da imagem": extrai um tom médio e um tom escuro da própria
   // foto principal e usa como paleta do site, pra tudo casar com a foto.
+  // estilos "segue sua foto" usam a foto de capa (desfocada) como fundo
+  function atualizarFundoDaFoto() {
+    if (!linhaAtual || !window.VibeTemplates) return;
+    var foto = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
+    window.VibeTemplates.fundoDaFoto(window.VibeTemplates.segueFoto(templateAtualParaCor) ? foto : null);
+  }
+
   function seguirCorDaImagem(url) {
     if (!window.extrairCoresDaImagem) return;
     window.extrairCoresDaImagem(url).then(function (cores) {
@@ -151,6 +144,64 @@
       var fotoAtual = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
       if (fotoAtual) seguirCorDaImagem(fotoAtual);
     }
+  }
+
+  // ---- trocar o estilo do site: folha embaixo com os prints; tocar
+  // mostra ao vivo no próprio site, "Usar este" salva ----
+  function aplicarEstiloAoVivo(chave) {
+    aplicarTemplateCss(chave);
+    aplicarCorDinamica(linhaAtual.cor_destaque, linhaAtual.cor_secundaria);
+    atualizarFundoDaFoto();
+  }
+  function abrirGaleriaEstilos() {
+    var T = window.VibeTemplates;
+    if (!T || document.getElementById('vbEstilos')) return;
+    var original = templateAtualParaCor;
+    var escolhido = original;
+    var folha = document.createElement('div');
+    folha.id = 'vbEstilos';
+    folha.className = 'vb-estilos';
+    folha.setAttribute('role', 'dialog');
+    folha.setAttribute('aria-label', 'Estilo do site');
+    folha.innerHTML = '<div class="vb-estilos-topo"><strong>Estilo do site</strong><span>Toque pra ver no seu site</span></div>' +
+      '<div class="vb-estilos-trilho">' + T.LISTA.map(function (t) {
+        return '<button type="button" class="vb-estilos-item" data-estilo="' + t.chave + '" aria-pressed="false">' +
+          '<img src="' + t.print + '" alt="" loading="lazy"><span>' + escapeHtml(t.nome) + (t.segueFoto ? '<em>segue sua foto</em>' : '') + '</span></button>';
+      }).join('') + '</div>' +
+      '<div class="vb-estilos-acoes"><button type="button" class="vb-estilos-cancelar">Cancelar</button><button type="button" class="vb-estilos-salvar">Usar este</button></div>';
+    document.body.appendChild(folha);
+    function marcar() {
+      folha.querySelectorAll('[data-estilo]').forEach(function (b) {
+        var on = b.getAttribute('data-estilo') === escolhido;
+        b.classList.toggle('is-ativo', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+    }
+    marcar();
+    var atual = folha.querySelector('.is-ativo');
+    if (atual && atual.scrollIntoView) atual.scrollIntoView({ inline: 'center', block: 'nearest' });
+    function fechar() { folha.classList.add('saindo'); setTimeout(function () { folha.remove(); }, 250); }
+    folha.addEventListener('click', function (e) {
+      var item = e.target.closest('[data-estilo]');
+      if (item) { escolhido = item.getAttribute('data-estilo'); marcar(); aplicarEstiloAoVivo(escolhido); return; }
+      if (e.target.closest('.vb-estilos-cancelar')) { aplicarEstiloAoVivo(original); fechar(); return; }
+      if (!e.target.closest('.vb-estilos-salvar')) return;
+      var btn = e.target.closest('.vb-estilos-salvar');
+      btn.disabled = true;
+      btn.textContent = 'Salvando…';
+      db.rpc('tenant_admin_atualizar_template', { p_estabelecimento_id: estabId, p_template: escolhido }).then(function (res) {
+        if (res.error) throw res.error;
+        linhaAtual.template = escolhido;
+        // estilos "segue sua foto" ligam a cor tirada da foto
+        if (T.segueFoto(escolhido) && !linhaAtual.seguir_cor_imagem) alternarSeguirCorImagem();
+        if (window.VBSalvo) window.VBSalvo.mostrar('Estilo salvo');
+        fechar();
+      }).catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Usar este';
+        if (window.VBDialogo) window.VBDialogo.alert('Não deu pra salvar o estilo: ' + ((err && err.message) || 'tenta de novo.'));
+      });
+    });
   }
 
   // widgets translúcidos (agenda/catálogo em vidro fosco) — puramente
@@ -1433,6 +1484,7 @@
     corSecundariaInput.addEventListener('input', function () { aplicarCorDinamica(corInput.value, corSecundariaInput.value); });
     corSecundariaInput.addEventListener('change', function () { salvarCor(corInput.value, corSecundariaInput.value); });
 
+    document.getElementById('adminEstiloBtn').addEventListener('click', abrirGaleriaEstilos);
     document.getElementById('adminSeguirCorImagemBtn').addEventListener('click', alternarSeguirCorImagem);
     document.getElementById('adminWidgetsTranslucidosBtn').addEventListener('click', alternarWidgetsTranslucidos);
     document.getElementById('adminFotoCardBtn').addEventListener('click', abrirEditorFotoCard);
@@ -1442,6 +1494,7 @@
     generoAtual = g;
     var femCss = document.getElementById('tplFeminino');
     femCss.disabled = (g !== 'feminino');
+    atualizarFundoDaFoto();
 
     var nome = linhaAtual.nome;
     document.getElementById('tplEyebrow').textContent = (SEGMENTOS[linhaAtual.segmento] || 'Estabelecimento') + ' · ' + linhaAtual.cidade;
@@ -2277,6 +2330,7 @@
     linhaAtual = linha;
     aplicarTemplateCss(linha.template);
     aplicarCorDinamica(linha.cor_destaque, linha.cor_secundaria);
+    atualizarFundoDaFoto();
     var adminCorInput = document.getElementById('adminCorInput');
     if (adminCorInput) adminCorInput.value = linha.cor_destaque || '#C9A227';
     var adminCorSecundariaInput = document.getElementById('adminCorSecundariaInput');

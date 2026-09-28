@@ -1,0 +1,21 @@
+/* Estilo "Pastel" (camada sobre tpl-claro): suave e arredondado; o fundo
+   é um véu da cor de destaque (muda junto quando o dono troca a cor). */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{
+  --linen:#FFFFFF; --stone:rgba(var(--terracotta-rgb),0.16);
+  --ink:#2A2230; --ink-soft:rgba(42,34,48,0.62);
+  --terracotta:#C0708A; --terracotta-deep:#9C5470; --terracotta-claro:#E8B9C9; --terracotta-rgb:192,112,138;
+  --radius:26px;
+  --shadow-soft:0 18px 40px -26px rgba(var(--terracotta-rgb),0.45);
+}
+body{font-family:'Manrope', sans-serif; background:linear-gradient(180deg, rgba(var(--terracotta-rgb),0.08), rgba(var(--terracotta-rgb),0.03) 40%, #fff);}
+h1, h2, h3, .display, .brand{font-family:'Manrope', sans-serif; font-weight:800; letter-spacing:-0.02em;}
+.brand{font-size:1.15rem;}
+.hero-split{background:transparent;}
+.hero-split-frame{display:none;}
+.hero-split-photo{border:none; border-radius:var(--radius); margin:12px; box-shadow:0 22px 50px -24px rgba(var(--terracotta-rgb),0.6);}
+.hero-split-photo::before{display:none;}
+.eyebrow{color:var(--terracotta-deep); font-weight:700;}
+.btn{box-shadow:0 12px 26px -12px rgba(var(--terracotta-rgb),0.8); font-weight:700;}
+.team-preview-card{border-radius:var(--radius); border-color:rgba(var(--terracotta-rgb),0.18); box-shadow:var(--shadow-soft);}
+footer.site-footer{background:#2A2230; border-top:none;}

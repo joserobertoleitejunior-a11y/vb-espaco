@@ -3028,3 +3028,43 @@ html[data-area="servicos"] .criar-body-full { --cor-marca: #2F5D7C; }
 .criar-tpl-filtros::-webkit-scrollbar { display: none; }
 .criar-tpl-filtros .chip { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
 .tpl-swatch-nome em { display: block; font-style: normal; font-size: 0.66rem; font-weight: 700; color: var(--cor-marca); }
+
+/* ---------- trocar estilo do site (folha embaixo, o site aparece em cima) ---------- */
+.vb-estilos {
+  position: fixed; left: 0.75rem; right: 0.75rem; bottom: 0.75rem; z-index: 170;
+  max-width: 640px; margin: 0 auto;
+  padding: 0.9rem 0 0.8rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+  color: #1f2024;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  animation: vbEstilosEntra 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.vb-estilos.saindo { animation: vbEstilosSai 0.24s ease both; }
+@keyframes vbEstilosEntra { from { transform: translateY(24px); opacity: 0; } }
+@keyframes vbEstilosSai { to { transform: translateY(24px); opacity: 0; } }
+.vb-estilos-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; padding: 0 1rem 0.6rem; }
+.vb-estilos-topo strong { font-size: 0.98rem; }
+.vb-estilos-topo span { font-size: 0.76rem; color: #6b6d76; }
+.vb-estilos-trilho { display: flex; gap: 0.6rem; overflow-x: auto; padding: 0.2rem 1rem 0.5rem; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.vb-estilos-trilho::-webkit-scrollbar { display: none; }
+.vb-estilos-item {
+  flex: 0 0 132px; scroll-snap-align: center;
+  display: flex; flex-direction: column; gap: 0.35rem; padding: 0; border: none; background: none;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.vb-estilos-item img { width: 132px; height: 92px; object-fit: cover; object-position: top; border-radius: 12px; border: 2px solid transparent; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); transition: border-color 0.2s ease, transform 0.2s ease; }
+.vb-estilos-item span { font-size: 0.8rem; font-weight: 700; padding-left: 0.15rem; }
+.vb-estilos-item em { display: block; font-style: normal; font-size: 0.66rem; font-weight: 700; color: #8f7318; }
+.vb-estilos-item.is-ativo img { border-color: var(--terracotta, var(--dourado, #0F6B5C)); transform: translateY(-2px); }
+.vb-estilos-item:focus-visible { outline: none; }
+.vb-estilos-item:focus-visible img { outline: 2px solid #1f2024; outline-offset: 2px; }
+.vb-estilos-acoes { display: flex; gap: 0.5rem; padding: 0.3rem 1rem 0; }
+.vb-estilos-acoes button { flex: 1; padding: 0.7rem 1rem; border-radius: 999px; font: inherit; font-size: 0.88rem; font-weight: 700; cursor: pointer; }
+.vb-estilos-cancelar { background: transparent; border: 1px solid #e7e7ea; color: #6b6d76; }
+.vb-estilos-salvar { background: #1f2024; border: 1px solid #1f2024; color: #fff; }
+.vb-estilos-salvar:disabled { opacity: 0.6; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .vb-estilos, .vb-estilos.saindo { animation: none; } }

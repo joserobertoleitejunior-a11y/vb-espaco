@@ -3,15 +3,6 @@
    atual do formulário via postMessage e re-renderiza a página igualzinha
    ao site de verdade (mesmo CSS de template, mesmas classes). */
 (function () {
-  var TEMPLATE_PASTAS = {
-    'classico-boiserie': 'tpl-classico',
-    'claro-minimal': 'tpl-claro',
-    'escuro-premium': 'tpl-escuro',
-    'automotivo-carbono': 'tpl-automotivo',
-    'boho-terracota': 'tpl-boho',
-    'vidro-fosco': 'tpl-vidro',
-    'pizza-forno': 'tpl-pizza'
-  };
 
   var COPY = {
     masculino: { headline: 'Seu estilo, sem complicação.', sub: 'Agende seu horário com poucos toques — escolha o serviço e o dia que preferir.' },
@@ -89,21 +80,17 @@
       estilo.id = 'tplCorDinamica';
       document.head.appendChild(estilo);
     }
-    if (TEMPLATES_COM_TERRACOTTA.indexOf(templateAtual) > -1) {
+    if (window.VibeTemplates.usaTerracotta(templateAtual)) {
       estilo.textContent = ':root{--terracotta:' + cor + '; --terracotta-deep:' + escuro + '; --terracotta-claro:' + claro + '; --terracotta-rgb:' + rgb.join(',') + ';}';
     } else {
       estilo.textContent = ':root{--dourado:' + cor + '; --dourado-escuro:' + escuro + '; --dourado-claro:' + claro + '; --dourado-rgb:' + rgb.join(',') + ';}';
     }
   }
 
-  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota', 'vidro-fosco', 'pizza-forno'];
   var templateAtual = null;
   function aplicarTemplateCss(templateKey) {
     if (templateKey === templateAtual) return;
-    templateAtual = templateKey;
-    var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
-    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=4';
-    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
+    templateAtual = window.VibeTemplates.aplicar(templateKey).chave;
   }
 
   function renderizar(estado) {
@@ -127,6 +114,7 @@
     // um valor vazio/nulo), não forçar o dourado do Rafael por cima.
     aplicarCorDinamica(estado.cor_destaque, estado.cor_secundaria);
 
+    window.VibeTemplates.fundoDaFoto(window.VibeTemplates.segueFoto(templateAtual) ? (estado.foto_hero_url || null) : null);
     var heroFoto = document.getElementById('tplHeroFoto');
     var fotoHero = genero === 'feminino' ? (estado.foto_hero_feminino_url || estado.foto_hero_url) : estado.foto_hero_url;
     heroFoto.style.backgroundColor = 'var(--linen-deep)';

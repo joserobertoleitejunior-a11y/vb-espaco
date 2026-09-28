@@ -15,22 +15,10 @@
   var linhaAtual = null;
   var modoAdmin = false;
 
-  var TEMPLATE_PASTAS = {
-    'classico-boiserie': 'tpl-classico',
-    'claro-minimal': 'tpl-claro',
-    'escuro-premium': 'tpl-escuro',
-    'automotivo-carbono': 'tpl-automotivo',
-    'boho-terracota': 'tpl-boho',
-    'vidro-fosco': 'tpl-vidro',
-    'pizza-forno': 'tpl-pizza'
-  };
+  // lista de estilos e pastas de CSS: assets/js/templates.js (VibeTemplates)
   var templateAtualParaCor = 'classico-boiserie';
-  var TEMPLATES_COM_TERRACOTTA = ['claro-minimal', 'escuro-premium', 'automotivo-carbono', 'boho-terracota', 'vidro-fosco', 'pizza-forno'];
   function aplicarTemplateCss(templateKey) {
-    templateAtualParaCor = templateKey || 'classico-boiserie';
-    var pasta = TEMPLATE_PASTAS[templateKey] || 'tpl-classico';
-    document.getElementById('tplBase').href = '/assets/' + pasta + '/css/base.css?v=4';
-    document.getElementById('tplFeminino').href = '/assets/' + pasta + '/css/feminino.css?v=3';
+    templateAtualParaCor = window.VibeTemplates.aplicar(templateKey).chave;
   }
 
   function hexParaRgbNums(hex) {
@@ -61,7 +49,7 @@
       estilo.id = 'tplCorDinamica';
       document.head.appendChild(estilo);
     }
-    if (TEMPLATES_COM_TERRACOTTA.indexOf(templateAtualParaCor) > -1) {
+    if (window.VibeTemplates.usaTerracotta(templateAtualParaCor)) {
       estilo.textContent = ':root{--terracotta:' + cor + '; --terracotta-deep:' + escuro + '; --terracotta-claro:' + claro + '; --terracotta-rgb:' + rgb.join(',') + ';}';
     } else {
       // mesma correção de perfil.js: classico-boiserie precisa sobrescrever
@@ -462,6 +450,7 @@
     linhaAtual = linha;
     aplicarTemplateCss(linha.template);
     aplicarCorDinamica(linha.cor_destaque, linha.cor_secundaria);
+    window.VibeTemplates.fundoDaFoto(window.VibeTemplates.segueFoto(linha.template) ? linha.foto_hero_url : null);
     var adminCorInput = document.getElementById('adminCorInput');
     if (adminCorInput) adminCorInput.value = linha.cor_destaque || '#C9A227';
     var adminCorSecundariaInput = document.getElementById('adminCorSecundariaInput');

@@ -1,0 +1,43 @@
+/* Estilo "Aurora" (camada sobre tpl-vidro): vibrante — fundo de luzes
+   coloridas a partir da cor de destaque, e cada seção vira um painel de
+   vidro com margens translúcidas por cima. */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{
+  --terracotta:#E0457B; --terracotta-deep:#B8305F; --terracotta-claro:#F4A6C1; --terracotta-rgb:224,69,123;
+  --vidro-bg:rgba(255,255,255,0.42); --vidro-bg-forte:rgba(255,255,255,0.62); --vidro-borda:rgba(255,255,255,0.7);
+  --radius:24px;
+}
+body{
+  font-family:'Manrope', sans-serif;
+  background-color:#F6EEF6;
+  background-image:
+    radial-gradient(760px 560px at 8% -8%, rgba(var(--terracotta-rgb),0.55), transparent 62%),
+    radial-gradient(640px 520px at 105% 12%, rgba(255,170,64,0.45), transparent 60%),
+    radial-gradient(820px 620px at 50% 112%, rgba(72,160,255,0.42), transparent 62%),
+    radial-gradient(520px 420px at 92% 78%, rgba(var(--terracotta-rgb),0.3), transparent 60%);
+  background-attachment:fixed;
+}
+h1, h2, h3, .display, .brand{font-family:'Manrope', sans-serif; font-weight:800; letter-spacing:-0.025em;}
+.hero-split{background:transparent;}
+.hero-split-frame{inset:12px; border:10px solid rgba(255,255,255,0.28); border-radius:30px; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.6);}
+.hero-split-photo{border:none; border-radius:22px; margin:22px; box-shadow:0 30px 60px -30px rgba(var(--terracotta-rgb),0.7);}
+.hero-split-photo::before{display:none;}
+.btn{background:var(--terracotta); color:#fff; box-shadow:0 14px 30px -12px rgba(var(--terracotta-rgb),0.9), inset 0 1px 0 rgba(255,255,255,0.35);}
+/* margens translúcidas: cada bloco do site ganha um painel de vidro */
+/* as seções vêm com padding inline (2.5rem 0); o painel precisa de respiro nas laterais */
+main > section.container{position:relative; isolation:isolate; padding-left:max(22px, 6vw) !important; padding-right:max(22px, 6vw) !important;}
+main > section.container::before{
+  content:''; position:absolute; z-index:-1; inset:0.9rem 8px 1.1rem;
+  background:var(--vidro-bg); border:1px solid var(--vidro-borda); border-radius:26px;
+  -webkit-backdrop-filter:blur(18px) saturate(170%); backdrop-filter:blur(18px) saturate(170%);
+  box-shadow:0 20px 50px -34px rgba(40,20,60,0.45);
+}
+main > section.container.oculto::before{display:none;}
+/* seções sem espaço em cima (equipe, galeria…): o painel sobe um pouco pra abraçar o título */
+main > section.container:not(#servicosSecao)::before{top:-0.9rem;}
+main > section.container:not(#servicosSecao){margin-top:1.4rem;}
+footer.site-footer{background:rgba(40,20,48,0.78);}
+/* no layout largo o topo fica sobre o texto (claro), não sobre a foto */
+@media (min-width:901px){
+  .site-topbar.on-hero .brand, .site-topbar.on-hero .brand em, .site-topbar.on-hero .brand-mark{color:var(--ink); text-shadow:none;}
+}

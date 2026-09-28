@@ -1,0 +1,24 @@
+/* Estilo "Nórdico" (camada sobre tpl-claro): minimalista, cantos retos,
+   muito respiro, sem moldura nem ornamento. Letra Manrope. */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{
+  --linen:#F7F7F5; --linen-deep:#EFEFEB; --stone:rgba(24,26,25,0.1);
+  --ink:#1A1C1B; --ink-soft:rgba(26,28,27,0.6);
+  --terracotta:#3D5A4C; --terracotta-deep:#2C4338; --terracotta-claro:#A9BDB2; --terracotta-rgb:61,90,76;
+  --radius:4px; --gloss:none; --gloss-hover:none;
+  --shadow-soft:0 1px 2px rgba(0,0,0,0.04);
+}
+body, h1, h2, h3, .display, .brand{font-family:'Manrope', sans-serif;}
+h1, h2, h3, .display{font-weight:700; letter-spacing:-0.025em;}
+.brand{font-size:1.1rem; font-weight:800; letter-spacing:-0.01em;}
+.brand-mark{display:none;}
+.eyebrow{letter-spacing:0.14em; font-weight:700; color:var(--ink-soft);}
+.hero-split-frame{display:none;}
+.hero-split-photo{border:none; box-shadow:none;}
+.hero-split-photo::before{display:none;}
+.hero-split-copy h1{font-size:clamp(2.2rem,5.4vw,3.4rem); font-weight:800;}
+.btn{border-radius:var(--radius); box-shadow:none; text-transform:uppercase; letter-spacing:0.08em; font-size:0.78rem; font-weight:700; padding:1rem 1.7rem;}
+.btn:hover, .btn:focus-visible{box-shadow:none;}
+.btn-ghost{border-radius:var(--radius);}
+.team-preview-card{border-radius:var(--radius); box-shadow:none;}
+footer.site-footer{background:#1A1C1B; border-top:none;}
