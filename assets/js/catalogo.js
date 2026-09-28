@@ -88,35 +88,9 @@
     outro: SVG_LOJA
   };
 
-  // ícones pequenos (18px, só traço) dos chips de filtro
-  function mini(d) { return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; }
-  function reduzir(svg) { return svg.replace('width="42" height="42"', 'width="18" height="18" aria-hidden="true"'); }
-  var ICONES_CHIP = {
-    barbearia: reduzir(SVG_TESOURA), salao: reduzir(SVG_CABELO), manicure_pedicure: reduzir(SVG_ESMALTE),
-    estetica: reduzir(SVG_SPARKLE), estetica_automotiva: reduzir(SVG_CARRO), pizzaria: reduzir(SVG_PIZZA), petshop: reduzir(SVG_PATA),
-    hamburgueria: mini('<path d="M4 10a8 5 0 0116 0z"/><path d="M3 13.5h18"/><path d="M4 17h16a0 0 0 010 0 2 2 0 01-2 2H6a2 2 0 01-2-2z"/>'),
-    lanchonete: mini('<path d="M6 8h12l-1.2 12H7.2z"/><path d="M9 8V5a3 3 0 016 0v3"/>'),
-    acaiteria: mini('<path d="M5 10h14l-2 10H7z"/><path d="M8 10a4 4 0 018 0"/><path d="M12 4v2"/>'),
-    japonesa: mini('<path d="M3 13h18a9 6 0 01-18 0z"/><path d="M14 3l-4 10"/><path d="M18 4l-5 9"/>'),
-    marmitaria: mini('<rect x="3" y="8" width="18" height="11" rx="2"/><path d="M3 12h18"/><path d="M9 8V6h6v2"/>'),
-    mercado: mini('<path d="M3 4h2l2.4 11h10.8L20 7H6.2"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>'),
-    padaria: mini('<path d="M4 14c0-5 3.6-8 8-8s8 3 8 8v4H4z"/><path d="M9 10l1 4"/><path d="M15 10l-1 4"/>'),
-    doceria: mini('<path d="M4 12h16v8H4z"/><path d="M4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1.5 4 0"/><path d="M12 12V8"/><path d="M12 5.5v.01"/>'),
-    adega: mini('<path d="M10 3h4v4l2 3v10a1 1 0 01-1 1H9a1 1 0 01-1-1V10l2-3z"/><path d="M8 14h8"/>'),
-    borracharia: mini('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3.5v5M12 15.5v5M3.5 12h5M15.5 12h5"/>'),
-    chaveiro: mini('<circle cx="8" cy="12" r="4"/><path d="M12 12h9"/><path d="M18 12v3"/><path d="M15.5 12v2"/>'),
-    guincho: mini('<path d="M2 16V9h9v7"/><path d="M11 12h5l3 4"/><path d="M11 16h11"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/><path d="M4 9l5-5"/>'),
-    eletricista: mini('<path d="M13 2L5 13.5h6L10 22l8-11.5h-6z"/>'),
-    encanador: mini('<path d="M12 3s6 6.4 6 10.5a6 6 0 01-12 0C6 9.4 12 3 12 3z"/>'),
-    pedreiro: mini('<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9.7h18M3 14.3h18M9 5v4.7M15 5v4.7M6 9.7v4.6M12 9.7v4.6M18 9.7v4.6M9 14.3V19M15 14.3V19"/>'),
-    vidraceiro: mini('<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 13l4-4M11 16l6-6"/>'),
-    ar_condicionado: mini('<rect x="2.5" y="4" width="19" height="9" rx="2"/><path d="M6 10h12"/><path d="M8 16.5c0 1.5-1 2.5-1 3.5M12 16.5v3.5M16 16.5c0 1.5 1 2.5 1 3.5"/>'),
-    montador: mini('<path d="M14.7 6.3a4 4 0 015 5L9 22l-3-3L16.7 8.3"/><path d="M4 20l2-2"/>'),
-    diarista: mini('<path d="M12 3v9"/><path d="M7 12h10l1.5 9h-13z"/><path d="M10 16v5M14 16v5"/>'),
-    jardinagem: mini('<path d="M12 21v-9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7z"/><path d="M12 15c0-3-2.4-5.5-6-5.5 0 3 2.4 5.5 6 5.5z"/>'),
-    dedetizacao: mini('<ellipse cx="12" cy="14" rx="4" ry="6"/><path d="M12 8V4M8 11l-4-2M16 11l4-2M8 15H4M16 15h4M8.5 18.5L5 21M15.5 18.5L19 21"/>'),
-    assistencia_tecnica: mini('<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>')
-  };
+  // ícones pequenos (18px, só traço) dos chips — lista única em segmentos.js
+  function iconeChip(seg) { return window.VibeSegmentos ? window.VibeSegmentos.icone(seg, 18) : ''; }
+
 
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, function (c) {
@@ -181,7 +155,7 @@
     listaEl.innerHTML = avisoOfflineHtml() + linhas.map(function (e) {
       var link = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade) + (AREA === 'agenda' ? '' : '/pedir');
       var cor = e.cor_destaque || '#C9A227';
-      var icone = ICONES[e.segmento] || SVG_LOJA;
+      var icone = ICONES[e.segmento] || (window.VibeSegmentos ? window.VibeSegmentos.icone(e.segmento, 42, 1.6) : SVG_LOJA);
       var sombra = '0 1px 2px rgba(20,20,30,.05), 0 16px 26px -14px ' + hexParaRgba(cor, 0.45);
       var fotoTopo = e.foto_capa_url || e.foto_hero_url;
       var capaStyle = fotoTopo
@@ -369,9 +343,11 @@
   document.getElementById('explorarTitulo').textContent = CFG.titulo;
   document.getElementById('explorarSub').textContent = CFG.sub;
   document.documentElement.setAttribute('data-area', AREA);
+  var criarTab = document.getElementById('tabbarCriarSite');
+  if (criarTab) criarTab.href = 'criar.html?area=' + AREA;
   filtrosEl.innerHTML = '<button class="chip is-ativo" type="button" data-segmento="" aria-pressed="true">Tudo</button>' +
     CFG.chips.map(function (seg) {
-      return '<button class="chip" type="button" data-segmento="' + seg + '" aria-pressed="false">' + (ICONES_CHIP[seg] || '') + escapeHtml(SEGMENTOS[seg] || seg) + '</button>';
+      return '<button class="chip" type="button" data-segmento="' + seg + '" aria-pressed="false">' + iconeChip(seg) + escapeHtml(SEGMENTOS[seg] || seg) + '</button>';
     }).join('');
   if (window.VibeToggle) {
     window.VibeToggle.tingir(AREA);

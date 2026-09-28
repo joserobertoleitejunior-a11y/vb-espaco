@@ -1205,6 +1205,7 @@
         if (ev.origin !== location.origin || !ev.data) return;
         if (ev.data.tipo === 'vb-tpl') aplicarVisual(ev.data.cor, ev.data.layout, ev.data.tom);
         if (ev.data.tipo === 'vb-recarregar') location.reload();
+        if (ev.data.tipo === 'vb-nome' && ev.data.nome) ['tbNome', 'drawerNome', 'heroTitulo'].forEach(function (id) { if ($(id)) $(id).textContent = ev.data.nome; });
       });
     }
   }

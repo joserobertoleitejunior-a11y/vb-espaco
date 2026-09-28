@@ -242,6 +242,9 @@
       var ctaCard = document.querySelector('.criar-cta-card');
       if (ctaCard) ctaCard.classList.toggle('oculto', linhas.length > 0);
       if (!linhas.length) {
+        var retomar = null;
+        try { retomar = sessionStorage.getItem('vibe-criar-params'); } catch (e) {}
+        if (retomar) { location.replace('criar.html' + (retomar === '?' ? '' : retomar)); return; }
         listaEl.innerHTML = '';
         listaMsg.textContent = 'Nenhum estabelecimento cadastrado ainda.';
         return;

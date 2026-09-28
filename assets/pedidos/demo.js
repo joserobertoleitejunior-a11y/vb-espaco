@@ -156,9 +156,18 @@
   DADOS.lanchonete = DADOS.hamburgueria;
   DADOS.restaurante = DADOS.japonesa;
 
+  // tipos sem exemplo próprio usam o exemplo mais parecido (com o nome certo)
+  var PARECIDO = {
+    guincho: 'borracharia', estetica_automotiva: 'borracharia', assistencia_tecnica: 'chaveiro',
+    eletricista: 'pedreiro', encanador: 'pedreiro', vidraceiro: 'pedreiro', ar_condicionado: 'pedreiro',
+    montador: 'pedreiro', diarista: 'pedreiro', jardinagem: 'pedreiro', dedetizacao: 'pedreiro',
+    marmitaria: 'restaurante', sorveteria: 'acaiteria', doceria: 'acaiteria', padaria: 'mercado', adega: 'mercado'
+  };
   function montar(segmento, template) {
-    var base = DADOS[segmento] || DADOS.pizzaria;
-    var seg = DADOS[segmento] ? segmento : 'pizzaria';
+    var fonte = DADOS[segmento] ? segmento : (PARECIDO[segmento] || 'pizzaria');
+    var base = Object.assign({}, DADOS[fonte]);
+    var seg = DADOS[segmento] || PARECIDO[segmento] ? segmento : 'pizzaria';
+    if (!DADOS[segmento] && PARECIDO[segmento] && global.VibeSegmentos) base.nome = global.VibeSegmentos.exemplo(segmento);
     return {
       estabelecimento: {
         id: 'demo', nome: base.nome, slug: 'demo', cidade: 'itapetininga', segmento: seg,

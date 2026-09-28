@@ -1,426 +1,452 @@
-/* Passo a passo de criação de site — substitui o formulário único de
-   antes. Cada passo pergunta uma coisa, atualiza a pré-visualização ao
-   vivo (iframe rodando preview-embutido.html) e salva no backend assim
-   que dá pra salvar (o estabelecimento nasce de verdade já no passo
-   "Nome e dados básicos", os passos seguintes só completam ele). */
+/* Passo a passo de criação do negócio (funil). Cada passo pergunta uma
+   coisa só e as perguntas mudam conforme as respostas:
+
+   1. O que seu negócio faz? → Agenda (horário marcado), Delivery (vende e
+      entrega) ou No local (vai até o cliente / orçamento), com a opção de
+      juntar a Agenda com uma das outras duas.
+   2. Tipo de negócio → só os segmentos daquela área.
+   3. Perguntas da área → atendimento (masc./fem.) na Agenda, como o
+      cliente recebe no Delivery, onde atende no No local.
+   4. Aparência → estilos do site (Agenda) ou jeito da loja (lista,
+      grade, cardápio, vitrine; claro ou vibrante).
+   5. Nome e link, cidade e WhatsApp → o negócio nasce aqui.
+
+   A pré-visualização ao fundo troca sozinha: site da Agenda
+   (preview-embutido.html) ou a loja/chamado de exemplo (pedir.html?demo). */
 (function () {
   if (!window.db) return;
 
-  // precisa estar logado (e-mail/senha ou Google) pra criar um site — a
-  // conta é quem vira dona do estabelecimento (criar_estabelecimento usa
-  // auth.uid()), e é ela que depois abre o modo admin sem PIN no site.
-  // Só é permitido 1 estabelecimento por conta — se a conta já tem um,
-  // nem começa o passo a passo (evita responder tudo pra descobrir isso
-  // só no fim).
+  var CHAVE_RETOMAR = 'vibe-criar-params';
+  var SEG = window.VibeSegmentos;
+
+  // precisa estar logado — a conta vira dona do negócio (criar_estabelecimento
+  // usa auth.uid()). Sem login: guarda o que já veio escolhido (?area,
+  // ?segmento, ?template) e volta pra cá depois de entrar (ver cadastro.js).
   db.auth.getSession().then(function (res) {
     if (!res.data || !res.data.session) {
+      try { sessionStorage.setItem(CHAVE_RETOMAR, location.search || '?'); } catch (e) {}
       window.location.href = 'cadastro.html';
       return;
     }
     db.rpc('meus_estabelecimentos_com_stats').then(function (r) {
-      if (r.data && r.data.length > 0) {
-        window.location.href = 'cadastro.html';
-        return;
-      }
+      if (r.data && r.data.length > 0) { window.location.href = 'cadastro.html'; return; }
       iniciarPassoAPasso();
-    }, function () {
-      iniciarPassoAPasso();
-    });
-  }, function () {
-    window.location.href = 'cadastro.html';
-  });
+    }, iniciarPassoAPasso);
+  }, function () { window.location.href = 'cadastro.html'; });
 
   function iniciarPassoAPasso() {
-  var params = new URLSearchParams(window.location.search);
+  var salvo = null;
+  try { salvo = sessionStorage.getItem(CHAVE_RETOMAR); sessionStorage.removeItem(CHAVE_RETOMAR); } catch (e) {}
+  var params = new URLSearchParams(location.search || salvo || '');
 
-  var SEGMENTOS_LABEL = {
-    barbearia: 'Barbearia',
-    salao: 'Salão de beleza',
-    manicure_pedicure: 'Manicure e pedicure',
-    estetica: 'Estética',
-    estetica_automotiva: 'Estética automotiva',
-    pizzaria: 'Pizzaria',
-    petshop: 'Petshop',
-    outro: 'Estabelecimento'
+  var AREAS = {
+    agenda: { nome: 'Agenda', frase: 'Atendo com horário marcado', desc: 'O cliente escolhe o serviço, o profissional, o dia e a hora.' },
+    delivery: { nome: 'Delivery', frase: 'Vendo e entrego', desc: 'Cardápio ou catálogo; o pedido chega no seu WhatsApp e no painel.' },
+    servicos: { nome: 'No local', frase: 'Vou até o cliente', desc: 'Chamado na hora, com a localização, ou pedido de orçamento.' }
   };
-  // mesmos ícones de linha do catálogo (index.html) — nada de emoji, pra
-  // ficar consistente com o resto do app e com aparência mais séria/profissional
-  var SEGMENTOS_ICONE = {
-    barbearia: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><line x1="8.1" y1="7.5" x2="20" y2="19"/><line x1="8.1" y1="16.5" x2="20" y2="5"/></svg>',
-    salao: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 18c2-4 2-8 0-12"/><path d="M9 18c2-4 2-8 0-12"/><path d="M14 18c2-4 2-8 0-12"/><path d="M19 18c2-4 2-8 0-12"/></svg>',
-    manicure_pedicure: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6v3l1.5 2v13a1 1 0 01-1 1h-7a1 1 0 01-1-1V7L9 5V2z"/><path d="M9 2h6"/></svg>',
-    estetica: '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M12 2L14.3 7.7L20 10L14.3 12.3L12 18L9.7 12.3L4 10L9.7 7.7z"/></svg>',
-    estetica_automotiva: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12l1.5-4.5A2 2 0 0 1 6.4 6h11.2a2 2 0 0 1 1.9 1.5L21 12"/><path d="M3 12h18v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/></svg>',
-    pizzaria: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2c5.5 0 10 4.5 10 10 0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2C2 6.5 6.5 2 12 2z"/><circle cx="9" cy="9" r="1"/><circle cx="14" cy="7" r="1"/><circle cx="16" cy="11" r="1"/></svg>',
-    petshop: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="9.5" r="2"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/><circle cx="18.5" cy="9.5" r="2"/><path d="M12 12c-3.5 0-6.5 2.2-6.5 5.2 0 1.5 1.2 2.8 2.8 2.8.9 0 1.7-.4 2.3-1 .4-.4 1-.6 1.4-.6s1 .2 1.4.6c.6.6 1.4 1 2.3 1 1.6 0 2.8-1.3 2.8-2.8 0-3-3-5.2-6.5-5.2z"/></svg>',
-    outro: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>'
-  };
-  // exemplo de nome mostrado no campo — sempre do MESMO nicho escolhido,
-  // pra nunca sugerir nome de barbearia pra quem está
-  // criando um site de estética automotiva, por exemplo
-  var NOME_EXEMPLO_POR_SEGMENTO = {
-    barbearia: 'Nome da sua barbearia',
-    salao: 'Nome do seu salão',
-    manicure_pedicure: 'Nome do seu espaço',
-    estetica: 'Nome da sua clínica',
-    estetica_automotiva: 'Nome da sua estética automotiva',
-    pizzaria: 'Nome da sua pizzaria',
-    petshop: 'Nome do seu petshop',
-    outro: 'Nome do seu negócio'
-  }
+  var ICONE_AREA = (window.VibeToggle && window.VibeToggle.ICONES) || {};
 
-  var MAPA_ACENTOS = {
-    'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a',
-    'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
-    'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
-    'ó': 'o', 'ò': 'o', 'õ': 'o', 'ô': 'o', 'ö': 'o',
-    'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
-    'ç': 'c', 'ñ': 'n'
-  };
-  function removerAcentos(texto) {
-    var resultado = '';
-    for (var i = 0; i < texto.length; i++) {
-      var c = texto[i];
-      resultado += MAPA_ACENTOS[c] || c;
-    }
-    return resultado;
-  }
-  function slugificar(texto) {
-    return removerAcentos((texto || '').toLowerCase())
-      .replace(/[^a-z0-9\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
-  }
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function formatarPreco(v) {
-    return 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+  var MAPA_ACENTOS = { 'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a', 'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', 'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+    'ó': 'o', 'ò': 'o', 'õ': 'o', 'ô': 'o', 'ö': 'o', 'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u', 'ç': 'c', 'ñ': 'n' };
+  function slugificar(texto) {
+    return String(texto || '').toLowerCase().replace(/[^\x00-\x7f]/g, function (c) { return MAPA_ACENTOS[c] || ''; })
+      .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-');
   }
-  function hexParaRgbNums(hex) {
-    var h = (hex || '').replace('#', '');
-    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-    return [parseInt(h.substr(0, 2), 16) || 0, parseInt(h.substr(2, 2), 16) || 0, parseInt(h.substr(4, 2), 16) || 0];
-  }
-  function misturarRgb(rgb, alvo, quantidade) {
-    return rgb.map(function (c, i) { return Math.round(c + (alvo[i] - c) * quantidade); });
-  }
-  function rgbParaHex(rgb) {
-    return '#' + rgb.map(function (c) {
-      return Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0');
-    }).join('');
-  }
+  // o banco guarda a cidade em minúsculas (lower(trim())) — o link usa igual
+  function cidadeDoLink() { return estado.cidade.trim().toLowerCase(); }
 
+  // ---- estado (o que veio pela URL já chega escolhido) ----
+  var areaUrl = params.get('area');
   var estado = {
-    template: params.get('template') || 'classico-boiserie',
+    area: AREAS[areaUrl] ? areaUrl : 'agenda',
+    extra: null,                    // segunda área opcional (agenda + delivery/servicos)
+    segmento: null,
     genero_atendimento: 'ambos',
-    nome: '', slug: '', cidade: 'Itapetininga', segmento: 'barbearia', telefone_whatsapp: '',
-    foto_perfil_url: null,
-    foto_hero_url: null, foto_hero_feminino_url: null,
-    cor_destaque: null, cor_secundaria: null,
-    texto_cta: 'Agendar horário',
-    instagram_url: '', facebook_url: '', tiktok_url: '',
-    total_servicos: 0, total_equipe: 0
+    servico_onde: 'cliente',
+    recebe: 'ambos',                // entrega | retirada | ambos
+    template: params.get('template') || 'classico-boiserie',
+    layout: 'lista', tom: 'claro',
+    nome: '', slug: '', cidade: 'Itapetininga', telefone_whatsapp: '',
+    foto_perfil_url: null, foto_hero_url: null, foto_hero_feminino_url: null,
+    cor_destaque: null, cor_secundaria: null, texto_cta: 'Agendar horário',
+    instagram_url: '', facebook_url: '', tiktok_url: '', total_servicos: 0, total_equipe: 0
   };
+  var segUrl = params.get('segmento');
+  estado.segmento = SEG.daArea(segUrl, estado.area) ? segUrl : SEG.POR_AREA[estado.area][0];
   var estabId = null;
-  var pastaTemp = window.VBUpload ? window.VBUpload.novaPastaTemporaria() : 'novo-' + Date.now();
 
-  // ---- pré-visualização ao vivo (iframe isolado, sem Supabase) ----
-  var previewFrame = document.getElementById('wizardPreviewFrame');
+  function areasEscolhidas() {
+    var a = [estado.area];
+    if (estado.extra && estado.extra !== estado.area) a.push(estado.extra);
+    return a.sort(function (x, y) { return x === 'agenda' ? -1 : y === 'agenda' ? 1 : 0; });
+  }
+  function tem(area) { return areasEscolhidas().indexOf(area) > -1; }
+  function areaDePedidos() { return tem('delivery') ? 'delivery' : tem('servicos') ? 'servicos' : null; }
+  function tingir() { if (window.VibeToggle) window.VibeToggle.tingir(estado.area); }
+
+  // ---- pré-visualização ao vivo ----
+  var frame = document.getElementById('wizardPreviewFrame');
   var previewPronto = false;
+  function srcDesejado() {
+    return tem('agenda') ? 'preview-embutido.html?v=1'
+      : '/pedir.html?demo=' + encodeURIComponent(estado.segmento) + '&preview=1';
+  }
+  function trocarPreview(forcar) {
+    var alvo = srcDesejado();
+    if (!forcar && frame.getAttribute('src') === alvo) return;
+    previewPronto = false;
+    frame.setAttribute('src', alvo);
+  }
+  frame.addEventListener('load', function () {
+    if (!tem('agenda')) { previewPronto = true; postEstado(); }
+  });
   function postEstado() {
-    if (!previewPronto || !previewFrame.contentWindow) return;
-    previewFrame.contentWindow.postMessage({ tipo: 'vb-preview-estado', estado: estado }, '*');
+    if (!previewPronto || !frame.contentWindow) return;
+    if (tem('agenda')) {
+      frame.contentWindow.postMessage({ tipo: 'vb-preview-estado', estado: estado }, '*');
+    } else {
+      frame.contentWindow.postMessage({ tipo: 'vb-tpl', cor: null, layout: estado.layout, tom: estado.tom }, location.origin);
+      if (estado.nome.trim()) frame.contentWindow.postMessage({ tipo: 'vb-nome', nome: estado.nome.trim() }, location.origin);
+    }
   }
   window.addEventListener('message', function (e) {
-    if (e.data && e.data.tipo === 'vb-preview-pronto') {
-      previewPronto = true;
-      postEstado();
-    }
+    if (e.data && e.data.tipo === 'vb-preview-pronto') { previewPronto = true; postEstado(); }
   });
 
-
-  // ---- passo 1: template ----
-  // mini-mockup de cada template com as cores/raio reais dele (nada de
-  // caixinha lisa com gradiente — o dono precisa reconhecer o site aqui)
-  // ---- prints reais de cada template (gerados a partir do próprio
-  // preview-embutido.html, não mockups em CSS) — o dono escolhe olhando
-  // pro site de verdade, não pra uma representação abstrata dele. ----
-  var TEMPLATES_DISPONIVEIS = [
-    { chave: 'classico-boiserie', nome: 'Clássico', print: '/assets/img/templates/classico.jpg' },
-    { chave: 'claro-minimal', nome: 'Claro', print: '/assets/img/templates/claro.jpg' },
-    { chave: 'escuro-premium', nome: 'Escuro', print: '/assets/img/templates/escuro.jpg' },
-    { chave: 'automotivo-carbono', nome: 'Automotivo', print: '/assets/img/templates/automotivo.jpg' },
-    { chave: 'boho-terracota', nome: 'Boho', print: '/assets/img/templates/boho.jpg' },
-    { chave: 'vidro-fosco', nome: 'Vidro', print: '/assets/img/templates/vidro.jpg' },
-    { chave: 'pizza-forno', nome: 'Forno', print: '/assets/img/templates/pizza.jpg' }
-  ];
-  function renderPassoTemplate(container) {
-    container.innerHTML =
-      '<p class="criar-passo-intro">Escolha o estilo visual do seu site. Você acompanha o resultado ao lado, e dá pra trocar depois.</p>' +
-      '<div id="criarTemplateEscolha" class="criar-template-grid"></div>';
-    function desenhar() {
-      document.getElementById('criarTemplateEscolha').innerHTML = TEMPLATES_DISPONIVEIS.map(function (t) {
-        return '<button type="button" class="tpl-print-card' + (t.chave === estado.template ? ' is-selecionado' : '') + '" data-template="' + t.chave + '">' +
-          '<img src="' + t.print + '" alt="Prévia do template ' + t.nome + '" loading="lazy">' +
-          '<span class="tpl-swatch-nome">' + t.nome + '</span>' +
-          '</button>';
-      }).join('');
-    }
-    desenhar();
-    document.getElementById('criarTemplateEscolha').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-template]');
-      if (!btn) return;
-      estado.template = btn.getAttribute('data-template');
-      desenhar();
-      postEstado();
+  function cartoes(lista, selecionado, atributo) {
+    return lista.map(function (o) {
+      var sel = o.chave === selecionado;
+      return '<button type="button" class="criar-opcao-card' + (sel ? ' is-selecionado' : '') + '" data-' + atributo + '="' + o.chave + '" aria-pressed="' + sel + '">' +
+        (o.icone ? '<span class="criar-opcao-icone">' + o.icone + '</span>' : '') +
+        '<span class="criar-opcao-nome">' + escapeHtml(o.nome) + '</span>' +
+        (o.desc ? '<span class="criar-opcao-desc">' + escapeHtml(o.desc) + '</span>' : '') + '</button>';
+    }).join('');
+  }
+  function aoEscolher(el, atributo, fn) {
+    el.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-' + atributo + ']');
+      if (btn) fn(btn.getAttribute('data-' + atributo));
     });
   }
 
-  // ---- passo (novo): segmento — qual tipo de negócio é, escolhido
-  // visualmente (não mais um <select> escondido no meio dos outros
-  // campos), pra já refletir no preview (rótulo do site) e decidir mais
-  // pra frente quais serviços/fotos sugerir ----
+  // ---- 1. o que seu negócio faz ----
+  var ROTULO_EXTRA = { agenda: 'Também atendo com horário marcado', delivery: 'Também vendo com entrega', servicos: 'Também vou até o cliente' };
+  function renderPassoArea(container) {
+    container.innerHTML =
+      '<p class="criar-passo-intro">Escolha o principal. Dá pra juntar a Agenda com uma das outras — e mudar depois no painel.</p>' +
+      '<div class="criar-areas" id="criarAreas"></div>' +
+      '<div class="criar-extra" id="criarExtra"></div>';
+    function desenhar() {
+      document.getElementById('criarAreas').innerHTML = Object.keys(AREAS).map(function (k) {
+        var a = AREAS[k];
+        var sel = k === estado.area;
+        return '<button type="button" class="criar-area-card' + (sel ? ' is-selecionado' : '') + '" data-area="' + k + '" aria-pressed="' + sel + '">' +
+          '<span class="criar-area-ic">' + (ICONE_AREA[k] || '') + '</span>' +
+          '<span class="criar-area-txt"><strong>' + a.frase + '</strong><small>' + a.desc + '</small></span>' +
+          '<span class="criar-area-tag">' + a.nome + '</span></button>';
+      }).join('');
+      var extras = estado.area === 'agenda' ? ['delivery', 'servicos'] : ['agenda'];
+      document.getElementById('criarExtra').innerHTML = '<p class="criar-extra-titulo">Quer outra área junto? <span>(opcional)</span></p>' +
+        extras.map(function (k) {
+          var on = estado.extra === k;
+          return '<button type="button" class="criar-extra-chip' + (on ? ' is-on' : '') + '" data-extra="' + k + '" aria-pressed="' + on + '">' +
+            '<span class="criar-extra-caixa" aria-hidden="true"></span>' + ROTULO_EXTRA[k] + ' <em>' + AREAS[k].nome + '</em></button>';
+        }).join('');
+    }
+    desenhar();
+    aoEscolher(container.querySelector('#criarAreas'), 'area', function (k) {
+      estado.area = k;
+      if (estado.extra === k || (k !== 'agenda' && estado.extra !== 'agenda')) estado.extra = null;
+      if (!SEG.daArea(estado.segmento, k)) estado.segmento = SEG.POR_AREA[k][0];
+      tingir(); desenhar(); trocarPreview(); postEstado(); atualizarCabecalho();
+    });
+    aoEscolher(container.querySelector('#criarExtra'), 'extra', function (k) {
+      estado.extra = estado.extra === k ? null : k;
+      desenhar(); trocarPreview(); postEstado(); atualizarCabecalho();
+    });
+  }
+
+  // ---- 2. tipo de negócio (só os da área) ----
   function renderPassoSegmento(container) {
-    container.innerHTML =
-      '<p class="criar-passo-intro">Qual desses combina mais com o seu negócio?</p>' +
-      '<div id="criarOpcoesSegmento" class="criar-opcoes-segmento"></div>' +
-      '<div id="criarAvisoApp"></div>';
-    // Pizzaria e petshop também têm o VB Delivery (cardápio + pedido).
-    // Só aparece se o app já tiver URL cadastrada em vb_apps.
-    function avisoDelivery(rolar) {
-      var alvo = document.getElementById('criarAvisoApp');
-      if (!alvo) return;
-      var textos = { pizzaria: 'Quer receber pedidos de pizza?', petshop: 'Quer vender ração e produtos com entrega?' };
-      if (!textos[estado.segmento] || !window.VBPlataforma) { alvo.innerHTML = ''; return; }
-      window.VBPlataforma.carregar().then(function (d) {
-        var url = window.VBPlataforma.urlDoApp(d.apps, 'delivery');
-        if (!url || !textos[estado.segmento]) { alvo.innerHTML = ''; return; }
-        alvo.innerHTML = '<div class="criar-aviso-app"><span><strong>' + textos[estado.segmento] + '</strong>' +
-          'O VB Delivery tem cardápio, carrinho e pedido no WhatsApp — com o mesmo login.</span>' +
-          '<a href="' + url + '/criar.html" target="_blank" rel="noopener">Conhecer o Delivery →</a></div>';
-        if (rolar && alvo.firstChild.scrollIntoView) alvo.firstChild.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }).catch(function () { alvo.innerHTML = ''; });
-    }
+    container.innerHTML = '<p class="criar-passo-intro">Qual desses combina mais com o seu negócio?</p>' +
+      '<div id="criarOpcoesSegmento" class="criar-opcoes-segmento criar-opcoes-3"></div>';
     function desenhar() {
-      document.getElementById('criarOpcoesSegmento').innerHTML = Object.keys(SEGMENTOS_LABEL).map(function (k) {
-        return '<button type="button" class="criar-opcao-card' + (k === estado.segmento ? ' is-selecionado' : '') + '" data-segmento="' + k + '">' +
-          '<span class="criar-opcao-icone">' + SEGMENTOS_ICONE[k] + '</span>' +
-          '<span class="criar-opcao-nome">' + SEGMENTOS_LABEL[k] + '</span></button>';
-      }).join('');
+      document.getElementById('criarOpcoesSegmento').innerHTML = cartoes(SEG.POR_AREA[estado.area].map(function (k) {
+        return { chave: k, nome: SEG.nome(k), icone: SEG.icone(k, 24, 1.8) };
+      }), estado.segmento, 'segmento');
     }
     desenhar();
-    avisoDelivery();
-    document.getElementById('criarOpcoesSegmento').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-segmento]');
-      if (!btn) return;
-      estado.segmento = btn.getAttribute('data-segmento');
-      // estética automotiva e pizzaria não têm sentido de atendimento
-      // masculino/feminino — pula essa pergunta pra esses nichos
-      if (estado.segmento === 'estetica_automotiva' || estado.segmento === 'pizzaria') estado.genero_atendimento = 'ambos';
+    aoEscolher(container.querySelector('#criarOpcoesSegmento'), 'segmento', function (k) {
+      estado.segmento = k;
       desenhar();
-      postEstado();
-      avisoDelivery(true);
+      if (tem('agenda')) postEstado(); else trocarPreview();
+      atualizarCabecalho();
     });
   }
 
-  // ---- passo 2: atendimento (gênero) ----
+  // ---- 3a. atendimento (Agenda de beleza) ----
   var OPCOES_GENERO = [
-    { chave: 'ambos', nome: 'Ambos', desc: 'O cliente escolhe masculino ou feminino ao entrar no site.' },
+    { chave: 'ambos', nome: 'Os dois', desc: 'O cliente escolhe masculino ou feminino ao entrar.' },
     { chave: 'masculino', nome: 'Só masculino', desc: 'Vai direto pro site, sem tela de escolha.' },
     { chave: 'feminino', nome: 'Só feminino', desc: 'Vai direto pro site, sem tela de escolha.' }
   ];
+  function perguntaGenero() {
+    return tem('agenda') && ['barbearia', 'salao', 'manicure_pedicure', 'estetica', 'outro'].indexOf(estado.segmento) > -1;
+  }
   function renderPassoAtendimento(container) {
-    container.innerHTML =
-      '<p class="criar-passo-intro">Seu estabelecimento atende só um público, ou os dois?</p>' +
-      '<div id="criarOpcoesGenero" class="criar-opcoes-genero"></div>';
+    container.innerHTML = '<p class="criar-passo-intro">Você atende só um público, ou os dois?</p><div id="criarOpcoesGenero" class="criar-opcoes-genero"></div>';
+    function desenhar() { document.getElementById('criarOpcoesGenero').innerHTML = cartoes(OPCOES_GENERO, estado.genero_atendimento, 'genero'); }
+    desenhar();
+    aoEscolher(container.querySelector('#criarOpcoesGenero'), 'genero', function (k) { estado.genero_atendimento = k; desenhar(); postEstado(); });
+  }
+
+  // ---- 3b. onde atende (No local) ----
+  var OPCOES_ONDE = [
+    { chave: 'cliente', nome: 'Vou até o cliente', desc: 'Atendimento móvel: o cliente manda a localização.' },
+    { chave: 'loja', nome: 'O cliente vem até mim', desc: 'Loja ou oficina, com endereço no site.' },
+    { chave: 'ambos', nome: 'Os dois', desc: 'Tenho endereço e também saio pra atender.' }
+  ];
+  function renderPassoOnde(container) {
+    container.innerHTML = '<p class="criar-passo-intro">Onde acontece o serviço?</p><div id="criarOpcoesOnde" class="criar-opcoes-genero"></div>';
+    function desenhar() { document.getElementById('criarOpcoesOnde').innerHTML = cartoes(OPCOES_ONDE, estado.servico_onde, 'onde'); }
+    desenhar();
+    aoEscolher(container.querySelector('#criarOpcoesOnde'), 'onde', function (k) { estado.servico_onde = k; desenhar(); });
+  }
+
+  // ---- 3c. como o cliente recebe (Delivery) ----
+  var OPCOES_RECEBE = [
+    { chave: 'ambos', nome: 'Entrega e retirada', desc: 'O cliente escolhe na hora de pedir.' },
+    { chave: 'entrega', nome: 'Só entrega', desc: 'Sempre levo até o endereço do cliente.' },
+    { chave: 'retirada', nome: 'Só retirada', desc: 'O cliente pede e busca no balcão.' }
+  ];
+  function renderPassoRecebe(container) {
+    container.innerHTML = '<p class="criar-passo-intro">Como o pedido chega no cliente?</p><div id="criarOpcoesRecebe" class="criar-opcoes-genero"></div>';
+    function desenhar() { document.getElementById('criarOpcoesRecebe').innerHTML = cartoes(OPCOES_RECEBE, estado.recebe, 'recebe'); }
+    desenhar();
+    aoEscolher(container.querySelector('#criarOpcoesRecebe'), 'recebe', function (k) { estado.recebe = k; desenhar(); });
+  }
+
+  // ---- 4a. estilo do site (Agenda) — prints reais de cada estilo ----
+  function renderPassoTemplate(container) {
+    var T = window.VibeTemplates || { LISTA: [], GRUPOS: [] };
+    container.innerHTML = '<p class="criar-passo-intro">Escolha o visual. Você vê o resultado ao fundo e pode trocar quando quiser.</p>' +
+      '<div class="criar-tpl-filtros" id="criarTplFiltros" role="group" aria-label="Filtrar estilos"></div>' +
+      '<div id="criarTemplateEscolha" class="criar-template-grid"></div>';
+    var grupoAtual = '';
     function desenhar() {
-      document.getElementById('criarOpcoesGenero').innerHTML = OPCOES_GENERO.map(function (o) {
-        return '<button type="button" class="criar-opcao-card' + (o.chave === estado.genero_atendimento ? ' is-selecionado' : '') + '" data-genero="' + o.chave + '">' +
-          '<span class="criar-opcao-nome">' + o.nome + '</span><span class="criar-opcao-desc">' + o.desc + '</span></button>';
+      document.getElementById('criarTplFiltros').innerHTML = T.GRUPOS.filter(function (g) {
+        return !g.chave || T.LISTA.some(function (t) { return t.grupo === g.chave; });
+      }).map(function (g) {
+        return '<button type="button" class="chip' + (g.chave === grupoAtual ? ' is-ativo' : '') + '" data-grupo="' + g.chave + '" aria-pressed="' + (g.chave === grupoAtual) + '">' + escapeHtml(g.nome) + '</button>';
+      }).join('');
+      document.getElementById('criarTemplateEscolha').innerHTML = T.LISTA.filter(function (t) {
+        return !grupoAtual || t.grupo === grupoAtual;
+      }).map(function (t) {
+        var sel = t.chave === estado.template;
+        return '<button type="button" class="tpl-print-card' + (sel ? ' is-selecionado' : '') + '" data-template="' + t.chave + '" aria-pressed="' + sel + '">' +
+          '<img src="' + t.print + '" alt="Prévia do estilo ' + escapeHtml(t.nome) + '" loading="lazy">' +
+          '<span class="tpl-swatch-nome">' + escapeHtml(t.nome) + (t.segueFoto ? '<em>segue sua foto</em>' : '') + '</span></button>';
       }).join('');
     }
     desenhar();
-    document.getElementById('criarOpcoesGenero').addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-genero]');
-      if (!btn) return;
-      estado.genero_atendimento = btn.getAttribute('data-genero');
-      desenhar();
-      postEstado();
-    });
+    aoEscolher(container.querySelector('#criarTplFiltros'), 'grupo', function (g) { grupoAtual = g; desenhar(); });
+    aoEscolher(container.querySelector('#criarTemplateEscolha'), 'template', function (k) { estado.template = k; desenhar(); postEstado(); });
   }
 
-  // ---- passos seguintes: cada um pergunta UMA coisa só (funil), não um
-  // formulário inteiro de uma vez — nome+link seguem juntos porque são a
-  // mesma ideia (o link nasce do nome), o resto vem em telas separadas ----
-  function renderPassoNome(container) {
-    var exemplo = NOME_EXEMPLO_POR_SEGMENTO[estado.segmento] || NOME_EXEMPLO_POR_SEGMENTO.outro;
-    container.innerHTML =
-      '<div class="field"><label for="criarNome">Nome do estabelecimento</label>' +
-      '<input type="text" id="criarNome" placeholder="' + escapeHtml(exemplo) + '" value="' + escapeHtml(estado.nome) + '"></div>' +
-      '<div class="field"><label for="criarSlug">Link (gerado a partir do nome, pode editar)</label>' +
-      '<div class="prefixo"><span>vbagenda.com.br/</span><input type="text" id="criarSlug" value="' + escapeHtml(estado.slug) + '"></div>' +
-      '<span class="criar-slug-status" id="criarSlugStatus"></span></div>';
+  // ---- 4b. jeito da loja (Delivery / No local) ----
+  var LAYOUTS = [
+    { chave: 'lista', nome: 'Lista', desc: 'Foto pequena ao lado. O jeito mais rápido.' },
+    { chave: 'grade', nome: 'Grade', desc: 'Dois por linha, foto em cima.' },
+    { chave: 'cardapio', nome: 'Cardápio', desc: 'Como o impresso: nome, pontilhado e preço.' },
+    { chave: 'vitrine', nome: 'Vitrine', desc: 'Capa e fotos grandes.' }
+  ];
+  var TONS = [
+    { chave: 'claro', nome: 'Claro', desc: 'Fundo claro com um toque da cor.' },
+    { chave: 'vibrante', nome: 'Vibrante', desc: 'Faixa na sua cor, cartões translúcidos.' }
+  ];
+  function renderPassoLoja(container) {
+    container.innerHTML = '<p class="criar-passo-intro">Como os itens aparecem pro cliente. Cor, fotos e logo você ajusta no painel.</p>' +
+      '<div id="criarLayouts" class="criar-opcoes-segmento"></div>' +
+      '<p class="criar-extra-titulo">Tom</p><div id="criarTons" class="criar-opcoes-segmento"></div>';
+    function desenhar() {
+      document.getElementById('criarLayouts').innerHTML = cartoes(LAYOUTS, estado.layout, 'layout');
+      document.getElementById('criarTons').innerHTML = cartoes(TONS, estado.tom, 'tom');
+    }
+    desenhar();
+    aoEscolher(container.querySelector('#criarLayouts'), 'layout', function (k) { estado.layout = k; desenhar(); postEstado(); });
+    aoEscolher(container.querySelector('#criarTons'), 'tom', function (k) { estado.tom = k; desenhar(); postEstado(); });
+  }
 
-    var slugTocadoManualmente = !!estado.slug;
-    var slugStatusEl = document.getElementById('criarSlugStatus');
-    var timerCheckSlug = null;
-    function checarSlugDisponivel() {
-      clearTimeout(timerCheckSlug);
-      var slug = estado.slug.trim();
-      var cidade = estado.cidade.trim().toLowerCase();
-      if (!slug || !cidade) { slugStatusEl.className = 'criar-slug-status'; slugStatusEl.textContent = ''; return; }
-      slugStatusEl.className = 'criar-slug-status checando';
-      slugStatusEl.textContent = 'verificando…';
-      timerCheckSlug = setTimeout(function () {
-        db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }).then(function (res) {
-          if (estado.slug.trim() !== slug || estado.cidade.trim().toLowerCase() !== cidade) return;
-          var ocupado = res.data && res.data.length > 0;
-          slugStatusEl.className = 'criar-slug-status ' + (ocupado ? 'ocupado' : 'ok');
-          slugStatusEl.textContent = ocupado ? '✕ esse link já está em uso nessa cidade' : '✓ link disponível';
-        }, function () {
-          slugStatusEl.className = 'criar-slug-status'; slugStatusEl.textContent = '';
-        });
-      }, 500);
+  // ---- 5. nome e link ----
+  function renderPassoNome(container) {
+    container.innerHTML =
+      '<div class="field"><label for="criarNome">Nome do seu negócio</label>' +
+      '<input type="text" id="criarNome" autocomplete="organization" placeholder="' + escapeHtml(SEG.exemplo(estado.segmento)) + '" value="' + escapeHtml(estado.nome) + '"></div>' +
+      '<div class="field"><label for="criarSlug">Link (sai do nome, pode editar)</label>' +
+      '<div class="prefixo"><span>/</span><input type="text" id="criarSlug" autocapitalize="off" spellcheck="false" value="' + escapeHtml(estado.slug) + '"></div>' +
+      '<span class="criar-slug-status" id="criarSlugStatus"></span>' +
+      '<span class="criar-slug-endereco" id="criarSlugEndereco"></span></div>';
+
+    var slugManual = !!estado.slug;
+    var statusEl = document.getElementById('criarSlugStatus');
+    var timer = null;
+    function mostrarEndereco() {
+      document.getElementById('criarSlugEndereco').textContent =
+        location.host + '/' + (estado.slug || 'seu-negocio') + '/' + cidadeDoLink() + (tem('agenda') ? '' : '/pedir');
+    }
+    function checar() {
+      clearTimeout(timer);
+      mostrarEndereco();
+      var slug = estado.slug;
+      if (!slug) { statusEl.className = 'criar-slug-status'; statusEl.textContent = ''; return; }
+      statusEl.className = 'criar-slug-status checando';
+      statusEl.textContent = 'verificando…';
+      timer = setTimeout(function () {
+        db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidadeDoLink() }).then(function (res) {
+          if (estado.slug !== slug) return;
+          var ocupado = !!(res.data && res.data.length > 0 && res.data[0].id !== estabId);
+          statusEl.className = 'criar-slug-status ' + (ocupado ? 'ocupado' : 'ok');
+          statusEl.textContent = ocupado ? '✕ esse link já está em uso nessa cidade' : '✓ link disponível';
+        }, function () { statusEl.className = 'criar-slug-status'; statusEl.textContent = ''; });
+      }, 450);
     }
     document.getElementById('criarNome').addEventListener('input', function () {
       estado.nome = this.value;
-      if (!slugTocadoManualmente) {
-        estado.slug = slugificar(this.value);
-        document.getElementById('criarSlug').value = estado.slug;
-        checarSlugDisponivel();
-      }
+      if (!slugManual) { estado.slug = slugificar(this.value); document.getElementById('criarSlug').value = estado.slug; checar(); }
       postEstado();
     });
     document.getElementById('criarSlug').addEventListener('input', function () {
-      slugTocadoManualmente = true;
-      estado.slug = this.value;
-      checarSlugDisponivel();
+      slugManual = true;
+      estado.slug = slugificar(this.value);
+      checar();
     });
-    checarSlugDisponivel();
+    document.getElementById('criarSlug').addEventListener('blur', function () { this.value = estado.slug; });
+    checar();
+  }
+  function erro(texto) {
+    var msg = document.getElementById('criarMsg');
+    msg.className = 'msg msg-erro';
+    msg.textContent = texto;
+    return false;
   }
   function validarNome() {
-    var msg = document.getElementById('criarMsg');
-    if (!estado.nome.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'Digite o nome do estabelecimento.'; return false; }
-    if (!estado.slug.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'O link não pode ficar vazio.'; return false; }
-    var slugStatusEl = document.getElementById('criarSlugStatus');
-    if (slugStatusEl && slugStatusEl.classList.contains('ocupado')) {
-      msg.className = 'msg msg-erro'; msg.textContent = 'Esse link já está em uso nessa cidade — muda o nome ou o link.'; return false;
-    }
+    if (estado.nome.trim().length < 2) return erro('Digite o nome do seu negócio.');
+    if (!estado.slug) return erro('O link não pode ficar vazio.');
+    var st = document.getElementById('criarSlugStatus');
+    if (st && st.classList.contains('ocupado')) return erro('Esse link já está em uso nessa cidade — muda o nome ou o link.');
     return true;
   }
 
-  var CIDADES_DISPONIVEIS = ['Itapetininga', 'Tatuí', 'Boituva', 'Itu', 'Sorocaba'];
+  // ---- 6. cidade ----
+  var CIDADES = ['Itapetininga', 'Tatuí', 'Boituva', 'Itu', 'Sorocaba'];
   function renderPassoCidade(container) {
-    var atual = estado.cidade || 'Itapetininga';
-    container.innerHTML = '<div class="field"><label for="criarCidade">Em qual cidade fica?</label>' +
-      '<select id="criarCidade">' +
-      CIDADES_DISPONIVEIS.map(function (c) {
-        return '<option value="' + escapeHtml(c) + '"' + (c.toLowerCase() === atual.toLowerCase() ? ' selected' : '') + '>' + escapeHtml(c) + '</option>';
-      }).join('') +
-      '</select></div>';
+    container.innerHTML = '<div class="field"><label for="criarCidade">Em qual cidade fica?</label><select id="criarCidade">' +
+      CIDADES.map(function (c) {
+        return '<option value="' + escapeHtml(c) + '"' + (c.toLowerCase() === cidadeDoLink() ? ' selected' : '') + '>' + escapeHtml(c) + '</option>';
+      }).join('') + '</select></div>';
     estado.cidade = document.getElementById('criarCidade').value;
-    postEstado();
-    document.getElementById('criarCidade').addEventListener('change', function () {
-      estado.cidade = this.value;
-      postEstado();
-    });
-  }
-  function validarCidade() {
-    var msg = document.getElementById('criarMsg');
-    if (!estado.cidade.trim()) { msg.className = 'msg msg-erro'; msg.textContent = 'Digite a cidade.'; return false; }
-    return true;
+    document.getElementById('criarCidade').addEventListener('change', function () { estado.cidade = this.value; postEstado(); });
   }
 
+  // ---- 7. WhatsApp e criação ----
   function renderPassoWhatsapp(container) {
-    container.innerHTML = '<div class="field"><label for="criarWhatsapp">WhatsApp pra receber os agendamentos (com DDD)</label><input type="tel" id="criarWhatsapp" placeholder="15999999999" value="' + escapeHtml(estado.telefone_whatsapp) + '"></div>';
-    document.getElementById('criarWhatsapp').addEventListener('input', function () {
-      estado.telefone_whatsapp = this.value;
-    });
+    var oQue = tem('agenda') ? 'os agendamentos' : tem('delivery') ? 'os pedidos' : 'os chamados e orçamentos';
+    container.innerHTML = '<div class="field"><label for="criarWhatsapp">WhatsApp pra receber ' + oQue + ' (com DDD)</label>' +
+      '<input type="tel" id="criarWhatsapp" inputmode="tel" autocomplete="tel" placeholder="15999999999" value="' + escapeHtml(estado.telefone_whatsapp) + '"></div>';
+    document.getElementById('criarWhatsapp').addEventListener('input', function () { estado.telefone_whatsapp = this.value; });
   }
-  function aoAvancarFinal() {
+  function validarWhatsapp() {
+    var n = estado.telefone_whatsapp.replace(/\D/g, '');
+    if (n && (n.length < 10 || n.length > 13)) return erro('Confere o número: DDD + número, só os dígitos.');
+    return true;
+  }
+  function camposDaLoja() {
+    var c = { layout: estado.layout, template: estado.tom };
+    if (tem('delivery')) { c.aceita_entrega = estado.recebe !== 'retirada'; c.aceita_retirada = estado.recebe !== 'entrega'; }
+    return c;
+  }
+  function salvarNegocio() {
     var msg = document.getElementById('criarMsg');
     msg.className = 'msg';
-    msg.textContent = 'Salvando…';
-    if (!estabId) {
-      return db.rpc('criar_estabelecimento', {
-        p_nome: estado.nome.trim(),
-        p_slug: estado.slug.trim(),
-        p_cidade: estado.cidade.trim(),
-        p_segmento: estado.segmento,
-        p_telefone_whatsapp: estado.telefone_whatsapp.trim() || null,
-        p_template: estado.template,
-        p_genero_atendimento: estado.genero_atendimento
-      }).then(function (res) {
-        if (res.error) {
-          var texto = res.error.message.indexOf('duplicate') > -1 || res.error.message.indexOf('unique') > -1
-            ? 'Já existe um estabelecimento com esse link nessa cidade — muda o nome ou o link.'
-            : res.error.message;
-          throw new Error(texto);
-        }
-        estabId = res.data.id;
-        msg.textContent = '';
-      });
-    }
-    return db.rpc('tenant_admin_atualizar_identidade', {
-      p_estabelecimento_id: estabId,
-      p_nome: estado.nome.trim(),
-      p_slug: estado.slug.trim(),
-      p_cidade: estado.cidade.trim(),
-      p_segmento: estado.segmento,
-      p_telefone_whatsapp: estado.telefone_whatsapp.trim() || null
-    }).then(function (res) {
-      if (res.error) throw new Error(res.error.message);
-      msg.textContent = '';
-    });
+    msg.textContent = 'Criando seu negócio…';
+    var areas = areasEscolhidas();
+    var onde = tem('servicos') ? estado.servico_onde : null;
+    var fone = estado.telefone_whatsapp.replace(/\D/g, '') || null;
+    var passo = !estabId
+      ? db.rpc('criar_estabelecimento', {
+          p_nome: estado.nome.trim(), p_slug: estado.slug, p_cidade: estado.cidade.trim(), p_segmento: estado.segmento,
+          p_telefone_whatsapp: fone, p_template: estado.template, p_genero_atendimento: perguntaGenero() ? estado.genero_atendimento : 'ambos',
+          p_areas: areas, p_servico_onde: onde
+        }).then(function (res) {
+          if (res.error) {
+            var m = res.error.message || '';
+            throw new Error(/duplicate|unique/.test(m) ? 'Já existe um negócio com esse link nessa cidade — muda o nome ou o link.' : m);
+          }
+          estabId = res.data.id;
+        })
+      : db.rpc('tenant_admin_atualizar_identidade', {
+          p_estabelecimento_id: estabId, p_nome: estado.nome.trim(), p_slug: estado.slug, p_cidade: estado.cidade.trim(),
+          p_segmento: estado.segmento, p_telefone_whatsapp: fone
+        }).then(function (res) {
+          if (res.error) throw new Error(res.error.message);
+          return db.rpc('estabelecimento_definir_areas', { p_estabelecimento_id: estabId, p_areas: areas, p_servico_onde: onde });
+        }).then(function (res) { if (res && res.error) throw new Error(res.error.message); });
+    // o jeito da loja é um extra: se falhar, o negócio já existe e ajusta no painel
+    return passo.then(function () {
+      if (!areaDePedidos()) return null;
+      return db.rpc('delivery_admin_atualizar_estabelecimento', { p_id: estabId, p_campos: camposDaLoja() }).then(null, function () {});
+    }).then(function () { msg.textContent = ''; });
   }
 
-  // ---- engine dos passos ----
-  // Só o essencial pra nascer o site (template, nicho, atendimento e
-  // identidade) acontece aqui — o resto (fotos, cores, serviços, equipe,
-  // redes) agora é preenchido ao vivo, direto no site real, no tutorial
-  // guiado que começa assim que o site é criado (ver perfil.js, modo
-  // ?tutorial=1). A lista é montada de novo a cada navegação porque o
-  // nicho escolhido decide se a pergunta de atendimento aparece ou não
-  // (funil: só pergunta o que faz sentido pro negócio escolhido).
+  // ---- engine: a lista de passos é refeita a cada navegação (funil) ----
   function obterPassos() {
-    var passos = [
-      { chave: 'template', titulo: 'Estilo do site', render: renderPassoTemplate },
+    var p = [
+      { chave: 'area', titulo: 'O que seu negócio faz?', render: renderPassoArea },
       { chave: 'segmento', titulo: 'Tipo de negócio', render: renderPassoSegmento }
     ];
-    if (estado.segmento !== 'estetica_automotiva' && estado.segmento !== 'pizzaria') {
-      passos.push({ chave: 'atendimento', titulo: 'Atendimento', render: renderPassoAtendimento });
-    }
-    passos.push(
-      { chave: 'nome', titulo: 'Nome do site', render: renderPassoNome, validar: validarNome },
-      { chave: 'cidade', titulo: 'Cidade', render: renderPassoCidade, validar: validarCidade },
-      { chave: 'whatsapp', titulo: 'WhatsApp', render: renderPassoWhatsapp, aoAvancar: aoAvancarFinal }
+    if (perguntaGenero()) p.push({ chave: 'atendimento', titulo: 'Atendimento', render: renderPassoAtendimento });
+    if (tem('servicos')) p.push({ chave: 'onde', titulo: 'Onde você atende?', render: renderPassoOnde });
+    if (tem('delivery')) p.push({ chave: 'recebe', titulo: 'Entrega ou retirada?', render: renderPassoRecebe });
+    p.push(tem('agenda')
+      ? { chave: 'template', titulo: 'Estilo do site', render: renderPassoTemplate }
+      : { chave: 'loja', titulo: 'Jeito da loja', render: renderPassoLoja });
+    p.push(
+      { chave: 'nome', titulo: 'Nome e link', render: renderPassoNome, validar: validarNome },
+      { chave: 'cidade', titulo: 'Cidade', render: renderPassoCidade },
+      { chave: 'whatsapp', titulo: 'WhatsApp', render: renderPassoWhatsapp, validar: validarWhatsapp, aoAvancar: salvarNegocio }
     );
-    return passos;
+    return p;
   }
   var passoAtual = 0;
 
-  function mostrarPasso(indice) {
-    passoAtual = indice;
+  function atualizarCabecalho() {
     var passos = obterPassos();
-    var passo = passos[indice];
+    var passo = passos[passoAtual];
+    document.getElementById('criarPassoLabel').textContent = 'Passo ' + (passoAtual + 1) + ' de ' + passos.length + ': ' + passo.titulo;
+    document.getElementById('criarProgressoFill').style.width = (((passoAtual + 1) / passos.length) * 100) + '%';
+    document.getElementById('criarProximoBtn').textContent = passoAtual === passos.length - 1
+      ? (tem('agenda') ? 'Criar e abrir meu site ✓' : 'Criar e abrir meu painel ✓') : 'Próximo →';
+  }
+  function mostrarPasso(indice, direcao) {
+    passoAtual = indice;
+    var passo = obterPassos()[indice];
     document.getElementById('criarTituloPasso').textContent = passo.titulo;
-    document.getElementById('criarPassoLabel').textContent = 'Passo ' + (indice + 1) + ' de ' + passos.length + ': ' + passo.titulo;
-    document.getElementById('criarProgressoFill').style.width = (((indice + 1) / passos.length) * 100) + '%';
     document.getElementById('criarVoltarBtn').style.visibility = indice === 0 ? 'hidden' : 'visible';
-    document.getElementById('criarProximoBtn').textContent = indice === passos.length - 1 ? 'Ir para o meu site ✓' : 'Próximo →';
+    atualizarCabecalho();
     var msg = document.getElementById('criarMsg');
-    msg.textContent = '';
-    msg.className = 'msg';
+    msg.textContent = ''; msg.className = 'msg';
     var container = document.getElementById('criarStepContainer');
-    container.classList.remove('criar-step-anim');
-    void container.offsetWidth; // força reflow pra reanimar mesmo repetindo a classe
+    container.classList.remove('criar-step-anim', 'criar-step-volta');
+    void container.offsetWidth; // reflow pra reanimar
     container.innerHTML = '';
     passo.render(container);
     container.classList.add('criar-step-anim');
+    if (direcao === 'volta') container.classList.add('criar-step-volta');
     postEstado();
   }
 
@@ -432,33 +458,24 @@
     btn.disabled = true;
     function prosseguir() {
       btn.disabled = false;
-      if (passoAtual === passos.length - 1) {
-        // "tutorial=1" continua a MESMA criação do site no site real (não é
-        // um tutorial à parte) — "desde" avisa quantos passos já foram
-        // dados aqui, pra numeração continuar contando (Passo 7, 8, 9...)
-        // em vez de reiniciar do 1.
-        window.location.href = '/' + encodeURIComponent(estado.slug) + '/' + encodeURIComponent(estado.cidade.trim().toLowerCase()) + '?tutorial=1&desde=' + passos.length;
-        return;
-      }
-      mostrarPasso(passoAtual + 1);
+      if (passoAtual < passos.length - 1) { mostrarPasso(passoAtual + 1); return; }
+      if (window.VibeToggle) window.VibeToggle.marcarDirecao('avanca');
+      var base = '/' + encodeURIComponent(estado.slug) + '/' + encodeURIComponent(cidadeDoLink());
+      // Agenda: a criação continua no site real (tutorial guiado; a numeração segue)
+      window.location.href = tem('agenda') ? base + '?tutorial=1&desde=' + passos.length : '/painel-area.html?nova=1';
     }
     function falhou(err) {
       btn.disabled = false;
-      var msg = document.getElementById('criarMsg');
-      msg.className = 'msg msg-erro';
-      msg.textContent = (err && err.message) || 'Algo deu errado — tenta de novo.';
+      erro((err && err.message) || 'Algo deu errado — tenta de novo.');
     }
-    if (passo.aoAvancar) {
-      passo.aoAvancar().then(prosseguir, falhou);
-    } else {
-      prosseguir();
-    }
+    if (passo.aoAvancar) passo.aoAvancar().then(prosseguir, falhou); else prosseguir();
   });
   document.getElementById('criarVoltarBtn').addEventListener('click', function () {
-    if (passoAtual === 0) return;
-    mostrarPasso(passoAtual - 1);
+    if (passoAtual > 0) mostrarPasso(passoAtual - 1, 'volta');
   });
 
+  tingir();
+  trocarPreview(true);
   mostrarPasso(0);
   }
 })();
