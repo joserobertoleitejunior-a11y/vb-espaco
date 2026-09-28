@@ -8,7 +8,7 @@
 
    Bump o número da versão sempre que mudar a lista de arquivos aqui
    embaixo — isso descarta o cache antigo e busca tudo de novo. */
-var VERSAO = 'vb-cache-v10';
+var VERSAO = 'vb-cache-v11';
 
 var CASCO = [
   '/',
@@ -38,6 +38,8 @@ var CASCO = [
   '/assets/js/catalogo.js',
   '/assets/js/splash.js',
   '/assets/css/splash.css',
+  '/assets/js/sem-zoom.js',
+  '/assets/js/site-visual.js',
   '/assets/js/vb-pull-refresh.js',
   '/assets/js/vb-cliente-global.js',
   '/assets/js/meus-agendamentos.js',

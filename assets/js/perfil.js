@@ -518,7 +518,7 @@
   var ESTOQUE_FOTOS_ADMIN = [
     { url: '/assets/tpl-classico/img/estoque/hero-masculino-1.jpg', legenda: 'Studio dourado' },
     { url: '/assets/tpl-classico/img/estoque/hero-feminino-1.jpg', legenda: 'Salão rosé' },
-    { url: '/assets/tpl-classico/img/estoque/fachada-1.jpg', legenda: 'Fachada clássica' }
+    { url: '/assets/estoque/geral/grafite.svg', legenda: 'Grafite' }
   ];
   // ícone de câmera em linha, no lugar do emoji nativo (some de aparência
   // por sistema operacional/navegador e fica cinza-chumbo, combinando com

@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script src="/assets/js/sem-zoom.js?v=1"></script>
 <title>Vibe — agende, peça e chame quem faz em Itapetininga</title>
 <meta name="description" content="Agende horário na barbearia ou no salão, peça da pizzaria ou do mercado e chame borracheiro, chaveiro ou pedreiro em Itapetininga — direto com quem faz.">
 <link rel="canonical" href="https://vb-espaco.joserobertoleitejunior.workers.dev/">
@@ -26,9 +27,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Vibe">
-<link rel="stylesheet" href="/assets/css/styles.css?v=79">
+<link rel="stylesheet" href="/assets/css/styles.css?v=81">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=3">
-<link rel="stylesheet" href="/assets/css/splash.css?v=2">
+<link rel="stylesheet" href="/assets/css/splash.css?v=3">
 <script src="/assets/js/vibe-toggle.js?v=3"></script>
 <script type="application/ld+json">
 {
@@ -52,6 +53,14 @@
     })();
   </script>
   <div class="sp-fundo" aria-hidden="true"><i class="sp-luz sp-luz-agenda"></i><i class="sp-luz sp-luz-delivery"></i><i class="sp-luz sp-luz-servicos"></i></div>
+  <!-- pôr do sol em Itapetininga (drone): sem áudio, levemente desfocado, em loop -->
+  <div class="sp-video" aria-hidden="true">
+    <video id="spVideo" autoplay muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback
+           poster="/assets/video/itapetininga-por-do-sol.jpg">
+      <source src="/assets/video/itapetininga-por-do-sol.mp4" type="video/mp4">
+    </video>
+    <i class="sp-video-veu"></i>
+  </div>
 
   <main class="sp" id="telaSplash">
     <header class="sp-topo">
@@ -215,7 +224,7 @@
   <script src="/assets/js/meus-agendamentos.js?v=1"></script>
   <script src="/assets/js/vb-cliente-global-index.js?v=4"></script>
   <script src="/assets/js/marca.js?v=1"></script>
-  <script src="/assets/js/splash.js?v=2"></script>
+  <script src="/assets/js/splash.js?v=3"></script>
   <script type="module" src="/assets/js/vb-cube3d.js?v=3"></script>
   <script type="module" src="/assets/js/vb-pull-refresh.js?v=3"></script>
   <script>

@@ -33,17 +33,6 @@
   function ler(chave) { try { return localStorage.getItem(chave); } catch (e) { return null; } }
   function gravar(chave, valor) { try { localStorage.setItem(chave, valor); } catch (e) {} }
 
-  // ---------- sem zoom (iOS ignora o user-scalable=no do viewport) ----------
-  ['gesturestart', 'gesturechange'].forEach(function (ev) {
-    document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
-  });
-  var ultimoToque = 0;
-  document.addEventListener('touchend', function (e) {
-    var agora = Date.now();
-    if (agora - ultimoToque < 300 && !e.target.closest('input, textarea, select')) e.preventDefault(); // duplo toque
-    ultimoToque = agora;
-  }, { passive: false });
-
   // ---------- conteúdo da splash ----------
   ops.forEach(function (op) {
     var ic = op.querySelector('.sp-ic');
@@ -116,6 +105,25 @@
   var sair = document.getElementById('magSair');
   if (sair) sair.addEventListener('click', function () { setTimeout(atualizarCliente, 400); });
 
+  // ---------- vídeo de fundo: só toca com a splash na tela ----------
+  var video = document.getElementById('spVideo');
+  var economiza = (navigator.connection && navigator.connection.saveData) ||
+    (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function videoConforme(tela) {
+    if (!video) return;
+    if (tela === 'splash' && !economiza) {
+      var p = video.play();
+      if (p && p.catch) p.catch(function () {}); // navegador bloqueou: fica o quadro parado (poster)
+    } else {
+      video.pause();
+    }
+  }
+  if (video && economiza) { video.removeAttribute('autoplay'); video.pause(); }
+  document.addEventListener('visibilitychange', function () {
+    if (!video) return;
+    if (document.hidden) video.pause(); else videoConforme(corpo.getAttribute('data-tela'));
+  });
+
   // ---------- telas: splash ↔ lista da área (sem recarregar) ----------
   var slotHero = document.getElementById('explorarCuboSlot');
   var slotSplash = document.querySelector('.sp-topo');
@@ -148,6 +156,7 @@
     if (meta) meta.content = ehSplash ? '#f4f4f6' : '#ffffff';
     if (!ehSplash && window.VBExplorar) window.VBExplorar.abrir(tela);
     if (ehSplash) { marcarUltima(); focar(null); atualizarCliente(); }
+    videoConforme(ehSplash ? 'splash' : 'lista');
     moverCubo(tela);
     window.scrollTo(0, 0);
   }

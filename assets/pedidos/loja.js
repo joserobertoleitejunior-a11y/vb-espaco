@@ -1,6 +1,9 @@
 /* Loja / chamado público do estabelecimento (rota /:slug/:cidade/pedir).
    É a área Delivery ou Serviços do MESMO estabelecimento da agenda —
-   mesmo app, mesmo link, mesmo login. Fluxo de pedido: cardápio, sheet
+   mesmo app, mesmo link, mesmo login e o MESMO site: topo, menu, hero,
+   estilo e cores são os que o dono escolheu (white-label da Agenda);
+   aqui só mudam os itens (cardápio/serviços, em botões redondos como os
+   serviços da Agenda) e os botões/funções de pedido e chamado. Fluxo de pedido: cardápio, sheet
    do item (meio a meio, borda, observação), combo, sacola, checkout e
    acompanhamento. Na área Serviços vira "chamado" (urgência, com GPS)
    ou "pedido de orçamento" (visita marcada), conforme o segmento.
@@ -8,13 +11,13 @@
 
    Modos extras:
    ?demo=<segmento>                  → cardápio de exemplo, sem rede
-   ?preview=1                        → recebe cor/layout/tom ao vivo do painel
+   ?preview=1                        → recebe o estado do passo a passo/painel ao vivo
    ?mini=1                           → miniatura (esconde sacola/toast) */
 (function () {
   'use strict';
 
   var U = window.VB;
-  var Tema = window.VBTema;
+  var SV = window.VBSiteVisual;
   var $ = function (id) { return document.getElementById(id); };
   var esc = U.escapeHtml;
 
@@ -26,6 +29,7 @@
   var cidade = partes[1];
 
   var estab = null;
+  var ident = {};   // identidade do site (estabelecimentos): estilo, cores, fotos, textos
   var cardapio = { categorias: [], itens: [], bordas: [], combos: [] };
   var carrinho = [];
   var aberta = true;
@@ -46,18 +50,12 @@
   function temOpcoes(item) { return (item.permite_meio_a_meio && elegiveisMeio().length > 1) || aceitaBorda(item); }
 
   function mostrarEstado(nome) {
-    ['estadoCarregando', 'estadoNaoEncontrado', 'estadoPronto'].forEach(function (id) {
-      $(id).classList.toggle('oculto', id !== nome);
-    });
-    if (nome === 'estadoPronto') {
-      $('heroSecao').classList.add('anim-entra');
-      $('cardapioConteudo').classList.add('anim-entra-2');
-    }
+    var mapa = { estadoCarregando: 'carregando', estadoNaoEncontrado: 'naoEncontrado', estadoPronto: 'tplClassico' };
+    Object.keys(mapa).forEach(function (k) { $(mapa[k]).classList.toggle('oculto', k !== nome); });
   }
 
   /* ===================== carga ===================== */
   async function iniciar() {
-    $('tbMenuBtn').innerHTML = U.ICONES.menu;
     $('buscaIcone').outerHTML = U.ICONES.busca;
 
     if (MODO_DEMO) {
@@ -72,6 +70,9 @@
       var cResp = await window.db.rpc('delivery_cardapio_publico', { p_estabelecimento_id: estab.id });
       if (!cResp.error && cResp.data) cardapio = cResp.data;
       if (!MODO_PREVIEW) window.db.rpc('delivery_registrar_acesso', { p_estabelecimento_id: estab.id });
+      // o visual vem do site do negócio (o mesmo da Agenda)
+      var iResp = await window.db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade });
+      if (!iResp.error && iResp.data && iResp.data[0]) ident = iResp.data[0];
     }
 
     V = U.vocab(estab.segmento, estab.modo);
@@ -79,10 +80,8 @@
     URGENTE = SERVICO && U.tipoServico(estab.segmento) === 'chamado';
     VEICULO = SERVICO && U.usaVeiculo(estab.segmento);
     AREA = SERVICO ? 'servicos' : 'delivery';
-    aplicarVisual(q.get('cor') ? '#' + q.get('cor').replace('#', '') : estab.cor_destaque, q.get('layout') || estab.layout, q.get('tom') || estab.template);
-    if (!MODO_DEMO && !MODO_PREVIEW) {
-      try { localStorage.setItem('vb_visual_' + location.pathname, JSON.stringify({ a: AREA, c: estab.cor_destaque, l: estab.layout, t: estab.template })); } catch (e) {}
-    }
+    if (MODO_DEMO) ident = { nome: estab.nome, segmento: estab.segmento, template: q.get('tpl') || 'claro-minimal', cor_destaque: q.get('cor') ? '#' + q.get('cor').replace('#', '') : null };
+    await aplicarVisual();
 
     CART_KEY = 'vbdelivery_carrinho_' + estab.id;
     carregarCarrinho();
@@ -98,9 +97,19 @@
     if (q.get('pedidos') === '1') abrirMeusPedidos();
   }
 
-  function aplicarVisual(cor, layout, tom) {
-    Tema.aplicar({ area: AREA, cor: cor, layout: layout, tom: tom });
+  // estilo + cor do dono (os mesmos do site da Agenda) e as partes do
+  // pedido herdando letra/cores/cantos do estilo
+  // sem cor escolhida, os botões usam o destaque do próprio estilo
+  var destaqueDoEstilo = null;
+  function corDoSite() { return ident.cor_destaque || estab.cor_destaque || destaqueDoEstilo; }
+  async function aplicarVisual() {
+    await SV.aplicarEstilo(ident.template || 'classico-boiserie');
+    SV.aplicarCor(corDoSite(), ident.cor_secundaria);
+    if (window.VibeTemplates) window.VibeTemplates.fundoDaFoto(window.VibeTemplates.segueFoto(ident.template) ? fotoCapa() : null);
+    document.documentElement.setAttribute('data-area', AREA);
+    destaqueDoEstilo = SV.herdarTokens([$('servicosSecao'), $('lojaCamada')])['--accent'];
   }
+  function fotoCapa() { return ident.foto_hero_url || estab.foto_capa_url || null; }
 
   // o mesmo estabelecimento pode ter Agenda + (Delivery ou Serviços): o toggle
   // da faixa (espaço da plataforma, fora da área da loja) troca de área
@@ -118,37 +127,65 @@
   }
 
   /* ===================== loja (topo) ===================== */
+  function textoHero() {
+    var vendeu = { titulo: '', sub: '' };
+    if (SERVICO && URGENTE) vendeu = { titulo: 'Precisou? A gente vai até você.', sub: 'Chame agora e mande sua localização — a gente te responde no WhatsApp.' };
+    else if (SERVICO) vendeu = { titulo: 'Seu orçamento, sem compromisso.', sub: 'Diga o que precisa e quando — a gente combina a visita com você.' };
+    else vendeu = { titulo: 'Peça agora, direto com a gente.', sub: 'O pedido chega no nosso WhatsApp, sem taxa de aplicativo.' };
+    return { titulo: ident.titulo_hero || vendeu.titulo, sub: estab.descricao || ident.subtitulo_hero || vendeu.sub };
+  }
+  function textoCta() {
+    if (!SERVICO) return 'Fazer pedido';
+    if (!URGENTE) return 'Pedir orçamento';
+    return estab.segmento === 'borracharia' ? 'Pneu furou? Chamar agora'
+      : estab.segmento === 'chaveiro' ? 'Ficou trancado? Chamar agora'
+      : estab.segmento === 'guincho' ? 'Carro parado? Chamar agora' : 'Chamar agora';
+  }
   function renderizarLoja() {
-    document.title = estab.nome + ' · Cardápio e pedidos';
+    var nome = ident.nome || estab.nome;
+    document.title = nome + ' · ' + (SERVICO ? (URGENTE ? 'Chamar agora' : 'Pedir orçamento') : 'Fazer pedido');
     var meta = document.querySelector('meta[name="description"]');
     if (meta && estab.descricao) meta.content = estab.descricao;
 
-    $('tbNome').textContent = estab.nome;
-    $('drawerNome').textContent = estab.nome;
-    $('heroTitulo').textContent = estab.nome;
-    $('heroEyebrow').textContent = (U.SEGMENTOS[estab.segmento] || 'Delivery') + ' · ' + U.cidadeLegivel(estab.cidade);
-    $('heroSub').textContent = estab.descricao || V.subHero;
+    // casco = o mesmo site da Agenda
+    $('tplNomeTopo').textContent = nome;
+    $('tplNomeRodape').textContent = nome;
+    $('tplEyebrow').textContent = (U.SEGMENTOS[estab.segmento] || 'Estabelecimento') + ' · ' + U.cidadeLegivel(estab.cidade);
+    var tx = textoHero();
+    $('tplHeadline').textContent = tx.titulo;
+    $('tplSubcopy').textContent = tx.sub;
+    $('tplCtaTexto').textContent = textoCta();
+    var foto = $('tplHeroFoto');
+    var capa = fotoCapa();
+    foto.style.backgroundColor = 'var(--linen-deep)';
+    if (capa) { foto.style.backgroundImage = 'url("' + encodeURI(capa) + '")'; foto.style.backgroundSize = 'cover'; }
+    $('tplCidadeRodape').textContent = U.cidadeLegivel(estab.cidade);
+    if (estab.endereco || ident.endereco) {
+      $('tplEnderecoRodape').textContent = estab.endereco || ident.endereco;
+      $('tplEnderecoMenu').textContent = estab.endereco || ident.endereco;
+    }
+    var fone = U.soDigitos(estab.telefone_whatsapp || ident.telefone_whatsapp);
+    $('tplTelefoneRodape').textContent = fone ? 'WhatsApp' : '';
+    $('tplTelefoneRodape').href = linkWhats('Olá! Vim pelo site.');
+    $('tplCopyright').innerHTML = '© ' + new Date().getFullYear() + ' ' + esc(nome) + ' · Feito com <a href="/">Vibe</a>';
+    var base = '/' + encodeURIComponent(estab.slug) + '/' + encodeURIComponent(estab.cidade);
+    $('tplLinkInstitucional').href = base + '/institucional';
+    if ((ident.areas || estab.areas || []).indexOf('agenda') > -1) {
+      $('menuAgendaItem').classList.remove('oculto');
+      $('menuAgendaLink').href = base;
+    }
+    $('lojaTituloLista').textContent = SERVICO ? 'Serviços' : 'Cardápio';
+    $('menuItensTitulo').textContent = SERVICO ? 'Serviços' : 'Cardápio';
     $('buscaBox').placeholder = V.buscar;
     document.querySelector('.cart-rotulo').textContent = V.verPedido;
-    document.querySelector('[data-abrir="meusPedidos"] span').textContent = V.meusPedidos;
-    document.querySelector('#drawer .drawer-rotulo').textContent = V.itens;
+    $('menuMeusPedidos').textContent = V.meusPedidos;
 
-    if (estab.foto_capa_url) {
-      $('heroCapa').style.backgroundImage = 'url("' + encodeURI(estab.foto_capa_url) + '")';
-      $('heroSecao').classList.add('com-capa');
-      document.body.classList.add('topo-sobre-capa');
-    }
-    if (estab.foto_perfil_url) {
-      ['heroLogo', 'tbLogo', 'drawerLogo'].forEach(function (id) {
-        $(id).style.backgroundImage = 'url("' + encodeURI(estab.foto_perfil_url) + '")';
-        $(id).classList.add('tem');
-      });
-    } else {
-      $('drawerLogo').style.display = 'none';
-    }
-    if (!estab.descricao) $('heroSub').classList.add('oculto');
+    // faixa de atalhos, como na Agenda: ver os itens / pedir ou chamar
+    $('tplServiceStrip').innerHTML =
+      '<button type="button" class="service-badge" data-ir-itens><span class="mark">' + U.ICONES.busca + '</span><strong>Ver</strong><span>' + (SERVICO ? 'Serviços' : 'Cardápio') + '</span></button>' +
+      '<button type="button" class="service-badge" data-cta-loja><span class="mark">' + (URGENTE ? U.ICONES.alerta : U.ICONES.pedidos) + '</span><strong>' + (SERVICO ? (URGENTE ? 'Chamar' : 'Orçamento') : 'Pedir') + '</strong><span>' + (SERVICO ? (URGENTE ? 'Agora' : 'Sem compromisso') : 'Agora') + '</span></button>';
 
-    // fatos do cabeçalho: rótulo pequeno em cima, valor embaixo
+    // fatos: rótulo pequeno em cima, valor embaixo
     var fatos = [];
     var tempo = estab.tempo_entrega_min ? estab.tempo_entrega_min + (estab.tempo_entrega_max && estab.tempo_entrega_max !== estab.tempo_entrega_min ? '–' + estab.tempo_entrega_max : '') + (SERVICO && !URGENTE ? ' dias' : ' min') : null;
     if (SERVICO && U.aberto24h(estab.horarios)) fatos.push(['Atende', '24 horas']);
@@ -157,17 +194,12 @@
       if (estab.taxa_entrega != null) fatos.push([!SERVICO ? 'Taxa' : URGENTE ? 'Deslocamento' : 'Visita', Number(estab.taxa_entrega) === 0 ? 'Grátis' : U.preco(estab.taxa_entrega)]);
       if (!SERVICO && estab.pedido_minimo) fatos.push(['Mínimo', U.preco(estab.pedido_minimo)]);
     }
-    if (estab.aceita_retirada && fatos.length < 3) fatos.push([SERVICO ? 'Na loja' : 'Retirada', estab.aceita_entrega ? (SERVICO ? 'Também' : 'Pode retirar') : 'Só retirada']);
+    if (estab.aceita_retirada && fatos.length < 3) {
+      fatos.push(SERVICO ? ['Onde', estab.aceita_entrega ? 'Local ou loja' : 'Só na loja'] : ['Retirada', estab.aceita_entrega ? 'Pode retirar' : 'Só retirada']);
+    }
     $('heroInfo').innerHTML = fatos.slice(0, 3).map(function (f) {
       return '<div class="fato"><span>' + f[0] + '</span><strong>' + esc(f[1]) + '</strong></div>';
     }).join('');
-    if (SERVICO && cardapio.itens.length && !document.getElementById('btnSocorro')) {
-      var textoBtn = !URGENTE ? 'Pedir orçamento'
-        : estab.segmento === 'borracharia' ? 'Pneu furou? Chamar agora'
-        : estab.segmento === 'chaveiro' ? 'Ficou trancado? Chamar agora'
-        : estab.segmento === 'guincho' ? 'Carro parado? Chamar agora' : 'Chamar agora';
-      $('heroInfo').insertAdjacentHTML('afterend', '<button type="button" class="hero-socorro" id="btnSocorro">' + (URGENTE ? U.ICONES.alerta : U.ICONES.pedidos) + textoBtn + '</button>');
-    }
     montarToggleAreas();
     if (!Object.keys(estab.horarios || {}).length && !estab.endereco && !(estab.formas_pagamento || []).length) $('heroMais').textContent = 'Sobre a loja';
 
@@ -175,12 +207,7 @@
       $('promoBanner').textContent = estab.aviso;
       $('promoBanner').classList.remove('oculto');
     }
-
-    $('drawerWhats').href = linkWhats('Olá! Vim pelo cardápio digital.');
-    $('rodapeLoja').innerHTML =
-      '<div>' + esc(estab.nome) + (estab.endereco ? ' · ' + esc(estab.endereco) : '') + '</div>' +
-      '<div>Feito com <a href="/"><strong>VB</strong></a></div>';
-
+    $('drawerWhats').href = linkWhats('Olá! Vim pelo site.');
     injetarDadosEstruturados();
   }
 
@@ -193,7 +220,7 @@
       description: estab.descricao || undefined,
       telephone: '+55' + U.soDigitos(estab.telefone_whatsapp),
       address: estab.endereco ? { '@type': 'PostalAddress', streetAddress: estab.endereco, addressLocality: U.cidadeLegivel(estab.cidade), addressCountry: 'BR' } : undefined,
-      image: estab.foto_capa_url || estab.foto_perfil_url || undefined,
+      image: fotoCapa() || estab.foto_perfil_url || undefined,
       url: location.origin + location.pathname
     };
     var s = document.createElement('script');
@@ -204,10 +231,6 @@
 
   function atualizarStatus() {
     aberta = MODO_DEMO ? true : U.lojaAberta(estab);
-    var st = $('tbStatus');
-    st.classList.remove('oculto');
-    st.classList.toggle('fechado', !aberta);
-    st.textContent = aberta ? 'Aberto' : 'Fechado';
     var hs = $('heroStatus');
     hs.classList.toggle('fechado', !aberta);
     if (aberta) {
@@ -266,21 +289,33 @@
     return extras.join(' · ');
   }
 
-  function renderItemCard(item, semExtras) {
-    return cartaoItem('data-item="' + item.id + '"', item.nome, U.precoOuCombinar(item.preco), item.descricao, semExtras ? '' : extrasDoItem(item),
-      fotoOuMono(item, 'item-foto'), item.nome + ' ' + (item.descricao || ''),
-      '<button type="button" class="item-add" data-add="' + item.id + '" aria-label="Adicionar ' + esc(item.nome) + '">Adicionar</button>');
+  // mesmo botão redondo dos serviços da Agenda: cor do site (ou a foto
+  // do item no círculo), nome e preço; tocar abre o item pra pedir
+  var contadorRedondo = 0;
+  function botaoRedondo(attrs, nome, preco, fotoUrl, busca, icone) {
+    var i = contadorRedondo++;
+    var fundo = fotoUrl ? 'background-image:url(\'' + esc(fotoUrl) + '\')' : 'background:' + SV.corBotaoRedondo(corDoSite(), i);
+    return '<li><button type="button" class="servico-redondo" ' + attrs + ' data-busca="' + esc((busca || nome).toLowerCase()) + '" aria-label="' + esc(nome) + '">' +
+      '<span class="servico-redondo-icone" style="' + fundo + '">' + (fotoUrl ? '' : (icone || iconeDoSegmento())) + '</span>' +
+      '<span class="servico-redondo-nome">' + esc(nome) + '</span>' +
+      (preco ? '<span class="servico-redondo-preco">' + preco + '</span>' : '') + '</button></li>';
+  }
+  function iconeDoSegmento() {
+    return window.VibeSegmentos ? window.VibeSegmentos.icone(estab.segmento, 30, 1.8) : '';
+  }
+  function renderItemCard(item) {
+    return botaoRedondo('data-item="' + item.id + '"', item.nome, U.precoOuCombinar(item.preco), item.foto_url, item.nome + ' ' + (item.descricao || ''));
   }
 
   function renderizarEspeciais() {
     var html = '';
     if (elegiveisMeio().length > 1) {
-      html += cartaoItem('data-meio="1" role="button"', 'Monte sua meio a meio', '', 'Dois sabores na mesma pizza. Você paga pelo mais caro.', '', '', '', '').replace('item-card', 'item-card especial');
+      html += botaoRedondo('data-meio="1"', 'Meio a meio', 'Dois sabores', null, 'meio a meio', U.ICONES.pedidos);
     }
     cardapio.combos.forEach(function (co) {
-      html += cartaoItem('data-combo="' + co.id + '" role="button"', co.nome, U.preco(co.preco), 'Escolha ' + co.qtd_sabores + ' ' + (co.qtd_sabores > 1 ? 'sabores' : 'sabor') + '.', '', '', '', '').replace('item-card', 'item-card especial');
+      html += botaoRedondo('data-combo="' + co.id + '"', co.nome, U.preco(co.preco), null, co.nome, U.ICONES.pedidos);
     });
-    return html ? '<section class="secao-especial" id="secaoEspeciais"><h2 class="cardapio-categoria-titulo" id="catg-especiais">Combos e montagem</h2><div class="item-lista">' + html + '</div></section>' : '';
+    return html ? '<section class="secao-especial grupo-cardapio" id="secaoEspeciais"><h2 class="cardapio-categoria-titulo" id="catg-especiais">Combos e montagem</h2><ul class="itens-redondos">' + html + '</ul></section>' : '';
   }
 
   function renderizarCardapio() {
@@ -297,8 +332,8 @@
     } else {
       pills.classList.add('oculto');
     }
-    $('drawerLinks').innerHTML = ancoras.map(function (g) {
-      return '<a href="#catg-' + g.id + '" class="drawer-link"><span>' + esc(g.nome) + '</span></a>';
+    $('drawerLinks').innerHTML = ancoras.map(function (g, i) {
+      return '<li><a href="#catg-' + g.id + '" class="drawer-link"><span>' + esc(g.nome) + '</span><span class="num">' + String(i + 1).padStart(2, '0') + '</span></a></li>';
     }).join('');
 
     if (!cardapio.itens.length) {
@@ -306,6 +341,7 @@
       return;
     }
 
+    contadorRedondo = 0;
     var html = renderizarEspeciais();
     html += grupos.map(function (g) {
       // se todo item da categoria aceita a mesma coisa, avisa uma vez só
@@ -315,14 +351,10 @@
       return '<section class="grupo-cardapio" data-grupo="' + g.id + '">' +
         '<h2 class="cardapio-categoria-titulo" id="catg-' + g.id + '">' + esc(g.nome) + '</h2>' +
         (nota ? '<p class="categoria-nota">' + nota + '</p>' : '') +
-        '<div class="item-lista">' + g.lista.map(function (i) { return renderItemCard(i, todos); }).join('') + '</div></section>';
+        '<ul class="itens-redondos">' + g.lista.map(function (i) { return renderItemCard(i); }).join('') + '</ul></section>';
     }).join('');
     $('cardapioConteudo').innerHTML = html;
 
-    document.querySelectorAll('.item-foto[data-carregando]').forEach(function (img) {
-      var tirar = function () { img.removeAttribute('data-carregando'); };
-      if (img.complete) tirar(); else { img.addEventListener('load', tirar); img.addEventListener('error', tirar); }
-    });
     marcarItensNoCarrinho();
   }
 
@@ -331,13 +363,12 @@
     carrinho.forEach(function (l) {
       if (l.tipo === 'item') contagem[l.item_id] = (contagem[l.item_id] || 0) + l.qtd;
     });
-    document.querySelectorAll('.item-card[data-item]').forEach(function (card) {
-      var n = contagem[card.getAttribute('data-item')] || 0;
-      card.classList.toggle('no-carrinho', n > 0);
-      var marca = card.querySelector('.item-qtd');
+    document.querySelectorAll('.servico-redondo[data-item]').forEach(function (bt) {
+      var n = contagem[bt.getAttribute('data-item')] || 0;
+      var marca = bt.querySelector('.no-pedido');
       if (n > 0) {
-        if (!marca) { marca = document.createElement('span'); marca.className = 'item-qtd'; card.querySelector('.item-nome').prepend(marca); }
-        marca.textContent = n + '×';
+        if (!marca) { marca = document.createElement('span'); marca.className = 'no-pedido'; bt.appendChild(marca); }
+        marca.textContent = n;
       } else if (marca) {
         marca.remove();
       }
@@ -465,7 +496,7 @@
     }
 
     corpo += '<div class="grupo"><div class="grupo-titulo">Alguma observação? <em>Opcional</em></div>' +
-      '<div class="campo"><textarea id="itemObs" maxlength="140" rows="2" placeholder="Ex.: sem cebola, bem passada, cortar em 8">' + esc(s.obs) + '</textarea></div></div>';
+      '<div class="campo"><textarea id="itemObs" maxlength="140" rows="2" placeholder="' + (SERVICO ? (VEICULO ? 'Ex.: pneu traseiro, aro 15' : 'Ex.: detalhe do que precisa') : 'Ex.: sem cebola, bem passada, cortar em 8') + '">' + esc(s.obs) + '</textarea></div></div>';
 
     var falta = s.meio && !s.metadeId;
     var total = precoItemAtual() * s.qtd;
@@ -1035,10 +1066,23 @@
   }
 
   /* ===================== eventos ===================== */
+  function alturaFixaTopo() {
+    var f = $('faixaVoltar');
+    return f && !f.classList.contains('escondida') ? f.offsetHeight : 0;
+  }
+  function fecharMenu() {
+    var m = $('siteMenu');
+    if (m && m.classList.contains('open')) $('menuCloseBtn').click();
+  }
+  // botão principal do hero: chamado/orçamento abre direto; pedido rola até o cardápio
+  function acaoPrincipal() {
+    if (SERVICO && cardapio.itens.length) { abrirSocorro(); return; }
+    rolarPara('servicosSecao');
+  }
   function rolarPara(id) {
     var alvo = document.getElementById(id);
     if (!alvo) return;
-    var folga = $('topbar').offsetHeight + ($('navPills').classList.contains('oculto') ? 0 : $('navPills').offsetHeight) + 8;
+    var folga = alturaFixaTopo() + ($('navPills').classList.contains('oculto') ? 0 : $('navPills').offsetHeight) + 8;
     window.scrollTo({ top: alvo.getBoundingClientRect().top + window.pageYOffset - folga, behavior: 'smooth' });
   }
 
@@ -1059,7 +1103,7 @@
   function ligarScrollspy() {
     var titulos = document.querySelectorAll('.cardapio-categoria-titulo[id]');
     if (!titulos.length || !('IntersectionObserver' in window)) return;
-    var folga = $('topbar').offsetHeight + $('navPills').offsetHeight + 20;
+    var folga = alturaFixaTopo() + $('navPills').offsetHeight + 20;
     var obs = new IntersectionObserver(function (entradas) {
       if (scrollspySuprimido) return;
       entradas.forEach(function (e) { if (e.isIntersecting) marcarPill(e.target.id.replace('catg-', 'catg-')); });
@@ -1068,14 +1112,15 @@
   }
 
   function ligarEventos() {
-    $('tbMenuBtn').addEventListener('click', function () { $('drawer').classList.add('aberto'); $('drawer').setAttribute('aria-hidden', 'false'); });
-    $('drawerBackdrop').addEventListener('click', function () { $('drawer').classList.remove('aberto'); $('drawer').setAttribute('aria-hidden', 'true'); });
+    $('lojaCta').addEventListener('click', acaoPrincipal);
 
     document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-cta-loja]')) { acaoPrincipal(); return; }
+      if (e.target.closest('[data-ir-itens]')) { rolarPara('servicosSecao'); return; }
       var ancora = e.target.closest('.nav-pill, #drawerLinks .drawer-link');
       if (ancora) {
         e.preventDefault();
-        $('drawer').classList.remove('aberto');
+        fecharMenu();
         var id = ancora.getAttribute('href').slice(1);
         marcarPill(id);
         scrollspySuprimido = true;
@@ -1087,7 +1132,7 @@
 
       var abrir = e.target.closest('[data-abrir]');
       if (abrir) {
-        $('drawer').classList.remove('aberto');
+        fecharMenu();
         var alvo = abrir.getAttribute('data-abrir');
         if (alvo === 'meusPedidos') abrirMeusPedidos();
         if (alvo === 'sobre') abrirSobre();
@@ -1104,7 +1149,7 @@
         U.toast(item.nome + ' no pedido');
         return;
       }
-      var card = e.target.closest('.item-card[data-item]');
+      var card = e.target.closest('.servico-redondo[data-item], .item-card[data-item]');
       if (card) { abrirItem(card.getAttribute('data-item')); return; }
       if (e.target.closest('[data-meio]')) {
         var eleg = elegiveisMeio();
@@ -1179,7 +1224,6 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         if (sheetAberto) fecharSheet();
-        else $('drawer').classList.remove('aberto');
       }
       if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.especial-card, .item-card')) { e.preventDefault(); e.target.click(); }
     });
@@ -1196,16 +1240,18 @@
       buscaTimer = setTimeout(function () { filtrar(campoBusca.value); }, 90);
     });
 
-    var topbar = $('topbar');
-    window.addEventListener('scroll', function () { topbar.classList.toggle('rolou', window.scrollY > 8); }, { passive: true });
     ligarScrollspy();
 
     if (MODO_PREVIEW) {
       window.addEventListener('message', function (ev) {
         if (ev.origin !== location.origin || !ev.data) return;
-        if (ev.data.tipo === 'vb-tpl') aplicarVisual(ev.data.cor, ev.data.layout, ev.data.tom);
         if (ev.data.tipo === 'vb-recarregar') location.reload();
-        if (ev.data.tipo === 'vb-nome' && ev.data.nome) ['tbNome', 'drawerNome', 'heroTitulo'].forEach(function (id) { if ($(id)) $(id).textContent = ev.data.nome; });
+        // estado do passo a passo / painel: estilo, cor, nome e foto ao vivo
+        if (ev.data.tipo === 'vb-preview-estado' && ev.data.estado) {
+          var e2 = ev.data.estado;
+          ident = Object.assign({}, ident, { template: e2.template || ident.template, cor_destaque: e2.cor_destaque || null, nome: e2.nome && e2.nome.trim() ? e2.nome.trim() : estab.nome, foto_hero_url: e2.foto_hero_url || ident.foto_hero_url });
+          aplicarVisual().then(function () { renderizarLoja(); renderizarCardapio(); });
+        }
       });
     }
   }
@@ -1215,14 +1261,14 @@
   function filtrar(texto) {
     var termo = U.slugificar(texto).replace(/-/g, ' ');
     var algum = false;
-    document.querySelectorAll('.item-card[data-item]').forEach(function (card) {
+    document.querySelectorAll('.servico-redondo[data-item]').forEach(function (card) {
       var alvo = U.slugificar(card.getAttribute('data-busca')).replace(/-/g, ' ');
       var mostra = !termo || alvo.indexOf(termo) !== -1;
-      card.classList.toggle('oculto', !mostra);
+      card.parentNode.classList.toggle('oculto', !mostra);
       if (mostra) algum = true;
     });
-    document.querySelectorAll('.grupo-cardapio').forEach(function (g) {
-      g.classList.toggle('oculto', !g.querySelector('.item-card:not(.oculto)'));
+    document.querySelectorAll('.grupo-cardapio:not(#secaoEspeciais)').forEach(function (g) {
+      g.classList.toggle('oculto', !g.querySelector('li:not(.oculto)'));
     });
     var esp = $('secaoEspeciais');
     if (esp) esp.classList.toggle('oculto', !!termo);

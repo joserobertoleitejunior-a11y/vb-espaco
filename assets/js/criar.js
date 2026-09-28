@@ -7,8 +7,8 @@
    2. Tipo de negócio → só os segmentos daquela área.
    3. Perguntas da área → atendimento (masc./fem.) na Agenda, como o
       cliente recebe no Delivery, onde atende no No local.
-   4. Aparência → estilos do site (Agenda) ou jeito da loja (lista,
-      grade, cardápio, vitrine; claro ou vibrante).
+   4. Estilo do site → o mesmo white-label pra todas as áreas (a loja e o
+      chamado usam o estilo, as cores e as fotos do site do negócio).
    5. Nome e link, cidade e WhatsApp → o negócio nasce aqui.
 
    A pré-visualização ao fundo troca sozinha: site da Agenda
@@ -70,7 +70,6 @@
     servico_onde: 'cliente',
     recebe: 'ambos',                // entrega | retirada | ambos
     template: params.get('template') || 'classico-boiserie',
-    layout: 'lista', tom: 'claro',
     nome: '', slug: '', cidade: 'Itapetininga', telefone_whatsapp: '',
     foto_perfil_url: null, foto_hero_url: null, foto_hero_feminino_url: null,
     cor_destaque: null, cor_secundaria: null, texto_cta: 'Agendar horário',
@@ -107,12 +106,8 @@
   });
   function postEstado() {
     if (!previewPronto || !frame.contentWindow) return;
-    if (tem('agenda')) {
-      frame.contentWindow.postMessage({ tipo: 'vb-preview-estado', estado: estado }, '*');
-    } else {
-      frame.contentWindow.postMessage({ tipo: 'vb-tpl', cor: null, layout: estado.layout, tom: estado.tom }, location.origin);
-      if (estado.nome.trim()) frame.contentWindow.postMessage({ tipo: 'vb-nome', nome: estado.nome.trim() }, location.origin);
-    }
+    // o mesmo estado vale pro site da Agenda e pra loja/chamado de exemplo
+    frame.contentWindow.postMessage({ tipo: 'vb-preview-estado', estado: estado }, tem('agenda') ? '*' : location.origin);
   }
   window.addEventListener('message', function (e) {
     if (e.data && e.data.tipo === 'vb-preview-pronto') { previewPronto = true; postEstado(); }
@@ -258,30 +253,6 @@
     aoEscolher(container.querySelector('#criarTemplateEscolha'), 'template', function (k) { estado.template = k; desenhar(); postEstado(); });
   }
 
-  // ---- 4b. jeito da loja (Delivery / No local) ----
-  var LAYOUTS = [
-    { chave: 'lista', nome: 'Lista', desc: 'Foto pequena ao lado. O jeito mais rápido.' },
-    { chave: 'grade', nome: 'Grade', desc: 'Dois por linha, foto em cima.' },
-    { chave: 'cardapio', nome: 'Cardápio', desc: 'Como o impresso: nome, pontilhado e preço.' },
-    { chave: 'vitrine', nome: 'Vitrine', desc: 'Capa e fotos grandes.' }
-  ];
-  var TONS = [
-    { chave: 'claro', nome: 'Claro', desc: 'Fundo claro com um toque da cor.' },
-    { chave: 'vibrante', nome: 'Vibrante', desc: 'Faixa na sua cor, cartões translúcidos.' }
-  ];
-  function renderPassoLoja(container) {
-    container.innerHTML = '<p class="criar-passo-intro">Como os itens aparecem pro cliente. Cor, fotos e logo você ajusta no painel.</p>' +
-      '<div id="criarLayouts" class="criar-opcoes-segmento"></div>' +
-      '<p class="criar-extra-titulo">Tom</p><div id="criarTons" class="criar-opcoes-segmento"></div>';
-    function desenhar() {
-      document.getElementById('criarLayouts').innerHTML = cartoes(LAYOUTS, estado.layout, 'layout');
-      document.getElementById('criarTons').innerHTML = cartoes(TONS, estado.tom, 'tom');
-    }
-    desenhar();
-    aoEscolher(container.querySelector('#criarLayouts'), 'layout', function (k) { estado.layout = k; desenhar(); postEstado(); });
-    aoEscolher(container.querySelector('#criarTons'), 'tom', function (k) { estado.tom = k; desenhar(); postEstado(); });
-  }
-
   // ---- 5. nome e link ----
   function renderPassoNome(container) {
     container.innerHTML =
@@ -366,7 +337,7 @@
     return true;
   }
   function camposDaLoja() {
-    var c = { layout: estado.layout, template: estado.tom };
+    var c = {};
     if (tem('delivery')) { c.aceita_entrega = estado.recebe !== 'retirada'; c.aceita_retirada = estado.recebe !== 'entrega'; }
     return c;
   }
@@ -398,7 +369,7 @@
         }).then(function (res) { if (res && res.error) throw new Error(res.error.message); });
     // o jeito da loja é um extra: se falhar, o negócio já existe e ajusta no painel
     return passo.then(function () {
-      if (!areaDePedidos()) return null;
+      if (!areaDePedidos() || !Object.keys(camposDaLoja()).length) return null;
       return db.rpc('delivery_admin_atualizar_estabelecimento', { p_id: estabId, p_campos: camposDaLoja() }).then(null, function () {});
     }).then(function () { msg.textContent = ''; });
   }
@@ -412,9 +383,7 @@
     if (perguntaGenero()) p.push({ chave: 'atendimento', titulo: 'Atendimento', render: renderPassoAtendimento });
     if (tem('servicos')) p.push({ chave: 'onde', titulo: 'Onde você atende?', render: renderPassoOnde });
     if (tem('delivery')) p.push({ chave: 'recebe', titulo: 'Entrega ou retirada?', render: renderPassoRecebe });
-    p.push(tem('agenda')
-      ? { chave: 'template', titulo: 'Estilo do site', render: renderPassoTemplate }
-      : { chave: 'loja', titulo: 'Jeito da loja', render: renderPassoLoja });
+    p.push({ chave: 'template', titulo: 'Estilo do site', render: renderPassoTemplate });
     p.push(
       { chave: 'nome', titulo: 'Nome e link', render: renderPassoNome, validar: validarNome },
       { chave: 'cidade', titulo: 'Cidade', render: renderPassoCidade },
@@ -445,10 +414,32 @@
     void container.offsetWidth; // reflow pra reanimar
     container.innerHTML = '';
     passo.render(container);
+    container.scrollTop = 0; // cada passo começa do topo
     container.classList.add('criar-step-anim');
     if (direcao === 'volta') container.classList.add('criar-step-volta');
+    verPrevia(false);
     postEstado();
   }
+
+  // o cartão ocupa a tela toda logo abaixo do topo (altura medida, porque o
+  // topo muda de tamanho com a fonte do celular e a área segura do iPhone)
+  var topo = document.querySelector('.criar-topo-flutuante');
+  function medirTopo() { document.documentElement.style.setProperty('--criar-topo-h', topo.offsetHeight + 'px'); }
+  medirTopo();
+  window.addEventListener('resize', medirTopo);
+
+  // "Ver prévia": recolhe o cartão pra mostrar o site sendo montado ao fundo
+  var cartao = document.getElementById('criarPerguntaCard');
+  var btnPrevia = document.getElementById('criarVerPrevia');
+  function verPrevia(mostrar) {
+    cartao.classList.toggle('recolhido', mostrar);
+    btnPrevia.setAttribute('aria-pressed', String(mostrar));
+    btnPrevia.textContent = mostrar ? 'Perguntas' : 'Ver prévia';
+  }
+  btnPrevia.addEventListener('click', function () { verPrevia(!cartao.classList.contains('recolhido')); });
+  document.getElementById('criarTituloPasso').addEventListener('click', function () {
+    if (cartao.classList.contains('recolhido')) verPrevia(false);
+  });
 
   document.getElementById('criarProximoBtn').addEventListener('click', function () {
     var passos = obterPassos();

@@ -34,13 +34,18 @@
       { url: '/assets/estoque/estetica_automotiva/interior-carro.jpg', legenda: 'Interior detalhado' },
       { url: '/assets/estoque/estetica_automotiva/escova-detalhamento.jpg', legenda: 'Escova de detalhamento' }
     ],
-    outro: [
-      { url: '/assets/tpl-classico/img/estoque/hero-masculino-1.jpg', legenda: 'Studio dourado' },
-      { url: '/assets/tpl-classico/img/estoque/fachada-1.jpg', legenda: 'Fachada clássica' }
+    // capas neutras (desenhadas em código) pra quem ainda não tem foto do
+    // próprio negócio — nunca foto de outro estabelecimento real
+    geral: [
+      { url: '/assets/estoque/geral/grafite.svg', legenda: 'Grafite' },
+      { url: '/assets/estoque/geral/areia.svg', legenda: 'Areia' },
+      { url: '/assets/estoque/geral/aco.svg', legenda: 'Aço' },
+      { url: '/assets/estoque/geral/brasa.svg', legenda: 'Brasa' }
     ]
   };
 
+  // fotos do tipo de negócio (quando existem) + as capas neutras
   window.estoqueFotosPara = function (segmento) {
-    return window.VB_ESTOQUE_FOTOS[segmento] || window.VB_ESTOQUE_FOTOS.outro;
+    return (window.VB_ESTOQUE_FOTOS[segmento] || []).concat(window.VB_ESTOQUE_FOTOS.geral);
   };
 })();

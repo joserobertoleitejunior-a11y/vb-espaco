@@ -363,3 +363,10 @@ body.painel {
 .tom-amostra.tom-vibrante::before { background: var(--c); height: 24px; }
 .tom-amostra::after { content: ''; position: absolute; left: 6px; right: 6px; top: 16px; height: 16px; border-radius: 4px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
 .cor-opcao.padrao span { color: #fff; }
+
+/* iPhone dá zoom sozinho ao tocar num campo com letra menor que 16px:
+   no celular todo campo tem pelo menos 16px (única exceção justificada
+   ao !important — precisa vencer qualquer regra de template) */
+@media (max-width: 900px) {
+  input, select, textarea { font-size: max(16px, 1em) !important; }
+}

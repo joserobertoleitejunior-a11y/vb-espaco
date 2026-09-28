@@ -2149,30 +2149,57 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 .criar-preview-full { position: fixed; inset: 0; z-index: 1; }
 .criar-preview-full iframe { width: 100%; height: 100%; border: 0; display: block; }
 
+/* o cartão da pergunta ocupa a tela toda (de baixo do topo até o fim),
+   dentro das margens: título em cima, opções rolando no meio e
+   Voltar/Próximo sempre à mão embaixo. "Ver prévia" recolhe o cartão
+   pra mostrar o site sendo montado ao fundo. */
 .criar-pergunta-flutuante {
   position: fixed;
   left: 50%;
-  bottom: 1.1rem;
+  top: calc(var(--criar-topo-h, 76px) + 0.75rem);
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
   transform: translateX(-50%);
-  width: min(94vw, 460px);
-  max-height: 66vh;
-  overflow-y: auto;
-  background: rgba(255, 255, 255, 0.92);
+  width: min(94vw, 560px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(22px) saturate(160%);
   -webkit-backdrop-filter: blur(22px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 22px;
-  padding: 1.3rem 1.3rem 1.1rem;
+  padding: 1.3rem 1.3rem 1rem;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
   z-index: 260;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.criar-titulo-passo { font-size: 1.2rem; margin: 0 0 0.7rem; }
+.criar-pergunta-flutuante #criarStepContainer {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -0.4rem;
+  padding: 0.15rem 0.4rem 0.4rem; /* folga pro contorno do item selecionado não cortar */
+}
+.criar-pergunta-flutuante.recolhido { transform: translate(-50%, calc(100% - 4.2rem)); }
+.criar-titulo-passo { flex-shrink: 0; font-size: 1.2rem; margin: 0 0 0.7rem; }
+.criar-pergunta-flutuante.recolhido .criar-titulo-passo { cursor: pointer; }
 .criar-passo-intro { color: var(--tinta-suave); font-size: 0.88rem; margin: 0 0 1rem; line-height: 1.5; }
-.criar-nav { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 1.2rem; }
-
-@media (max-width: 600px) {
-  .criar-pergunta-flutuante { max-height: 58vh; }
+.criar-pergunta-flutuante .msg { flex-shrink: 0; }
+.criar-nav { flex-shrink: 0; display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 0; padding-top: 0.9rem; border-top: 1px solid rgba(0, 0, 0, 0.06); }
+.criar-ver-previa {
+  flex-shrink: 0;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--borda);
+  background: rgba(255, 255, 255, 0.7);
+  font: inherit; font-size: 0.78rem; font-weight: 700;
+  color: var(--tinta);
+  cursor: pointer;
 }
+.criar-ver-previa[aria-pressed="true"] { background: var(--cor-marca); border-color: var(--cor-marca); color: #fff; }
+@media (prefers-reduced-motion: reduce) { .criar-pergunta-flutuante { transition: none; } }
 
 .criar-template-grid, .criar-opcoes-genero, .criar-opcoes-segmento { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
 .criar-opcao-card {
@@ -3068,3 +3095,10 @@ html[data-area="servicos"] .criar-body-full { --cor-marca: #2F5D7C; }
 .vb-estilos-salvar { background: #1f2024; border: 1px solid #1f2024; color: #fff; }
 .vb-estilos-salvar:disabled { opacity: 0.6; cursor: default; }
 @media (prefers-reduced-motion: reduce) { .vb-estilos, .vb-estilos.saindo { animation: none; } }
+
+/* iPhone dá zoom sozinho ao tocar num campo com letra menor que 16px:
+   no celular todo campo tem pelo menos 16px (única exceção justificada
+   ao !important — precisa vencer qualquer regra de template) */
+@media (max-width: 900px) {
+  input, select, textarea { font-size: max(16px, 1em) !important; }
+}

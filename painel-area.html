@@ -2,15 +2,16 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script src="/assets/js/sem-zoom.js?v=1"></script>
 <title>Painel · Pedidos</title>
 <meta name="theme-color" content="#ffffff">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
 <link rel="manifest" href="/manifest.json">
-<link rel="stylesheet" href="/assets/css/styles.css?v=79">
+<link rel="stylesheet" href="/assets/css/styles.css?v=81">
 <link rel="stylesheet" href="/assets/pedidos/loja.css?v=2">
-<link rel="stylesheet" href="/assets/pedidos/painel.css?v=2">
+<link rel="stylesheet" href="/assets/pedidos/painel.css?v=3">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=3">
 <script src="/assets/js/vibe-toggle.js?v=3"></script>
 </head>
@@ -138,10 +139,9 @@
 
     <div class="p-secao">
       <div class="p-secao-topo"><h2>Aparência</h2></div>
-      <p class="p-ajuda">Visual claro com um toque da cor da sua marca. A prévia lá embaixo mostra o seu site de verdade.</p>
-      <div class="grupo-titulo">Tom</div>
-      <div class="layouts" id="gradeTons"></div>
-      <div class="grupo"><div class="grupo-titulo" id="tituloLayouts">Como os itens aparecem</div><div class="layouts" id="gradeLayouts"></div></div>
+      <p class="p-ajuda">Sua loja usa o mesmo visual do seu site: o estilo escolhido na criação, a sua cor e as suas fotos. Pra trocar o estilo, abra o seu site e toque em <strong>Estilo</strong> na barra de edição.</p>
+      <!-- tom e layout da loja antiga: o visual agora vem do estilo do site -->
+      <div hidden><div class="layouts" id="gradeTons"></div><div class="grupo-titulo" id="tituloLayouts"></div><div class="layouts" id="gradeLayouts"></div></div>
       <div class="grupo"><div class="grupo-titulo">Cor de destaque</div><div class="cores" id="cores"></div></div>
       <div class="grupo"><div class="grupo-titulo">Prévia do seu site</div><iframe class="preview-real" id="previewReal" title="Prévia do seu site" loading="lazy"></iframe></div>
     </div>

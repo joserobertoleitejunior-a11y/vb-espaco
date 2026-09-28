@@ -20,7 +20,8 @@ body { touch-action: pan-x pan-y; }
 /* splash e Explorar moram na mesma página: uma tela por vez */
 body[data-tela="splash"] .tela-explorar,
 body[data-tela="explorar"] #telaSplash,
-body[data-tela="explorar"] .sp-fundo { display: none; }
+body[data-tela="explorar"] .sp-fundo,
+body[data-tela="explorar"] .sp-video { display: none; }
 .sp-corpo {
   min-height: 100vh; min-height: 100svh;
   background: var(--linho);
@@ -201,3 +202,26 @@ body[data-tela="explorar"] .sp-fundo { display: none; }
   .sp-op { padding-top: 0.65rem; padding-bottom: 0.65rem; }
   .sp-ic { width: 40px; height: 40px; }
 }
+
+/* iPhone dá zoom sozinho ao tocar num campo com letra menor que 16px:
+   no celular todo campo tem pelo menos 16px (única exceção justificada
+   ao !important — precisa vencer qualquer regra de template) */
+@media (max-width: 900px) {
+  input, select, textarea { font-size: max(16px, 1em) !important; }
+}
+
+/* ---------- vídeo de fundo (só na splash) ---------- */
+.sp-video { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #2a2622 url("/assets/video/itapetininga-por-do-sol.jpg") center / cover no-repeat; }
+.sp-video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
+/* véu bem leve: o vídeo aparece inteiro, mas o texto continua legível */
+.sp-video-veu { position: absolute; inset: 0; background:
+  linear-gradient(180deg, rgba(244, 244, 246, 0.10) 0%, rgba(244, 244, 246, 0.05) 45%, rgba(20, 18, 16, 0.18) 100%); }
+/* computador: o vídeo é em pé — cobre a tela e ganha um desfoque um pouco
+   maior pra esconder o aumento; o conteúdo fica numa coluna de vidro */
+@media (min-width: 720px) {
+  .sp-video video { filter: blur(3px) saturate(1.05); transform: scale(1.04); }
+}
+/* texto sobre o vídeo */
+.sp-corpo .sp-nome, .sp-corpo .sp-local, .sp-corpo .sp-ola, .sp-corpo .sp-pergunta h1 { text-shadow: 0 1px 12px rgba(255, 255, 255, 0.55); }
+.sp-corpo .sp-rodape { margin: 0.7rem auto 0; padding: 0.35rem 1rem; border-radius: 999px; background: rgba(255, 255, 255, 0.62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+@media (prefers-reduced-motion: reduce) { .sp-video video { display: none; } }
