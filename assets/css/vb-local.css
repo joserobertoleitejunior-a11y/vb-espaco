@@ -1,0 +1,167 @@
+/* Escolher a localização (assets/js/vb-local.js). Cartão claro, campo
+   em pílula, mapa arredondado com pino fixo no centro. Cores próprias
+   (não herda do estilo do site) pra ficar legível em qualquer tema. */
+.vbl {
+  --vbl-tinta: #1f2024;
+  --vbl-suave: rgba(31, 32, 36, 0.6);
+  --vbl-linha: rgba(31, 32, 36, 0.12);
+  --vbl-pino: #1f2024;
+  --vbl-ok: #1a7f4b;
+  --vbl-erro: #b3261e;
+  color: var(--vbl-tinta);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-align: left;
+}
+.vbl-campo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--vbl-linha);
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.vbl-campo:focus-within {
+  border-color: rgba(31, 32, 36, 0.45);
+  box-shadow: 0 0 0 4px rgba(31, 32, 36, 0.08);
+}
+.vbl-lupa { display: flex; padding-left: 0.95rem; color: var(--vbl-suave); }
+.vbl .vbl-input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0.75rem 0.6rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  color: var(--vbl-tinta);
+  font: inherit;
+  font-size: 16px; /* 16px: o iPhone não dá zoom ao tocar */
+}
+.vbl .vbl-input::placeholder { color: var(--vbl-suave); }
+.vbl .vbl-gps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  margin: 0 0.3rem 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(31, 32, 36, 0.06);
+  color: var(--vbl-tinta);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.vbl .vbl-gps:hover { background: rgba(31, 32, 36, 0.12); }
+.vbl .vbl-gps.buscando svg { animation: vbl-girar 1s linear infinite; }
+@keyframes vbl-girar { to { transform: rotate(360deg); } }
+
+.vbl .vbl-sugestoes {
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0.3rem;
+  background: #fff;
+  border: 1px solid var(--vbl-linha);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+.vbl .vbl-sugestoes[hidden] { display: none; }
+.vbl .vbl-sugestoes li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.6rem 0.65rem;
+  border-radius: 11px;
+  cursor: pointer;
+}
+.vbl .vbl-sugestoes li:hover,
+.vbl .vbl-sugestoes li.ativo { background: rgba(31, 32, 36, 0.06); }
+.vbl-sug-icone {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(31, 32, 36, 0.06);
+  color: var(--vbl-suave);
+}
+.vbl-sug-texto { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.vbl-sug-texto strong { font-size: 0.92rem; font-weight: 600; color: var(--vbl-tinta); }
+.vbl-sug-texto small {
+  font-size: 0.78rem;
+  color: var(--vbl-suave);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vbl-mapa {
+  position: relative;
+  height: 210px;
+  margin-top: 0.6rem;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--vbl-linha);
+  background: #eef0f2;
+  isolation: isolate;
+}
+.vbl-mapa[hidden] { display: none; }
+.vbl-mapa-leaflet { position: absolute; inset: 0; background: #eef0f2; }
+.vbl-pino {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 450;
+  width: 36px;
+  height: 46px;
+  margin: -46px 0 0 -18px;
+  color: var(--vbl-pino);
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+  transition: transform 0.2s cubic-bezier(0.3, 0.7, 0.4, 1.4);
+}
+.vbl-pino svg { display: block; }
+.vbl-sombra {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 449;
+  width: 14px;
+  height: 5px;
+  margin: -2px 0 0 -7px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.vbl-mapa.movendo .vbl-pino { transform: translateY(-12px); }
+.vbl-mapa.movendo .vbl-sombra { transform: scale(0.6); opacity: 0.5; }
+.vbl-mapa .leaflet-control-zoom.leaflet-bar { border: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); border-radius: 12px; overflow: hidden; }
+.vbl-mapa .leaflet-control-zoom.leaflet-bar a { width: 32px; height: 32px; line-height: 32px; color: var(--vbl-tinta); }
+.vbl-mapa .leaflet-control-attribution { font-size: 9px; background: rgba(255, 255, 255, 0.7); }
+
+.vbl .vbl-status {
+  margin: 0.5rem 0.2rem 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--vbl-suave);
+}
+.vbl .vbl-status:empty { display: none; }
+.vbl .vbl-status.vbl-ok { color: var(--vbl-ok); }
+.vbl .vbl-status.vbl-erro { color: var(--vbl-erro); }
+
+@media (min-width: 720px) {
+  .vbl-mapa { height: 250px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vbl-pino, .vbl-sombra { transition: none; }
+  .vbl .vbl-gps.buscando svg { animation: none; }
+}

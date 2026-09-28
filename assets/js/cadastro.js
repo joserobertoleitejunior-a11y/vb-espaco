@@ -990,28 +990,6 @@
   // só dava pra mexer nisso entrando no "Editar site" (modo visual, em
   // cima do próprio site); agora também dá pra fazer tudo aqui, direto
   // no painel de gestão. ----
-  function geocodificarEnderecoDash(endereco, cidade) {
-    var semComplemento = (endereco || '').replace(/,?\s*(ap(?:t|to)?\.?|sala|loja|bloco|bl\.?|conjunto|cj\.?)\s*\.?\s*\d+\w*/gi, '').trim();
-    var soRua = semComplemento.replace(/,?\s*n[º°o]?\.?\s*\d+[\w-]*/gi, '').replace(/^\s*,\s*/, '').trim();
-    var tentativasBrutas = [endereco, semComplemento, soRua, ''];
-    var vistas = {};
-    var tentativas = [];
-    tentativasBrutas.forEach(function (texto) {
-      var consulta = [texto, cidade, 'Brasil'].filter(Boolean).join(', ');
-      if (!vistas[consulta]) { vistas[consulta] = true; tentativas.push(consulta); }
-    });
-    function tentar(i) {
-      if (i >= tentativas.length) return null;
-      var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(tentativas[i]);
-      return fetch(url).then(function (res) { return res.json(); }).then(function (dados) {
-        var achado = dados && dados[0];
-        if (achado) return { lat: parseFloat(achado.lat), lng: parseFloat(achado.lon) };
-        return tentar(i + 1);
-      }, function () { return tentar(i + 1); });
-    }
-    return Promise.resolve(tentar(0));
-  }
-
   function formatarPrecoInput(v) { return (Number(v) || 0).toFixed(2).replace('.', ','); }
 
   function renderizarDashPerfil() {
@@ -1073,10 +1051,7 @@
         '<p class="msg" id="dashFotoMsg"></p>' +
 
         '<p class="dash-resumo-subtitulo">Localização</p>' +
-        '<div class="field field-full"><label for="dashEnderecoInput">Endereço completo</label><input type="text" id="dashEnderecoInput" placeholder="Rua, número, bairro" value="' + escapeHtml(estab.endereco || '') + '"></div>' +
-        '<button type="button" class="dash-mapa-localizar-link" id="dashLocalizarEnderecoBtn">🔍 Tentar localizar esse endereço no mapa</button>' +
-        '<div id="dashMapaLocalizacao" class="dash-mapa-localizacao" data-lat="' + (estab.endereco_lat != null ? estab.endereco_lat : '') + '" data-lng="' + (estab.endereco_lng != null ? estab.endereco_lng : '') + '"></div>' +
-        '<p class="dash-mapa-dica">Não achou certinho? Arraste o pino até o local exato — é a posição dele que vale, não o texto digitado.</p>' +
+        '<div id="dashLocal" style="margin-bottom:0.8rem;"></div>' +
         '<button type="button" class="btn btn-ghost" id="dashSalvarEnderecoBtn" style="margin-bottom:0.3rem;">Salvar localização</button>' +
         '<p class="msg" id="dashEnderecoMsg"></p>' +
 
@@ -1113,6 +1088,7 @@
     }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
   }
 
+  var localDash = null;
   function ligarEventosPerfil(estabId, estab) {
     var fotoMsg = document.getElementById('dashFotoMsg');
     function trocarFoto(inputId, campo) {
@@ -1140,53 +1116,21 @@
     trocarFoto('dashFotoCapaInput', 'p_foto_capa_url');
     trocarFoto('dashFotoPerfilInput', 'p_foto_perfil_url');
 
-    // Mapa com pino arrastável — sempre funciona, mesmo quando o texto do
-    // endereço não bate com nada num serviço de geocodificação (rua nova,
-    // condomínio sem nome oficial etc.): o dono ajusta manualmente e a
-    // posição do pino é o que vale de verdade na hora de salvar.
-    var COORD_PADRAO = { lat: -23.5917, lng: -48.0531 }; // Itapetininga, usado só até ter algo melhor
-    var mapaLocalizacao = null;
-    var marcadorLocalizacao = null;
-    var mapaEl = document.getElementById('dashMapaLocalizacao');
-    if (mapaEl && window.L) {
-      if (!L.Icon.Default.imagePath) L.Icon.Default.imagePath = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/';
-      var latSalvo = mapaEl.getAttribute('data-lat');
-      var lngSalvo = mapaEl.getAttribute('data-lng');
-      var temCoordSalva = latSalvo !== '' && lngSalvo !== '';
-      var latInicial = temCoordSalva ? parseFloat(latSalvo) : COORD_PADRAO.lat;
-      var lngInicial = temCoordSalva ? parseFloat(lngSalvo) : COORD_PADRAO.lng;
-      mapaLocalizacao = L.map(mapaEl, { attributionControl: false }).setView([latInicial, lngInicial], temCoordSalva ? 16 : 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapaLocalizacao);
-      marcadorLocalizacao = L.marker([latInicial, lngInicial], { draggable: true }).addTo(mapaLocalizacao);
-      setTimeout(function () { mapaLocalizacao.invalidateSize(); }, 150);
-    }
-
-    var localizarBtn = document.getElementById('dashLocalizarEnderecoBtn');
-    if (localizarBtn) localizarBtn.addEventListener('click', function () {
-      var endereco = document.getElementById('dashEnderecoInput').value.trim();
-      var msg = document.getElementById('dashEnderecoMsg');
-      if (!endereco) { msg.className = 'msg msg-erro'; msg.textContent = 'Escreva o endereço primeiro.'; return; }
-      localizarBtn.disabled = true;
-      msg.className = 'msg'; msg.textContent = 'Procurando no mapa…';
-      geocodificarEnderecoDash(endereco, estab.cidade).then(function (coord) {
-        localizarBtn.disabled = false;
-        if (coord && mapaLocalizacao && marcadorLocalizacao) {
-          mapaLocalizacao.setView([coord.lat, coord.lng], 16);
-          marcadorLocalizacao.setLatLng([coord.lat, coord.lng]);
-          msg.textContent = '';
-        } else {
-          msg.className = 'msg msg-erro';
-          msg.textContent = 'Não achamos automaticamente — arraste o pino até o lugar certo no mapa.';
-        }
-      });
-    });
+    // Localização: busca com sugestões, "usar minha localização" e mapa
+    // com o pino fixo no centro (assets/js/vb-local.js).
+    if (localDash) localDash.destruir();
+    var localEl = document.getElementById('dashLocal');
+    localDash = localEl && window.VBLocal ? window.VBLocal.montar(localEl, {
+      endereco: estab.endereco || '', lat: estab.endereco_lat, lng: estab.endereco_lng, cidade: estab.cidade
+    }) : null;
 
     var enderecoBtn = document.getElementById('dashSalvarEnderecoBtn');
     if (enderecoBtn) enderecoBtn.addEventListener('click', function () {
-      var endereco = document.getElementById('dashEnderecoInput').value.trim();
+      var local = localDash ? localDash.valor() : { endereco: '', lat: null, lng: null };
+      var endereco = local.endereco;
       var msg = document.getElementById('dashEnderecoMsg');
       if (!endereco) { msg.className = 'msg msg-erro'; msg.textContent = 'Escreva o endereço primeiro.'; return; }
-      var pos = marcadorLocalizacao ? marcadorLocalizacao.getLatLng() : null;
+      var pos = local.lat != null ? { lat: local.lat, lng: local.lng } : null;
       enderecoBtn.disabled = true;
       msg.className = 'msg'; msg.textContent = 'Salvando…';
       db.rpc('tenant_admin_atualizar_endereco', {
