@@ -143,17 +143,32 @@
 
 /* ---------- logotipo (cubo + nome) ---------- */
 /* montado pelo marca.js em todo elemento [data-vibe-marca-logo]: o
-   nome fica na letra do sistema, com o "i" sem ponto e um pino fino
-   dourado no lugar — o mesmo traço do cubo, sem preenchimento. Escala
-   sozinho com o tamanho da letra (splash grande, faixa pequena). */
+   nome ganha uma letra serifada própria (Fraunces — carregada no
+   <head> das páginas que mostram o logotipo) e o "i" ganha um pino
+   dourado no lugar do ponto. A versão pequena (junto do cubo, na
+   faixa fina do topo) é só isso; a versão grande (="hero", a splash)
+   ganha também o traço dourado embaixo. Tudo escala sozinho com o
+   tamanho da letra. */
+.pt-word {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  letter-spacing: 0;
+}
 .pt-idot { position: relative; display: inline-block; }
 .pt-pin {
-  position: absolute; left: 50%; bottom: 0.6em;
-  width: 0.46em; height: 0.6em;
+  position: absolute; left: 50%; bottom: 0.62em;
+  width: 0.5em; height: 0.66em;
   transform: translateX(-50%);
   color: #C9A227;
+  filter: drop-shadow(0 0.05em 0.05em rgba(31, 32, 36, 0.25));
   pointer-events: none;
 }
+[data-vibe-marca-logo="hero"] {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.32em;
+}
+.pt-swoosh { display: block; width: 3.6em; height: auto; overflow: visible; }
 @media (max-width: 380px) {
   .faixa-marca .faixa-nome { display: none; }
   .vt-op { padding: 0.36rem 0.6rem; }

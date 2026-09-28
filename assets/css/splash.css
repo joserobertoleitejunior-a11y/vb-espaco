@@ -66,8 +66,8 @@ body[data-tela="explorar"] .sp-video { display: none; }
 .sp-topo { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-top: auto; }
 .sp-cubo { display: block; width: 58px; height: 58px; }
 .cubo-no-hero { display: block; width: 100%; height: 100%; }
-.sp-nome { margin: 0; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.01em; }
-.sp-slogan { margin: -0.15rem 0 0; font-size: 0.86rem; font-weight: 600; font-style: italic; letter-spacing: 0.01em; color: #8f7318; }
+.sp-nome { margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: 0.01em; line-height: 1; }
+.sp-slogan { margin: 0.15rem 0 0; font-size: 0.86rem; font-weight: 600; font-style: italic; letter-spacing: 0.01em; color: #8f7318; }
 .sp-local {
   margin: 0; display: inline-flex; align-items: center; gap: 0.25rem;
   font-size: 0.74rem; font-weight: 700; color: var(--tinta-suave);

@@ -181,8 +181,8 @@ Todo projeto com página voltada ao cliente final (não só ferramenta interna) 
 
 Regras que valem pra toda tela nova do app:
 
-- **Logo = cubo** (só arestas douradas `#C9A227`, CSS 3D ou three.js). A plataforma nunca invade o espaço do negócio: no site do negócio ela aparece só na **faixa fina do topo** (cubo minúsculo + nome + toggle das áreas). Nada de logo no hero do negócio.
-- **Letra do sistema** (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`) em tudo que é da plataforma (splash, Explorar, funil, painéis). Fontes especiais só dentro dos estilos do site do negócio.
+- **Logo = cubo + logotipo**. O cubo (só arestas douradas `#C9A227`, CSS 3D ou three.js) nunca muda; junto dele, o nome "Pertin" ganha uma letra serifada própria (Fraunces, 700) com um pino de mapa dourado no lugar do ponto do "i" — a única exceção à letra do sistema, por ser o logotipo em si, não texto de interface. Na versão grande (splash) o logotipo ainda ganha um traço dourado embaixo, tipo assinatura. Montado por `assets/js/marca.js` em qualquer `[data-vibe-marca-logo]` (`=""` pequeno, junto do cubo; `="hero"` grande, com o traço). A plataforma nunca invade o espaço do negócio: no site do negócio o logotipo aparece só na **faixa fina do topo** (cubo + nome + toggle das áreas). Nada de logo no hero do negócio.
+- **Letra do sistema** (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`) em todo o resto que é da plataforma (splash, Explorar, funil, painéis, menções soltas ao nome via `[data-vibe-marca]`). Fontes especiais fora do logotipo só dentro dos estilos do site do negócio.
 - **Cores claras e translúcidas**: fundo `#f4f4f6`, cartões brancos translúcidos com blur, borda fina. Cada área tem um tom sutil: Agenda `15,107,92` (verde), Delivery `196,85,58` (tomate), No local `47,93,124` (azul aço). Nada escandaloso.
 - **Carregamento**: skeleton em tudo que vem do banco; o cubo é o indicador de "puxar pra atualizar".
 - **Transições**: trocar de área = deslizar pro lado (View Transitions entre páginas, fallback CSS); respeitar `prefers-reduced-motion` sempre.
