@@ -270,12 +270,7 @@
             '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Clique em "Perfil do site", aqui embaixo, pra completar.</p>' +
             '</div>'
           : '';
-        // beta: sem cobrança nenhuma por enquanto — os 20 primeiros
-        // estabelecimentos cadastrados (bonus_3_meses) ganham 3 meses
-        // grátis quando os planos pagos começarem de verdade.
-        var pagamentoHtml = '<div class="dash-card-pagamento dash-card-pagamento-emdia">🎉 Beta gratuito — sem cobrança por enquanto.' +
-          (e.bonus_3_meses ? ' Você é um dos 20 primeiros — quando os planos pagos começarem, ganha <strong>3 meses grátis</strong>.' : '') +
-          '</div>';
+        var pagamentoHtml = pagamentoCardHtml(e);
         // linha de menu genérica: ícone + rótulo à esquerda, valor à
         // direita — o mesmo formato pra estatística (só leitura) e pra
         // ação (link/botão clicável, com seta indicando que abre algo).
@@ -415,6 +410,37 @@
   }
   function formatarPreco(v) {
     return 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+  }
+
+  // ---- assinatura da plataforma (mensalidade via Mercado Pago) ----
+  function formatarDataBr(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    return p[2] + '/' + p[1];
+  }
+  function pagamentoCardHtml(e) {
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var fim = e.trial_termina_em ? new Date(e.trial_termina_em + 'T00:00:00') : null;
+    var diasRestantes = fim ? Math.round((fim - hoje) / 86400000) : null;
+    var venceu = diasRestantes != null && diasRestantes < 0;
+    var status = e.pagamento_status;
+    var bonusTxt = e.bonus_3_meses ? ' Você é um dos 20 primeiros — ganha <strong>3 meses grátis</strong> de bônus, já contando aí.' : '';
+    var botao = '<button type="button" class="btn btn-primario dash-card-pagar-btn" data-pagar-mensalidade="' + e.id + '" style="margin-top:0.5rem; padding:0.45rem 1rem; font-size:0.82rem;">Pagar ' + formatarPreco(e.mensalidade) + ' agora</button>';
+    if (status === 'bloqueado' || (status === 'atrasado')) {
+      return '<div class="dash-card-pagamento dash-card-pagamento-urgente">🔴 ' +
+        (status === 'bloqueado' ? 'Assinatura bloqueada — o site fica fora do ar até o pagamento.' : 'Mensalidade atrasada.') +
+        '<br>' + botao + '</div>';
+    }
+    if (status === 'trial' && venceu) {
+      return '<div class="dash-card-pagamento dash-card-pagamento-urgente">🔴 Seu teste grátis acabou.' +
+        '<br>' + botao + '</div>';
+    }
+    if (status === 'trial') {
+      return '<div class="dash-card-pagamento dash-card-pagamento-emdia">🎉 Teste grátis até ' + formatarDataBr(e.trial_termina_em) +
+        ' (' + diasRestantes + (diasRestantes === 1 ? ' dia' : ' dias') + ').' + bonusTxt + '</div>';
+    }
+    // em_dia
+    return '<div class="dash-card-pagamento dash-card-pagamento-emdia">✅ Assinatura em dia — próxima cobrança em ' + formatarDataBr(e.trial_termina_em) + '.' + bonusTxt + '</div>';
   }
   // ---- exportação em PDF (antes era CSV puro, que abria feito bloco de
   // notas sem formatação nenhuma) — tabela limpa, com título, cabeçalho
@@ -1677,6 +1703,26 @@
   // Botão de apagar site — só pro admin por enquanto (sem senha ainda,
   // fica pra depois). Apaga de verdade, sem volta.
   listaEl.addEventListener('click', function (e) {
+    var pagarBtn = e.target.closest('[data-pagar-mensalidade]');
+    if (pagarBtn) {
+      pagarBtn.disabled = true;
+      var textoOriginal = pagarBtn.textContent;
+      pagarBtn.textContent = 'Abrindo pagamento…';
+      db.functions.invoke('mp-criar-cobranca', { body: { estabelecimento_id: pagarBtn.getAttribute('data-pagar-mensalidade') } }).then(function (res) {
+        if (res.error || !res.data || !res.data.init_point) {
+          pagarBtn.disabled = false;
+          pagarBtn.textContent = textoOriginal;
+          window.VBDialogo.alert((res.data && res.data.erro) || 'Não deu pra abrir o pagamento agora. Tenta de novo em instantes.');
+          return;
+        }
+        window.location.href = res.data.init_point;
+      }, function () {
+        pagarBtn.disabled = false;
+        pagarBtn.textContent = textoOriginal;
+        window.VBDialogo.alert('Sem conexão agora — tenta de novo em instantes.');
+      });
+      return;
+    }
     var btn = e.target.closest('[data-apagar-id]');
     if (!btn) return;
     var nome = btn.getAttribute('data-apagar-nome');
