@@ -366,14 +366,20 @@
   var toggle = null;
   function montarToggle() {
     if (toggle || !window.VibeToggle) return;
+    // só oferece a troca pras áreas já liberadas pro público (ver
+    // segmentos.js AREAS_PUBLICAS) — se a pessoa já está numa área
+    // ainda escondida (link direto), o toggle mostra ela também, senão
+    // não teria como voltar pras outras
+    var PUBLICAS = (window.VibeSegmentos && window.VibeSegmentos.AREAS_PUBLICAS) || ['agenda', 'delivery', 'servicos'];
+    var TODAS = [
+      { chave: 'agenda', rotulo: 'Agendar', href: '/explorar.html?area=agenda' },
+      { chave: 'delivery', rotulo: 'Pedir', href: '/explorar.html?area=delivery' },
+      { chave: 'servicos', rotulo: 'Chamar', href: '/explorar.html?area=servicos' }
+    ];
     toggle = window.VibeToggle.montar(document.getElementById('explorarAreas'), {
       tema: 'claro', atual: AREA, swipe: true, semCubo: true, rotulo: 'O que você procura',
       gestoAtivo: function () { return document.body.getAttribute('data-tela') === 'explorar'; },
-      opcoes: [
-        { chave: 'agenda', rotulo: 'Agendar', href: '/explorar.html?area=agenda' },
-        { chave: 'delivery', rotulo: 'Pedir', href: '/explorar.html?area=delivery' },
-        { chave: 'servicos', rotulo: 'Chamar', href: '/explorar.html?area=servicos' }
-      ],
+      opcoes: TODAS.filter(function (o) { return o.chave === AREA || PUBLICAS.indexOf(o.chave) > -1; }),
       aoTrocar: function (chave, o, dir) {
         if (window.VBInicio) window.VBInicio.irPara(chave, dir); else abrir(chave);
       }

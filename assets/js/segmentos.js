@@ -5,6 +5,12 @@
 (function (global) {
   'use strict';
 
+  // Enquanto Delivery e No local ainda estão em validação, só Agenda
+  // aparece pra quem visita (splash e Explorar). Criar um negócio nas
+  // outras áreas continua funcionando normal — é só a descoberta
+  // pública que fica escondida. Mude aqui quando cada uma for liberada.
+  var AREAS_PUBLICAS = ['agenda'];
+
   var LISTA = [
     // chave, nome, áreas onde aparece, exemplo de nome
     ['barbearia', 'Barbearia', ['agenda'], 'Nome da sua barbearia'],
@@ -102,5 +108,5 @@
   function exemplo(chave) { return POR_CHAVE[chave] ? POR_CHAVE[chave].exemplo : 'Nome do seu negócio'; }
   function daArea(chave, area) { return !!(POR_CHAVE[chave] && POR_CHAVE[chave].areas.indexOf(area) > -1); }
 
-  global.VibeSegmentos = { POR_CHAVE: POR_CHAVE, POR_AREA: POR_AREA, icone: icone, nome: nome, exemplo: exemplo, daArea: daArea };
+  global.VibeSegmentos = { POR_CHAVE: POR_CHAVE, POR_AREA: POR_AREA, icone: icone, nome: nome, exemplo: exemplo, daArea: daArea, AREAS_PUBLICAS: AREAS_PUBLICAS };
 })(window);

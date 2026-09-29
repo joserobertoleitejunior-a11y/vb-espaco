@@ -38,6 +38,18 @@
     var ic = op.querySelector('.sp-ic');
     if (ic && ICONES[ic.getAttribute('data-icone')]) ic.innerHTML = ICONES[ic.getAttribute('data-icone')];
   });
+
+  // ---------- áreas ainda em validação ficam escondidas da descoberta
+  // pública (splash e Explorar) — ver segmentos.js AREAS_PUBLICAS.
+  // Criar um negócio nessas áreas continua funcionando normal. ----------
+  var AREAS_PUBLICAS = (window.VibeSegmentos && window.VibeSegmentos.AREAS_PUBLICAS) || AREAS;
+  var i = 0;
+  ops = ops.filter(function (op) {
+    var area = op.getAttribute('data-area');
+    if (area !== 'negocio' && AREAS_PUBLICAS.indexOf(area) === -1) { op.remove(); return false; }
+    op.style.setProperty('--i', i++);
+    return true;
+  });
   var h = new Date().getHours();
   var ola = document.getElementById('spOla');
   if (ola) ola.textContent = h < 5 ? 'Boa noite' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
