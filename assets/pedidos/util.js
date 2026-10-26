@@ -65,7 +65,7 @@
   // modo vem do estabelecimento (área Serviços = 'servico'); sem ele, cai no segmento
   function modoDoSegmento(seg, modo) {
     if (modo === 'servico' || modo === 'cardapio') return modo;
-    return SERVICO_URGENTE.indexOf(seg) !== -1 || ['pedreiro', 'vidraceiro', 'ar_condicionado', 'dedetizacao', 'montador', 'diarista', 'jardinagem'].indexOf(seg) !== -1 ? 'servico' : 'cardapio';
+    return SERVICO_URGENTE.indexOf(seg) !== -1 || ['pedreiro', 'vidraceiro', 'ar_condicionado', 'dedetizacao', 'montador', 'diarista', 'jardinagem', 'estetica_automotiva'].indexOf(seg) !== -1 ? 'servico' : 'cardapio';
   }
   function tipoServico(seg) { return SERVICO_URGENTE.indexOf(seg) !== -1 ? 'chamado' : 'orcamento'; }
   function usaVeiculo(seg) { return SERVICO_VEICULO.indexOf(seg) !== -1; }

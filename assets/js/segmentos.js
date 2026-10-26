@@ -5,11 +5,9 @@
 (function (global) {
   'use strict';
 
-  // Enquanto Delivery e No local ainda estão em validação, só Agenda
-  // aparece pra quem visita (splash e Explorar). Criar um negócio nas
-  // outras áreas continua funcionando normal — é só a descoberta
-  // pública que fica escondida. Mude aqui quando cada uma for liberada.
-  var AREAS_PUBLICAS = ['agenda'];
+  // Áreas que aparecem pra quem visita (splash e Explorar). Tirar uma daqui
+  // esconde da descoberta pública sem impedir de criar negócio nela.
+  var AREAS_PUBLICAS = ['agenda', 'delivery', 'servicos'];
 
   var LISTA = [
     // chave, nome, áreas onde aparece, exemplo de nome

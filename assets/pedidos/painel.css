@@ -370,3 +370,10 @@ body.painel {
 @media (max-width: 900px) {
   input, select, textarea { font-size: max(16px, 1em) !important; }
 }
+
+/* cardápio vazio: modelo pronto da categoria */
+.ca-modelo { padding: 1.1rem 1.1rem 1rem; border: 1.5px dashed rgba(201, 162, 39, 0.6); border-radius: 16px; background: rgba(201, 162, 39, 0.05); }
+.ca-modelo-rotulo { margin: 0; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #C9A227; }
+.ca-modelo-titulo { margin: 0.3rem 0 0; font-size: 1.12rem; font-weight: 800; }
+.ca-modelo-txt { margin: 0.4rem 0 0.9rem; font-size: 0.88rem; line-height: 1.45; color: var(--ink-soft, #6b6d76); }
+.ca-modelo-ou { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--ink-faint, #8a8c94); }

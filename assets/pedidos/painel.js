@@ -585,7 +585,7 @@
           '<div class="ca-info"><strong>' + esc(i.nome) + '</strong><small>' + U.precoOuCombinar(i.preco) + (flags.length ? ' · ' + flags.join(' · ') : '') + (i.ativo ? '' : (SERVICO ? ' · indisponível' : ' · esgotado')) + '</small></div>' +
           '<label class="switch" data-parar title="' + (i.ativo ? 'Disponível' : 'Esgotado') + '"><input type="checkbox" data-alternar="' + i.id + '" ' + (i.ativo ? 'checked' : '') + ' aria-label="Disponível"><span class="trilho"></span></label></div>';
       }).join('');
-    }).join('') : '<p class="ca-vazio">Nenhum item ainda. Toque em "+ Novo item" pra começar — dá pra pôr foto, descrição e preço.</p>';
+    }).join('') : modeloProntoHtml();
 
     $('listaCategorias').innerHTML = categorias.length ? categorias.map(function (c, idx) {
       var n = itens.filter(function (i) { return i.categoria_id === c.id; }).length;
@@ -607,7 +607,66 @@
     }).join('') : '<p class="ca-vazio">Nenhum combo ainda.</p>';
   }
 
+  // cardápio vazio: oferece o modelo pronto da categoria (o mesmo da prévia
+  // dos estilos), com preços de referência que o dono ajusta depois
+  function modeloDaLoja() {
+    if (!window.VBDemo || window.VBDemo.segmentos.indexOf(loja.segmento) === -1) return null;
+    return window.VBDemo.montar(loja.segmento).cardapio;
+  }
+  function modeloProntoHtml() {
+    var m = modeloDaLoja();
+    var vazio = '<p class="ca-vazio">Nenhum item ainda. Toque em "+ Novo item" pra começar — dá pra pôr foto, descrição e preço.</p>';
+    if (!m || !m.itens.length) return vazio;
+    var nomeSeg = window.VibeSegmentos ? window.VibeSegmentos.nome(loja.segmento) : '';
+    return '<div class="ca-modelo">' +
+      '<p class="ca-modelo-rotulo">Passo a passo</p>' +
+      '<p class="ca-modelo-titulo">Comece com o ' + (SERVICO ? 'catálogo' : 'cardápio') + ' pronto de ' + esc(nomeSeg.toLowerCase()) + '</p>' +
+      '<p class="ca-modelo-txt">' + m.categorias.length + ' categorias e ' + m.itens.length + ' ' + (SERVICO ? 'serviços' : 'itens') + ' com preços de referência: ' +
+      esc(m.itens.slice(0, 3).map(function (i) { return i.nome; }).join(', ')) + '… Depois é só ajustar nome, foto e preço.</p>' +
+      '<button type="button" class="btn" id="importarModeloBtn">Usar o modelo pronto →</button>' +
+      '<p class="ca-modelo-ou">ou toque em "' + esc($('novoItemBtn').textContent.trim()) + '" e monte do zero</p></div>';
+  }
+  async function importarModelo(btn) {
+    var m = modeloDaLoja();
+    if (!m) return;
+    btn.disabled = true;
+    btn.textContent = 'Montando…';
+    try {
+      var mapaCat = {}, mapaItem = {};
+      for (var i = 0; i < m.categorias.length; i++) {
+        var c = await rpc('delivery_admin_salvar_categoria', { p_id: null, p_estabelecimento_id: loja.id, p_nome: m.categorias[i].nome, p_ordem: i });
+        mapaCat[m.categorias[i].id] = c && c.id;
+      }
+      for (var j = 0; j < m.itens.length; j++) {
+        var it = m.itens[j];
+        var novo = await rpc('delivery_admin_salvar_item', {
+          p_id: null, p_estabelecimento_id: loja.id, p_categoria_id: mapaCat[it.categoria_id] || null,
+          p_nome: it.nome, p_descricao: it.descricao || null, p_preco: Number(it.preco) || 0, p_foto_url: null,
+          p_permite_meio_a_meio: !!it.permite_meio_a_meio, p_ativo: true, p_ordem: j, p_aceita_borda: !!it.aceita_borda
+        });
+        mapaItem[it.id] = novo && novo.id;
+      }
+      for (var b = 0; b < (m.bordas || []).length; b++) {
+        await rpc('delivery_admin_salvar_borda', { p_id: null, p_estabelecimento_id: loja.id, p_nome: m.bordas[b].nome, p_preco: m.bordas[b].preco, p_ativo: true, p_ordem: b });
+      }
+      for (var k = 0; k < (m.combos || []).length; k++) {
+        var cb = m.combos[k];
+        var permitidos = (cb.itens_permitidos || []).map(function (id) { return mapaItem[id]; }).filter(Boolean);
+        if (permitidos.length) await rpc('delivery_admin_salvar_combo', { p_id: null, p_estabelecimento_id: loja.id, p_nome: cb.nome, p_preco: cb.preco, p_itens_permitidos: permitidos, p_qtd_sabores: cb.qtd_sabores || 2, p_ativo: true, p_ordem: k });
+      }
+      U.toast((SERVICO ? 'Catálogo' : 'Cardápio') + ' pronto! Agora ajuste os preços do seu jeito.', 3600);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Tentar de novo →';
+    }
+    await carregarCardapio();
+  }
+
   function ligarCardapio() {
+    $('listaItens').addEventListener('click', function (e) {
+      var imp = e.target.closest('#importarModeloBtn');
+      if (imp) importarModelo(imp);
+    });
     $('novoItemBtn').addEventListener('click', function () { abrirFormItem(null); });
     $('novoComboBtn').addEventListener('click', function () {
       if (!itens.length) { U.toast('Cadastre os itens primeiro'); return; }

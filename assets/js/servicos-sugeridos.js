@@ -44,6 +44,14 @@
       { nome: 'Enceramento', preco: 90 },
       { nome: 'Vitrificação', preco: 400 }
     ],
+    petshop: [
+      { nome: 'Banho (porte pequeno)', preco: 45 },
+      { nome: 'Banho (porte médio)', preco: 60 },
+      { nome: 'Banho (porte grande)', preco: 80 },
+      { nome: 'Banho e tosa', preco: 90 },
+      { nome: 'Tosa higiênica', preco: 35 },
+      { nome: 'Corte de unhas', preco: 20 }
+    ],
     outro: []
   };
 
