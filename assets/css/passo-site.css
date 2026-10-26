@@ -68,3 +68,6 @@ body:has(#cartBar:not(.vazio)) .passo-pill { bottom: calc(92px + env(safe-area-i
 .aval-enviar { margin-top: 1.2rem; font: inherit; font-size: 1.05rem; font-weight: 800; color: var(--accent, #0F6B5C); background: none; border: 0; padding: 0.4rem 0; cursor: pointer; }
 .aval-enviar[disabled] { opacity: 0.45; cursor: default; }
 .aval-msg { margin: 0.6rem 0 0; font-size: 0.88rem; color: #c0392b; min-height: 1.2em; }
+
+/* preço junto do nome do serviço na agenda (diferencia serviços com o mesmo nome) */
+.pick-btn .pick-preco { display: block; margin-top: 0.2rem; font-size: 0.78em; font-weight: 600; opacity: 0.7; }

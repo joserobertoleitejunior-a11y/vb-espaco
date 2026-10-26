@@ -16,12 +16,22 @@
   document.addEventListener('touchmove', function (e) {
     if (e.touches && e.touches.length > 1) nao(e);
   }, { passive: false });
-  // toque duplo (fora de campos de texto, onde ele seleciona palavra)
+  // toque duplo: o CSS touch-action já impede o zoom nos navegadores novos;
+  // no iPhone antigo travamos o segundo toque rápido — mas sem perder o
+  // toque: quem toca uma opção e logo outra (ou "Continuar") ainda escolhe
+  // certo, porque o clique é disparado na mão no lugar tocado
+  document.documentElement.style.touchAction = 'manipulation';
   var ultimo = 0;
   document.addEventListener('touchend', function (e) {
     var agora = Date.now();
-    if (agora - ultimo < 320 && !(e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]'))) nao(e);
+    var rapido = agora - ultimo < 320;
     ultimo = agora;
+    if (!rapido || (e.touches && e.touches.length) || (e.changedTouches && e.changedTouches.length > 1)) return;
+    var alvo = e.target && e.target.closest ? e.target : null;
+    if (!alvo || alvo.closest('input, textarea, select, [contenteditable="true"]')) return;
+    nao(e);
+    var clicavel = alvo.closest('button, a, label, summary, [role="button"], [role="link"], [data-key], [data-value], [tabindex]');
+    if (clicavel && !clicavel.disabled) clicavel.click();
   }, { passive: false });
   // computador: Ctrl/⌘ + roda do mouse (e pinça do trackpad) ou + - 0
   document.addEventListener('wheel', function (e) { if (e.ctrlKey || e.metaKey) nao(e); }, { passive: false });

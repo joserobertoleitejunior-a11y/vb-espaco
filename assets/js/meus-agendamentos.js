@@ -73,13 +73,17 @@
               '<div id="magSlots' + id + '" style="display:flex; flex-wrap:wrap; gap:0.4rem;"></div>';
             painel.classList.remove('oculto');
             var dataInput = document.getElementById('magData' + id);
-            dataInput.min = new Date().toISOString().slice(0, 10);
+            var hoje = new Date();
+            dataInput.min = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
+            var ultimaBusca = null;
             dataInput.addEventListener('change', function () {
               var diaIso = dataInput.value;
               if (!diaIso) return;
               var slotsEl = document.getElementById('magSlots' + id);
               slotsEl.textContent = 'Carregando…';
+              ultimaBusca = diaIso;
               db.rpc('tenant_public_agenda_slots', { p_estabelecimento_id: estabId, p_dia: diaIso, p_staff_id: staffId }).then(function (res) {
+                if (ultimaBusca !== diaIso) return; // trocou a data enquanto carregava
                 var slots = (res.data || []).filter(function (s) { return s.disponivel; });
                 if (!slots.length) { slotsEl.innerHTML = '<span style="color:var(--tinta-suave); font-size:0.85rem;">Sem horários livres nesse dia.</span>'; return; }
                 var diaLabel = new Date(diaIso + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
@@ -88,11 +92,27 @@
                 }).join('');
                 slotsEl.querySelectorAll('[data-slot]').forEach(function (slotBtn) {
                   slotBtn.addEventListener('click', function () {
-                    db.rpc('cliente_reagendar_agendamento', {
-                      p_id: id, p_telefone: cliente.telefone, p_dia: diaIso, p_dia_label: diaLabel, p_horario: slotBtn.getAttribute('data-slot')
-                    }).then(function (res2) {
-                      if (res2.error) { window.VBDialogo.alert(res2.error.message); return; }
-                      carregar();
+                    var horario = slotBtn.getAttribute('data-slot');
+                    if (slotsEl.getAttribute('data-salvando')) return;
+                    window.VBDialogo.confirm('Remarcar pra ' + diaLabel + ' às ' + horario + '?').then(function (ok) {
+                      if (!ok || slotsEl.getAttribute('data-salvando')) return;
+                      slotsEl.setAttribute('data-salvando', '1');
+                      slotsEl.querySelectorAll('[data-slot]').forEach(function (b) { b.disabled = true; });
+                      db.rpc('cliente_reagendar_agendamento', {
+                        p_id: id, p_telefone: cliente.telefone, p_dia: diaIso, p_dia_label: diaLabel, p_horario: horario
+                      }).then(function (res2) {
+                        slotsEl.removeAttribute('data-salvando');
+                        if (res2.error) {
+                          slotsEl.querySelectorAll('[data-slot]').forEach(function (b) { b.disabled = false; });
+                          window.VBDialogo.alert(res2.error.message);
+                          return;
+                        }
+                        carregar();
+                      }, function () {
+                        slotsEl.removeAttribute('data-salvando');
+                        slotsEl.querySelectorAll('[data-slot]').forEach(function (b) { b.disabled = false; });
+                        window.VBDialogo.alert('Sem conexão agora — tenta de novo em instantes.');
+                      });
                     });
                   });
                 });

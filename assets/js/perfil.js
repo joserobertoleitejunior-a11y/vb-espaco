@@ -2011,6 +2011,7 @@
     var staffList = [];
     var diasDisponiveis = [];
     var lastFocused = null;
+    var ultimoPedidoHorarios = null;
 
     function storageKey() { return WIZ_STORAGE_PREFIX + estabId; }
 
@@ -2022,15 +2023,18 @@
       db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }).then(function (res) {
         staffList = res.data || [];
         if (!staffList.length) {
-          profissionalList.innerHTML = '<button type="button" class="pick-card" data-value="Qualquer profissional">Qualquer profissional disponível</button>';
+          profissionalList.innerHTML = '<button type="button" class="pick-card" data-value="Qualquer profissional" data-key="qualquer">Qualquer profissional disponível</button>';
+          marcarSelecionados();
           return;
         }
         profissionalList.innerHTML = staffList.map(function (p) {
-          return '<button type="button" class="pick-card" data-value="' + escapeHtml(p.nome) + '" data-staff-id="' + p.id + '">' +
+          var rotulo = p.nome + (p.especialidade ? ' — ' + p.especialidade : '');
+          return '<button type="button" class="pick-card" data-value="' + escapeHtml(rotulo) + '" data-key="' + p.id + '" data-staff-id="' + p.id + '">' +
             '<img src="' + (p.foto_url ? escapeHtml(p.foto_url) : '/assets/tpl-classico/img/placeholder-portrait.svg') + '" alt="">' +
             escapeHtml(p.nome) + (p.especialidade ? ' — ' + escapeHtml(p.especialidade) : '') +
             '</button>';
         }).join('');
+        marcarSelecionados();
       });
     }
 
@@ -2038,9 +2042,16 @@
       var genero = generoAtual;
       var lista = servicosCache.filter(function (s) { return s.categoria === genero || s.categoria === 'unissex'; });
       if (!lista.length) lista = servicosCache;
+      // serviço vindo de fora (botão do site / busca) só traz o nome: marca o primeiro com esse nome
+      if (choices.servico && !choices.servicoKey) {
+        var achado = lista.filter(function (s) { return s.nome === choices.servico; })[0];
+        if (achado) choices.servicoKey = String(achado.id);
+      }
       servicoGrid.innerHTML = lista.map(function (s) {
-        return '<button type="button" class="pick-btn' + (s.nome === choices.servico ? ' selected' : '') + '" data-value="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
+        var preco = Number(s.preco) > 0 ? ' <small class="pick-preco">' + formatarPreco(s.preco) + '</small>' : '';
+        return '<button type="button" class="pick-btn" data-value="' + escapeHtml(s.nome) + '" data-key="' + escapeHtml(String(s.id)) + '">' + escapeHtml(s.nome) + preco + '</button>';
       }).join('');
+      marcarSelecionados();
     }
 
     function gerarDiasUteis(n) {
@@ -2059,7 +2070,7 @@
       diasDisponiveis = gerarDiasUteis(6);
       diaRow.innerHTML = diasDisponiveis.map(function (d) {
         var label = DIAS_ABREV[d.getDay()] + ' ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
-        return '<button type="button" class="day-btn" data-value="' + label + '" data-iso="' + isoDate(d) + '">' +
+        return '<button type="button" class="day-btn" data-value="' + label + '" data-key="' + isoDate(d) + '" data-iso="' + isoDate(d) + '">' +
           DIAS_ABREV[d.getDay()] + '<br>' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '</button>';
       }).join('');
     }
@@ -2067,23 +2078,32 @@
     function renderHorarios(slots) {
       if (!slots || !slots.length) {
         horarioGrid.innerHTML = '<p style="grid-column:1/-1; color:var(--ink-soft); font-size:0.9rem;">Sem horários livres nesse dia.</p>';
+        delete choices.horario; delete choices.horarioKey;
+        render();
         return;
       }
       horarioGrid.innerHTML = slots.map(function (s) {
-        return '<button type="button" class="time-btn" data-value="' + s.horario + '"' + (s.disponivel ? '' : ' disabled style="opacity:.35;"') + '>' + s.horario + (s.disponivel ? '' : ' (ocupado)') + '</button>';
+        return '<button type="button" class="time-btn" data-value="' + s.horario + '" data-key="' + s.horario + '"' + (s.disponivel ? '' : ' disabled style="opacity:.35;"') + '>' + s.horario + (s.disponivel ? '' : ' (ocupado)') + '</button>';
       }).join('');
+      // o horário escolhido antes sumiu ou ficou ocupado nesta nova lista? desmarca
+      var aindaLivre = (slots || []).some(function (s) { return s.disponivel && s.horario === choices.horario; });
+      if (choices.horario && !aindaLivre) { delete choices.horario; delete choices.horarioKey; }
+      marcarSelecionados();
+      render();
     }
 
     function atualizarHorarios() {
-      var diaBtn = diaRow.querySelector('.day-btn.selected');
-      if (!diaBtn) return;
-      var iso = diaBtn.getAttribute('data-iso');
-      var profBtn = profissionalList.querySelector('.pick-card.selected');
-      var staffId = profBtn ? profBtn.getAttribute('data-staff-id') : null;
+      var iso = choices.diaKey;
+      if (!iso) return;
+      var staffId = choices.profissionalKey && choices.profissionalKey !== 'qualquer' ? choices.profissionalKey : null;
+      var pedido = iso + '|' + (staffId || '');
+      ultimoPedidoHorarios = pedido;
       horarioGrid.innerHTML = '<p style="grid-column:1/-1; color:var(--ink-soft); font-size:0.9rem;">Carregando…</p>';
       db.rpc('tenant_public_agenda_slots', { p_estabelecimento_id: estabId, p_dia: iso, p_staff_id: staffId || null }).then(function (res) {
+        if (pedido !== ultimoPedidoHorarios) return; // trocou de dia/profissional enquanto carregava
         renderHorarios(res.data || []);
       }, function () {
+        if (pedido !== ultimoPedidoHorarios) return;
         renderHorarios([]);
       });
     }
@@ -2094,9 +2114,8 @@
       if (requiredInputs.length) {
         return Array.prototype.every.call(requiredInputs, function (inp) { return inp.value.trim().length > 0; });
       }
-      var group = stepEl.querySelector('[data-group]');
-      if (!group) return true;
-      return Boolean(choices[group.getAttribute('data-group')]);
+      var grupos = stepEl.querySelectorAll('[data-group]');
+      return Array.prototype.every.call(grupos, function (g) { return Boolean(choices[g.getAttribute('data-group')]); });
     }
 
     function render() {
@@ -2120,23 +2139,36 @@
       }
     }
 
-    function selectChoice(groupName, value) {
-      choices[groupName] = value;
-      var group = overlay.querySelector('[data-group="' + groupName + '"]');
-      if (group) {
-        group.querySelectorAll('[data-value]').forEach(function (b) {
-          b.classList.toggle('selected', b.getAttribute('data-value') === value);
+    // cada grupo guarda o texto (pro resumo/WhatsApp) e a chave única do
+    // botão tocado — dois profissionais ou serviços com o mesmo nome nunca
+    // acendem juntos, e o horário sempre vai pro profissional certo
+    function marcarSelecionados() {
+      [profissionalList, servicoGrid, diaRow, horarioGrid].forEach(function (group) {
+        var nome = group.getAttribute('data-group');
+        group.querySelectorAll('[data-key]').forEach(function (b) {
+          var on = choices[nome + 'Key'] != null && b.getAttribute('data-key') === String(choices[nome + 'Key']);
+          b.classList.toggle('selected', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
+      });
+    }
+    function selectChoice(groupName, value, key) {
+      var mudou = choices[groupName + 'Key'] !== key;
+      choices[groupName] = value;
+      choices[groupName + 'Key'] = key;
+      if (mudou && (groupName === 'profissional' || groupName === 'dia')) {
+        delete choices.horario; delete choices.horarioKey;
+        atualizarHorarios();
       }
-      if (groupName === 'profissional' || groupName === 'dia') atualizarHorarios();
+      marcarSelecionados();
       render();
     }
 
     [profissionalList, servicoGrid, diaRow, horarioGrid].forEach(function (group) {
       group.addEventListener('click', function (e) {
-        var btn = e.target.closest('[data-value]');
+        var btn = e.target.closest('[data-key]');
         if (!btn || btn.disabled) return;
-        selectChoice(group.getAttribute('data-group'), btn.getAttribute('data-value'));
+        selectChoice(group.getAttribute('data-group'), btn.getAttribute('data-value'), btn.getAttribute('data-key'));
       });
     });
 
@@ -2259,16 +2291,14 @@
       }
 
       nextBtn.disabled = true;
-      var diaBtn = diaRow.querySelector('.day-btn.selected');
-      var profBtn = profissionalList.querySelector('.pick-card.selected');
       db.rpc('tenant_criar_agendamento', {
         p_estabelecimento_id: estabId,
         p_cliente_nome: choices.nome || '',
         p_cliente_telefone: choices.telefone || '',
-        p_staff_id: profBtn ? profBtn.getAttribute('data-staff-id') : null,
+        p_staff_id: choices.profissionalKey && choices.profissionalKey !== 'qualquer' ? choices.profissionalKey : null,
         p_staff_nome: choices.profissional || null,
         p_servico: choices.servico || null,
-        p_dia: diaBtn ? diaBtn.getAttribute('data-iso') : null,
+        p_dia: choices.diaKey || null,
         p_dia_label: choices.dia || null,
         p_horario: choices.horario || ''
       }).then(function (res) {
@@ -2276,6 +2306,7 @@
         if (res.error) {
           window.VBDialogo.alert(res.error.message);
           current = 3;
+          delete choices.horario; delete choices.horarioKey;
           render();
           atualizarHorarios();
           return;
