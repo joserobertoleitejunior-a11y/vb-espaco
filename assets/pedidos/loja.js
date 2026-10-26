@@ -93,6 +93,7 @@
     setInterval(atualizarStatus, 60000);
     mostrarEstado('estadoPronto');
     atualizarBadgePedidos();
+    montarPassoSite();
 
     if (q.get('pedidos') === '1') abrirMeusPedidos();
   }
@@ -123,6 +124,36 @@
         { chave: 'agenda', rotulo: 'Agendar', href: base },
         { chave: AREA, rotulo: SERVICO ? (URGENTE ? 'Chamar' : 'Orçamento') : 'Pedir', href: base + '/pedir' }
       ]
+    });
+  }
+
+  // "O próximo passo a um clique": o pedido (ou orçamento/chamado) em
+  // passos — primeiro o que vai querer (por categoria), depois o carrinho
+  function montarPassoSite() {
+    if (!window.VBPassoSite || MODO_DEMO) return;
+    var base = '/' + encodeURIComponent(estab.slug) + '/' + encodeURIComponent(estab.cidade);
+    var fone = U.soDigitos(estab.telefone_whatsapp || ident.telefone_whatsapp);
+    var comentarios = false;
+    if (window.VBAvaliacoes && estab.id) {
+      window.VBAvaliacoes.ligar(estab.id, document.querySelector('#tplClassico .site-footer')).then(function (ok) { comentarios = ok; });
+    }
+    window.VBPassoSite.montar({
+      titulo: SERVICO ? (URGENTE ? 'Do que você precisa agora?' : 'Do que você precisa?') : 'O que vai querer hoje?',
+      sub: function () { return carrinho.length ? 'Você já tem ' + qtdTotal() + (qtdTotal() > 1 ? ' itens' : ' item') + ' separado' + (qtdTotal() > 1 ? 's' : '') + '.' : 'Escolha por onde começar — o resto é um toque de cada vez.'; },
+      opcoes: function () {
+        var ops = [];
+        if (carrinho.length) ops.push({ rotulo: SERVICO ? 'Revisar e enviar meu pedido' : 'Finalizar meu pedido', detalhe: qtdTotal() + (qtdTotal() > 1 ? ' itens · ' : ' item · ') + U.preco(subtotal()), acao: abrirCarrinho });
+        agrupar().slice(0, 6).forEach(function (g) {
+          ops.push({ rotulo: g.nome, detalhe: g.lista.length + (g.lista.length > 1 ? ' opções' : ' opção'), acao: function () {
+            var alvo = document.getElementById('catg-' + g.id) || document.getElementById('cardapioConteudo');
+            if (alvo) window.scrollTo({ top: alvo.getBoundingClientRect().top + window.scrollY - alturaFixaTopo() - 12, behavior: 'smooth' });
+          } });
+        });
+        if ((estab.areas || []).indexOf('agenda') !== -1) ops.push({ rotulo: 'Agendar um horário', detalhe: 'serviço, profissional, dia e pronto', href: base + '#agendar' });
+        if (comentarios) ops.push({ rotulo: 'Deixar um comentário', detalhe: 'conta como foi', acao: function () { window.VBAvaliacoes.comentar(); } });
+        if (fone) ops.push({ rotulo: 'Falar no WhatsApp', detalhe: 'tirar uma dúvida antes', href: 'https://wa.me/55' + fone });
+        return ops;
+      }
     });
   }
 
@@ -167,7 +198,7 @@
     var fone = U.soDigitos(estab.telefone_whatsapp || ident.telefone_whatsapp);
     $('tplTelefoneRodape').textContent = fone ? 'WhatsApp' : '';
     $('tplTelefoneRodape').href = linkWhats('Olá! Vim pelo site.');
-    $('tplCopyright').innerHTML = '© ' + new Date().getFullYear() + ' ' + esc(nome) + ' · Feito com <a href="/">Pertin</a>';
+    $('tplCopyright').innerHTML = '© ' + new Date().getFullYear() + ' ' + esc(nome) + ' · Feito com <a href="/">Passo a passo</a>';
     var base = '/' + encodeURIComponent(estab.slug) + '/' + encodeURIComponent(estab.cidade);
     $('tplLinkInstitucional').href = base + '/institucional';
     if ((ident.areas || estab.areas || []).indexOf('agenda') > -1) {

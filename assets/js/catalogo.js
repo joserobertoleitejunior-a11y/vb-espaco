@@ -401,6 +401,7 @@
     filtrosEl.scrollLeft = 0;
     montarToggle();
     if (toggle && toggle.atual() !== AREA) toggle.definir(AREA);
+    if (window.VBGuia) window.VBGuia.iniciar(AREA);
   }
   // abre (ou troca) a área mostrada — sem recarregar a página
   function abrir(area) {

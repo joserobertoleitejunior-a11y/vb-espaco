@@ -4,18 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <script src="/assets/js/sem-zoom.js?v=1"></script>
-<title>Carregando… — Pertin</title>
+<title>Carregando… — Passo a passo</title>
 <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&family=Oswald:wght@300;400;500;600;700&family=Bangers&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/css/styles.css?v=81">
-<link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=5">
+<link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=6">
 <link rel="stylesheet" href="/assets/css/vb-local.css?v=1">
 <script src="/assets/js/vibe-toggle.js?v=3"></script>
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=5" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
 <link rel="stylesheet" href="/assets/tpl-classico/css/widget.css?v=5" id="tplWidget">
+<link rel="stylesheet" href="/assets/css/passo-site.css?v=1">
 </head>
 <body>
   <div id="carregando" class="container" style="padding-top:3rem;">
@@ -34,7 +35,7 @@
     <div class="faixa-vibe" id="faixaVoltar">
     <a class="faixa-marca" href="/" aria-label="Voltar pro início">
       <span class="vt-cubo" aria-hidden="true"><span class="vt-cubo-3d"><i class="f1"></i><i class="f2"></i><i class="f3"></i><i class="f4"></i><i class="f5"></i><i class="f6"></i></span></span>
-      <span class="faixa-nome" data-vibe-marca-logo>Pertin</span>
+      <span class="faixa-nome" data-vibe-marca-logo>Passo a passo</span>
     </a>
     <div id="faixaAreas"></div>
   </div>
@@ -70,7 +71,7 @@
           <li><a href="#promocoesSecao"><span>Promoções</span><span class="num">09</span></a></li>
         </ul>
 
-        <p class="site-menu-secao">Pertin</p>
+        <p class="site-menu-secao">Passo a passo</p>
         <ul class="site-menu-list">
           <li><a href="/termos.html"><span>Termos de uso</span><span class="num">•</span></a></li>
         </ul>
@@ -165,7 +166,7 @@
     <span class="corner-mark bl" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M4,32 L4,10 Q4,4 10,4 L32,4" stroke="currentColor" stroke-width="2"/><circle cx="4" cy="4" r="3" fill="currentColor"/></svg></span>
     <div class="wizard-box">
       <div class="wizard-topline">
-        <p class="eyebrow wizard-eyebrow">Agenda</p>
+        <p class="eyebrow wizard-eyebrow" id="wizardEyebrow">Passo a passo</p>
         <button class="wizard-close" id="wizardClose" type="button" aria-label="Fechar agendamento">×</button>
       </div>
       <p class="welcome-back-hint" id="welcomeBackHint" style="display:none;"></p>
@@ -174,16 +175,9 @@
       </div>
 
       <div class="wizard-step active" data-step="1">
-        <h2>Antes de começar</h2>
-        <p class="hint">Seus dados pra gente já te reconhecer nas próximas vezes.</p>
-        <div class="field-group">
-          <label class="field-label" for="wizNome">Nome</label>
-          <input class="field-input" type="text" id="wizNome" name="wizNome" placeholder="Seu nome" autocomplete="name" required>
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="wizTelefone">WhatsApp</label>
-          <input class="field-input" type="tel" id="wizTelefone" name="wizTelefone" placeholder="(15) 90000-0000" autocomplete="tel" inputmode="tel" required>
-        </div>
+        <h2>Qual serviço?</h2>
+        <p class="hint">Comece pelo que você quer fazer.</p>
+        <div class="pick-grid" data-group="servico"></div>
       </div>
 
       <div class="wizard-step" data-step="2">
@@ -193,16 +187,23 @@
       </div>
 
       <div class="wizard-step" data-step="3">
-        <h2>Qual serviço?</h2>
-        <p class="hint">Escolha uma opção.</p>
-        <div class="pick-grid" data-group="servico"></div>
-      </div>
-
-      <div class="wizard-step" data-step="4">
         <h2>Dia e horário</h2>
         <p class="hint">Toque no dia e depois no horário.</p>
         <div class="day-row" data-group="dia"></div>
         <div class="time-grid" data-group="horario"></div>
+      </div>
+
+      <div class="wizard-step" data-step="4">
+        <h2>Pra quem é o horário?</h2>
+        <p class="hint">Só nome e WhatsApp — na próxima vez já vem preenchido.</p>
+        <div class="field-group">
+          <label class="field-label" for="wizNome">Nome</label>
+          <input class="field-input" type="text" id="wizNome" name="wizNome" placeholder="Seu nome" autocomplete="name" required>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="wizTelefone">WhatsApp</label>
+          <input class="field-input" type="tel" id="wizTelefone" name="wizTelefone" placeholder="(15) 90000-0000" autocomplete="tel" inputmode="tel" required>
+        </div>
       </div>
 
       <div class="wizard-step" data-step="5">
@@ -231,7 +232,7 @@
   <div class="admin-pin-overlay oculto" id="clienteGlobalOverlay">
     <div class="admin-pin-box cliente-global-box">
       <div id="clienteGlobalEstagioEscolha">
-        <p class="eyebrow">Pertin</p>
+        <p class="eyebrow">Passo a passo</p>
         <h2 style="margin:0.3rem 0;">Como você quer entrar?</h2>
         <p class="hint">Escolha o tipo de acesso.</p>
         <button class="btn btn-primario" id="clienteGlobalEscolherCliente" type="button" style="width:100%;">Sou cliente</button>
@@ -239,7 +240,7 @@
         <button class="btn btn-ghost" id="clienteGlobalCancelarEscolha" type="button" style="width:100%; margin-top:0.5rem;">Cancelar</button>
       </div>
       <div id="clienteGlobalEstagioTelefone" class="oculto">
-        <p class="eyebrow">Pertin</p>
+        <p class="eyebrow">Passo a passo</p>
         <h2 style="margin:0.3rem 0;">Entrar com WhatsApp</h2>
         <p class="hint">Assim você não precisa digitar seus dados de novo em cada estabelecimento.</p>
         <div class="field">
@@ -347,7 +348,9 @@
   <script src="/assets/js/meus-agendamentos.js?v=1"></script>
   <script src="/assets/js/templates.js?v=2"></script>
   <script src="/assets/js/vb-local.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=57"></script>
+  <script src="/assets/js/passo-site.js?v=1"></script>
+  <script src="/assets/js/avaliacoes-site.js?v=1"></script>
+  <script src="/assets/js/perfil.js?v=58"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
@@ -355,6 +358,6 @@
       });
     }
   </script>
-  <script src="/assets/js/marca.js?v=4"></script>
+  <script src="/assets/js/marca.js?v=5"></script>
 </body>
 </html>

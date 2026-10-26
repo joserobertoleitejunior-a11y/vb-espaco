@@ -9,7 +9,7 @@
 ## 0. Contexto do projeto (preencher a cada novo projeto)
 
 ```
-Nome do projeto: Pertin (antes "Vibe", e antes disso "VB Agenda")
+Nome do projeto: Passo a passo (antes "Vibe", e antes disso "VB Agenda")
 Cliente: Agência própria (José) — plataforma white-label multi-tenant
 Modelo de negócio: R$40/mês por estabelecimento (assinatura da plataforma) + 5% de comissão sobre toda transação dentro do app, via split automático (Mercado Pago Marketplace, cada dono conecta a própria conta MP)
 Stack principal: Site estático (HTML/JS puro, sem build/bundler) + Supabase (banco/auth/RLS) + Mercado Pago (pagamento + split) + Cloudflare Workers (hospedagem)
@@ -177,11 +177,11 @@ Todo projeto com página voltada ao cliente final (não só ferramenta interna) 
 
 ---
 
-## 10. Identidade visual da plataforma (Pertin)
+## 10. Identidade visual da plataforma (Passo a passo)
 
 Regras que valem pra toda tela nova do app:
 
-- **Logo = cubo + logotipo**. O cubo (só arestas douradas `#C9A227`, CSS 3D ou three.js) nunca muda; junto dele, o nome "Pertin" ganha uma letra serifada própria (Fraunces, 700) com um pino de mapa dourado no lugar do ponto do "i" — a única exceção à letra do sistema, por ser o logotipo em si, não texto de interface. Na versão grande (splash) o logotipo ainda ganha um traço dourado embaixo, tipo assinatura. Montado por `assets/js/marca.js` em qualquer `[data-vibe-marca-logo]` (`=""` pequeno, junto do cubo; `="hero"` grande, com o traço). A plataforma nunca invade o espaço do negócio: no site do negócio o logotipo aparece só na **faixa fina do topo** (cubo + nome + toggle das áreas). Nada de logo no hero do negócio.
+- **Logo = cubo + logotipo**. O cubo (só arestas douradas `#C9A227`, CSS 3D ou three.js) nunca muda; junto dele, o nome "Passo a passo" ganha uma letra serifada própria (Fraunces, 700) com um pino de mapa dourado no lugar do ponto do "i" — a única exceção à letra do sistema, por ser o logotipo em si, não texto de interface. Na versão grande (splash) o logotipo ainda ganha um traço dourado embaixo, tipo assinatura. Montado por `assets/js/marca.js` em qualquer `[data-vibe-marca-logo]` (`=""` pequeno, junto do cubo; `="hero"` grande, com o traço). A plataforma nunca invade o espaço do negócio: no site do negócio o logotipo aparece só na **faixa fina do topo** (cubo + nome + toggle das áreas). Nada de logo no hero do negócio.
 - **Letra do sistema** (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`) em todo o resto que é da plataforma (splash, Explorar, funil, painéis, menções soltas ao nome via `[data-vibe-marca]`). Fontes especiais fora do logotipo só dentro dos estilos do site do negócio.
 - **Cores claras e translúcidas**: fundo `#f4f4f6`, cartões brancos translúcidos com blur, borda fina. Cada área tem um tom sutil: Agenda `15,107,92` (verde), Delivery `196,85,58` (tomate), No local `47,93,124` (azul aço). Nada escandaloso.
 - **Carregamento**: skeleton em tudo que vem do banco; o cubo é o indicador de "puxar pra atualizar".

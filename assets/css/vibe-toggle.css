@@ -122,6 +122,8 @@
 .vt-mais svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
 /* ---------- faixa da plataforma (topo do site do estabelecimento) ---------- */
+/* com a agenda (ou outra janela de tela cheia) aberta, a faixa fica por baixo dela */
+body.scroll-locked .faixa-vibe { z-index: 100; }
 .faixa-vibe {
   position: fixed; top: 0; left: 0; right: 0; z-index: 140;
   height: var(--faixa-h);
@@ -156,6 +158,8 @@
   letter-spacing: 0;
 }
 .pt-idot { position: relative; display: inline-block; }
+.pt-word { white-space: nowrap; }
+.pt-degrau { color: #C9A227; font-style: italic; font-weight: 600; display: inline-block; transform: translateY(0.08em); }
 .pt-pin {
   position: absolute; left: 50%; bottom: 0.62em;
   width: 0.5em; height: 0.66em;
@@ -168,7 +172,7 @@
   display: flex; flex-direction: column; align-items: center;
   gap: 0.32em;
 }
-.pt-swoosh { display: block; width: 3.6em; height: auto; overflow: visible; }
+.pt-swoosh { display: block; width: 5.2em; height: auto; overflow: visible; }
 @media (max-width: 380px) {
   .faixa-marca .faixa-nome { display: none; }
   .vt-op { padding: 0.36rem 0.6rem; }

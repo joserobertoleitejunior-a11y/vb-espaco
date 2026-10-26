@@ -1,4 +1,4 @@
-/* Tela inicial do Pertin (splash) + troca de telas sem recarregar.
+/* Tela inicial do Passo a passo (splash) + troca de telas sem recarregar.
 
    A splash e o Explorar moram na mesma página (index.html). Escolher
    Agendar / Pedir / Chamar só desliza a tela pro lado e mostra a lista
@@ -15,9 +15,9 @@
   var AREAS = ['agenda', 'delivery', 'servicos'];
   var TITULOS = {
     splash: document.title,
-    agenda: 'Agendar horário em Itapetininga — Pertin',
-    delivery: 'Pedir delivery em Itapetininga — Pertin',
-    servicos: 'Chamar um profissional em Itapetininga — Pertin'
+    agenda: 'Agendar horário em Itapetininga — Passo a passo',
+    delivery: 'Pedir delivery em Itapetininga — Passo a passo',
+    servicos: 'Chamar um profissional em Itapetininga — Passo a passo'
   };
   var T = window.VibeToggle || {};
   var ICONES = T.ICONES || {};

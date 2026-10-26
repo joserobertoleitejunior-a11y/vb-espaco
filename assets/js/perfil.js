@@ -1612,6 +1612,14 @@
   }
 
   var servicosCache = [];
+  var agendaPeloHash = false;
+  function abrirAgendaDoHash(linhas) {
+    agendaPeloHash = false;
+    var pedido = decodeURIComponent((window.location.hash.split('=')[1] || '')).trim().toLowerCase();
+    var achado = pedido ? linhas.filter(function (s) { return String(s.nome).trim().toLowerCase() === pedido; })[0] : null;
+    history.replaceState(null, '', location.pathname + location.search);
+    setTimeout(function () { if (window.VBAgenda) window.VBAgenda.abrir(achado ? achado.nome : undefined); }, 0);
+  }
 
   // ícone de linha por nicho — mesmo estilo/traço dos ícones do catálogo e
   // do seletor de segmento em criar.js, pra ficar visualmente consistente
@@ -1661,6 +1669,7 @@
     db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }).then(function (res) {
       var linhas = res.data || [];
       servicosCache = linhas;
+      if (agendaPeloHash) abrirAgendaDoHash(linhas);
       strip.innerHTML =
         '<button type="button" class="service-badge" onclick="document.getElementById(\'servicosSecao\').scrollIntoView({behavior:\'smooth\'})"><span class="mark">' + ICONE_TESOURA + '</span><strong>Ver</strong><span>Serviços</span></button>' +
         '<button type="button" class="service-badge" data-open-widget><span class="mark">' + ICONE_AGENDA + '</span><strong>Agendar</strong><span>Horário</span></button>';
@@ -2098,6 +2107,8 @@
         d.classList.toggle('done', n < current);
       });
       nextBtn.textContent = current === totalSteps ? 'Confirmar' : 'Continuar';
+      var eyebrow = document.getElementById('wizardEyebrow');
+      if (eyebrow) eyebrow.textContent = 'Passo ' + current + ' de ' + totalSteps;
       nextBtn.classList.toggle('is-disabled', !isStepValid(current));
       if (current === totalSteps) {
         document.getElementById('wizSummaryBox').innerHTML =
@@ -2166,11 +2177,12 @@
         if (global) saved = { nome: global.nome, telefone: global.telefone };
       }
 
-      current = 1;
       choices = {};
-      // veio de um botão redondo de serviço específico (clicado direto no
-      // site)? já entra com o pedido decidido — só falta contato/horário.
+      // passo a passo: 1 serviço, 2 profissional, 3 dia/horário, 4 contato
+      // (pulado quando já sabemos quem é), 5 confirmar. Veio de um botão
+      // de serviço (ou do passo a passo da busca)? já começa no profissional.
       if (servicoPreSelecionado) choices.servico = servicoPreSelecionado;
+      current = servicoPreSelecionado ? 2 : 1;
       carregarServicosWizard();
       if (saved && saved.nome && saved.telefone) {
         choices.nome = saved.nome;
@@ -2180,7 +2192,6 @@
         welcomeHint.textContent = 'Bem-vindo de volta, ' + saved.nome.split(' ')[0] + '! Já preenchemos seus dados — é só conferir.';
         welcomeHint.style.display = '';
         db.rpc('tenant_registrar_cliente', { p_estabelecimento_id: estabId, p_nome: saved.nome, p_telefone: saved.telefone });
-        current = 2;
       } else {
         welcomeHint.style.display = 'none';
         nomeInput.value = '';
@@ -2213,6 +2224,8 @@
       if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
     }
 
+    window.VBAgenda = { abrir: open };
+
     if (successCloseBtn) successCloseBtn.addEventListener('click', close);
     closeBtn.addEventListener('click', close);
     overlay.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
@@ -2230,13 +2243,15 @@
         return;
       }
 
-      var eraContato = current === 1;
+      var eraContato = current === 4;
       if (eraContato) {
         try { localStorage.setItem(storageKey(), JSON.stringify({ nome: choices.nome, telefone: choices.telefone })); } catch (e) {}
       }
 
       if (current < totalSteps) {
         current++;
+        // contato já conhecido (voltou ou entrou com a conta)? pula direto pro confirmar
+        if (current === 4 && choices.nome && choices.telefone) current = 5;
         render();
         overlay.scrollTop = 0;
         if (eraContato) db.rpc('tenant_registrar_cliente', { p_estabelecimento_id: estabId, p_nome: choices.nome || '', p_telefone: choices.telefone || '' });
@@ -2260,7 +2275,7 @@
         nextBtn.disabled = false;
         if (res.error) {
           window.VBDialogo.alert(res.error.message);
-          current = 4;
+          current = 3;
           render();
           atualizarHorarios();
           return;
@@ -2350,6 +2365,7 @@
     carregarPromocoesPublicas();
     iniciarModoAdmin();
     iniciarWizard();
+    montarPassoSite(linha);
     iniciarClienteGlobal();
     verificarSessaoDono();
 
@@ -2360,12 +2376,38 @@
     // que desbloqueia (linha acima já chama isso de novo).
     atualizarGateIncompleto();
 
-    // veio de outra página do site (ex: institucional.html) com
-    // #agendar na URL? abre a agenda direto.
-    if (window.location.hash === '#agendar') {
-      var gatilho = document.querySelector('[data-open-widget]');
-      if (gatilho) gatilho.click();
+    // veio de outra página do site (ex: institucional.html) com #agendar
+    // na URL, ou do passo a passo da busca com #agendar=Serviço? abre a
+    // agenda direto (com o serviço, assim que a lista de serviços chegar).
+    if (/^#agendar(=|$)/.test(window.location.hash)) agendaPeloHash = true;
+  }
+
+  // "O próximo passo a um clique": uma pergunta só, com as ações que este
+  // negócio oferece; cada uma leva pro passo a passo dela
+  function montarPassoSite(linha) {
+    if (!window.VBPassoSite) return;
+    var areas = linha.areas || ['agenda'];
+    var base = '/' + encodeURIComponent(linha.slug) + '/' + encodeURIComponent(linha.cidade);
+    var urgente = SEG_URGENTE.indexOf(linha.segmento) !== -1;
+    var tel = (linha.telefone_whatsapp || '').replace(/\D/g, '');
+    var comentarios = false;
+    if (window.VBAvaliacoes) {
+      window.VBAvaliacoes.ligar(linha.id, document.querySelector('#tplClassico .site-footer')).then(function (ok) { comentarios = ok; });
     }
+    window.VBPassoSite.montar({
+      titulo: 'O que você quer fazer aqui?',
+      sub: linha.nome,
+      opcoes: function () {
+        return [
+          { rotulo: 'Agendar um horário', detalhe: 'serviço, profissional, dia e pronto', acao: function () { if (window.VBAgenda) window.VBAgenda.abrir(); } },
+          areas.indexOf('delivery') !== -1 ? { rotulo: 'Fazer um pedido', detalhe: 'escolhe, coloca no carrinho e envia', href: base + '/pedir' } : null,
+          areas.indexOf('servicos') !== -1 ? { rotulo: urgente ? 'Chamar agora' : 'Pedir um orçamento', detalhe: urgente ? 'manda sua localização e a gente vai' : 'conta o que precisa e recebe o valor', href: base + '/pedir' } : null,
+          servicosCache.length ? { rotulo: 'Ver serviços e preços', detalhe: servicosCache.length + (servicosCache.length > 1 ? ' serviços' : ' serviço'), acao: function () { var s = document.getElementById('servicosSecao'); if (s) s.scrollIntoView({ behavior: 'smooth' }); } } : null,
+          comentarios ? { rotulo: 'Deixar um comentário', detalhe: 'conta como foi o atendimento', acao: function () { window.VBAvaliacoes.comentar(); } } : null,
+          tel ? { rotulo: 'Falar no WhatsApp', detalhe: linha.telefone_whatsapp, href: 'https://wa.me/55' + tel } : null
+        ];
+      }
+    });
   }
 
   // Agenda + Delivery/Serviços no mesmo estabelecimento: o toggle da faixa

@@ -1,11 +1,13 @@
-/* Nome da plataforma num lugar só. Enquanto o nome oficial não sai,
-   é "Pertin"; pra trocar, muda aqui (e nos <title>/meta das páginas).
+/* Nome da plataforma num lugar só: "Passo a passo". Pra trocar, muda
+   aqui (e nos <title>/meta das páginas).
 
    Dois jeitos de marcar um elemento:
    - data-vibe-marca: recebe o nome como texto puro (menus, rodapés,
      legendas — qualquer menção ao nome que não seja o logotipo).
    - data-vibe-marca-logo: recebe o logotipo de verdade (a letra
-     serifada da marca, com um pino dourado no lugar do ponto do "i").
+     serifada da marca; o "a" do meio sai dourado e em itálico, como o
+     degrau entre um passo e o próximo — e, se o nome tiver "i", o pino
+     dourado entra no lugar do ponto).
      Vazio ("") é a versão pequena, junto do cubo na faixa fina do
      topo; ="hero" é a versão grande da splash, com o traço dourado
      embaixo. Some sozinho se o nome não tiver "i" minúsculo (troca de
@@ -13,7 +15,7 @@
      página que usa o logotipo — ver <link ... family=Fraunces>). */
 (function (global) {
   'use strict';
-  var MARCA = { nome: 'Pertin', slogan: 'O que você precisa bem perto de você.' };
+  var MARCA = { nome: 'Passo a passo', slogan: 'O próximo passo a um clique.' };
   global.VIBE_MARCA = MARCA;
 
   function escapeHtml(t) {
@@ -32,9 +34,14 @@
   var SWOOSH = '<svg class="pt-swoosh" viewBox="0 0 120 18" aria-hidden="true">' +
     '<path d="M3 4c20 12 94 12 114 0" fill="none" stroke="#C9A227" stroke-width="4" stroke-linecap="round"/></svg>';
 
-  // troca a última letra "i" minúscula pelo "ı" sem ponto + o pino por
-  // cima dele; sem "i" no nome, fica só o texto normal
+  // "Passo a passo": o " a " do meio vira o degrau dourado. Senão, troca a
+  // última letra "i" minúscula pelo "ı" sem ponto + o pino por cima dele;
+  // sem "i" no nome, fica só o texto normal
   function palavraHtml(nome) {
+    var degrau = nome.match(/^(\S+) (a|e|de) (\S+)$/);
+    if (degrau) {
+      return escapeHtml(degrau[1]) + ' <span class="pt-degrau">' + escapeHtml(degrau[2]) + '</span> ' + escapeHtml(degrau[3]);
+    }
     var idx = nome.lastIndexOf('i');
     if (idx === -1) return escapeHtml(nome);
     return escapeHtml(nome.slice(0, idx)) +
