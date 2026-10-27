@@ -231,3 +231,35 @@ html.pt-marca-pronta .pt-word { animation-play-state: running; }
 @media (prefers-reduced-motion: reduce) {
   .pt-word { animation: none; }
 }
+
+/* ---- motion do nome grande (marca-motion.js, three.js): enquanto os
+   pontos montam o nome, a letra do DOM espera escondida; quando pousam,
+   ela entra nítida e fica um cursor de código piscando ---- */
+[data-vibe-marca-logo="hero"] { position: relative; }
+.pt-motion-tela { position: absolute; pointer-events: none; z-index: 1; }
+html.pt-motion [data-vibe-marca-logo="hero"] .pt-word { animation: none; opacity: 0; }
+html.pt-motion-fim [data-vibe-marca-logo="hero"] .pt-word { animation: none; opacity: 1; transition: opacity 0.6s ease-out; }
+[data-vibe-marca-logo="hero"] .pt-word { position: relative; }
+html.pt-motion-fim [data-vibe-marca-logo="hero"] .pt-word::after {
+  content: '_'; position: absolute; left: 100%; bottom: 0; margin-left: 0.08em;
+  color: #C9A227; font-weight: 400; opacity: 0;
+  animation: ptCursor 0.5s steps(1) 0.35s 7 alternate;
+}
+@keyframes ptCursor { from { opacity: 1; } to { opacity: 0; } }
+/* pastilhas pequenas: um reflexo de luz atravessa o vidro de vez em quando */
+[data-vibe-marca-logo]:not([data-vibe-marca-logo="hero"]) {
+  background-image:
+    linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.7) 50%, transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.22));
+  background-size: 260% 100%, 100% 100%; background-repeat: no-repeat;
+  background-position: 130% 0, 0 0;
+}
+.faixa-vibe [data-vibe-marca-logo] {
+  background-image:
+    linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.28) 50%, transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+}
+@media (prefers-reduced-motion: no-preference) {
+  html.pt-marca-pronta [data-vibe-marca-logo]:not([data-vibe-marca-logo="hero"]) { animation: ptReflexo 9s ease-in-out 2.2s infinite; }
+}
+@keyframes ptReflexo { 0% { background-position: 130% 0, 0 0; } 14%, 100% { background-position: -30% 0, 0 0; } }
