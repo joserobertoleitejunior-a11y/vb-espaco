@@ -9,18 +9,34 @@
 <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&family=Oswald:wght@300;400;500;600;700&family=Bangers&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&family=Oswald:wght@300;400;500;600;700&family=Bangers&family=Fraunces:opsz,wght@9..144,700&display=optional" rel="stylesheet">
 <!-- mesma base do site do negócio (perfil.html): o estilo escolhido pelo dono
      vale igual pra Agenda, Pedir e Chamar — só mudam botões e funções -->
 <link rel="stylesheet" href="/assets/css/styles.css?v=81">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=6">
 <script src="/assets/js/vibe-toggle.js?v=3"></script>
+<script src="/assets/js/templates.js?v=4"></script>
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=5" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=3" id="tplFeminino" disabled>
 <link rel="stylesheet" href="/assets/tpl-classico/css/widget.css?v=5" id="tplWidget">
+<script>
+  /* estilo do negócio já na primeira pintura (se este aparelho já abriu o
+     site); senão, fundo neutro até o estilo chegar — nada de piscar */
+  (function () {
+    var ok = false;
+    try { ok = window.VibeTemplates && VibeTemplates.restaurar(); } catch (e) {}
+    if (!ok) document.documentElement.classList.add('site-carregando');
+    setTimeout(function () { document.documentElement.classList.remove('site-carregando'); }, 4000);
+  })();
+</script>
+<style>
+  html.site-carregando, html.site-carregando body { background: #f5f5f6 !important; }
+  html.site-carregando body > :not(#carregando):not(script) { visibility: hidden; }
+  body { transition: background-color 0.25s ease; }
+</style>
 <link rel="stylesheet" href="/assets/css/passo-site.css?v=3">
 <link rel="stylesheet" href="/assets/pedidos/loja.css?v=6">
-<link rel="stylesheet" href="/assets/css/botoes.css?v=1">
+<link rel="stylesheet" href="/assets/css/botoes.css?v=3">
 </head>
 <body>
   <div id="carregando" class="container" style="padding-top:3rem;">
@@ -159,15 +175,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/js/supabase-client.js?v=1"></script>
   <script src="/assets/tpl-classico/js/menu.js?v=1"></script>
-  <script src="/assets/js/templates.js?v=2"></script>
-  <script src="/assets/js/site-visual.js?v=1"></script>
+  <script src="/assets/js/site-visual.js?v=2"></script>
   <script src="/assets/js/frases-efeito.js?v=1"></script>
   <script src="/assets/pedidos/util.js?v=3"></script>
   <script src="/assets/js/segmentos.js?v=3"></script>
   <script src="/assets/pedidos/demo.js?v=4"></script>
   <script src="/assets/js/passo-site.js?v=1"></script>
   <script src="/assets/js/avaliacoes-site.js?v=1"></script>
-  <script src="/assets/pedidos/loja.js?v=7"></script>
+  <script src="/assets/pedidos/loja.js?v=8"></script>
   <script src="/assets/js/faixa-voltar.js?v=3"></script>
   <script src="/assets/js/marca.js?v=5"></script>
 </body>

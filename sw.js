@@ -8,7 +8,7 @@
 
    Bump o número da versão sempre que mudar a lista de arquivos aqui
    embaixo — isso descarta o cache antigo e busca tudo de novo. */
-var VERSAO = 'vb-cache-v22';
+var VERSAO = 'vb-cache-v23';
 
 var CASCO = [
   '/',
@@ -86,26 +86,38 @@ self.addEventListener('fetch', function (evento) {
   var url = new URL(req.url);
   if (ehApi(url)) return; // API/CDN/fonte: sempre rede, nunca cache
 
-  // stale-while-revalidate: responde rápido com o que já tem em cache
-  // (ou espera a rede se for a primeira vez) e atualiza o cache por
-  // trás pra próxima visita, sem travar a tela esperando isso.
+  // Página (HTML) e arquivo sem ?v=: rede primeiro — o que está no ar é
+  // sempre o que aparece; o cache só entra sem internet. Antes era "cache
+  // primeiro", e isso mostrava o layout da versão anterior até recarregar.
+  // Arquivo versionado (?v=) e imagem: cache primeiro (o nome muda a cada
+  // versão, então o que está guardado nunca fica velho).
+  var versionado = url.origin === self.location.origin && /[?&]v=/.test(url.search);
+  var imagem = req.destination === 'image' || req.destination === 'font';
+  if (versionado || imagem) {
+    evento.respondWith(
+      caches.match(req).then(function (emCache) {
+        return emCache || fetch(req).then(function (resposta) {
+          if (resposta && resposta.ok) { var copia = resposta.clone(); caches.open(VERSAO).then(function (c) { c.put(req, copia); }); }
+          return resposta;
+        });
+      })
+    );
+    return;
+  }
   evento.respondWith(
-    caches.match(req).then(function (emCache) {
-      var buscaRede = fetch(req).then(function (resposta) {
-        if (resposta && resposta.ok) {
-          var copia = resposta.clone();
-          caches.open(VERSAO).then(function (cache) { cache.put(req, copia); });
-        }
-        return resposta;
-      }).catch(function () {
-        // offline e essa página nunca foi visitada/cacheada antes: cai
-        // pro "casco" da home em vez de deixar o navegador mostrar a
-        // tela de erro dele (ERR_FAILED) — pelo menos abre o app.
+    fetch(req).then(function (resposta) {
+      if (resposta && resposta.ok && url.origin === self.location.origin) {
+        var copia = resposta.clone();
+        caches.open(VERSAO).then(function (cache) { cache.put(req, copia); });
+      }
+      return resposta;
+    }).catch(function () {
+      // offline: o que tiver guardado; página nunca vista cai no "casco" da home
+      return caches.match(req).then(function (emCache) {
         if (emCache) return emCache;
         if (req.mode === 'navigate') return caches.match('/index.html');
         return Promise.reject('offline-sem-cache');
       });
-      return emCache || buscaRede;
     })
   );
 });

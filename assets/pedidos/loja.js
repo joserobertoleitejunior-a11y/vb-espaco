@@ -52,6 +52,10 @@
   function mostrarEstado(nome) {
     var mapa = { estadoCarregando: 'carregando', estadoNaoEncontrado: 'naoEncontrado', estadoPronto: 'tplClassico' };
     Object.keys(mapa).forEach(function (k) { $(mapa[k]).classList.toggle('oculto', k !== nome); });
+    if (nome !== 'estadoCarregando') {
+      var liberar = function () { document.documentElement.classList.remove('site-carregando'); };
+      if (window.VibeTemplates && window.VibeTemplates.quandoPronto) window.VibeTemplates.quandoPronto().then(liberar); else liberar();
+    }
   }
 
   /* ===================== carga ===================== */
@@ -106,6 +110,7 @@
   async function aplicarVisual() {
     await SV.aplicarEstilo(ident.template || 'classico-boiserie');
     SV.aplicarCor(corDoSite(), ident.cor_secundaria);
+    if (window.VibeTemplates && window.VibeTemplates.lembrar) window.VibeTemplates.lembrar(ident.template || 'classico-boiserie');
     if (window.VibeTemplates) window.VibeTemplates.fundoDaFoto(window.VibeTemplates.segueFoto(ident.template) ? fotoCapa() : null);
     document.documentElement.setAttribute('data-area', AREA);
     destaqueDoEstilo = SV.herdarTokens([$('servicosSecao'), $('lojaCamada')])['--accent'];

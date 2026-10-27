@@ -55,26 +55,11 @@
   }
 
   // troca o CSS do estilo e resolve quando ele terminou de carregar
+  // troca o estilo e só resolve quando o CSS novo já está na tela
   function aplicarEstilo(chave) {
-    return new Promise(function (ok) {
-      if (!global.VibeTemplates) { ok(); return; }
-      var ids = ['tplBase', 'tplWidget', 'tplExtra'];
-      var antes = ids.map(function (id) { var el = document.getElementById(id); return el ? el.getAttribute('href') : null; });
-      var t = global.VibeTemplates.aplicar(chave);
-      templateAtual = t.chave;
-      var pendentes = 0;
-      var feito = false;
-      function fim() { if (!feito && --pendentes <= 0) { feito = true; ok(); } }
-      ids.forEach(function (id, i) {
-        var el = document.getElementById(id);
-        if (!el || el.disabled || el.getAttribute('href') === antes[i]) return;
-        pendentes++;
-        el.addEventListener('load', fim, { once: true });
-        el.addEventListener('error', fim, { once: true });
-      });
-      if (!pendentes) { feito = true; ok(); }
-      setTimeout(function () { if (!feito) { feito = true; ok(); } }, 3000);
-    });
+    if (!global.VibeTemplates) return Promise.resolve();
+    templateAtual = global.VibeTemplates.aplicar(chave).chave;
+    return global.VibeTemplates.quandoPronto();
   }
 
   // copia cor de fundo, texto, destaque, letra e cantos do estilo pras

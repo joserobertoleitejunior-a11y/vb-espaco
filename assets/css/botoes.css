@@ -225,3 +225,84 @@ label.arquivo-btn {
 }
 label.arquivo-btn > span { display: inline-block; margin: 0; }
 label.arquivo-btn > .arquivo-btn-icone { display: grid; }
+
+/* ======================================================================
+   Leveza no celular: o que fazia a tela travar, piscar e "pixelar"
+   ====================================================================== */
+/* as luzes do início já são degradês suaves; o desfoque por cima era
+   recalculado a cada quadro da animação */
+.sp-luz { filter: none !important; }
+/* o cubinho da marca flutua só ao abrir, não pra sempre */
+.vt-cubo { animation-iteration-count: 2 !important; }
+@media (hover: none) and (pointer: coarse) {
+  /* vidro fosco em cima do vídeo do início: o celular refazia o desfoque
+     a cada quadro do vídeo (trava e serrilha). Fica um branco quase
+     opaco, com a mesma cara */
+  .sp-op, .sp-meus, .sp-corpo .sp-rodape, .sp-op-negocio {
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  .sp-op { background-color: rgba(255, 255, 255, 0.9) !important; }
+  .sp-meus, .sp-corpo .sp-rodape { background-color: rgba(255, 255, 255, 0.88) !important; }
+  /* fundo "preso" na tela obriga a repintar a página inteira a cada
+     rolagem — no celular ele rola junto */
+  html, body { background-attachment: scroll !important; }
+}
+
+/* ======================================================================
+   Plataforma (index, explorar, janelas de entrar): botões que estavam crus
+   ====================================================================== */
+/* secundário: pílula branca com borda, no lugar do texto cinza solto */
+html:not([data-tpl]) .btn.btn-ghost {
+  background: #fff; color: var(--tinta, #1f2024); border: 1.5px solid rgba(31, 32, 36, 0.14);
+  box-shadow: 0 1px 2px rgba(20, 20, 30, 0.05);
+  transition: transform 0.12s ease, border-color 0.2s, color 0.2s, background 0.2s;
+}
+html:not([data-tpl]) .btn.btn-ghost:hover, html:not([data-tpl]) .btn.btn-ghost:focus-visible {
+  border-color: var(--cor-marca, #0F6B5C); color: var(--cor-marca, #0F6B5C); outline: none;
+}
+/* "Cancelar" e "Voltar" das janelas: discretos, com ícone, sem caixa */
+#clienteGlobalCancelarEscolha, #clienteGlobalCancelar, #clienteGlobalVoltarTelefone {
+  background: transparent !important; border-color: transparent !important; box-shadow: none !important;
+  color: var(--tinta-suave, #6b6d76) !important; font-weight: 600;
+}
+#clienteGlobalCancelarEscolha::before, #clienteGlobalCancelar::before, #clienteGlobalVoltarTelefone::before {
+  content: ''; width: 0.95rem; height: 0.95rem; background: currentColor;
+  -webkit-mask: var(--ic) center / contain no-repeat; mask: var(--ic) center / contain no-repeat;
+}
+#clienteGlobalCancelarEscolha, #clienteGlobalCancelar { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E"); }
+#clienteGlobalVoltarTelefone { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 6l-6 6 6 6'/%3E%3C/svg%3E"); }
+#clienteGlobalCancelarEscolha:hover, #clienteGlobalCancelar:hover, #clienteGlobalVoltarTelefone:hover { color: var(--tinta, #1f2024) !important; }
+
+/* "Entrar" do topo: pílula com ícone de pessoa */
+html:not([data-tpl]) .cliente-global-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.45rem 0.85rem 0.45rem 0.5rem; border: 1.5px solid rgba(31, 32, 36, 0.12) !important;
+  background: #fff; color: var(--tinta, #1f2024) !important; font-size: 0.82rem; font-weight: 700;
+  box-shadow: 0 1px 2px rgba(20, 20, 30, 0.05); transition: border-color 0.2s, transform 0.12s;
+}
+html:not([data-tpl]) .cliente-global-btn::before {
+  content: ''; width: 1.45rem; height: 1.45rem; border-radius: 50%; flex: 0 0 auto;
+  background: var(--cor-marca, #0F6B5C) center / 0.85rem no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6'/%3E%3C/svg%3E");
+}
+html:not([data-tpl]) .cliente-global-btn:hover { border-color: var(--cor-marca, #0F6B5C) !important; background: #fff; }
+html:not([data-tpl]) .cliente-global-btn:active { transform: scale(0.96); }
+
+/* seta dos cartões de lugar: bolinha que acende ao tocar */
+.catalogo-seta {
+  display: inline-grid; place-items: center; width: 2.2rem; height: 2.2rem; flex: 0 0 auto; border-radius: 50%;
+  background: color-mix(in srgb, var(--cor-marca, #0F6B5C) 10%, transparent); color: var(--cor-marca, #0F6B5C) !important; font-size: 1rem !important; line-height: 1;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+a:hover .catalogo-seta, .catalogo-card:hover .catalogo-seta, a:focus-visible .catalogo-seta { background: var(--cor-marca, #0F6B5C); color: #fff !important; transform: translateX(2px); }
+
+/* "+ Criar um site assim": etiqueta tracejada em vez de link solto */
+.catalogo-criar-assim {
+  display: flex !important; align-items: center; gap: 0.3rem; width: fit-content !important;
+  margin: 0.55rem auto 0 !important; padding: 0.4rem 0.85rem; border-radius: 999px;
+  border: 1.5px dashed color-mix(in srgb, currentColor 40%, transparent); background: color-mix(in srgb, currentColor 5%, transparent);
+  font-size: 0.78rem !important; font-weight: 700; text-decoration: none !important;
+  transition: background 0.2s, border-color 0.2s, transform 0.12s;
+}
+.catalogo-criar-assim:hover { background: color-mix(in srgb, currentColor 10%, transparent); border-style: solid; }
+.catalogo-criar-assim svg { width: 0.9rem; height: 0.9rem; }
+.catalogo-criar-assim:active { transform: scale(0.97); }

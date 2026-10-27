@@ -211,10 +211,10 @@
         (selosSociais ? '<span class="catalogo-tags catalogo-tags-social">' + selosSociais + '</span>' : '') +
         avisoPromo +
         '</span>' +
-        '<span class="catalogo-seta" aria-hidden="true">→</span>' +
+        '<span class="catalogo-seta" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>' +
         '</div>' +
         '</div>' +
-        '<a class="catalogo-criar-assim" href="' + (AREA === 'agenda' ? 'criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') : 'criar.html?area=' + AREA + '&segmento=' + encodeURIComponent(e.segmento || '')) + '">+ Criar ' + (AREA === 'agenda' ? 'um site assim' : 'uma loja assim') + ' →</a>' +
+        '<a class="catalogo-criar-assim" href="' + (AREA === 'agenda' ? 'criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') : 'criar.html?area=' + AREA + '&segmento=' + encodeURIComponent(e.segmento || '')) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Criar ' + (AREA === 'agenda' ? 'um site assim' : 'uma loja assim') + '</a>' +
         '</div>';
     }).join('') + ctaCadastro();
   }

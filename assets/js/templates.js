@@ -46,11 +46,44 @@
   function usaTerracotta(chave) { return achar(chave).pasta !== 'tpl-classico'; }
   function segueFoto(chave) { return !!achar(chave).segueFoto; }
 
+  // Troca um CSS do estilo sem deixar a página "crua": o arquivo novo entra
+  // ao lado do antigo e o antigo só sai quando o novo terminou de carregar
+  // (trocar o href direto apagava o estilo por um instante — a tela piscava
+  // e mostrava o layout sem formatação). Lendo o <head> ainda (nada pintado),
+  // escreve o link no lugar, e ele segura a primeira pintura até carregar.
+  var carregando = [];
   function trocarLink(id, href) {
     var el = document.getElementById(id);
-    if (el && href && el.getAttribute('href') !== href) el.setAttribute('href', href);
+    if (!el || !href) return el;
+    if ((el.getAttribute('data-destino') || el.getAttribute('href')) === href) return el;
+    if (!document.body && document.readyState === 'loading') {
+      document.write('<link rel="stylesheet" id="' + id + '" href="' + href + '"' + (el.disabled ? ' disabled' : '') + '>');
+      el.parentNode.removeChild(el);
+      return document.getElementById(id);
+    }
+    // desligado (ex.: CSS feminino em site masculino) não carrega nem pinta: troca direto
+    if (el.disabled) { el.setAttribute('href', href); return el; }
+    var novo = el.cloneNode(false);
+    novo.removeAttribute('id');
+    novo.setAttribute('href', href);
+    el.setAttribute('data-destino', href);
+    carregando.push(new Promise(function (pronto) {
+      function trocar() {
+        var atual = document.getElementById(id);
+        if (atual && atual !== novo) { novo.disabled = atual.disabled; atual.parentNode.removeChild(atual); }
+        novo.id = id;
+        pronto();
+      }
+      novo.addEventListener('load', trocar);
+      novo.addEventListener('error', trocar);
+      setTimeout(trocar, 4000); // rede ruim: não prende a tela pra sempre
+    }));
+    el.parentNode.insertBefore(novo, el.nextSibling);
     return el;
   }
+  // resolve quando todo CSS trocado por aplicar() já está na tela
+  function quandoPronto() { return Promise.all(carregando.slice()); }
+
   // troca o CSS da página (links #tplBase, #tplFeminino, #tplWidget, #tplExtra)
   function aplicar(chave) {
     var t = achar(chave);
@@ -59,6 +92,10 @@
     trocarLink('tplFeminino', raiz + 'feminino.css?' + V_FEM);
     trocarLink('tplWidget', raiz + 'widget.css?' + V_WIDGET);
     var extra = document.getElementById('tplExtra');
+    if (!extra && t.extra && !document.body && document.readyState === 'loading') {
+      document.write('<link rel="stylesheet" id="tplExtra" href="' + EXTRA + t.extra + '?' + V_EXTRA + '">');
+      extra = document.getElementById('tplExtra');
+    }
     if (!extra && t.extra) {
       extra = document.createElement('link');
       extra.rel = 'stylesheet';
@@ -81,8 +118,38 @@
     else s.removeProperty('--foto-fundo');
   }
 
+  // ---- lembrar o visual do site neste aparelho: na próxima visita o estilo
+  // e a cor certos entram ANTES da primeira pintura (chamado no <head>), em
+  // vez de a tela piscar do estilo padrão pro do negócio ----
+  function chaveVisual() {
+    var p = location.pathname.split('/').filter(Boolean);
+    return p.length >= 2 && !/\.html$/.test(p[0]) ? 'vb-visual:' + p[0] + '/' + p[1] : null;
+  }
+  function lembrar(chave) {
+    var k = chaveVisual();
+    if (!k) return;
+    try {
+      var cor = document.getElementById('tplCorDinamica');
+      localStorage.setItem(k, JSON.stringify({ t: chave, css: cor ? cor.textContent : '' }));
+    } catch (e) {}
+  }
+  function restaurar() {
+    var k = chaveVisual(), v = null;
+    try { v = k && JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) {}
+    if (!v || !v.t || !POR_CHAVE[v.t]) return false;
+    aplicar(v.t);
+    if (v.css && !document.getElementById('tplCorDinamica')) {
+      var st = document.createElement('style');
+      st.id = 'tplCorDinamica';
+      st.textContent = v.css;
+      document.head.appendChild(st);
+    }
+    return true;
+  }
+
   global.VibeTemplates = {
     LISTA: LISTA, GRUPOS: GRUPOS, achar: achar, aplicar: aplicar,
-    usaTerracotta: usaTerracotta, segueFoto: segueFoto, fundoDaFoto: fundoDaFoto
+    usaTerracotta: usaTerracotta, segueFoto: segueFoto, fundoDaFoto: fundoDaFoto,
+    lembrar: lembrar, restaurar: restaurar, quandoPronto: quandoPronto
   };
 })(window);
