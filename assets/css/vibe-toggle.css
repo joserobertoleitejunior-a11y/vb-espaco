@@ -122,8 +122,11 @@
 .vt-mais svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
 /* ---------- faixa da plataforma (topo do site do estabelecimento) ---------- */
-/* com a agenda (ou outra janela de tela cheia) aberta, a faixa fica por baixo dela */
-body.scroll-locked .faixa-vibe { z-index: 100; }
+/* com qualquer janela de tela cheia aberta (agenda, pedido/chamado, menu,
+   catálogo, passo a passo, avaliação, caixa de diálogo), a faixa desce pra
+   baixo dela — antes ela ficava por cima e comia o título e o "fechar" */
+body.scroll-locked .faixa-vibe,
+body:has(.sheet.aberto, .wizard-overlay.open, .catalog-overlay.open, .site-menu.open, .passo-folha.aberta, .vb-dialogo-overlay, .gender-gate.open, .staff-gallery-overlay.open) .faixa-vibe { z-index: 50; }
 .faixa-vibe {
   position: fixed; top: 0; left: 0; right: 0; z-index: 140;
   height: var(--faixa-h);
@@ -144,22 +147,11 @@ body.scroll-locked .faixa-vibe { z-index: 100; }
 .faixa-vibe .vt { margin-left: auto; }
 
 /* ---------- logotipo (cubo + nome) ---------- */
-/* montado pelo marca.js em todo elemento [data-vibe-marca-logo]: o
-   nome ganha uma letra serifada própria (Fraunces — carregada no
-   <head> das páginas que mostram o logotipo) e o "i" ganha um pino
-   dourado no lugar do ponto. A versão pequena (junto do cubo, na
-   faixa fina do topo) é só isso; a versão grande (="hero", a splash)
-   ganha também o traço dourado embaixo. Tudo escala sozinho com o
-   tamanho da letra. */
-.pt-word {
-  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
-  font-optical-sizing: auto;
-  font-weight: 700;
-  letter-spacing: 0;
-}
+/* montado pelo marca.js em todo elemento [data-vibe-marca-logo] (visual
+   lá embaixo, em "logotipo minimalista"); se o nome tiver "i", o pino
+   entra no lugar do ponto. Tudo escala com o tamanho da letra. */
 .pt-idot { position: relative; display: inline-block; }
 .pt-word { white-space: nowrap; }
-.pt-degrau { color: #C9A227; font-style: italic; font-weight: 600; display: inline-block; transform: translateY(0.08em); }
 .pt-pin {
   position: absolute; left: 50%; bottom: 0.62em;
   width: 0.5em; height: 0.66em;
@@ -168,11 +160,7 @@ body.scroll-locked .faixa-vibe { z-index: 100; }
   filter: drop-shadow(0 0.05em 0.05em rgba(31, 32, 36, 0.25));
   pointer-events: none;
 }
-[data-vibe-marca-logo="hero"] {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 0.32em;
-}
-.pt-swoosh { display: block; width: 5.2em; height: auto; overflow: visible; }
+[data-vibe-marca-logo="hero"] { display: inline-flex; justify-content: center; }
 @media (max-width: 380px) {
   .faixa-marca .faixa-nome { display: none; }
   .vt-op { padding: 0.36rem 0.6rem; }
@@ -213,30 +201,33 @@ html.vt-entrando.vt-entrou body > *:not(.faixa-vibe) { transform: none; opacity:
   .vt-entra-avanca, .vt-entra-volta { animation: none; }
 }
 
-/* ---- o "a" da marca em inox: aço escovado prateado, com o brilho do metal
-   correndo conforme a rolagem (--pt-brilho, de marca.js) ---- */
-.pt-degrau {
-  font-style: italic; font-weight: 700; padding: 0 0.04em;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 1px, rgba(0, 0, 0, 0.04) 1px 2px),
-    linear-gradient(100deg, #3b4047 0%, #8c929b 14%, #e9ecf0 24%, #6b717a 36%, #c9cdd3 48%, #4d525a 60%, #dfe2e6 72%, #7a8089 86%, #363b42 100%);
-  background-size: 100% 100%, 260% 100%;
-  background-position: 0 0, calc(15% + var(--pt-brilho, 0) * 140%) 0;
-  -webkit-background-clip: text; background-clip: text;
-  color: transparent; -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0.03em 0 rgba(0, 0, 0, 0.35)) drop-shadow(0 -0.015em 0 rgba(255, 255, 255, 0.7));
-  animation: ptInoxEntra 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+/* ---- logotipo minimalista: letra de código, numa pastilha de vidro, e o
+   nome aparece devagar (classe pt-marca-pronta, de marca.js, quando a
+   letra já carregou) ---- */
+.pt-word {
+  font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-weight: 600; font-optical-sizing: auto;
 }
-/* ao abrir a página, um reflexo passa uma vez pelo "a" */
-@keyframes ptInoxEntra { from { background-position: 0 0, 120% 0; } to { background-position: 0 0, 15% 0; } }
-
-/* ---- "sobe a escada" na rolagem: cada letra é um degrau (--i), o nome
-   inclina em diagonal pela velocidade (--pt-escada, de -1 a 1) e volta
-   pro lugar com mola quando para ---- */
-.pt-l, .pt-degrau { display: inline-block; will-change: transform; }
-.pt-l { transform: translateY(calc((var(--i) - 5) * var(--pt-escada, 0) * -0.075em)); }
-.pt-degrau { transform: translateY(calc(0.08em + var(--pt-escada, 0) * 0.04em)) rotate(calc(var(--pt-escada, 0) * -14deg)) scale(calc(1 + var(--pt-escada, 0) * var(--pt-escada, 0) * 0.18)); }
+.pt-degrau { color: inherit; font-style: normal; font-weight: 400; opacity: 0.45; transform: none; margin: 0 -0.05em; }
+[data-vibe-marca-logo] {
+  display: inline-flex; align-items: center;
+  padding: 0.28em 0.7em; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.22));
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 2px rgba(20, 20, 30, 0.06), 0 8px 24px -14px rgba(20, 20, 30, 0.35);
+  -webkit-backdrop-filter: blur(10px) saturate(140%); backdrop-filter: blur(10px) saturate(140%);
+}
+/* o nome aparece devagar: sai do desfoque e as letras se acomodam */
+.pt-word { letter-spacing: -0.04em; animation: ptAparece 2.4s ease-in-out both paused; }
+html.pt-marca-pronta .pt-word { animation-play-state: running; }
+@keyframes ptAparece { from { opacity: 0; filter: blur(6px); letter-spacing: 0.08em; } to { opacity: 1; filter: none; letter-spacing: -0.04em; } }
+.topbar [data-vibe-marca-logo] { padding: 0.24em 0.62em; }
+/* fundo escuro (faixa do site do negócio): vidro escuro, letra clara */
+.faixa-vibe [data-vibe-marca-logo] {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  border-color: rgba(255, 255, 255, 0.22); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+[data-vibe-marca-logo="hero"] { padding: 0.32em 0.85em; gap: 0; }
 @media (prefers-reduced-motion: reduce) {
-  .pt-l, .pt-degrau { transform: none !important; }
-  .pt-degrau { transform: translateY(0.08em) !important; animation: none; }
+  .pt-word { animation: none; }
 }
