@@ -3196,3 +3196,28 @@ html[data-area="servicos"] .criar-body-full { --cor-marca: #2F5D7C; }
 .dash-novo-horario summary::-webkit-details-marker { display: none; }
 .dash-novo-horario summary::before { content: '+'; display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--cor-marca); color: #fff; font-weight: 800; transition: transform 0.2s; }
 .dash-novo-horario[open] summary::before { transform: rotate(45deg); }
+
+/* ---- editar o site pelo passo a passo (painel → "Editar meu site") ---- */
+.vb-tutorial-bolha { position: fixed; }
+.vb-tutorial-sair { position: absolute; top: 0.7rem; right: 0.7rem; width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: rgba(31, 32, 36, 0.07); color: #1f2024; font-size: 1.25rem; line-height: 1; cursor: pointer; }
+.vb-tutorial-sair.oculto, .vb-tutorial-atalhos.oculto { display: none; }
+.vb-tutorial-atalhos { display: flex; gap: 0.35rem; overflow-x: auto; margin: 0 2.4rem 0.7rem 0; padding-bottom: 0.2rem; scrollbar-width: none; }
+.vb-tutorial-atalhos::-webkit-scrollbar { display: none; }
+.vb-tutorial-atalhos button { flex: 0 0 auto; padding: 0.35rem 0.7rem; border: 1px solid rgba(31, 32, 36, 0.12); border-radius: 999px; background: #fff; color: #1f2024; font: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.vb-tutorial-atalhos button.ativo { background: var(--terracotta, #0F6B5C); border-color: transparent; color: #fff; }
+.vb-editando .vb-tutorial-barras { display: none; }
+.vb-editando .vb-tutorial-bolha { width: min(94vw, 420px); max-height: 72vh; }
+.vb-ed-extras { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+.vb-ed-extras .btn { flex: 1 1 auto; padding: 0.55rem 0.9rem; font-size: 0.82rem; background: #fff !important; color: #1f2024 !important; border: 1.5px solid rgba(31, 32, 36, 0.14) !important; border-radius: 999px; }
+.vb-tutorial-campos .field label { display: block; margin-bottom: 0.25rem; font-size: 0.78rem; font-weight: 700; color: rgba(31, 32, 36, 0.7); }
+.vb-tutorial-campos .field input, .vb-tutorial-campos .field textarea { width: 100%; box-sizing: border-box; padding: 0.65rem 0.75rem; border: 1.5px solid rgba(31, 32, 36, 0.14); border-radius: 12px; font: inherit; font-size: 0.95rem; color: #1f2024; background: #fff; }
+
+/* dono visitando o próprio site: vê igual ao cliente, com atalho pra editar */
+.vb-dono-atalho {
+  position: fixed; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 95;
+  display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.4rem 0.35rem 0.85rem; border-radius: 999px;
+  background: rgba(24, 22, 20, 0.92); color: #fff; font-size: 0.78rem; box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.55); white-space: nowrap;
+}
+.vb-dono-atalho span { opacity: 0.75; margin-right: 0.15rem; }
+.vb-dono-atalho a { padding: 0.4rem 0.8rem; border-radius: 999px; background: #fff; color: #1f2024; font-weight: 800; text-decoration: none; }
+.vb-dono-atalho a.vb-dono-atalho-painel { background: rgba(255, 255, 255, 0.12); color: #fff; }

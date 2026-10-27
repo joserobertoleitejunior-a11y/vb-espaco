@@ -311,7 +311,7 @@
           atalho('dono-atalho-principal', ICONE_STAT_AGENDA, 'Agenda', e.total_pendentes ? e.total_pendentes + (e.total_pendentes === 1 ? ' pedido de horário esperando' : ' pedidos de horário esperando') : 'Ver e marcar horários',
             ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="agenda"', e.total_pendentes) +
           '<div class="dono-atalhos-grade">' +
-          atalho('', ICONE_ACAO_EDITAR, 'Editar meu site', 'fotos, serviços, equipe', ' href="' + link + '"') +
+          atalho('', ICONE_ACAO_EDITAR, 'Editar meu site', 'passo a passo', ' href="' + link + '?editar=1"') +
           atalho('', ICONE_ACAO_CAIXA, 'Caixa', 'registrar venda', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="caixa"') +
           atalho('', ICONE_STAT_EQUIPE, 'Clientes', 'quem já veio', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="clientes"') +
           atalho('', ICONE_ACAO_COMUNIDADE, 'Promoções', 'e status do dia', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="comunidade"') +

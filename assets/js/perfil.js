@@ -529,6 +529,9 @@
 
   // ---------- modo admin: PIN + edição inline direto no site ----------
   var modoAdmin = false;
+  // o site nunca mais vira editor solto (texto/foto/lista clicável): o dono
+  // edita pelo passo a passo. modoAdmin só libera os dados pros passos.
+  var edicaoNoSite = false;
   var ESTOQUE_FOTOS_ADMIN = [
     { url: '/assets/tpl-classico/img/estoque/hero-masculino-1.jpg', legenda: 'Studio dourado' },
     { url: '/assets/tpl-classico/img/estoque/hero-feminino-1.jpg', legenda: 'Salão rosé' },
@@ -590,62 +593,6 @@
     });
   }
 
-  function abrirEditorHero() {
-    // a foto principal fica sempre visível pra todo mundo (é o próprio
-    // hero do site) — sem essa conferência, uma vez que esse escutador
-    // de clique é ligado (quando o dono entra no modo admin) ele nunca
-    // era removido, e continuava abrindo o editor mesmo depois de
-    // "Sair" ou pra qualquer cliente usando o mesmo aparelho depois.
-    if (!modoAdmin) return;
-    var existente = document.getElementById('vbHeroEditor');
-    if (existente) { existente.remove(); return; }
-    var caixa = document.createElement('div');
-    caixa.id = 'vbHeroEditor';
-    caixa.style.cssText = 'position:absolute; z-index:20; bottom:1rem; left:1rem; right:1rem; background:rgba(255,255,255,.92); backdrop-filter:blur(16px); border-radius:16px; padding:0.9rem; box-shadow:0 15px 40px rgba(0,0,0,.3);';
-    caixa.innerHTML =
-      '<p style="margin:0 0 0.6rem; font-size:0.85rem; font-weight:700;">Trocar foto principal</p>' +
-      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.7rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto do celular<input type="file" id="vbHeroEditorUpload" accept="image/*"></label>' +
-      '<p style="margin:0 0 0.45rem; font-size:0.78rem; color:var(--ink-soft,#7a7368);">ou toque numa foto pronta:</p>' +
-      '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem;">' +
-      (window.estoqueFotosPara ? window.estoqueFotosPara(linhaAtual.segmento) : ESTOQUE_FOTOS_ADMIN).map(function (f) {
-        return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; cursor:pointer;">';
-      }).join('') +
-      '</div>' +
-      '<p class="msg" id="vbHeroEditorMsg" style="margin-top:0.5rem;"></p>';
-    document.getElementById('tplHeroFoto').appendChild(caixa);
-
-    function salvarFotoHero(url) {
-      var msg = document.getElementById('vbHeroEditorMsg');
-      msg.textContent = 'Salvando…';
-      var chave = (generoAtual === 'feminino') ? 'p_foto_hero_feminino_url' : 'p_foto_hero_url';
-      var payload = { p_estabelecimento_id: estabId, p_foto_hero_url: null, p_foto_hero_feminino_url: null };
-      payload[chave] = url;
-      db.rpc('tenant_admin_atualizar_hero', payload).then(function (res) {
-        if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
-        if (generoAtual === 'feminino') linhaAtual.foto_hero_feminino_url = url; else linhaAtual.foto_hero_url = url;
-        caixa.remove();
-        aplicarGenero(generoAtual);
-        if (linhaAtual.seguir_cor_imagem) seguirCorDaImagem(url);
-      });
-    }
-
-    caixa.querySelectorAll('[data-estoque-url]').forEach(function (img) {
-      img.addEventListener('click', function (e) {
-        e.stopPropagation();
-        salvarFotoHero(img.getAttribute('data-estoque-url'));
-      });
-    });
-    document.getElementById('vbHeroEditorUpload').addEventListener('change', function (e) {
-      e.stopPropagation();
-      var file = e.target.files[0];
-      if (!file || !window.VBUpload) return;
-      document.getElementById('vbHeroEditorMsg').textContent = 'Enviando…';
-      window.VBUpload.uploadFoto(file, estabId, 'hero').then(salvarFotoHero, function (err) {
-        document.getElementById('vbHeroEditorMsg').className = 'msg msg-erro';
-        document.getElementById('vbHeroEditorMsg').textContent = err.message || 'Falha ao enviar.';
-      });
-    });
-  }
 
   // ---- foto de perfil/capa do card no catálogo (fora do site em si) ----
   function abrirEditorFotoCard() {
@@ -810,29 +757,6 @@
     return Promise.resolve(tentar(0));
   }
 
-  function salvarEndereco() {
-    var endereco = document.getElementById('tplEnderecoRodape').textContent.trim();
-    // salva o texto na hora — geocodificar é só um extra pra deixar o mapa
-    // preciso, e não pode travar a ação principal se o serviço demorar/falhar.
-    linhaAtual.endereco = endereco;
-    linhaAtual.endereco_lat = null;
-    linhaAtual.endereco_lng = null;
-    atualizarMapaLink();
-    db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: endereco, p_lat: null, p_lng: null });
-    if (!endereco) return;
-    geocodificarEndereco(endereco, linhaAtual.cidade).then(function (coord) {
-      if (!coord) return;
-      linhaAtual.endereco_lat = coord.lat;
-      linhaAtual.endereco_lng = coord.lng;
-      atualizarMapaLink();
-      db.rpc('tenant_admin_atualizar_endereco', {
-        p_estabelecimento_id: estabId,
-        p_endereco: endereco,
-        p_lat: coord.lat,
-        p_lng: coord.lng
-      });
-    });
-  }
 
   // esconde o site de quem visita enquanto faltar serviço ou equipe
   // (ninguém deveria cair numa agenda vazia sem profissional/serviço pra
@@ -859,8 +783,9 @@
   function ativarModoAdmin() {
     if (modoAdmin) return;
     modoAdmin = true;
-    document.body.classList.add('vb-modo-admin');
-    document.getElementById('adminModoBarra').classList.remove('oculto');
+    // edição só pelo passo a passo (criar/editar): o site em si não vira
+    // mais um editor solto, com texto e foto clicáveis
+    document.getElementById('adminModoBarra').classList.add('oculto');
     // o dono não deveria ficar travado atrás do gate de gênero (ainda sem
     // resposta) pra poder editar — resolve com o padrão e segue.
     var gate = document.getElementById('genderGate');
@@ -870,23 +795,6 @@
       aplicarGenero(generoAtual || 'masculino');
     }
     atualizarGateIncompleto();
-    var titulo = document.getElementById('tplHeadline');
-    var sub = document.getElementById('tplSubcopy');
-    var endereco = document.getElementById('tplEnderecoRodape');
-    var nomeTopo = document.getElementById('tplNomeTopo');
-    var ctaTexto = document.getElementById('tplCtaTexto');
-    titulo.setAttribute('contenteditable', 'true');
-    sub.setAttribute('contenteditable', 'true');
-    endereco.setAttribute('contenteditable', 'true');
-    nomeTopo.setAttribute('contenteditable', 'true');
-    ctaTexto.setAttribute('contenteditable', 'true');
-    titulo.addEventListener('blur', salvarTextoHero);
-    sub.addEventListener('blur', salvarTextoHero);
-    endereco.addEventListener('blur', salvarEndereco);
-    nomeTopo.addEventListener('blur', salvarNome);
-    ctaTexto.addEventListener('blur', salvarCta);
-    document.getElementById('tplHeroFoto').addEventListener('click', abrirEditorHero);
-    ativarEdicaoTelefone();
     carregarServicos();
     carregarEquipeAdmin();
     carregarGaleria();
@@ -943,35 +851,61 @@
   var passoCriacaoAtual = 0;
   var passoCriacaoDesde = 0;
   var passoCriacaoTotal = 0;
+  var passosAtivos = PASSOS_CRIACAO;
+  var editandoPorPassos = false; // true = veio do painel em "Editar meu site"
+  function modoPassos() {
+    var q = new URLSearchParams(window.location.search);
+    return q.get('editar') === '1' ? 'editar' : q.get('tutorial') === '1' ? 'criar' : null;
+  }
 
   function iniciarTutorialSeNecessario() {
     var params = new URLSearchParams(window.location.search);
-    var querContinuar = params.get('tutorial') === '1';
-    if (!querContinuar || !linhaAtual || linhaAtual.onboarding_concluido) return;
+    var modo = modoPassos();
+    if (!modo || !linhaAtual) return;
+    if (modo === 'criar' && linhaAtual.onboarding_concluido) return;
+    editandoPorPassos = modo === 'editar';
+    passosAtivos = editandoPorPassos ? PASSOS_EDICAO : PASSOS_CRIACAO;
     passoCriacaoAtual = 0;
-    passoCriacaoDesde = parseInt(params.get('desde'), 10) || 0;
-    passoCriacaoTotal = passoCriacaoDesde + PASSOS_CRIACAO.length;
-    // a barra de admin e a bolha de criação são as duas fixas na base da
-    // tela — some com a barra enquanto a criação continua, senão as duas
-    // ficam se sobrepondo (volta a aparecer quando termina)
+    passoCriacaoDesde = editandoPorPassos ? 0 : (parseInt(params.get('desde'), 10) || 0);
+    passoCriacaoTotal = passoCriacaoDesde + passosAtivos.length;
+    var inicial = params.get('passo');
+    passosAtivos.forEach(function (p, i) { if (p.id === inicial) passoCriacaoAtual = i; });
     document.getElementById('adminModoBarra').classList.add('oculto');
     document.getElementById('vbTutorialOverlay').classList.remove('oculto');
+    document.getElementById('vbTutorialOverlay').classList.toggle('vb-editando', editandoPorPassos);
+    // editar: atalhos pra pular direto pra qualquer etapa + "Sair"
+    if (editandoPorPassos) {
+      var atalhos = document.getElementById('vbTutorialAtalhos');
+      atalhos.innerHTML = passosAtivos.map(function (p, i) {
+        return '<button type="button" data-ir-passo="' + i + '">' + escapeHtml(p.titulo) + '</button>';
+      }).join('');
+      atalhos.classList.remove('oculto');
+      atalhos.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-ir-passo]');
+        if (!b) return;
+        passoCriacaoAtual = Number(b.getAttribute('data-ir-passo'));
+        mostrarPassoTutorial(passoCriacaoAtual);
+      });
+      var sair = document.getElementById('vbTutorialSair');
+      sair.classList.remove('oculto');
+      sair.addEventListener('click', concluirTutorial);
+    }
     document.getElementById('vbTutorialVoltar').addEventListener('click', function () {
       if (passoCriacaoAtual > 0) { passoCriacaoAtual--; mostrarPassoTutorial(passoCriacaoAtual); }
     });
     document.getElementById('vbTutorialProximo').addEventListener('click', function () {
       if (this.disabled) return;
-      if (passoCriacaoAtual >= PASSOS_CRIACAO.length - 1) { concluirTutorial(); return; }
+      if (passoCriacaoAtual >= passosAtivos.length - 1) { concluirTutorial(); return; }
       passoCriacaoAtual++;
       mostrarPassoTutorial(passoCriacaoAtual);
     });
-    mostrarPassoTutorial(0);
+    mostrarPassoTutorial(passoCriacaoAtual);
   }
 
   // atualiza o texto/estado do botão "Próximo" de acordo com o passo atual
   // — obrigatório sem dado real trava o avanço (com o aviso do motivo).
   function atualizarBotaoProximoTutorial() {
-    var passo = PASSOS_CRIACAO[passoCriacaoAtual];
+    var passo = passosAtivos[passoCriacaoAtual];
     var btn = document.getElementById('vbTutorialProximo');
     var aviso = document.getElementById('vbTutorialAviso');
     var completo = !passo.obrigatorio || (passo.completo && passo.completo());
@@ -984,11 +918,16 @@
   }
 
   function mostrarPassoTutorial(indice) {
-    var passo = PASSOS_CRIACAO[indice];
-    document.getElementById('vbTutorialContador').textContent = 'Passo ' + (passoCriacaoDesde + indice + 1) + ' de ' + passoCriacaoTotal;
+    var passo = passosAtivos[indice];
+    document.getElementById('vbTutorialContador').textContent = (editandoPorPassos ? 'Editando · ' : 'Passo ') + (passoCriacaoDesde + indice + 1) + ' de ' + passoCriacaoTotal;
     document.getElementById('vbTutorialTitulo').textContent = passo.titulo;
     document.getElementById('vbTutorialTexto').textContent = passo.texto;
-    document.getElementById('vbTutorialProximo').textContent = indice === PASSOS_CRIACAO.length - 1 ? 'Pronto, ver meu site' : 'Próximo';
+    document.getElementById('vbTutorialProximo').textContent = indice === passosAtivos.length - 1 ? (editandoPorPassos ? 'Concluir' : 'Pronto, ver meu site') : 'Próximo';
+    document.querySelectorAll('#vbTutorialAtalhos [data-ir-passo]').forEach(function (b) {
+      var ativo = Number(b.getAttribute('data-ir-passo')) === indice;
+      b.classList.toggle('ativo', ativo);
+      if (ativo && b.scrollIntoView) b.scrollIntoView({ block: 'nearest', inline: 'center' });
+    });
     document.getElementById('vbTutorialVoltar').classList.toggle('oculto', indice === 0);
     // barrinhas de progresso: uma por passo da criação inteira
     var barras = '';
@@ -1001,11 +940,204 @@
     atualizarBotaoProximoTutorial();
   }
 
+  function renderPassoTutorialCores(container) {
+    var corPrincipal = linhaAtual.cor_destaque || '#C9A227';
+    var corSecundaria = linhaAtual.cor_secundaria || rgbParaHex(misturarRgb(hexParaRgbNums(corPrincipal), [0, 0, 0], 0.28));
+    var temFoto = !!((generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) || linhaAtual.foto_hero_url);
+    container.innerHTML =
+      (temFoto ? '<button type="button" class="btn btn-ghost" id="vbTutSeguirFoto" style="width:100%; margin-bottom:1rem;">🎨 Usar as cores da minha foto</button>' : '') +
+      '<p class="vb-servico-novo-legenda">Paletas prontas:</p>' +
+      '<div style="display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:1.1rem;">' +
+      PALETAS_PRONTAS.map(function (p) {
+        var ativa = p.principal.toLowerCase() === corPrincipal.toLowerCase();
+        return '<button type="button" class="vb-paleta-pronta' + (ativa ? ' is-selecionada' : '') + '" data-paleta-principal="' + p.principal + '" data-paleta-secundaria="' + p.secundaria + '" title="' + p.nome + '" aria-label="' + p.nome + '">' +
+          '<span style="background:' + p.principal + ';"></span><span style="background:' + p.secundaria + ';"></span>' +
+          '</button>';
+      }).join('') +
+      '</div>' +
+      '<p class="vb-servico-novo-legenda">Ou escolha à mão:</p>' +
+      '<div style="display:flex; gap:1.4rem; align-items:center; margin-bottom:0.4rem;">' +
+      '<label style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; font-size:0.75rem; color:var(--ink-soft,#7a7368);">Principal' +
+      '<span class="admin-cor-swatch" style="width:44px; height:44px;"><input type="color" id="vbTutCorPrincipal" value="' + corPrincipal + '"></span>' +
+      '</label>' +
+      '<label style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; font-size:0.75rem; color:var(--ink-soft,#7a7368);">Secundária' +
+      '<span class="admin-cor-swatch" style="width:44px; height:44px;"><input type="color" id="vbTutCorSecundaria" value="' + corSecundaria + '"></span>' +
+      '</label>' +
+      '</div>';
+    var inputPrincipal = document.getElementById('vbTutCorPrincipal');
+    var inputSecundaria = document.getElementById('vbTutCorSecundaria');
+    inputPrincipal.addEventListener('input', function () { aplicarCorDinamica(inputPrincipal.value, inputSecundaria.value); });
+    inputSecundaria.addEventListener('input', function () { aplicarCorDinamica(inputPrincipal.value, inputSecundaria.value); });
+    inputPrincipal.addEventListener('change', function () { salvarCor(inputPrincipal.value, inputSecundaria.value); });
+    inputSecundaria.addEventListener('change', function () { salvarCor(inputPrincipal.value, inputSecundaria.value); });
+    container.querySelectorAll('[data-paleta-principal]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        salvarCor(btn.getAttribute('data-paleta-principal'), btn.getAttribute('data-paleta-secundaria'));
+        mostrarPassoTutorial(passoCriacaoAtual);
+      });
+    });
+    var seguirBtn = document.getElementById('vbTutSeguirFoto');
+    if (seguirBtn) {
+      seguirBtn.addEventListener('click', function () {
+        var fotoAtual = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
+        linhaAtual.seguir_cor_imagem = true;
+        db.rpc('tenant_admin_alternar_seguir_cor_imagem', { p_estabelecimento_id: estabId, p_seguir: true });
+        seguirCorDaImagem(fotoAtual);
+        setTimeout(function () { mostrarPassoTutorial(passoCriacaoAtual); }, 200);
+      });
+    }
+  }
+
+  // ---- passo "redes sociais": opcional, mas com um selo deixando claro
+  // que vale a pena preencher (não é obrigatório, mas também não é só
+  // enfeite) — mesmo prompt de link de sempre, só que embutido aqui. ----
+  function renderPassoTutorialRedes(container) {
+    container.innerHTML =
+      '<p class="vb-tutorial-selo-recomendado">★ Recomendado</p>' +
+      '<div class="vb-tutorial-redes" id="vbTutRedes"></div>';
+    var alvo = document.getElementById('vbTutRedes');
+    var linksVisiveis = REDES.filter(function (r) { return r.chave !== 'whatsapp'; });
+    function render() {
+      alvo.innerHTML = linksVisiveis.map(function (r) {
+        var vazio = !linhaAtual[r.chave];
+        return '<button type="button" class="social-badge" data-rede-tut="' + r.chave + '" title="' + r.label + '" style="' + (vazio ? 'opacity:0.4;' : '') + '">' + r.icone + '</button>';
+      }).join('');
+      alvo.querySelectorAll('[data-rede-tut]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var chave = btn.getAttribute('data-rede-tut');
+          var atual = linhaAtual[chave] || '';
+          window.VBDialogo.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', atual).then(function (novo) {
+            if (novo === null) return;
+            novo = novo.trim() || null;
+            linhaAtual[chave] = novo;
+            db.rpc('tenant_admin_atualizar_redes', {
+              p_estabelecimento_id: estabId,
+              p_instagram_url: linhaAtual.instagram_url,
+              p_facebook_url: linhaAtual.facebook_url,
+              p_tiktok_url: linhaAtual.tiktok_url
+            }).then(function () { carregarRedesSociais(); render(); });
+          });
+        });
+      });
+    }
+    render();
+  }
+
+  // ---- passo "galeria": botão de enviar fotos direto aqui — continua
+  // opcional, mas com o mesmo selo de "vale a pena" do passo de redes. ----
+  function renderPassoTutorialGaleria(container) {
+    container.innerHTML =
+      '<p class="vb-tutorial-selo-recomendado">★ Recomendado</p>' +
+      '<div id="vbTutGaleriaGrid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; margin-bottom:0.7rem;"></div>' +
+      '<label class="vb-btn-upload" style="width:100%; justify-content:center; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Adicionar fotos<input type="file" id="vbTutGaleriaUpload" accept="image/*" multiple></label>' +
+      '<p class="msg" id="vbTutGaleriaMsg" style="margin-top:0.5rem;"></p>';
+
+    function renderGrid() {
+      db.rpc('tenant_listar_galeria', { p_estabelecimento_id: estabId }).then(function (res) {
+        var linhas = res.data || [];
+        document.getElementById('vbTutGaleriaGrid').innerHTML = linhas.slice(0, 6).map(function (g) {
+          return '<img src="' + escapeHtml(g.foto_url) + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px;">';
+        }).join('');
+      });
+    }
+    renderGrid();
+
+    document.getElementById('vbTutGaleriaUpload').addEventListener('change', function (e) {
+      var arquivos = Array.prototype.slice.call(e.target.files);
+      if (!arquivos.length || !window.VBUpload) return;
+      var msg = document.getElementById('vbTutGaleriaMsg');
+      msg.textContent = 'Enviando…';
+      Promise.all(arquivos.map(function (arquivo) {
+        return window.VBUpload.uploadFoto(arquivo, estabId, 'galeria').then(function (url) {
+          return db.rpc('tenant_admin_adicionar_foto', { p_estabelecimento_id: estabId, p_foto_url: url, p_staff_id: null });
+        });
+      })).then(function () {
+        msg.textContent = '';
+        renderGrid();
+        carregarGaleria();
+      });
+    });
+  }
+
+  // ---- editar o site (painel → "Editar meu site"): o mesmo passo a passo
+  // da criação, com tudo que dá pra mudar, sem nada obrigatório ----
+  function renderPassoEdicaoTextos(container) {
+    var campos = [
+      ['tplNomeTopo', 'Nome do negócio', linhaAtual.nome, salvarNome],
+      ['tplHeadline', 'Frase grande do topo', document.getElementById('tplHeadline').textContent, salvarTextoHero],
+      ['tplSubcopy', 'Frase pequena embaixo', document.getElementById('tplSubcopy').textContent, salvarTextoHero],
+      ['tplCtaTexto', 'Texto do botão de agendar', linhaAtual.texto_cta || document.getElementById('tplCtaTexto').textContent, salvarCta]
+    ];
+    container.innerHTML = campos.map(function (c, i) {
+      return '<div class="field" style="margin-bottom:0.7rem;"><label for="vbEdTexto' + i + '">' + c[1] + '</label>' +
+        (c[0] === 'tplSubcopy' ? '<textarea id="vbEdTexto' + i + '" rows="2">' + escapeHtml(c[2]) + '</textarea>' : '<input type="text" id="vbEdTexto' + i + '" value="' + escapeHtml(c[2]) + '">') + '</div>';
+    }).join('') +
+      '<div class="field" style="margin-bottom:0.7rem;"><label for="vbEdTelefone">WhatsApp do negócio</label><input type="tel" id="vbEdTelefone" inputmode="tel" value="' + escapeHtml(linhaAtual.telefone_whatsapp || '') + '"></div>' +
+      '<p class="msg" id="vbEdTextosMsg"></p>';
+    campos.forEach(function (c, i) {
+      var input = document.getElementById('vbEdTexto' + i);
+      // escreve no site ao vivo e salva quando sai do campo
+      input.addEventListener('input', function () { document.getElementById(c[0]).textContent = input.value; });
+      input.addEventListener('change', function () {
+        c[3]();
+        var msg = document.getElementById('vbEdTextosMsg');
+        if (msg) { msg.className = 'msg msg-ok'; msg.textContent = 'Salvo ✓'; }
+      });
+    });
+    ligarTelefoneEdicao();
+  }
+  function ligarTelefoneEdicao() {
+    var input = document.getElementById('vbEdTelefone');
+    if (!input) return;
+    input.addEventListener('change', function () {
+      var msg = document.getElementById('vbEdTextosMsg');
+      salvarTelefone(input.value).then(function () {
+        if (msg) { msg.className = 'msg msg-ok'; msg.textContent = 'Salvo ✓'; }
+      }, function (err) {
+        if (msg) { msg.className = 'msg msg-erro'; msg.textContent = (err && err.message) || 'Não deu pra salvar o WhatsApp.'; }
+      });
+    });
+  }
+  function renderPassoEdicaoEstilo(container) {
+    var topo = document.createElement('div');
+    topo.innerHTML =
+      '<button type="button" class="btn btn-primario" id="vbEdEstilo" style="width:100%; margin-bottom:0.8rem;">Trocar o estilo do site</button>';
+    var cores = document.createElement('div');
+    var extras = document.createElement('div');
+    extras.className = 'vb-ed-extras';
+    extras.innerHTML =
+      '<button type="button" class="btn btn-ghost" id="vbEdVidro">' + (linhaAtual.widgets_translucidos ? 'Tirar efeito vidro' : 'Efeito vidro na agenda') + '</button>' +
+      '<button type="button" class="btn btn-ghost" id="vbEdFotoBusca">Foto que aparece na busca</button>';
+    container.appendChild(topo);
+    container.appendChild(cores);
+    container.appendChild(extras);
+    renderPassoTutorialCores(cores);
+    document.getElementById('vbEdEstilo').addEventListener('click', abrirGaleriaEstilos);
+    document.getElementById('vbEdVidro').addEventListener('click', function () {
+      alternarWidgetsTranslucidos();
+      this.textContent = linhaAtual.widgets_translucidos ? 'Tirar efeito vidro' : 'Efeito vidro na agenda';
+    });
+    document.getElementById('vbEdFotoBusca').addEventListener('click', abrirEditorFotoCard);
+  }
+  var PASSOS_EDICAO = [
+    { id: 'foto', titulo: 'Foto principal', texto: 'A foto grande do topo do site.', render: renderPassoTutorialFoto },
+    { id: 'textos', titulo: 'Nome e frases', texto: 'O que aparece escrito no topo do site. Muda ao vivo aqui atrás.', render: renderPassoEdicaoTextos },
+    { id: 'estilo', titulo: 'Cores e estilo', texto: 'O visual do site inteiro — vale pra Agendar, Pedir e Chamar.', render: renderPassoEdicaoEstilo },
+    { id: 'servicos', titulo: 'Serviços e preços', texto: 'O que o cliente pode agendar.', render: renderPassoTutorialServicos },
+    { id: 'equipe', titulo: 'Quem atende', texto: 'As pessoas que o cliente escolhe na hora de agendar.', render: renderPassoTutorialEquipe },
+    { id: 'localizacao', titulo: 'Endereço', texto: 'Onde fica o seu espaço — aparece no site e abre no mapa.', render: renderPassoTutorialLocalizacao },
+    { id: 'redes', titulo: 'Redes sociais', texto: 'Instagram, Facebook e TikTok no rodapé do site.', render: renderPassoTutorialRedes },
+    { id: 'galeria', titulo: 'Galeria de fotos', texto: 'Fotos do espaço e dos seus trabalhos.', render: renderPassoTutorialGaleria }
+  ];
+
   function concluirTutorial() {
     document.getElementById('vbTutorialOverlay').classList.add('oculto');
-    document.getElementById('adminModoBarra').classList.remove('oculto');
+    if (editandoPorPassos) { window.location.href = '/cadastro.html'; return; }
     if (linhaAtual) linhaAtual.onboarding_concluido = true;
-    db.rpc('tenant_admin_concluir_onboarding', { p_estabelecimento_id: estabId });
+    db.rpc('tenant_admin_concluir_onboarding', { p_estabelecimento_id: estabId }).then(function () {
+      // site pronto: abre como o cliente vê (com o botão "Editar meu site" pro dono)
+      window.location.replace(window.location.pathname);
+    }, function () { window.location.replace(window.location.pathname); });
   }
 
   // ---- passo "foto principal": mesmo upload/estoque do editor rápido do
@@ -1304,11 +1436,22 @@
   // admin direto, sem PIN nenhum (a conta já é a prova de dono) — só
   // depois disso resolver é que dá pra saber se quem visita é o próprio
   // dono, então o contador de acessos espera esse resultado.
+  // o dono vê o site igual ao cliente, com um botão pra editar pelo passo a passo
+  function mostrarAtalhoDono() {
+    if (document.getElementById('vbDonoAtalho')) return;
+    var barra = document.createElement('div');
+    barra.id = 'vbDonoAtalho';
+    barra.className = 'vb-dono-atalho';
+    barra.innerHTML = '<span>Este site é seu</span>' +
+      '<a href="' + window.location.pathname + '?editar=1">Editar meu site</a>' +
+      '<a href="/cadastro.html" class="vb-dono-atalho-painel">Painel</a>';
+    document.body.appendChild(barra);
+  }
   function verificarSessaoDono() {
     db.auth.getSession().then(function (res) {
       var session = res.data && res.data.session;
       if (session && linhaAtual && session.user.id === linhaAtual.dono_user_id) {
-        ativarModoAdmin();
+        if (modoPassos()) ativarModoAdmin(); else mostrarAtalhoDono();
       }
       registrarAcessoSeNecessario();
     });
@@ -1469,7 +1612,7 @@
     if (!strip) return;
     var linksVisiveis = REDES.filter(function (r) {
       if (r.chave === 'whatsapp') return !!linhaAtual.telefone_whatsapp;
-      return modoAdmin || linhaAtual[r.chave];
+      return edicaoNoSite || linhaAtual[r.chave];
     });
     strip.innerHTML = linksVisiveis.map(function (r) {
       var url = r.chave === 'whatsapp'
@@ -1477,13 +1620,13 @@
         : linhaAtual[r.chave];
       var vazio = r.chave !== 'whatsapp' && !url;
       var estiloVazio = vazio ? ' style="opacity:0.4;"' : '';
-      if (modoAdmin && r.chave !== 'whatsapp') {
+      if (edicaoNoSite && r.chave !== 'whatsapp') {
         return '<button type="button" class="social-badge" data-rede="' + r.chave + '" title="' + r.label + '"' + estiloVazio + '>' + r.icone + '</button>';
       }
       return '<a class="social-badge" href="' + escapeHtml(url) + '" target="_blank" rel="noopener" title="' + r.label + '">' + r.icone + '</a>';
     }).join('');
 
-    if (!modoAdmin) return;
+    if (!edicaoNoSite) return;
     strip.querySelectorAll('[data-rede]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var chave = btn.getAttribute('data-rede');
@@ -1566,13 +1709,13 @@
         '<button type="button" class="service-badge" onclick="document.getElementById(\'servicosSecao\').scrollIntoView({behavior:\'smooth\'})"><span class="mark">' + ICONE_TESOURA + '</span><strong>Ver</strong><span>Serviços</span></button>' +
         '<button type="button" class="service-badge" data-open-widget><span class="mark">' + ICONE_AGENDA + '</span><strong>Agendar</strong><span>Horário</span></button>';
 
-      if (!linhas.length && !modoAdmin) {
+      if (!linhas.length && !edicaoNoSite) {
         lista.classList.remove('servicos-redondos-lista');
         lista.innerHTML = '<li style="border:none; color:var(--ink-soft);">Serviços em breve.</li>';
         return;
       }
 
-      if (!modoAdmin) {
+      if (!edicaoNoSite) {
         lista.classList.add('servicos-redondos-lista');
         lista.innerHTML = linhas.map(function (s, i) {
           return '<li>' +
@@ -1676,6 +1819,10 @@
   var equipeCache = [];
   function carregarEquipeAdmin() {
     if (!modoAdmin) return;
+    if (!edicaoNoSite) {
+      db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }).then(function (res) { equipeCache = res.data || []; });
+      return;
+    }
     var secao = document.getElementById('equipeSecaoAdmin');
     var lista = document.getElementById('tplListaEquipeAdmin');
     if (!secao || !lista) return;
@@ -1800,57 +1947,39 @@
     });
   }
 
-  // ---- telefone/WhatsApp editável inline (reaproveita a mesma RPC de
-  // identidade — os outros campos ficam intactos porque ela só troca o
-  // que vier preenchido) ----
-  function ativarEdicaoTelefone() {
-    [document.getElementById('tplTelefoneMenu'), document.getElementById('tplTelefoneRodape')].forEach(function (el) {
-      if (!el || el.dataset.vbTelefoneLigado) return;
-      el.dataset.vbTelefoneLigado = '1';
-      el.addEventListener('click', function (e) {
-        // o link do telefone continua visível/clicável pra todo mundo
-        // (é assim que o cliente liga/manda WhatsApp) — sem essa
-        // conferência, uma vez que esse escutador é ligado ele fica pra
-        // sempre, e continuava abrindo a edição mesmo depois de "Sair".
-        if (!modoAdmin) return;
-        e.preventDefault();
-        var atual = linhaAtual.telefone_whatsapp || '';
-        window.VBDialogo.prompt('WhatsApp com DDD (ex: 15999999999):', atual).then(function (novo) {
-          if (novo === null) return;
-          novo = novo.trim();
-          if (!novo || novo === atual) return;
-          db.rpc('tenant_admin_atualizar_identidade', {
-            p_estabelecimento_id: estabId, p_nome: null, p_slug: null, p_cidade: null, p_segmento: null, p_telefone_whatsapp: novo
-          }).then(function (res) {
-            if (res.error) return;
-            linhaAtual.telefone_whatsapp = novo;
-            var tel = novo.replace(/\D/g, '');
-            [document.getElementById('tplTelefoneMenu'), document.getElementById('tplTelefoneRodape')].forEach(function (a) {
-              a.style.display = '';
-              a.href = 'tel:+55' + tel;
-              a.textContent = novo;
-            });
-            carregarRedesSociais();
-          });
-        });
+  function salvarTelefone(novo) {
+    novo = String(novo || '').trim();
+    if (!novo || novo === (linhaAtual.telefone_whatsapp || '')) return Promise.resolve();
+    return db.rpc('tenant_admin_atualizar_identidade', {
+      p_estabelecimento_id: estabId, p_nome: null, p_slug: null, p_cidade: null, p_segmento: null, p_telefone_whatsapp: novo
+    }).then(function (res) {
+      if (res.error) throw res.error;
+      linhaAtual.telefone_whatsapp = novo;
+      var tel = novo.replace(/\D/g, '');
+      [document.getElementById('tplTelefoneMenu'), document.getElementById('tplTelefoneRodape')].forEach(function (a) {
+        if (!a) return;
+        a.style.display = '';
+        a.href = 'tel:+55' + tel;
+        a.textContent = novo;
       });
+      carregarRedesSociais();
     });
   }
 
   function carregarGaleria() {
     db.rpc('tenant_listar_galeria', { p_estabelecimento_id: estabId }).then(function (res) {
       var linhas = res.data || [];
-      if (!linhas.length && !modoAdmin) return;
+      if (!linhas.length && !edicaoNoSite) return;
 
       var grid = document.getElementById('tplGrid');
       var fotosHtml = linhas.slice(0, 9).map(function (g) {
-        var remover = modoAdmin ? '<button type="button" class="vb-remover-x" data-remover-galeria="' + g.id + '">×</button>' : '';
+        var remover = edicaoNoSite ? '<button type="button" class="vb-remover-x" data-remover-galeria="' + g.id + '">×</button>' : '';
         return '<div class="vb-foto-wrap"><img src="' + escapeHtml(g.foto_url) + '" alt="" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px;" loading="lazy">' + remover + '</div>';
       }).join('');
-      grid.innerHTML = fotosHtml + (modoAdmin ? '<button type="button" class="vb-add-tile" id="vbAddFoto">+</button><input type="file" id="vbAddFotoInput" accept="image/*" multiple style="display:none;">' : '');
+      grid.innerHTML = fotosHtml + (edicaoNoSite ? '<button type="button" class="vb-add-tile" id="vbAddFoto">+</button><input type="file" id="vbAddFotoInput" accept="image/*" multiple style="display:none;">' : '');
       document.getElementById('tplGaleriaSecao').classList.remove('oculto');
 
-      if (!modoAdmin) return;
+      if (!edicaoNoSite) return;
       grid.querySelectorAll('[data-remover-galeria]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           db.rpc('tenant_admin_remover_foto', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-galeria') }).then(carregarGaleria);

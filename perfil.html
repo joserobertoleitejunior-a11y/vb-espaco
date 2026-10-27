@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&family=Oswald:wght@300;400;500;600;700&family=Bangers&family=Fraunces:opsz,wght@9..144,700&display=optional" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=87">
+<link rel="stylesheet" href="/assets/css/styles.css?v=89">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=6">
 <link rel="stylesheet" href="/assets/css/vb-local.css?v=1">
 <script src="/assets/js/vibe-toggle.js?v=3"></script>
@@ -346,6 +346,8 @@
        admin que já existem, ao vivo, sem opção de pular. -->
   <div class="vb-tutorial-overlay oculto" id="vbTutorialOverlay">
     <div class="vb-tutorial-bolha" id="vbTutorialBolha">
+      <button type="button" class="vb-tutorial-sair oculto" id="vbTutorialSair" aria-label="Sair da edição">×</button>
+      <div class="vb-tutorial-atalhos oculto" id="vbTutorialAtalhos" role="tablist" aria-label="Etapas"></div>
       <div class="vb-tutorial-barras" id="vbTutorialBarras" aria-hidden="true"></div>
       <p class="vb-tutorial-contador" id="vbTutorialContador"></p>
       <h3 id="vbTutorialTitulo"></h3>
@@ -378,7 +380,7 @@
   <script src="/assets/js/passo-site.js?v=1"></script>
   <script src="/assets/js/avaliacoes-site.js?v=1"></script>
   <script src="/assets/js/segmentos.js?v=3"></script>
-  <script src="/assets/js/perfil.js?v=65"></script>
+  <script src="/assets/js/perfil.js?v=66"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
