@@ -5,8 +5,8 @@
    - data-vibe-marca: recebe o nome como texto puro (menus, rodapés,
      legendas — qualquer menção ao nome que não seja o logotipo).
    - data-vibe-marca-logo: recebe o logotipo de verdade (a letra
-     serifada da marca; o "a" do meio sai dourado e em itálico, como o
-     degrau entre um passo e o próximo — e, se o nome tiver "i", o pino
+     serifada da marca; o "a" do meio sai em inox prateado e itálico, como
+     o degrau entre um passo e o próximo — e, se o nome tiver "i", o pino
      dourado entra no lugar do ponto).
      Vazio ("") é a versão pequena, junto do cubo na faixa fina do
      topo; ="hero" é a versão grande da splash, com o traço dourado
@@ -37,10 +37,18 @@
   // "Passo a passo": o " a " do meio vira o degrau dourado. Senão, troca a
   // última letra "i" minúscula pelo "ı" sem ponto + o pino por cima dele;
   // sem "i" no nome, fica só o texto normal
+  // cada letra vira um degrau (--i = posição na escada): na rolagem o nome
+  // "sobe a escada" letra por letra — ver ligarRolagem()
+  function letras(txt, inicio) {
+    return Array.prototype.map.call(txt, function (c, k) {
+      return '<span class="pt-l" style="--i:' + (inicio + k) + '">' + escapeHtml(c) + '</span>';
+    }).join('');
+  }
   function palavraHtml(nome) {
     var degrau = nome.match(/^(\S+) (a|e|de) (\S+)$/);
     if (degrau) {
-      return escapeHtml(degrau[1]) + ' <span class="pt-degrau">' + escapeHtml(degrau[2]) + '</span> ' + escapeHtml(degrau[3]);
+      var meio = degrau[1].length;
+      return letras(degrau[1], 0) + ' <span class="pt-degrau" style="--i:' + meio + '">' + escapeHtml(degrau[2]) + '</span> ' + letras(degrau[3], meio + 1);
     }
     var idx = nome.lastIndexOf('i');
     if (idx === -1) return escapeHtml(nome);
@@ -63,6 +71,45 @@
       el.setAttribute('aria-label', MARCA.nome);
     });
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aplicar);
-  else aplicar();
+  // rolagem da página → o nome sobe a escada (letras em degrau), o "a" de
+  // inox inclina e o brilho do metal corre junto; parando de rolar, tudo
+  // volta pro lugar com mola. Uma conta por quadro, só com transform.
+  function ligarRolagem() {
+    if (global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // a variável vai só nos logotipos (no <html> recalculava a página inteira a cada quadro)
+    var logos = document.querySelectorAll('[data-vibe-marca-logo]');
+    if (!logos.length) return;
+    function definir(nome, v) { for (var i = 0; i < logos.length; i++) logos[i].style.setProperty(nome, v); }
+    var alvo = 0, atual = 0, vel = 0, quadro = null, brilho = 0;
+    function passo() {
+      // mola: segue o alvo e acomoda sozinha quando a rolagem para
+      vel += (alvo - atual) * 0.18;
+      vel *= 0.72;
+      atual += vel;
+      alvo *= 0.86;
+      definir('--pt-escada', atual.toFixed(3));
+      definir('--pt-brilho', brilho.toFixed(3));
+      if (Math.abs(atual) > 0.002 || Math.abs(alvo) > 0.002 || Math.abs(vel) > 0.002) quadro = requestAnimationFrame(passo);
+      else { definir('--pt-escada', '0'); quadro = null; }
+    }
+    function empurrar(dy) {
+      // descendo, o nome sobe a escada; subindo, desce — mais forte quanto mais rápido
+      alvo = Math.max(-1, Math.min(1, alvo + dy / 140));
+      brilho = (brilho + dy / 600) % 1;
+      if (!quadro) quadro = requestAnimationFrame(passo);
+    }
+    // rolagem da página e de telas que rolam por dentro (splash/explorar)
+    if (document.scrollingElement) document.scrollingElement.__ptY = document.scrollingElement.scrollTop;
+    document.addEventListener('scroll', function (e) {
+      var el = e.target === document ? document.scrollingElement : e.target;
+      if (!el || el.scrollTop == null) return;
+      var antes = el.__ptY == null ? el.scrollTop : el.__ptY;
+      el.__ptY = el.scrollTop;
+      empurrar(el.scrollTop - antes);
+    }, { passive: true, capture: true });
+  }
+
+  function iniciar() { aplicar(); ligarRolagem(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
+  else iniciar();
 })(window);

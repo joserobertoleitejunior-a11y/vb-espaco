@@ -3261,3 +3261,18 @@ html[data-area="servicos"] .criar-body-full { --cor-marca: #2F5D7C; }
 .editar-passos-txt { display: flex; flex-direction: column; }
 .editar-passos-txt strong { font-size: 1.05rem; }
 .editar-passos-txt small { font-size: 0.82rem; opacity: 0.85; }
+
+/* ---- nada empurra a página pros lados (o celular afastava o zoom sozinho) ---- */
+html, body { max-width: 100%; overflow-x: clip; }
+/* topo do Explorar: marca, cidade e Entrar sempre numa linha só */
+.topbar { gap: 0.6rem; min-width: 0; }
+.topbar .brand { flex: 0 1 auto; min-width: 0; }
+.topbar-local { display: block; flex: 1 1 auto; min-width: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-local svg { vertical-align: -0.15em; margin-right: 0.15rem; }
+.topbar .cliente-global-btn { flex: 0 0 auto; }
+@media (max-width: 380px) {
+  .topbar { padding-left: 0.9rem; padding-right: 0.9rem; }
+  /* só o ícone de pessoa (o texto "Entrar" volta em telas maiores) */
+  html:not([data-tpl]) .topbar .cliente-global-btn { font-size: 0 !important; gap: 0; padding: 0.3rem !important; }
+}
+@media (max-width: 330px) { .topbar-local { display: none; } }
