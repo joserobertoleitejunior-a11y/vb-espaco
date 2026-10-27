@@ -20,6 +20,19 @@
   // de CSS (mesma estrutura de HTML/classes, só trocam tokens/fonte) ----------
   // lista de estilos e pastas de CSS: assets/js/templates.js (VibeTemplates)
   var templateAtualParaCor = 'classico-boiserie';
+  // a foto do topo é a mesma em Agendar, Pedir e Chamar: a principal (ou a
+  // feminina, na área feminina) e, se não tiver, a capa — antes a Agenda
+  // ignorava a capa e o mesmo negócio aparecia sem foto num lado e com
+  // foto no outro
+  function fotoPrincipal(g) {
+    if (!linhaAtual) return null;
+    return ((g || generoAtual) === 'feminino' && linhaAtual.foto_hero_feminino_url) || linhaAtual.foto_hero_url || linhaAtual.foto_capa_url || null;
+  }
+  // só beleza separa área masculina/feminina; borracharia, pet, comida etc. nunca
+  var SEGMENTOS_COM_GENERO = ['barbearia', 'salao', 'manicure_pedicure', 'estetica', 'outro'];
+  function separaPorGenero() {
+    return !!linhaAtual && linhaAtual.genero_atendimento === 'ambos' && SEGMENTOS_COM_GENERO.indexOf(linhaAtual.segmento) > -1;
+  }
   function aplicarTemplateCss(templateKey) {
     templateAtualParaCor = window.VibeTemplates.aplicar(templateKey).chave;
   }
@@ -113,7 +126,7 @@
   // estilos "segue sua foto" usam a foto de capa (desfocada) como fundo
   function atualizarFundoDaFoto() {
     if (!linhaAtual || !window.VibeTemplates) return;
-    var foto = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
+    var foto = fotoPrincipal();
     window.VibeTemplates.fundoDaFoto(window.VibeTemplates.segueFoto(templateAtualParaCor) ? foto : null);
   }
 
@@ -141,7 +154,7 @@
       if (window.VBDialogo) window.VBDialogo.alert('Sem conexão — tenta de novo.');
     });
     if (novoValor) {
-      var fotoAtual = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
+      var fotoAtual = fotoPrincipal();
       if (fotoAtual) seguirCorDaImagem(fotoAtual);
     }
   }
@@ -897,7 +910,7 @@
       texto: 'É a primeira coisa que o cliente vê. Mande uma do celular ou toque numa pronta.',
       obrigatorio: true,
       avisoIncompleto: 'Escolha uma foto pra continuar.',
-      completo: function () { return !!(linhaAtual && ((generoAtual === 'feminino') ? (linhaAtual.foto_hero_feminino_url || linhaAtual.foto_hero_url) : linhaAtual.foto_hero_url)); },
+      completo: function () { return !!fotoPrincipal(); },
       render: renderPassoTutorialFoto
     },
     {
@@ -999,7 +1012,7 @@
   // admin, só que sempre visível dentro da própria caixa da criação — sem
   // precisar adivinhar onde clicar na foto por trás dela. ----
   function renderPassoTutorialFoto(container) {
-    var fotoAtual = (generoAtual === 'feminino') ? (linhaAtual.foto_hero_feminino_url || linhaAtual.foto_hero_url) : linhaAtual.foto_hero_url;
+    var fotoAtual = fotoPrincipal();
     var estoque = window.estoqueFotosPara ? window.estoqueFotosPara(linhaAtual.segmento) : ESTOQUE_FOTOS_ADMIN;
     container.innerHTML =
       (fotoAtual ? '<div style="width:100%; aspect-ratio:16/9; border-radius:12px; background-size:cover; background-position:center; margin-bottom:0.7rem; background-image:url(\'' + fotoAtual + '\')"></div>' : '') +
@@ -1342,7 +1355,12 @@
     atualizarFundoDaFoto();
 
     var nome = linhaAtual.nome;
-    document.getElementById('tplEyebrow').textContent = (SEGMENTOS[linhaAtual.segmento] || 'Estabelecimento') + ' · ' + linhaAtual.cidade;
+    // nome do tipo de negócio pela lista da plataforma (segmentos.js) — a
+    // lista daqui só tinha os de beleza e borracharia saía "Estabelecimento"
+    var seg = linhaAtual.segmento;
+    var nomeSeg = (seg !== 'outro' && window.VibeSegmentos && window.VibeSegmentos.nome(seg)) || SEGMENTOS[seg] || 'Estabelecimento';
+    var cidadeBonita = String(linhaAtual.cidade || '').replace(/(^|[\s-])(\S)/g, function (m, a, b) { return a + b.toUpperCase(); });
+    document.getElementById('tplEyebrow').textContent = nomeSeg + ' · ' + cidadeBonita;
     // frase de efeito por nicho, sorteada de forma estável a partir do
     // slug+cidade — o mesmo site sempre mostra a mesma frase, mas
     // dificilmente igual à de outro estabelecimento do mesmo segmento.
@@ -1350,7 +1368,7 @@
     document.getElementById('tplHeadline').textContent = linhaAtual.titulo_hero || frase.headline;
     document.getElementById('tplSubcopy').textContent = linhaAtual.subtitulo_hero || frase.sub;
 
-    var fotoHero = (g === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
+    var fotoHero = fotoPrincipal(g);
     var heroFoto = document.getElementById('tplHeroFoto');
     heroFoto.style.backgroundColor = 'var(--linen-deep)';
     if (fotoHero) {
@@ -1364,7 +1382,7 @@
     }
 
     var trocaBtn = document.getElementById('tplTrocaGenero');
-    if (linhaAtual.genero_atendimento === 'ambos' && linhaAtual.segmento !== 'estetica_automotiva' && linhaAtual.segmento !== 'pizzaria') {
+    if (separaPorGenero()) {
       var outro = g === 'masculino' ? 'feminino' : 'masculino';
       document.getElementById('tplTrocaGlifo').textContent = outro === 'feminino' ? 'F' : 'M';
       document.getElementById('tplTrocaLabel').textContent = outro === 'feminino' ? 'Área feminina' : 'Área masculina';
@@ -1392,11 +1410,11 @@
   }
 
   function iniciarGenero() {
-    // estética automotiva e pizzaria não distinguem público por gênero —
+    // fora da beleza ninguém separa público por gênero —
     // o campo genero_atendimento é gravado como 'ambos' só como valor
     // técnico padrão desde a criação (criar.js), mas aqui isso nunca deve
     // abrir o portão de escolha nem mostrar o botão de trocar de área.
-    if (linhaAtual.segmento === 'estetica_automotiva' || linhaAtual.segmento === 'pizzaria') {
+    if (SEGMENTOS_COM_GENERO.indexOf(linhaAtual.segmento) === -1) {
       document.getElementById('genderGate').remove();
       mostrarSplashSeNecessario();
       aplicarGenero('masculino');
