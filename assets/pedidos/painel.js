@@ -190,6 +190,7 @@
     t('tituloLayouts', SERVICO ? 'Como os serviços aparecem' : 'Como o cardápio aparece');
     t('tituloEntrega', SERVICO ? 'Atendimento' : 'Entrega e retirada');
     t('tituloItens', V.itens === 'Cardápio' ? 'Itens' : 'Serviços');
+    t('ajudaItens', SERVICO ? 'Toque num serviço pra editar. A chave liga/desliga na hora (não está fazendo esse serviço agora? desliga que some do site).' : 'Toque num item pra editar. A chave liga/desliga na hora (acabou o ingrediente? desliga que some do site).');
     t('novoItemBtn', SERVICO ? '+ Novo serviço' : '+ Novo item');
     document.querySelectorAll('[data-so-cardapio]').forEach(function (el) { el.classList.toggle('oculto', SERVICO); });
   }
@@ -756,10 +757,10 @@
     }).join('');
     var corpo =
       '<label class="foto-upload' + (f.foto_url ? ' tem' : '') + '" id="fiFoto" style="' + (f.foto_url ? 'background-image:url(&quot;' + esc(encodeURI(f.foto_url)) + '&quot;)' : '') + '">' +
-        U.ICONES.mais.replace('<svg', '<svg width="28" height="28"') + 'Foto do item (opcional)<input type="file" accept="image/*" id="fiArquivo"></label>' +
+        U.ICONES.mais.replace('<svg', '<svg width="28" height="28"') + (SERVICO ? 'Foto do serviço (opcional)' : 'Foto do item (opcional)') + '<input type="file" accept="image/*" id="fiArquivo"></label>' +
       '<button type="button" class="link-acao' + (f.foto_url ? '' : ' oculto') + '" id="fiTirarFoto">Tirar foto</button>' +
-      '<div class="campo" style="margin-top:.8rem"><label for="fiNome">Nome</label><input id="fiNome" maxlength="80" value="' + esc(f.nome) + '" placeholder="Ex.: Calabresa"></div>' +
-      '<div class="campo"><label for="fiDesc">Descrição</label><textarea id="fiDesc" maxlength="300" rows="2" placeholder="Ingredientes, tamanho, o que vem…">' + esc(f.descricao || '') + '</textarea></div>' +
+      '<div class="campo" style="margin-top:.8rem"><label for="fiNome">Nome</label><input id="fiNome" maxlength="80" value="' + esc(f.nome) + '" placeholder="' + (SERVICO ? 'Ex.: Troca de pneu' : 'Ex.: Calabresa') + '"></div>' +
+      '<div class="campo"><label for="fiDesc">Descrição</label><textarea id="fiDesc" maxlength="300" rows="2" placeholder="' + (SERVICO ? 'O que está incluso, tempo médio, observações…' : 'Ingredientes, tamanho, o que vem…') + '">' + esc(f.descricao || '') + '</textarea></div>' +
       '<div class="linha-campos"><div class="campo"><label for="fiPreco">Preço (R$)</label><input id="fiPreco" type="number" inputmode="decimal" min="0" step="0.01" value="' + esc(f.preco) + '"><div class="ajuda">0 = "a combinar"</div></div>' +
       '<div class="campo"><label for="fiCat">Categoria</label><select id="fiCat">' + opcoesCat + '</select></div></div>' +
       '<div class="switches">' +
@@ -767,7 +768,7 @@
         '<label class="switch' + (SERVICO ? ' oculto' : '') + '"><input type="checkbox" id="fiBorda" ' + (f.aceita_borda ? 'checked' : '') + '><span class="trilho"></span>Aceita borda recheada</label>' +
         '<label class="switch"><input type="checkbox" id="fiAtivo" ' + (f.ativo ? 'checked' : '') + '><span class="trilho"></span>Disponível no cardápio</label>' +
       '</div><p class="p-msg" id="fiMsg"></p>';
-    var rodape = (f.id ? '<button type="button" class="btn perigo" id="fiExcluir">Excluir</button>' : '') + '<button type="button" class="btn cheio" id="fiSalvar">Salvar item</button>';
+    var rodape = (f.id ? '<button type="button" class="btn perigo" id="fiExcluir">Excluir</button>' : '') + '<button type="button" class="btn cheio" id="fiSalvar">' + (SERVICO ? 'Salvar serviço' : 'Salvar item') + '</button>';
     abrirSheet(f.id ? (SERVICO ? 'Editar serviço' : 'Editar item') : (SERVICO ? 'Novo serviço' : 'Novo item'), corpo, rodape);
 
     $('fiArquivo').addEventListener('change', async function () {
@@ -1188,8 +1189,8 @@
   async function carregarResumo() {
     $('conteudoResumo').innerHTML = '<div class="kpis">' + '<div class="skeleton-item" style="height:84px"></div>'.repeat(4) + '</div><div class="skeleton-item" style="height:220px"></div>';
     var r = await db.rpc('delivery_admin_resumo', { p_estabelecimento_id: loja.id, p_dias: diasResumo });
-    if (r.error || !r.data) { $('conteudoResumo').innerHTML = '<p class="pa-vazio">Não consegui carregar o resumo agora.</p>'; return; }
     var d = r.data;
+    if (r.error || !d || !d.hoje || !d.periodo) { $('conteudoResumo').innerHTML = '<p class="pa-vazio">Não consegui carregar o resumo agora.</p>'; return; }
     var porDia = d.por_dia || [];
     var max = Math.max.apply(null, porDia.map(function (x) { return Number(x.faturamento); }).concat([1]));
     var fmtDia = function (s) { var p = s.split('-'); return p[2] + '/' + p[1]; };

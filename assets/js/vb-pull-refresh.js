@@ -130,12 +130,16 @@
   document.addEventListener('touchmove', function (e) {
     if (!arrastando) return;
     var dy = e.touches[0].clientY - inicioY;
-    if (dy <= 0 || window.scrollY > 0) {
-      // dedo voltou ou a pagina rolou de verdade nesse meio tempo: cancela
+    // o dedo subiu (quer rolar a página pra baixo): solta o gesto de vez —
+    // no iPhone, travar o primeiro movimento cancela a rolagem inteira
+    if (dy < -4 || window.scrollY > 0) {
+      arrastando = false;
       puxadoPx = 0;
       if (cuboApi) cuboApi.resetar();
       return;
     }
+    // tremidinho do dedo ainda não é puxão: deixa o navegador decidir
+    if (dy < 10) return;
     e.preventDefault();
     puxadoPx = Math.min(PUXAO_MAX_PX, dy);
     if (cuboApi) cuboApi.esticar(puxadoPx / PUXAO_MAX_PX);

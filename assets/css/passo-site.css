@@ -20,7 +20,7 @@ body:has(#cartBar:not(.vazio)) .passo-pill { bottom: calc(92px + env(safe-area-i
 .passo-folha-caixa {
   position: relative; width: 100%; max-width: 520px; max-height: 86vh; overflow-y: auto;
   padding: 1.4rem 1.3rem calc(1.4rem + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0;
-  background: #fff; color: #1f2024; transform: translateY(100%); transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  background: #fff; color: #1f2024; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; transform: translateY(100%); transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .passo-folha.aberta .passo-folha-caixa { transform: none; }
 @media (min-width: 640px) { .passo-folha { align-items: center; } .passo-folha-caixa { border-radius: 24px; } }
