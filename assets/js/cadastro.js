@@ -267,13 +267,21 @@
         if (!e.total_equipe) faltando.push('nenhum profissional');
         var configPendenteHtml = faltando.length
           ? '<div class="dash-card-config-pendente">' +
-            '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Clique em "Perfil do site", aqui embaixo, pra completar.</p>' +
+            '<p>Seu site ainda está escondido de quem visita: falta cadastrar ' + faltando.join(' e ') + '. Toque em "Editar meu site" pra completar.</p>' +
             '</div>'
           : '';
         var pagamentoHtml = pagamentoCardHtml(e);
         // linha de menu genérica: ícone + rótulo à esquerda, valor à
         // direita — o mesmo formato pra estatística (só leitura) e pra
         // ação (link/botão clicável, com seta indicando que abre algo).
+        function atalho(classe, icone, titulo, sub, acaoAttrs, badge) {
+          var tag = acaoAttrs.indexOf('href=') > -1 ? 'a' : 'button';
+          return '<' + tag + (tag === 'button' ? ' type="button"' : '') + ' class="dono-atalho ' + classe + '"' + acaoAttrs + '>' +
+            '<span class="dono-atalho-ic">' + icone + '</span>' +
+            '<span class="dono-atalho-txt"><strong>' + titulo + '</strong><small>' + escapeHtml(sub) + '</small></span>' +
+            (badge ? '<span class="dash-badge-pendente">' + badge + '</span>' : '') +
+            '</' + tag + '>';
+        }
         function linhaMenu(icone, rotulo, valorHtml, acaoAttrs, classesExtra) {
           var tag = acaoAttrs ? (acaoAttrs.indexOf('href=') > -1 ? 'a' : 'button') : 'div';
           var abre = tag !== 'div';
@@ -296,29 +304,34 @@
           '<div class="dash-card-menu">' +
           configPendenteHtml +
           pagamentoHtml +
-          '<div class="dash-card-menu-corpo">' +
-          '<div class="dash-card-menu-grupo">' +
-          '<p class="dash-card-menu-titulo">Visão geral</p>' +
-          linhaMenu(ICONE_STAT_AGENDA, 'Agendamentos', '<strong>' + (e.total_agendamentos || 0) + '</strong>') +
-          linhaMenu(ICONE_STAT_SERVICO, 'Serviços', '<strong>' + (e.total_servicos || 0) + '</strong>') +
-          linhaMenu(ICONE_STAT_EQUIPE, 'Profissionais', '<strong>' + (e.total_equipe || 0) + '</strong>') +
-          linhaMenu(ICONE_ACESSOS, 'Acessos ao site', '<strong>' + (e.total_acessos || 0) + '</strong>' +
-            '<label class="dash-card-switch" title="Mostrar pro público"><input type="checkbox" data-toggle-contador-id="' + e.id + '"' + (e.mostrar_contador_publico ? ' checked' : '') + '><span class="dash-card-switch-trilho"></span></label>') +
-          '<p class="dash-card-menu-legenda">Ativar deixa esse número de acessos visível pra quem visita o site — público, não só pra você.</p>' +
+          // o que o dono faz todo dia vem primeiro, em botões grandes; o resto
+          // fica guardado em "Mais opções" (antes era uma lista longa em que
+          // Gestão, Agendamentos, Perfil e Editar pareciam a mesma coisa)
+          '<div class="dono-atalhos">' +
+          atalho('dono-atalho-principal', ICONE_STAT_AGENDA, 'Agenda', e.total_pendentes ? e.total_pendentes + (e.total_pendentes === 1 ? ' pedido de horário esperando' : ' pedidos de horário esperando') : 'Ver e marcar horários',
+            ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="agenda"', e.total_pendentes) +
+          '<div class="dono-atalhos-grade">' +
+          atalho('', ICONE_ACAO_EDITAR, 'Editar meu site', 'fotos, serviços, equipe', ' href="' + link + '"') +
+          atalho('', ICONE_ACAO_CAIXA, 'Caixa', 'registrar venda', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="caixa"') +
+          atalho('', ICONE_STAT_EQUIPE, 'Clientes', 'quem já veio', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="clientes"') +
+          atalho('', ICONE_ACAO_COMUNIDADE, 'Promoções', 'e status do dia', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="comunidade"') +
           '</div>' +
-          '<div class="dash-card-menu-grupo">' +
-          '<p class="dash-card-menu-titulo">Ações</p>' +
-          linhaMenu(ICONE_ACAO_GESTAO, 'Gestão', (e.total_pendentes ? '<span class="dash-badge-pendente">' + e.total_pendentes + '</span>' : ''),
-            ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '"', 'is-principal') +
-          linhaMenu(ICONE_STAT_AGENDA, 'Agendamentos', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="agenda"') +
-          linhaMenu(ICONE_ACAO_CAIXA, 'Caixa', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="caixa"') +
-          linhaMenu(ICONE_ACAO_COMUNIDADE, 'Status e promoções', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="comunidade"') +
-          linhaMenu(ICONE_ACAO_PERFIL, 'Perfil do site', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="perfil"') +
-          linhaMenu(ICONE_ACAO_VER, 'Ver site', '', ' href="' + link + '" target="_blank" rel="noopener"') +
-          linhaMenu(ICONE_ACAO_EDITAR, 'Editar site', '', ' href="' + link + '"') +
+          '</div>' +
+          '<div class="dono-numeros">' +
+          '<span><strong>' + (e.total_agendamentos || 0) + '</strong> agendamentos</span>' +
+          '<span><strong>' + (e.total_servicos || 0) + '</strong> serviços</span>' +
+          '<span><strong>' + (e.total_equipe || 0) + '</strong> na equipe</span>' +
+          '<span><strong>' + (e.total_acessos || 0) + '</strong> visitas</span>' +
+          '</div>' +
+          '<details class="dono-mais"><summary>Mais opções</summary>' +
+          '<div class="dash-card-menu-corpo">' +
+          linhaMenu(ICONE_ACAO_VER, 'Ver meu site como cliente', '', ' href="' + link + '" target="_blank" rel="noopener"') +
+          linhaMenu(ICONE_ACAO_GESTAO, 'Resumo do mês', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="resumo"') +
+          linhaMenu(ICONE_ACAO_PERFIL, 'Dados do negócio', '', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="perfil"') +
+          linhaMenu(ICONE_ACESSOS, 'Mostrar visitas no site', '<label class="dash-card-switch" title="Mostrar pro público"><input type="checkbox" data-toggle-contador-id="' + e.id + '"' + (e.mostrar_contador_publico ? ' checked' : '') + '><span class="dash-card-switch-trilho"></span></label>') +
           linhaMenu(ICONE_ACAO_APAGAR, 'Apagar site', '', ' data-apagar-id="' + e.id + '" data-apagar-nome="' + escapeHtml(e.nome) + '"', 'is-perigo') +
           '</div>' +
-          '</div>' +
+          '</details>' +
           '</div>' +
           '</div>' +
           '</li>';
@@ -572,7 +585,7 @@
     else carregarMeuNegocio().then(function () { if (dashEstabId === estabId) montarCuboAreas(estabId); });
     // Caixa é a aba mais usada no dia a dia (registrar uma venda é rápido
     // e constante) — abre direto nela, em vez do Resumo.
-    mostrarAbaDashboard(abaInicial || 'caixa');
+    mostrarAbaDashboard(abaInicial || 'agenda');
   }
   function fecharDashboard() {
     dashboardOverlay.classList.add('oculto');
@@ -659,8 +672,23 @@
       var semCadastroBase = !servicos.length || !equipe.length;
       dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
-        '<p class="dash-resumo-subtitulo" style="margin-top:0;">Novo agendamento manual</p>' +
-        '<p class="dash-secao-intro">Pra cliente que liga ou chega no balcão sem passar pelo site — entra direto confirmado, com o cliente já registrado.</p>' +
+        '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Próximos horários</p>' +
+        (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashAgendaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar PDF</button>' : '') +
+        '</div>' +
+        '<div id="dashAgendaLista">' + (linhas.length ? linhas.map(function (a) {
+          return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(a.cliente_nome) + '</span><br>' +
+            '<span class="secundario">' + escapeHtml(a.servico || '') + (a.staff_nome ? ' · ' + escapeHtml(a.staff_nome) : '') + ' · ' + escapeHtml(a.dia_label || a.dia) + ' ' + escapeHtml(a.horario) + '</span></span>' +
+            '<span class="dash-agenda-acoes">' +
+            '<span class="painel-status-badge ' + a.status + '">' + (STATUS_LABEL[a.status] || a.status) + '</span>' +
+            (a.status === 'pendente' ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="confirmado" style="padding:0.2rem 0.5rem; font-size:0.72rem;">Confirmar</button>' : '') +
+            (a.status === 'confirmado' ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="concluido" style="padding:0.2rem 0.5rem; font-size:0.72rem;">Concluir</button>' : '') +
+            ((a.status === 'pendente' || a.status === 'confirmado') ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="cancelado" style="padding:0.2rem 0.5rem; font-size:0.72rem; color:var(--erro); border-color:var(--erro);">Cancelar</button>' : '') +
+            '</span></div>';
+        }).join('') : blocoVazio(ICONE_VAZIO_AGENDA, 'Nenhum agendamento ainda', 'Todo agendamento feito pelo site (ou marcado aqui embaixo) aparece nesta lista, com o status de cada um.')) + '</div>' +
+        // marcar pra quem ligou fica guardado num botão — a lista é o que o
+        // dono abre a aba pra ver
+        '<details class="dash-novo-horario"' + (linhas.length ? '' : ' open') + '><summary>Marcar horário pra quem ligou ou chegou</summary>' +
+        '<p class="dash-secao-intro">Entra direto confirmado, com o cliente já registrado.</p>' +
         (semCadastroBase
           ? '<p class="msg msg-erro" style="margin-bottom:1rem;">Cadastre pelo menos 1 serviço e 1 profissional em "Editar meu site" antes de criar um agendamento manual.</p>'
           : '<form id="dashAgendamentoForm" class="dash-campos-grid">' +
@@ -677,19 +705,8 @@
             '<button class="btn btn-primario field-full" type="submit">Criar agendamento</button>' +
             '</form>' +
             '<p class="msg" id="dashAgendamentoMsg"></p>') +
-        '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Agenda (clientes que já agendaram)</p>' +
-        (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashAgendaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar PDF</button>' : '') +
-        '</div>' +
-        '<div id="dashAgendaLista">' + (linhas.length ? linhas.map(function (a) {
-          return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(a.cliente_nome) + '</span><br>' +
-            '<span class="secundario">' + escapeHtml(a.servico || '') + (a.staff_nome ? ' · ' + escapeHtml(a.staff_nome) : '') + ' · ' + escapeHtml(a.dia_label || a.dia) + ' ' + escapeHtml(a.horario) + '</span></span>' +
-            '<span class="dash-agenda-acoes">' +
-            '<span class="painel-status-badge ' + a.status + '">' + (STATUS_LABEL[a.status] || a.status) + '</span>' +
-            (a.status === 'pendente' ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="confirmado" style="padding:0.2rem 0.5rem; font-size:0.72rem;">Confirmar</button>' : '') +
-            (a.status === 'confirmado' ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="concluido" style="padding:0.2rem 0.5rem; font-size:0.72rem;">Concluir</button>' : '') +
-            ((a.status === 'pendente' || a.status === 'confirmado') ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="cancelado" style="padding:0.2rem 0.5rem; font-size:0.72rem; color:var(--erro); border-color:var(--erro);">Cancelar</button>' : '') +
-            '</span></div>';
-        }).join('') : blocoVazio(ICONE_VAZIO_AGENDA, 'Nenhum agendamento ainda', 'Todo agendamento feito pelo site (ou criado manualmente aqui em cima) aparece nesta lista, com o status de cada um.')) + '</div>';
+        '</details>';
+
 
       if (window.VBSelect) window.VBSelect.enhanceTodos(dashboardCorpo);
       var profSelect = document.getElementById('dashAgProfissional');

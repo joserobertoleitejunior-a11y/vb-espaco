@@ -2232,7 +2232,7 @@ body.vb-modo-admin { padding-bottom: 3rem; }
 
 .criar-slug-status { display: inline-block; margin-top: 0.35rem; font-size: 0.78rem; font-weight: 600; }
 .criar-slug-status.ok { color: #1F8A6E; }
-.criar-slug-status.ocupado { color: var(--cor-marca); }
+.criar-slug-status.ocupado { color: #b23a28; }
 .criar-slug-status.checando { color: var(--tinta-suave); font-weight: 400; }
 
 .criar-logo-preview {
@@ -3102,3 +3102,97 @@ html[data-area="servicos"] .criar-body-full { --cor-marca: #2F5D7C; }
 @media (max-width: 900px) {
   input, select, textarea { font-size: max(16px, 1em) !important; }
 }
+
+/* ---- criação: endereço do site pronto (o link sai do nome sozinho) ---- */
+.criar-link-pronto { margin-top: 0.4rem; padding: 0.85rem 0.95rem; border-radius: 14px; background: rgba(15, 107, 92, 0.06); border: 1px dashed rgba(15, 107, 92, 0.3); }
+.criar-link-rotulo { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-suave); }
+.criar-link-url { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; font-weight: 700; font-size: 0.92rem; color: var(--cor-marca); word-break: break-all; }
+.criar-link-trocar { flex: 0 0 auto; margin-left: auto; padding: 0.25rem 0.7rem; border: 1px solid rgba(31, 32, 36, 0.15); border-radius: 999px; background: #fff; font: inherit; font-size: 0.78rem; font-weight: 700; color: var(--tinta); cursor: pointer; }
+.criar-link-pronto .field { margin: 0.7rem 0 0; }
+/* setas desenhadas nos botões da criação */
+#criarProximoBtn::after, #criarVoltarBtn::before { content: ''; width: 1rem; height: 1rem; background: currentColor; -webkit-mask: var(--seta) center / contain no-repeat; mask: var(--seta) center / contain no-repeat; }
+#criarProximoBtn { --seta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E"); }
+#criarVoltarBtn { --seta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12H5M11 6l-6 6 6 6'/%3E%3C/svg%3E"); }
+
+/* ---- continuação da criação no site: progresso em barrinhas, Voltar ao lado do Próximo ---- */
+.vb-tutorial-barras { display: flex; gap: 4px; margin: 0 0 0.7rem; }
+.vb-tutorial-barras i { flex: 1; height: 4px; border-radius: 4px; background: rgba(31, 32, 36, 0.1); }
+.vb-tutorial-barras i.feito { background: var(--terracotta, var(--dourado, #C9A227)); }
+.vb-tutorial-acoes { justify-content: space-between; }
+.vb-tutorial-acoes #vbTutorialProximo { flex: 1; padding: 0.75rem 1.1rem; font-size: 0.95rem; background: var(--terracotta, #0F6B5C); color: #fff; border: 0; border-radius: 999px; }
+.vb-tutorial-acoes #vbTutorialVoltar { flex: 0 0 auto; padding: 0.75rem 1rem; font-size: 0.9rem; background: #fff; color: #1f2024; border: 1.5px solid rgba(31, 32, 36, 0.14); border-radius: 999px; }
+.vb-tutorial-acoes #vbTutorialVoltar.oculto { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .vb-tutorial-bolha { -webkit-backdrop-filter: none; backdrop-filter: none; background: #fff; }
+}
+
+/* ---- área do dono: atalhos grandes do dia a dia + "Mais opções" ---- */
+.dono-atalhos { display: grid; gap: 0.6rem; margin: 0.4rem 0 0.9rem; }
+.dono-atalhos-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.dono-atalho {
+  position: relative; display: flex; align-items: center; gap: 0.7rem; width: 100%; box-sizing: border-box;
+  padding: 0.85rem 0.8rem; border: 1px solid rgba(31, 32, 36, 0.08); border-radius: 16px;
+  background: linear-gradient(180deg, #fff, #fafafb); color: var(--tinta); text-decoration: none; text-align: left;
+  font: inherit; cursor: pointer; box-shadow: 0 10px 22px -20px rgba(20, 20, 30, 0.6);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.18s, box-shadow 0.18s;
+}
+.dono-atalho:hover { transform: translateY(-2px); border-color: rgba(15, 107, 92, 0.35); }
+.dono-atalho:active { transform: scale(0.98); }
+.dono-atalhos-grade .dono-atalho { flex-direction: column; align-items: flex-start; gap: 0.45rem; padding: 0.85rem; }
+.dono-atalho-ic { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; flex: 0 0 auto; border-radius: 12px; background: rgba(15, 107, 92, 0.1); color: var(--cor-marca); }
+.dono-atalho-ic svg { width: 1.2rem; height: 1.2rem; }
+.dono-atalho-txt { display: flex; flex-direction: column; min-width: 0; }
+.dono-atalho-txt strong { font-size: 0.98rem; }
+.dono-atalho-txt small { font-size: 0.78rem; color: var(--tinta-suave); }
+.dono-atalho-principal { padding: 1rem; background: var(--cor-marca); color: #fff; border-color: transparent; box-shadow: 0 16px 30px -18px rgba(15, 107, 92, 0.9); }
+.dono-atalho-principal .dono-atalho-ic { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.dono-atalho-principal .dono-atalho-txt strong { font-size: 1.12rem; }
+.dono-atalho-principal .dono-atalho-txt small { color: rgba(255, 255, 255, 0.82); font-size: 0.85rem; }
+.dono-atalho-principal::after { content: ''; margin-left: auto; width: 1.1rem; height: 1.1rem; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center / contain no-repeat; }
+.dono-atalho-principal .dash-badge-pendente { position: absolute; top: 0.45rem; left: 2.7rem; min-width: 1.15rem; height: 1.15rem; display: grid; place-items: center; padding: 0 0.3rem; border-radius: 999px; font-size: 0.7rem; font-weight: 800; background: #C9A227; color: #1f2024; box-shadow: 0 0 0 2px var(--cor-marca); }
+.dono-numeros { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.9rem; }
+.dono-numeros span { padding: 0.35rem 0.7rem; border-radius: 999px; background: rgba(31, 32, 36, 0.05); font-size: 0.78rem; color: var(--tinta-suave); }
+.dono-numeros strong { color: var(--tinta); }
+.dono-mais { border-top: 1px solid var(--borda); padding-top: 0.4rem; }
+.dono-mais summary { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.1rem; list-style: none; cursor: pointer; font-weight: 700; font-size: 0.9rem; color: var(--tinta-suave); }
+.dono-mais summary::-webkit-details-marker { display: none; }
+.dono-mais summary::after { content: ''; width: 1rem; height: 1rem; background: currentColor; transition: transform 0.2s; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; }
+.dono-mais[open] summary::after { transform: rotate(180deg); }
+.dono-mais .dash-card-menu-corpo { grid-template-columns: 1fr !important; }
+
+/* ---- barra do modo edição: explica o que fazer, essencial à mostra ---- */
+.admin-modo-barra { flex-direction: column; align-items: stretch; gap: 0.55rem; padding: 0.75rem 0.85rem; border-radius: 22px; background: rgba(24, 22, 20, 0.92); }
+.admin-modo-dica { margin: 0; font-size: 0.8rem; line-height: 1.35; color: rgba(255, 255, 255, 0.78); text-align: center; }
+.admin-modo-dica strong { display: block; color: #fff; font-size: 0.88rem; }
+.admin-modo-linha { display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; flex-wrap: wrap; }
+.admin-modo-cores { display: inline-flex; align-items: center; gap: 0.3rem; }
+.admin-modo-cores small { font-size: 0.72rem; color: rgba(255, 255, 255, 0.7); margin-left: 0.15rem; }
+.admin-modo-barra .admin-cor-swatch { width: 28px; height: 28px; }
+.admin-modo-barra button, .admin-modo-mais summary { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 0.85rem; font-size: 0.8rem; }
+.admin-modo-mais { position: relative; }
+.admin-modo-mais summary {
+  list-style: none; cursor: pointer; border-radius: 999px; font-weight: 600; color: #fff;
+  background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.admin-modo-mais summary::-webkit-details-marker { display: none; }
+.admin-modo-mais[open] summary { background: rgba(255, 255, 255, 0.2); }
+.admin-modo-mais-lista {
+  position: absolute; bottom: calc(100% + 0.6rem); right: 0; z-index: 2;
+  display: flex; flex-direction: column; gap: 0.4rem; min-width: 190px; padding: 0.55rem;
+  border-radius: 16px; background: rgba(24, 22, 20, 0.97); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+.admin-modo-mais-lista button { justify-content: center; width: 100%; }
+#adminSairBtn { background: #fff; color: #1f2024; text-shadow: none; border-color: #fff; font-weight: 700; }
+#adminSairBtn:hover { background: #fff; filter: brightness(0.95); }
+@media (hover: none) and (pointer: coarse) {
+  .admin-modo-barra { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+.admin-modo-barra { overflow: visible; max-height: none; }
+
+/* ---- aba Agenda: "marcar horário de quem ligou" recolhido num botão ---- */
+.dash-novo-horario { margin-top: 1.2rem; border: 1.5px dashed rgba(15, 107, 92, 0.35); border-radius: 16px; padding: 0 1rem; background: rgba(15, 107, 92, 0.03); }
+.dash-novo-horario[open] { border-style: solid; padding-bottom: 1rem; }
+.dash-novo-horario summary { display: flex; align-items: center; gap: 0.55rem; padding: 0.9rem 0; list-style: none; cursor: pointer; font-weight: 700; color: var(--cor-marca); }
+.dash-novo-horario summary::-webkit-details-marker { display: none; }
+.dash-novo-horario summary::before { content: '+'; display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--cor-marca); color: #fff; font-weight: 800; transition: transform 0.2s; }
+.dash-novo-horario[open] summary::before { transform: rotate(45deg); }

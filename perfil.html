@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="/assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@400;500;600&family=Oswald:wght@300;400;500;600;700&family=Bangers&family=Fraunces:opsz,wght@9..144,700&display=optional" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=81">
+<link rel="stylesheet" href="/assets/css/styles.css?v=87">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=6">
 <link rel="stylesheet" href="/assets/css/vb-local.css?v=1">
 <script src="/assets/js/vibe-toggle.js?v=3"></script>
@@ -292,18 +292,27 @@
     </div>
   </div>
 
+  <!-- Modo edição do dono: diz o que fazer (tocar no que quer trocar) e
+       deixa só o essencial à mostra; ajustes finos ficam em "Mais" -->
   <div class="admin-modo-barra oculto" id="adminModoBarra">
-    <label class="admin-cor-swatch admin-cor-principal" title="Cor principal do site">
-      <input type="color" id="adminCorInput" value="#C9A227">
-    </label>
-    <label class="admin-cor-swatch admin-cor-secundaria" title="Cor secundária (gradientes e detalhes)">
-      <input type="color" id="adminCorSecundariaInput" value="#8a6d1c">
-    </label>
-    <button type="button" id="adminEstiloBtn" title="Trocar o estilo do site">Estilo</button>
-    <button type="button" id="adminSeguirCorImagemBtn" title="Fazer as cores do site seguirem a foto principal">Seguir foto</button>
-    <button type="button" id="adminWidgetsTranslucidosBtn" title="Deixar a agenda e o catálogo com efeito de vidro fosco">Vidro</button>
-    <button type="button" id="adminFotoCardBtn" title="Foto do card no catálogo">Card</button>
-    <button type="button" id="adminSairBtn">Sair</button>
+    <p class="admin-modo-dica"><strong>Editando seu site</strong> Toque em qualquer texto ou foto pra trocar.</p>
+    <div class="admin-modo-linha">
+      <span class="admin-modo-cores">
+        <label class="admin-cor-swatch admin-cor-principal" title="Cor principal do site"><input type="color" id="adminCorInput" value="#C9A227" aria-label="Cor principal"></label>
+        <label class="admin-cor-swatch admin-cor-secundaria" title="Cor secundária (gradientes e detalhes)"><input type="color" id="adminCorSecundariaInput" value="#8a6d1c" aria-label="Cor secundária"></label>
+        <small>Cores</small>
+      </span>
+      <button type="button" id="adminEstiloBtn" title="Trocar o estilo do site"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Estilo</button>
+      <details class="admin-modo-mais">
+        <summary><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Mais</summary>
+        <div class="admin-modo-mais-lista">
+          <button type="button" id="adminSeguirCorImagemBtn" title="Fazer as cores do site seguirem a foto principal">Cores tiradas da foto</button>
+          <button type="button" id="adminWidgetsTranslucidosBtn" title="Deixar a agenda e o catálogo com efeito de vidro fosco">Efeito vidro</button>
+          <button type="button" id="adminFotoCardBtn" title="Foto do card no catálogo">Foto na busca</button>
+        </div>
+      </details>
+      <button type="button" id="adminSairBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Concluir</button>
+    </div>
   </div>
 
   <div class="gender-gate" id="genderGate">
@@ -337,13 +346,15 @@
        admin que já existem, ao vivo, sem opção de pular. -->
   <div class="vb-tutorial-overlay oculto" id="vbTutorialOverlay">
     <div class="vb-tutorial-bolha" id="vbTutorialBolha">
+      <div class="vb-tutorial-barras" id="vbTutorialBarras" aria-hidden="true"></div>
       <p class="vb-tutorial-contador" id="vbTutorialContador"></p>
       <h3 id="vbTutorialTitulo"></h3>
       <p id="vbTutorialTexto"></p>
       <div class="vb-tutorial-campos" id="vbTutorialCampos"></div>
       <p class="vb-tutorial-aviso oculto" id="vbTutorialAviso"></p>
       <div class="vb-tutorial-acoes">
-        <button type="button" class="btn btn-primario" id="vbTutorialProximo" style="width:100%;">Próximo →</button>
+        <button type="button" class="btn btn-ghost oculto" id="vbTutorialVoltar">Voltar</button>
+        <button type="button" class="btn btn-primario" id="vbTutorialProximo">Próximo</button>
       </div>
     </div>
   </div>
@@ -366,7 +377,7 @@
   <script src="/assets/js/vb-local.js?v=1"></script>
   <script src="/assets/js/passo-site.js?v=1"></script>
   <script src="/assets/js/avaliacoes-site.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=61"></script>
+  <script src="/assets/js/perfil.js?v=63"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {

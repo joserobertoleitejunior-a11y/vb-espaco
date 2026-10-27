@@ -62,6 +62,7 @@
 
   // ---- estado (o que veio pela URL já chega escolhido) ----
   var areaUrl = params.get('area');
+  var areaUrlValida = !!AREAS[areaUrl];
   var estado = {
     area: AREAS[areaUrl] ? areaUrl : 'agenda',
     extra: null,                    // segunda área opcional (agenda + delivery/servicos)
@@ -190,8 +191,14 @@
     { chave: 'masculino', nome: 'Só masculino', desc: 'Vai direto pro site, sem tela de escolha.' },
     { chave: 'feminino', nome: 'Só feminino', desc: 'Vai direto pro site, sem tela de escolha.' }
   ];
+  // barbearia já nasce "só masculino" (dá pra mudar no painel); a pergunta
+  // fica pros negócios que realmente atendem os dois públicos
   function perguntaGenero() {
-    return tem('agenda') && ['barbearia', 'salao', 'manicure_pedicure', 'estetica', 'outro'].indexOf(estado.segmento) > -1;
+    return tem('agenda') && ['salao', 'estetica', 'outro'].indexOf(estado.segmento) > -1;
+  }
+  function generoFinal() {
+    if (perguntaGenero()) return estado.genero_atendimento;
+    return estado.segmento === 'barbearia' ? 'masculino' : 'ambos';
   }
   function renderPassoAtendimento(container) {
     container.innerHTML = '<p class="criar-passo-intro">Você atende só um público, ou os dois?</p><div id="criarOpcoesGenero" class="criar-opcoes-genero"></div>';
@@ -253,22 +260,37 @@
     aoEscolher(container.querySelector('#criarTemplateEscolha'), 'template', function (k) { estado.template = k; desenhar(); postEstado(); });
   }
 
-  // ---- 5. nome e link ----
-  function renderPassoNome(container) {
+  // ---- 5. seus dados: nome, cidade e WhatsApp numa tela só ----
+  // o link do site sai sozinho do nome; só aparece pra editar se a pessoa
+  // tocar em "trocar" (antes era um campo técnico com "/" e endereço cru)
+  var CIDADES = ['Itapetininga', 'Tatuí', 'Boituva', 'Itu', 'Sorocaba'];
+  function renderPassoDados(container) {
+    var oQue = tem('agenda') ? 'os agendamentos' : tem('delivery') ? 'os pedidos' : 'os chamados';
     container.innerHTML =
+      '<p class="criar-passo-intro">Último passo antes de ver seu site pronto.</p>' +
       '<div class="field"><label for="criarNome">Nome do seu negócio</label>' +
       '<input type="text" id="criarNome" autocomplete="organization" placeholder="' + escapeHtml(SEG.exemplo(estado.segmento)) + '" value="' + escapeHtml(estado.nome) + '"></div>' +
-      '<div class="field"><label for="criarSlug">Link (sai do nome, pode editar)</label>' +
-      '<div class="prefixo"><span>/</span><input type="text" id="criarSlug" autocapitalize="off" spellcheck="false" value="' + escapeHtml(estado.slug) + '"></div>' +
-      '<span class="criar-slug-status" id="criarSlugStatus"></span>' +
-      '<span class="criar-slug-endereco" id="criarSlugEndereco"></span></div>';
+      '<div class="field"><label for="criarCidade">Cidade</label><select id="criarCidade">' +
+      CIDADES.map(function (c) {
+        return '<option value="' + escapeHtml(c) + '"' + (c.toLowerCase() === cidadeDoLink() ? ' selected' : '') + '>' + escapeHtml(c) + '</option>';
+      }).join('') + '</select></div>' +
+      '<div class="field"><label for="criarWhatsapp">WhatsApp pra receber ' + oQue + '</label>' +
+      '<input type="tel" id="criarWhatsapp" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" value="' + escapeHtml(estado.telefone_whatsapp) + '"></div>' +
+      '<div class="criar-link-pronto" id="criarLinkPronto">' +
+        '<span class="criar-link-rotulo">Endereço do seu site</span>' +
+        '<span class="criar-link-url"><span id="criarSlugEndereco"></span><button type="button" class="criar-link-trocar" id="criarSlugTrocar">trocar</button></span>' +
+        '<span class="criar-slug-status" id="criarSlugStatus"></span>' +
+        '<div class="field oculto" id="criarSlugCampo"><label for="criarSlug">Como aparece no endereço</label>' +
+        '<input type="text" id="criarSlug" autocapitalize="off" spellcheck="false" value="' + escapeHtml(estado.slug) + '"></div>' +
+      '</div>';
 
+    estado.cidade = document.getElementById('criarCidade').value;
     var slugManual = !!estado.slug;
     var statusEl = document.getElementById('criarSlugStatus');
     var timer = null;
     function mostrarEndereco() {
       document.getElementById('criarSlugEndereco').textContent =
-        location.host + '/' + (estado.slug || 'seu-negocio') + '/' + cidadeDoLink() + (tem('agenda') ? '' : '/pedir');
+        location.host.replace(/^www\./, '') + '/' + (estado.slug || 'seu-negocio') + '/' + cidadeDoLink() + (tem('agenda') ? '' : '/pedir');
     }
     function checar() {
       clearTimeout(timer);
@@ -282,7 +304,7 @@
           if (estado.slug !== slug) return;
           var ocupado = !!(res.data && res.data.length > 0 && res.data[0].id !== estabId);
           statusEl.className = 'criar-slug-status ' + (ocupado ? 'ocupado' : 'ok');
-          statusEl.textContent = ocupado ? '✕ esse link já está em uso nessa cidade' : '✓ link disponível';
+          statusEl.textContent = ocupado ? '✕ já tem um negócio com esse endereço — toque em "trocar"' : '✓ disponível';
         }, function () { statusEl.className = 'criar-slug-status'; statusEl.textContent = ''; });
       }, 450);
     }
@@ -291,12 +313,19 @@
       if (!slugManual) { estado.slug = slugificar(this.value); document.getElementById('criarSlug').value = estado.slug; checar(); }
       postEstado();
     });
+    document.getElementById('criarSlugTrocar').addEventListener('click', function () {
+      document.getElementById('criarSlugCampo').classList.remove('oculto');
+      this.classList.add('oculto');
+      document.getElementById('criarSlug').focus();
+    });
     document.getElementById('criarSlug').addEventListener('input', function () {
       slugManual = true;
       estado.slug = slugificar(this.value);
       checar();
     });
     document.getElementById('criarSlug').addEventListener('blur', function () { this.value = estado.slug; });
+    document.getElementById('criarCidade').addEventListener('change', function () { estado.cidade = this.value; checar(); postEstado(); });
+    document.getElementById('criarWhatsapp').addEventListener('input', function () { estado.telefone_whatsapp = this.value; });
     checar();
   }
   function erro(texto) {
@@ -305,32 +334,14 @@
     msg.textContent = texto;
     return false;
   }
-  function validarNome() {
+  function validarDados() {
     if (estado.nome.trim().length < 2) return erro('Digite o nome do seu negócio.');
-    if (!estado.slug) return erro('O link não pode ficar vazio.');
+    if (!estado.slug) return erro('Escolha como o nome aparece no endereço (toque em "trocar").');
     var st = document.getElementById('criarSlugStatus');
-    if (st && st.classList.contains('ocupado')) return erro('Esse link já está em uso nessa cidade — muda o nome ou o link.');
-    return true;
+    if (st && st.classList.contains('ocupado')) return erro('Já tem um negócio com esse endereço nessa cidade — toque em "trocar" e mude.');
+    return validarWhatsapp();
   }
 
-  // ---- 6. cidade ----
-  var CIDADES = ['Itapetininga', 'Tatuí', 'Boituva', 'Itu', 'Sorocaba'];
-  function renderPassoCidade(container) {
-    container.innerHTML = '<div class="field"><label for="criarCidade">Em qual cidade fica?</label><select id="criarCidade">' +
-      CIDADES.map(function (c) {
-        return '<option value="' + escapeHtml(c) + '"' + (c.toLowerCase() === cidadeDoLink() ? ' selected' : '') + '>' + escapeHtml(c) + '</option>';
-      }).join('') + '</select></div>';
-    estado.cidade = document.getElementById('criarCidade').value;
-    document.getElementById('criarCidade').addEventListener('change', function () { estado.cidade = this.value; postEstado(); });
-  }
-
-  // ---- 7. WhatsApp e criação ----
-  function renderPassoWhatsapp(container) {
-    var oQue = tem('agenda') ? 'os agendamentos' : tem('delivery') ? 'os pedidos' : 'os chamados e orçamentos';
-    container.innerHTML = '<div class="field"><label for="criarWhatsapp">WhatsApp pra receber ' + oQue + ' (com DDD)</label>' +
-      '<input type="tel" id="criarWhatsapp" inputmode="tel" autocomplete="tel" placeholder="15999999999" value="' + escapeHtml(estado.telefone_whatsapp) + '"></div>';
-    document.getElementById('criarWhatsapp').addEventListener('input', function () { estado.telefone_whatsapp = this.value; });
-  }
   function validarWhatsapp() {
     var n = estado.telefone_whatsapp.replace(/\D/g, '');
     if (n && (n.length < 10 || n.length > 13)) return erro('Confere o número: DDD + número, só os dígitos.');
@@ -351,7 +362,7 @@
     var passo = !estabId
       ? db.rpc('criar_estabelecimento', {
           p_nome: estado.nome.trim(), p_slug: estado.slug, p_cidade: estado.cidade.trim(), p_segmento: estado.segmento,
-          p_telefone_whatsapp: fone, p_template: estado.template, p_genero_atendimento: perguntaGenero() ? estado.genero_atendimento : 'ambos',
+          p_telefone_whatsapp: fone, p_template: estado.template, p_genero_atendimento: generoFinal(),
           p_areas: areas, p_servico_onde: onde
         }).then(function (res) {
           if (res.error) {
@@ -377,29 +388,29 @@
   // ---- engine: a lista de passos é refeita a cada navegação (funil) ----
   function obterPassos() {
     var p = [
-      { chave: 'area', titulo: 'O que seu negócio faz?', render: renderPassoArea },
-      { chave: 'segmento', titulo: 'Tipo de negócio', render: renderPassoSegmento }
+      { chave: 'segmento', titulo: 'Qual é o seu negócio?', render: renderPassoSegmento }
     ];
+    // veio de "Agendar", "Pedir" ou "Chamar"? a área já está escolhida
+    if (!areaUrlValida) p.unshift({ chave: 'area', titulo: 'O que seu negócio faz?', render: renderPassoArea });
     if (perguntaGenero()) p.push({ chave: 'atendimento', titulo: 'Atendimento', render: renderPassoAtendimento });
     if (tem('servicos')) p.push({ chave: 'onde', titulo: 'Onde você atende?', render: renderPassoOnde });
     if (tem('delivery')) p.push({ chave: 'recebe', titulo: 'Entrega ou retirada?', render: renderPassoRecebe });
-    p.push({ chave: 'template', titulo: 'Estilo do site', render: renderPassoTemplate });
-    p.push(
-      { chave: 'nome', titulo: 'Nome e link', render: renderPassoNome, validar: validarNome },
-      { chave: 'cidade', titulo: 'Cidade', render: renderPassoCidade },
-      { chave: 'whatsapp', titulo: 'WhatsApp', render: renderPassoWhatsapp, validar: validarWhatsapp, aoAvancar: salvarNegocio }
-    );
+    p.push({ chave: 'template', titulo: 'Escolha o visual', render: renderPassoTemplate });
+    p.push({ chave: 'dados', titulo: 'Seus dados', render: renderPassoDados, validar: validarDados, aoAvancar: salvarNegocio });
     return p;
   }
   var passoAtual = 0;
+  var PASSOS_NO_SITE = 4; // perfil.js: PASSOS_CRIACAO
 
   function atualizarCabecalho() {
     var passos = obterPassos();
     var passo = passos[passoAtual];
-    document.getElementById('criarPassoLabel').textContent = 'Passo ' + (passoAtual + 1) + ' de ' + passos.length + ': ' + passo.titulo;
+    // a criação continua no próprio site (foto, serviços, equipe, endereço)
+    var total = passos.length + (tem('agenda') ? PASSOS_NO_SITE : 0);
+    document.getElementById('criarPassoLabel').textContent = (passoAtual + 1) + ' de ' + total;
     document.getElementById('criarProgressoFill').style.width = (((passoAtual + 1) / passos.length) * 100) + '%';
     document.getElementById('criarProximoBtn').textContent = passoAtual === passos.length - 1
-      ? (tem('agenda') ? 'Criar e abrir meu site ✓' : 'Criar e abrir meu painel ✓') : 'Próximo →';
+      ? (tem('agenda') ? 'Criar meu site' : 'Criar e abrir meu painel') : 'Próximo';
   }
   function mostrarPasso(indice, direcao) {
     passoAtual = indice;
@@ -434,7 +445,7 @@
   function verPrevia(mostrar) {
     cartao.classList.toggle('recolhido', mostrar);
     btnPrevia.setAttribute('aria-pressed', String(mostrar));
-    btnPrevia.textContent = mostrar ? 'Perguntas' : 'Ver prévia';
+    btnPrevia.textContent = mostrar ? 'Voltar às perguntas' : 'Ver o site';
   }
   btnPrevia.addEventListener('click', function () { verPrevia(!cartao.classList.contains('recolhido')); });
   document.getElementById('criarTituloPasso').addEventListener('click', function () {

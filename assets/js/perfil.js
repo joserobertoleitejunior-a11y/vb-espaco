@@ -894,57 +894,38 @@
   var PASSOS_CRIACAO = [
     {
       id: 'foto', titulo: 'Foto principal',
-      texto: 'Essa é a primeira coisa que os clientes veem. Escolha uma foto do seu celular ou uma das opções abaixo.',
+      texto: 'É a primeira coisa que o cliente vê. Mande uma do celular ou toque numa pronta.',
       obrigatorio: true,
       avisoIncompleto: 'Escolha uma foto pra continuar.',
       completo: function () { return !!(linhaAtual && ((generoAtual === 'feminino') ? (linhaAtual.foto_hero_feminino_url || linhaAtual.foto_hero_url) : linhaAtual.foto_hero_url)); },
       render: renderPassoTutorialFoto
     },
     {
-      id: 'cores', titulo: 'Cores da sua marca',
-      texto: 'Você já escolheu uma cor lá no começo — aqui dá pra trocar quantas vezes quiser. Escolha a principal e a secundária.',
-      obrigatorio: false,
-      completo: function () { return true; },
-      render: renderPassoTutorialCores
-    },
-    {
       id: 'servicos', titulo: 'Serviços e preços',
-      texto: 'Adicione cada serviço que você oferece, com o preço. Precisa ter pelo menos um pra continuar.',
+      texto: 'O que o cliente pode agendar. Toque numa sugestão ou escreva o seu.',
       obrigatorio: true,
       avisoIncompleto: 'Adicione pelo menos um serviço pra continuar.',
       completo: function () { return servicosCache && servicosCache.length > 0; },
       render: renderPassoTutorialServicos
     },
     {
-      id: 'equipe', titulo: 'Sua equipe',
-      texto: 'Adicione os profissionais que atendem na sua loja. Precisa ter pelo menos um pra continuar.',
+      id: 'equipe', titulo: 'Quem atende',
+      texto: 'Coloque seu nome (e o de quem trabalha com você). O cliente escolhe na hora de agendar.',
       obrigatorio: true,
-      avisoIncompleto: 'Adicione pelo menos um profissional pra continuar.',
+      avisoIncompleto: 'Adicione pelo menos uma pessoa pra continuar.',
       completo: function () { return equipeCache && equipeCache.length > 0; },
       render: renderPassoTutorialEquipe
     },
     {
-      id: 'localizacao', titulo: 'Localização',
-      texto: 'Onde fica seu estabelecimento? Isso aparece no rodapé do site e no link do mapa. Precisa preencher pra continuar.',
+      id: 'localizacao', titulo: 'Endereço',
+      texto: 'Onde fica o seu espaço — aparece no site e abre no mapa.',
       obrigatorio: true,
       avisoIncompleto: 'Preencha o endereço pra continuar.',
       completo: function () { return !!(linhaAtual && linhaAtual.endereco && linhaAtual.endereco.trim()); },
       render: renderPassoTutorialLocalizacao
-    },
-    {
-      id: 'redes', titulo: 'Redes sociais',
-      texto: 'Opcional, mas muito importante — clientes confiam bem mais em quem tem Instagram e WhatsApp visíveis no site.',
-      obrigatorio: false,
-      completo: function () { return true; },
-      render: renderPassoTutorialRedes
-    },
-    {
-      id: 'galeria', titulo: 'Galeria de fotos',
-      texto: 'Opcional, mas ajuda bastante a fechar clientes: mostre fotos do seu espaço e dos seus trabalhos.',
-      obrigatorio: false,
-      completo: function () { return true; },
-      render: renderPassoTutorialGaleria
     }
+    // cores, redes sociais e galeria ficam pro painel ("Editar site"),
+    // fora da criação — eram passos a mais que confundiam no primeiro uso
   ];
   var passoCriacaoAtual = 0;
   var passoCriacaoDesde = 0;
@@ -962,6 +943,9 @@
     // ficam se sobrepondo (volta a aparecer quando termina)
     document.getElementById('adminModoBarra').classList.add('oculto');
     document.getElementById('vbTutorialOverlay').classList.remove('oculto');
+    document.getElementById('vbTutorialVoltar').addEventListener('click', function () {
+      if (passoCriacaoAtual > 0) { passoCriacaoAtual--; mostrarPassoTutorial(passoCriacaoAtual); }
+    });
     document.getElementById('vbTutorialProximo').addEventListener('click', function () {
       if (this.disabled) return;
       if (passoCriacaoAtual >= PASSOS_CRIACAO.length - 1) { concluirTutorial(); return; }
@@ -991,7 +975,12 @@
     document.getElementById('vbTutorialContador').textContent = 'Passo ' + (passoCriacaoDesde + indice + 1) + ' de ' + passoCriacaoTotal;
     document.getElementById('vbTutorialTitulo').textContent = passo.titulo;
     document.getElementById('vbTutorialTexto').textContent = passo.texto;
-    document.getElementById('vbTutorialProximo').textContent = indice === PASSOS_CRIACAO.length - 1 ? 'Finalizar criação ✓' : 'Próximo →';
+    document.getElementById('vbTutorialProximo').textContent = indice === PASSOS_CRIACAO.length - 1 ? 'Pronto, ver meu site' : 'Próximo';
+    document.getElementById('vbTutorialVoltar').classList.toggle('oculto', indice === 0);
+    // barrinhas de progresso: uma por passo da criação inteira
+    var barras = '';
+    for (var b = 0; b < passoCriacaoTotal; b++) barras += '<i' + (b <= passoCriacaoDesde + indice ? ' class="feito"' : '') + '></i>';
+    document.getElementById('vbTutorialBarras').innerHTML = barras;
     var campos = document.getElementById('vbTutorialCampos');
     if (localTutorial) { localTutorial.destruir(); localTutorial = null; }
     campos.innerHTML = '';
@@ -1141,53 +1130,6 @@
     { nome: 'Terracota', principal: '#B5622E', secundaria: '#7A4019' }
   ];
 
-  function renderPassoTutorialCores(container) {
-    var corPrincipal = linhaAtual.cor_destaque || '#C9A227';
-    var corSecundaria = linhaAtual.cor_secundaria || rgbParaHex(misturarRgb(hexParaRgbNums(corPrincipal), [0, 0, 0], 0.28));
-    var temFoto = !!((generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) || linhaAtual.foto_hero_url);
-    container.innerHTML =
-      (temFoto ? '<button type="button" class="btn btn-ghost" id="vbTutSeguirFoto" style="width:100%; margin-bottom:1rem;">🎨 Usar as cores da minha foto</button>' : '') +
-      '<p class="vb-servico-novo-legenda">Paletas prontas:</p>' +
-      '<div style="display:flex; flex-wrap:wrap; gap:0.6rem; margin-bottom:1.1rem;">' +
-      PALETAS_PRONTAS.map(function (p) {
-        var ativa = p.principal.toLowerCase() === corPrincipal.toLowerCase();
-        return '<button type="button" class="vb-paleta-pronta' + (ativa ? ' is-selecionada' : '') + '" data-paleta-principal="' + p.principal + '" data-paleta-secundaria="' + p.secundaria + '" title="' + p.nome + '" aria-label="' + p.nome + '">' +
-          '<span style="background:' + p.principal + ';"></span><span style="background:' + p.secundaria + ';"></span>' +
-          '</button>';
-      }).join('') +
-      '</div>' +
-      '<p class="vb-servico-novo-legenda">Ou escolha à mão:</p>' +
-      '<div style="display:flex; gap:1.4rem; align-items:center; margin-bottom:0.4rem;">' +
-      '<label style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; font-size:0.75rem; color:var(--ink-soft,#7a7368);">Principal' +
-      '<span class="admin-cor-swatch" style="width:44px; height:44px;"><input type="color" id="vbTutCorPrincipal" value="' + corPrincipal + '"></span>' +
-      '</label>' +
-      '<label style="display:flex; flex-direction:column; align-items:center; gap:0.35rem; font-size:0.75rem; color:var(--ink-soft,#7a7368);">Secundária' +
-      '<span class="admin-cor-swatch" style="width:44px; height:44px;"><input type="color" id="vbTutCorSecundaria" value="' + corSecundaria + '"></span>' +
-      '</label>' +
-      '</div>';
-    var inputPrincipal = document.getElementById('vbTutCorPrincipal');
-    var inputSecundaria = document.getElementById('vbTutCorSecundaria');
-    inputPrincipal.addEventListener('input', function () { aplicarCorDinamica(inputPrincipal.value, inputSecundaria.value); });
-    inputSecundaria.addEventListener('input', function () { aplicarCorDinamica(inputPrincipal.value, inputSecundaria.value); });
-    inputPrincipal.addEventListener('change', function () { salvarCor(inputPrincipal.value, inputSecundaria.value); });
-    inputSecundaria.addEventListener('change', function () { salvarCor(inputPrincipal.value, inputSecundaria.value); });
-    container.querySelectorAll('[data-paleta-principal]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        salvarCor(btn.getAttribute('data-paleta-principal'), btn.getAttribute('data-paleta-secundaria'));
-        mostrarPassoTutorial(passoCriacaoAtual);
-      });
-    });
-    var seguirBtn = document.getElementById('vbTutSeguirFoto');
-    if (seguirBtn) {
-      seguirBtn.addEventListener('click', function () {
-        var fotoAtual = (generoAtual === 'feminino' && linhaAtual.foto_hero_feminino_url) ? linhaAtual.foto_hero_feminino_url : linhaAtual.foto_hero_url;
-        linhaAtual.seguir_cor_imagem = true;
-        db.rpc('tenant_admin_alternar_seguir_cor_imagem', { p_estabelecimento_id: estabId, p_seguir: true });
-        seguirCorDaImagem(fotoAtual);
-        setTimeout(function () { mostrarPassoTutorial(passoCriacaoAtual); }, 200);
-      });
-    }
-  }
 
   // ---- passo "serviços": mesma sugestão por nicho + campo manual do
   // painel "+Novo serviço" de sempre, só que já aberto aqui dentro —
@@ -1318,76 +1260,7 @@
     });
   }
 
-  // ---- passo "redes sociais": opcional, mas com um selo deixando claro
-  // que vale a pena preencher (não é obrigatório, mas também não é só
-  // enfeite) — mesmo prompt de link de sempre, só que embutido aqui. ----
-  function renderPassoTutorialRedes(container) {
-    container.innerHTML =
-      '<p class="vb-tutorial-selo-recomendado">★ Recomendado</p>' +
-      '<div class="vb-tutorial-redes" id="vbTutRedes"></div>';
-    var alvo = document.getElementById('vbTutRedes');
-    var linksVisiveis = REDES.filter(function (r) { return r.chave !== 'whatsapp'; });
-    function render() {
-      alvo.innerHTML = linksVisiveis.map(function (r) {
-        var vazio = !linhaAtual[r.chave];
-        return '<button type="button" class="social-badge" data-rede-tut="' + r.chave + '" title="' + r.label + '" style="' + (vazio ? 'opacity:0.4;' : '') + '">' + r.icone + '</button>';
-      }).join('');
-      alvo.querySelectorAll('[data-rede-tut]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var chave = btn.getAttribute('data-rede-tut');
-          var atual = linhaAtual[chave] || '';
-          window.VBDialogo.prompt('Link do ' + btn.getAttribute('title') + ' (deixe vazio pra remover):', atual).then(function (novo) {
-            if (novo === null) return;
-            novo = novo.trim() || null;
-            linhaAtual[chave] = novo;
-            db.rpc('tenant_admin_atualizar_redes', {
-              p_estabelecimento_id: estabId,
-              p_instagram_url: linhaAtual.instagram_url,
-              p_facebook_url: linhaAtual.facebook_url,
-              p_tiktok_url: linhaAtual.tiktok_url
-            }).then(function () { carregarRedesSociais(); render(); });
-          });
-        });
-      });
-    }
-    render();
-  }
 
-  // ---- passo "galeria": botão de enviar fotos direto aqui — continua
-  // opcional, mas com o mesmo selo de "vale a pena" do passo de redes. ----
-  function renderPassoTutorialGaleria(container) {
-    container.innerHTML =
-      '<p class="vb-tutorial-selo-recomendado">★ Recomendado</p>' +
-      '<div id="vbTutGaleriaGrid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; margin-bottom:0.7rem;"></div>' +
-      '<label class="vb-btn-upload" style="width:100%; justify-content:center; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Adicionar fotos<input type="file" id="vbTutGaleriaUpload" accept="image/*" multiple></label>' +
-      '<p class="msg" id="vbTutGaleriaMsg" style="margin-top:0.5rem;"></p>';
-
-    function renderGrid() {
-      db.rpc('tenant_listar_galeria', { p_estabelecimento_id: estabId }).then(function (res) {
-        var linhas = res.data || [];
-        document.getElementById('vbTutGaleriaGrid').innerHTML = linhas.slice(0, 6).map(function (g) {
-          return '<img src="' + escapeHtml(g.foto_url) + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px;">';
-        }).join('');
-      });
-    }
-    renderGrid();
-
-    document.getElementById('vbTutGaleriaUpload').addEventListener('change', function (e) {
-      var arquivos = Array.prototype.slice.call(e.target.files);
-      if (!arquivos.length || !window.VBUpload) return;
-      var msg = document.getElementById('vbTutGaleriaMsg');
-      msg.textContent = 'Enviando…';
-      Promise.all(arquivos.map(function (arquivo) {
-        return window.VBUpload.uploadFoto(arquivo, estabId, 'galeria').then(function (url) {
-          return db.rpc('tenant_admin_adicionar_foto', { p_estabelecimento_id: estabId, p_foto_url: url, p_staff_id: null });
-        });
-      })).then(function () {
-        msg.textContent = '';
-        renderGrid();
-        carregarGaleria();
-      });
-    });
-  }
 
   function desativarModoAdmin() {
     modoAdmin = false;
