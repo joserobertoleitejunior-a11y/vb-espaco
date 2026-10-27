@@ -1,0 +1,227 @@
+/* Botões e campos desenhados em código pra todo o site — nada com cara de
+   controle nativo do navegador. Carregar por último em cada página.
+   A cor de destaque vem do estilo do negócio (--terracotta nos sites,
+   --accent no painel, --cor-marca na plataforma). */
+
+/* ---------- seleção (select) ---------- */
+select:not([multiple]):not([size]) {
+  -webkit-appearance: none; appearance: none;
+  padding-right: 2.7rem !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%231f2024' fill-opacity='.07'/%3E%3Cpath d='M8 10.5l4 4 4-4' fill='none' stroke='%231f2024' stroke-opacity='.7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important; background-position: right 0.7rem center !important; background-size: 1.45rem !important;
+  cursor: pointer;
+}
+select:not([multiple]):not([size])::-ms-expand { display: none; }
+
+/* ---------- número sem as setinhas do sistema ---------- */
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ---------- hora e data: ícone próprio no lugar do do sistema ---------- */
+input[type="time"], input[type="date"] { cursor: pointer; min-height: 2.6rem; }
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+  width: 1.15rem; height: 1.15rem; padding: 0.25rem; margin-left: 0.3rem; border-radius: 50%;
+  background: rgba(31, 32, 36, 0.07) center / 0.95rem no-repeat; opacity: 0.85; cursor: pointer;
+}
+input[type="time"]::-webkit-calendar-picker-indicator {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f2024' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f2024' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15' rx='3'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E");
+}
+
+/* ---------- cor: bolinha em vez da caixinha do sistema ---------- */
+input[type="color"] {
+  -webkit-appearance: none; appearance: none; width: 2.6rem; height: 2.6rem; padding: 0; border: 0; border-radius: 50%;
+  background: none; cursor: pointer; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(31, 32, 36, 0.18); overflow: hidden;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 50%; }
+input[type="color"]::-moz-color-swatch { border: 0; border-radius: 50%; }
+
+/* ---------- caixinha de marcar (fora dos interruptores) ---------- */
+input[type="checkbox"]:not(:where(.switch, .dash-card-switch, .vt-switch, .sem-skin) input):not(.sem-skin) {
+  -webkit-appearance: none; appearance: none; flex: 0 0 auto;
+  width: 1.3rem; height: 1.3rem; margin: 0; border-radius: 7px; cursor: pointer; vertical-align: -0.25em;
+  border: 1.5px solid rgba(31, 32, 36, 0.28); background: #fff center / 0.9rem no-repeat;
+  transition: background-color 0.18s, border-color 0.18s, transform 0.12s;
+}
+input[type="checkbox"]:not(:where(.switch, .dash-card-switch, .vt-switch, .sem-skin) input):not(.sem-skin):checked {
+  border-color: transparent;
+  background-color: var(--terracotta, var(--accent, var(--cor-marca, #0F6B5C)));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+}
+input[type="checkbox"]:not(:where(.switch, .dash-card-switch, .vt-switch, .sem-skin) input):not(.sem-skin):active { transform: scale(0.88); }
+input[type="checkbox"]:not(:where(.switch, .dash-card-switch, .vt-switch, .sem-skin) input):not(.sem-skin):focus-visible { outline: 2px solid var(--terracotta, var(--accent, var(--cor-marca, #0F6B5C))); outline-offset: 2px; }
+
+/* ---------- cartões do "Criar negócio" com a fonte do site ---------- */
+.criar-opcao-card, .tpl-print-card { font-family: inherit; }
+
+/* ---------- menu do painel ---------- */
+.p-menu .drawer-link {
+  display: flex; align-items: center; gap: 0.6rem; width: 100%; box-sizing: border-box;
+  padding: 0.8rem 0.75rem; margin: 0; border: 0; border-radius: 12px; background: none;
+  font: inherit; font-weight: 700; font-size: 0.95rem; color: inherit; text-align: left; text-decoration: none; cursor: pointer;
+  transition: background 0.18s, transform 0.12s;
+}
+.p-menu .drawer-link > span { flex: 1; }
+.p-menu .drawer-link::after {
+  content: ''; width: 1.6rem; height: 1.6rem; border-radius: 50%; flex: 0 0 auto;
+  background: rgba(31, 32, 36, 0.06) center / 0.85rem no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f2024' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E");
+  opacity: 0.75; transition: transform 0.18s;
+}
+.p-menu .drawer-link:hover, .p-menu .drawer-link:focus-visible { background: rgba(31, 32, 36, 0.05); outline: none; }
+.p-menu .drawer-link:hover::after { transform: translateX(2px); }
+.p-menu .drawer-link:active { transform: scale(0.98); }
+.p-menu .drawer-link[data-sair], .p-menu #pDesativarArea { color: #b23a28; }
+
+/* ---------- botõezinhos de linha do painel (subir, descer, renomear, apagar) ---------- */
+.ca-linha button {
+  display: inline-grid; place-items: center; width: 2.1rem; height: 2.1rem; padding: 0 !important;
+  border-radius: 50% !important; background: rgba(31, 32, 36, 0.05) !important; color: var(--ink-soft, #6b6d76) !important;
+  transition: background 0.18s, color 0.18s, transform 0.12s;
+}
+.ca-linha button svg { width: 1rem; height: 1rem; }
+.ca-linha button:hover { background: rgba(var(--accent-rgb, 15, 107, 92), 0.12) !important; color: var(--accent, #0F6B5C) !important; }
+.ca-linha button[data-remover-cat]:hover, .ca-linha button[data-remover-borda]:hover { background: rgba(192, 57, 43, 0.12) !important; color: #c0392b !important; }
+.ca-linha button:active { transform: scale(0.9); }
+.ca-linha button:disabled { opacity: 0.3; pointer-events: none; }
+
+/* ======================================================================
+   Opções do passo a passo (busca e site do negócio): cartões desenhados
+   ====================================================================== */
+.guia .guia-opcoes, .passo-folha ol { display: grid; gap: 0.6rem; border-top: 0; padding-top: 0.2rem; }
+.guia .guia-op, .passo-folha li button {
+  position: relative; overflow: hidden; isolation: isolate;
+  grid-template-columns: 2.5rem 1fr 2.1rem; align-items: center; gap: 0.12rem 0.85rem;
+  padding: 0.9rem 0.9rem 0.9rem 0.85rem; border: 1px solid rgba(31, 32, 36, 0.08); border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #fbfbfc);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(20, 20, 30, 0.04), 0 12px 24px -20px rgba(20, 20, 30, 0.45);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s, border-color 0.22s, background 0.22s;
+}
+/* brilho que passa por cima ao tocar */
+.guia .guia-op::after, .passo-folha li button::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(201, 162, 39, 0.16) 50%, transparent 65%);
+  transform: translateX(-110%); transition: transform 0.6s ease;
+}
+.guia .guia-op:hover, .guia .guia-op:focus-visible,
+.passo-folha li button:hover, .passo-folha li button:focus-visible {
+  padding-left: 0.85rem; outline: none; transform: translateY(-2px);
+  border-color: rgba(201, 162, 39, 0.45);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 30px -20px rgba(20, 20, 30, 0.5);
+}
+.guia .guia-op:hover::after, .passo-folha li button:hover::after { transform: translateX(110%); }
+.guia .guia-op:active, .passo-folha li button:active { transform: scale(0.985); transition-duration: 0.08s; }
+
+/* número dentro de uma moeda dourada */
+.guia .guia-op-num, .passo-folha li button .n {
+  grid-row: 1 / span 2; align-self: center; display: grid; place-items: center;
+  width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  background: radial-gradient(circle at 32% 26%, #fff3c4 0%, #e6c55a 38%, #C9A227 72%, #a8851a 100%);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.14), 0 4px 10px -4px rgba(168, 133, 26, 0.7), inset 0 -2px 3px rgba(0, 0, 0, 0.12);
+  color: #3a2d05; font-size: 0.85rem; letter-spacing: 0.02em; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.guia .guia-op-txt, .passo-folha li button .t { grid-column: 2; line-height: 1.25; }
+.guia .guia-op-det, .passo-folha li button .d { grid-column: 2; grid-row: 2; }
+.guia .guia-op-det:empty { display: none; }
+
+/* seta numa bolinha sempre visível */
+.guia .guia-op-seta, .passo-folha li button .s {
+  grid-column: 3; grid-row: 1 / span 2; align-self: center; justify-self: end;
+  display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%;
+  opacity: 1; transform: none; font-size: 1rem; line-height: 1;
+  color: var(--cor-marca, var(--accent, #0F6B5C));
+  background: rgba(15, 107, 92, 0.09);
+  transition: background 0.22s, color 0.22s, transform 0.22s;
+}
+.passo-folha li button .s { color: var(--accent, #0F6B5C); }
+.guia .guia-op:hover .guia-op-seta, .guia .guia-op:focus-visible .guia-op-seta, .guia .guia-op.escolhida .guia-op-seta,
+.passo-folha li button:hover .s, .passo-folha li button:focus-visible .s, .passo-folha li button.escolhida .s {
+  opacity: 1; transform: translateX(2px); color: #fff; background: var(--cor-marca, var(--accent, #0F6B5C));
+}
+.passo-folha li button:hover .s, .passo-folha li button.escolhida .s { background: var(--accent, #0F6B5C); }
+
+.guia .guia-op.escolhida, .passo-folha li button.escolhida {
+  padding-left: 0.85rem; border-color: var(--cor-marca, #0F6B5C);
+  background: linear-gradient(180deg, rgba(15, 107, 92, 0.07), rgba(15, 107, 92, 0.02)), #fff;
+}
+
+/* ======================================================================
+   Agenda do site do negócio: dia, horário e serviço
+   ====================================================================== */
+body .day-btn {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  min-width: 70px; padding: 0 0 0.6rem; overflow: hidden; border-radius: 16px; line-height: 1.1;
+  box-shadow: 0 10px 20px -18px rgba(20, 20, 30, 0.55);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+body .day-btn .dia-sem {
+  align-self: stretch; padding: 0.35rem 0.5rem; margin-bottom: 0.25rem;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+  background: color-mix(in srgb, var(--terracotta, #0F6B5C) 12%, transparent); color: var(--terracotta, #0F6B5C);
+}
+body .day-btn .dia-num { font-size: 1.45rem; font-weight: 700; }
+body .day-btn .dia-mes { font-size: 0.7rem; opacity: 0.65; text-transform: lowercase; }
+body .day-btn:hover { transform: translateY(-2px); }
+body .day-btn.selected { border-color: var(--terracotta, #0F6B5C); box-shadow: 0 0 0 1px var(--terracotta, #0F6B5C), 0 14px 24px -16px rgba(20, 20, 30, 0.6); }
+body .day-btn.selected .dia-sem { background: var(--terracotta, #0F6B5C); color: #fff; }
+
+body .time-btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+  border-radius: 999px; font-variant-numeric: tabular-nums; font-weight: 600;
+  transition: transform 0.18s, background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+body .time-btn::before {
+  content: ''; width: 0.95rem; height: 0.95rem; flex: 0 0 auto; background: currentColor; opacity: 0.55;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+body .time-btn:not(:disabled):hover { transform: translateY(-1px); border-color: var(--terracotta, #0F6B5C); }
+body .time-btn.selected { background: var(--terracotta, #0F6B5C); border-color: var(--terracotta, #0F6B5C); color: #fff; box-shadow: 0 10px 20px -12px var(--terracotta, #0F6B5C); }
+body .time-btn.selected::before { opacity: 1; }
+body .time-btn:disabled { text-decoration: line-through; border-style: dashed; cursor: not-allowed; }
+
+/* serviço / profissional escolhido ganha um selo de check */
+body .pick-btn { position: relative; transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s, background 0.2s, box-shadow 0.2s; }
+body .pick-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 24px -20px rgba(20, 20, 30, 0.6); }
+body .pick-btn::after {
+  content: ''; position: absolute; top: 0.55rem; right: 0.55rem; width: 1.35rem; height: 1.35rem; border-radius: 50%;
+  background: var(--terracotta, #0F6B5C) center / 0.8rem no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+  transform: scale(0); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+body .pick-btn.selected::after { transform: scale(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .guia .guia-op, .passo-folha li button, body .day-btn, body .time-btn, body .pick-btn, .guia .guia-op::after, .passo-folha li button::after { transition: none !important; }
+}
+
+/* ---------- envio de foto (assets/js/botoes.js veste o input do navegador) ---------- */
+.arquivo-btn {
+  position: relative; display: inline-flex; align-items: center; gap: 0.6rem; max-width: 100%; box-sizing: border-box;
+  padding: 0.55rem 1.05rem 0.55rem 0.55rem; border-radius: 999px; cursor: pointer;
+  border: 1.5px dashed rgba(31, 32, 36, 0.22); background: rgba(31, 32, 36, 0.03);
+  font: inherit; font-weight: 700; font-size: 0.95rem; color: inherit;
+  transition: border-color 0.2s, background 0.2s, transform 0.12s;
+}
+.arquivo-btn:hover { border-color: var(--terracotta, var(--accent, var(--cor-marca, #0F6B5C))); background: rgba(15, 107, 92, 0.05); }
+.arquivo-btn:active { transform: scale(0.98); }
+.arquivo-btn:focus-within { outline: 2px solid var(--terracotta, var(--accent, var(--cor-marca, #0F6B5C))); outline-offset: 2px; }
+.arquivo-btn-icone {
+  display: grid; place-items: center; width: 2.2rem; height: 2.2rem; flex: 0 0 auto; border-radius: 50%;
+  background: var(--terracotta, var(--accent, var(--cor-marca, #0F6B5C))); color: #fff;
+}
+.arquivo-btn-icone svg { width: 1.15rem; height: 1.15rem; }
+.arquivo-btn-nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.82rem; opacity: 0.65; }
+.arquivo-btn-nome:empty { display: none; }
+.arquivo-btn.tem { border-style: solid; }
+.arquivo-btn input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+/* páginas que estilizam todo <label> como título de campo não podem desmontar o botão */
+label.arquivo-btn {
+  display: inline-flex !important; flex-direction: row !important; width: auto; margin: 0 !important;
+  font-size: 0.95rem !important; font-weight: 700 !important; line-height: 1.2 !important;
+  letter-spacing: 0 !important; text-transform: none !important; color: var(--tinta, #1f2024) !important;
+}
+label.arquivo-btn > span { display: inline-block; margin: 0; }
+label.arquivo-btn > .arquivo-btn-icone { display: grid; }

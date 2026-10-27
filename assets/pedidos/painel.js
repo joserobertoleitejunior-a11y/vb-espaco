@@ -37,6 +37,11 @@
   var URGENTE = false;
   var negocio = null;
 
+  // ícones das ações de linha (subir, descer, renomear) desenhados em SVG
+  var ICONE_SOBE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>';
+  var ICONE_DESCE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  var ICONE_LAPIS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>';
+
   /* ===================== utilidades ===================== */
   function mostrarTela(id) {
     ['telaCarregando', 'telaAtivar', 'app'].forEach(function (x) { $(x).classList.toggle('oculto', x !== id); });
@@ -591,9 +596,9 @@
     $('listaCategorias').innerHTML = categorias.length ? categorias.map(function (c, idx) {
       var n = itens.filter(function (i) { return i.categoria_id === c.id; }).length;
       return '<div class="ca-linha"><span><strong>' + esc(c.nome) + '</strong> <small style="color:var(--ink-faint)">' + n + ' ' + (n === 1 ? 'item' : 'itens') + '</small></span>' +
-        '<button type="button" data-mover-cat="' + idx + '" data-d="-1" aria-label="Subir" ' + (idx === 0 ? 'disabled' : '') + '>↑</button>' +
-        '<button type="button" data-mover-cat="' + idx + '" data-d="1" aria-label="Descer" ' + (idx === categorias.length - 1 ? 'disabled' : '') + '>↓</button>' +
-        '<button type="button" data-renomear-cat="' + c.id + '" aria-label="Renomear">✎</button>' +
+        '<button type="button" data-mover-cat="' + idx + '" data-d="-1" aria-label="Subir" ' + (idx === 0 ? 'disabled' : '') + '>' + ICONE_SOBE + '</button>' +
+        '<button type="button" data-mover-cat="' + idx + '" data-d="1" aria-label="Descer" ' + (idx === categorias.length - 1 ? 'disabled' : '') + '>' + ICONE_DESCE + '</button>' +
+        '<button type="button" data-renomear-cat="' + c.id + '" aria-label="Renomear">' + ICONE_LAPIS + '</button>' +
         '<button type="button" data-remover-cat="' + c.id + '" aria-label="Remover">' + U.ICONES.lixo + '</button></div>';
     }).join('') : '<p class="ca-vazio">Crie categorias como "Tradicionais", "Bebidas"… elas viram as abas do seu cardápio.</p>';
 

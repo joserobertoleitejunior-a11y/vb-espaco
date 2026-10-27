@@ -1984,6 +1984,7 @@
   // marcou) ----------
   var WIZ_STORAGE_PREFIX = 'vbClienteContato_';
   var DIAS_ABREV = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+  var MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
   function iniciarWizard() {
     var overlay = document.getElementById('wizardOverlay');
@@ -2071,7 +2072,8 @@
       diaRow.innerHTML = diasDisponiveis.map(function (d) {
         var label = DIAS_ABREV[d.getDay()] + ' ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
         return '<button type="button" class="day-btn" data-value="' + label + '" data-key="' + isoDate(d) + '" data-iso="' + isoDate(d) + '">' +
-          DIAS_ABREV[d.getDay()] + '<br>' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '</button>';
+          '<span class="dia-sem">' + DIAS_ABREV[d.getDay()] + '</span><span class="dia-num">' + String(d.getDate()).padStart(2, '0') + '</span>' +
+          '<span class="dia-mes">' + MESES_ABREV[d.getMonth()] + '</span></button>';
       }).join('');
     }
 
