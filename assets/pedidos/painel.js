@@ -221,11 +221,11 @@
     $('pNome').textContent = loja.nome;
     $('pSegmento').textContent = U.SEGMENTOS[loja.segmento] || 'Estabelecimento';
     $('pMenuSite').href = urlSite();
-    // com Agenda junto, o visual do site (foto do topo, cores, estilo e
-    // textos) é o mesmo nas duas áreas e se edita pelo passo a passo
-    var temAgenda = (loja.areas || []).indexOf('agenda') !== -1;
-    $('pMenuEditarSite').classList.toggle('oculto', !temAgenda);
-    if (temAgenda) $('pMenuEditarSite').href = '/' + loja.slug + '/' + loja.cidade + '?editar=1';
+    // editar o site: o mesmo passo a passo da Agenda, aberto no próprio
+    // site de Pedir/Chamar (assets/pedidos/editar-loja.js)
+    var urlEditar = '/' + loja.slug + '/' + loja.cidade + '/pedir?editar=1';
+    $('pMenuEditarSite').href = urlEditar;
+    $('editarPassosBtn').href = urlEditar;
     var logo = $('pLogo');
     if (loja.foto_perfil_url) { logo.style.backgroundImage = 'url("' + encodeURI(loja.foto_perfil_url) + '")'; logo.textContent = ''; }
     else { logo.style.backgroundImage = ''; logo.textContent = loja.nome.charAt(0).toUpperCase(); }

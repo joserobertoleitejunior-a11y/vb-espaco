@@ -58,6 +58,37 @@
     }
   }
 
+  /* ===================== edição pelo passo a passo ===================== */
+  // o editor (editar-loja.js) lê e grava pelo banco; aqui só recarrega os
+  // dados e redesenha a página sem recarregar, pra ver o resultado ao vivo
+  async function recarregarDados() {
+    var resp = await window.db.rpc('delivery_buscar_estabelecimento', { p_slug: slug, p_cidade: cidade });
+    if (!resp.error && resp.data) estab = resp.data;
+    var cResp = await window.db.rpc('delivery_cardapio_publico', { p_estabelecimento_id: estab.id });
+    if (!cResp.error && cResp.data) cardapio = cResp.data;
+    var iResp = await window.db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade });
+    if (!iResp.error && iResp.data && iResp.data[0]) ident = iResp.data[0];
+    await aplicarVisual();
+    renderizarLoja();
+    renderizarCardapio();
+    atualizarStatus();
+  }
+  // mostra estilo/cor/nome antes de salvar (mesmo caminho do preview do painel)
+  function prever(dados) {
+    ident = Object.assign({}, ident, dados);
+    aplicarVisual().then(function () { renderizarLoja(); renderizarCardapio(); });
+  }
+  var apiEditor = {
+    estab: function () { return estab; },
+    ident: function () { return ident; },
+    cardapio: function () { return cardapio; },
+    servico: function () { return SERVICO; },
+    urgente: function () { return URGENTE; },
+    vocab: function () { return V; },
+    recarregar: recarregarDados,
+    prever: prever
+  };
+
   /* ===================== carga ===================== */
   async function iniciar() {
     $('buscaIcone').outerHTML = U.ICONES.busca;
@@ -98,6 +129,8 @@
     mostrarEstado('estadoPronto');
     atualizarBadgePedidos();
     montarPassoSite();
+    // dono editando pelo passo a passo (assets/pedidos/editar-loja.js)
+    if (!MODO_DEMO && !MODO_PREVIEW && window.VBEditarLoja) window.VBEditarLoja.iniciar(apiEditor);
 
     if (q.get('pedidos') === '1') abrirMeusPedidos();
   }
