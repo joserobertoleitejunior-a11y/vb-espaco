@@ -202,6 +202,12 @@ body.painel { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .foto-remover { margin-top: 0.4rem; }
 .fotos-loja { display: flex; gap: 1rem; align-items: flex-start; }
 .fotos-loja > div:first-child { flex: 1; }
+.capas-prontas { margin-top: 1.1rem; }
+.capas-prontas-lista { display: flex; gap: 0.6rem; overflow-x: auto; padding: 0.2rem 0.1rem 0.5rem; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+.capa-pronta { flex: 0 0 132px; display: flex; flex-direction: column; gap: 0.3rem; padding: 0; border: 0; background: none; font: inherit; font-size: 0.78rem; color: inherit; text-align: left; cursor: pointer; scroll-snap-align: start; }
+.capa-pronta img { width: 132px; height: 84px; object-fit: cover; border-radius: 10px; border: 2px solid transparent; transition: border-color 0.15s; }
+.capa-pronta.escolhida img { border-color: rgb(var(--accent-rgb)); }
+.capa-pronta[disabled] { opacity: 0.5; cursor: default; }
 
 /* horários */
 .hor-linha { display: grid; grid-template-columns: 1fr auto auto auto; gap: 0.5rem; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--line); }

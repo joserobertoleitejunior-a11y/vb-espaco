@@ -910,9 +910,35 @@
       el.classList.toggle('tem', !!url);
       document.querySelector('[data-remover-foto="' + x[0] + '"]').classList.toggle('oculto', !url);
     });
+    renderizarCapasProntas();
+  }
+
+  // capas do banco de fotos (assets/js/estoque-fotos.js) pra quem ainda não tem foto própria
+  function renderizarCapasProntas() {
+    var caixa = $('capasProntas'), lista = $('capasProntasLista');
+    var fotos = window.estoqueFotosPara ? window.estoqueFotosPara(loja.segmento) : [];
+    caixa.hidden = !fotos.length;
+    lista.innerHTML = fotos.map(function (f) {
+      return '<button type="button" class="capa-pronta' + (loja.foto_capa_url === f.url ? ' escolhida' : '') + '" data-capa-pronta="' + esc(f.url) + '">' +
+        '<img src="' + esc(f.url) + '" alt="" loading="lazy"><span>' + esc(f.legenda) + '</span></button>';
+    }).join('');
   }
 
   function ligarFotosLoja() {
+    $('capasProntasLista').addEventListener('click', async function (e) {
+      var b = e.target.closest('[data-capa-pronta]');
+      if (!b || b.disabled) return;
+      var botoes = this.querySelectorAll('[data-capa-pronta]');
+      botoes.forEach(function (x) { x.disabled = true; });
+      try {
+        Object.assign(loja, await rpc('delivery_admin_atualizar_estabelecimento', { p_id: loja.id, p_campos: { foto_capa_url: b.getAttribute('data-capa-pronta') } }));
+        renderizarFotosLoja(); renderizarTopo(); recarregarPreview();
+        U.toast('Capa atualizada');
+      } catch (err) {
+        U.toast(U.mensagemErro(err, 'Não consegui trocar a capa'), 3500);
+        botoes.forEach(function (x) { x.disabled = false; });
+      }
+    });
     document.querySelectorAll('[data-upload]').forEach(function (input) {
       input.addEventListener('change', async function () {
         var arq = this.files[0];
