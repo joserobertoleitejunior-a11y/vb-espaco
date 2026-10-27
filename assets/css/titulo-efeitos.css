@@ -1,0 +1,59 @@
+/* Efeitos do título (assets/js/titulo-efeitos.js). A cor de destaque vem
+   do estilo do site (--terracotta), com reserva no verde da plataforma. */
+.te { --te-cor: var(--terracotta, var(--accent, #0F6B5C)); }
+.te-l, .te-p { display: inline-block; }
+.te-palavra { display: inline-block; white-space: nowrap; }
+
+/* ---- movimento ---- */
+.te-m-surgir .te-p { opacity: 0; transform: translateY(0.45em); animation: teSurgir 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; animation-delay: calc(var(--i) * 0.09s + 0.1s); }
+@keyframes teSurgir { to { opacity: 1; transform: none; } }
+
+.te-m-digitar .te-l { opacity: 0; animation: teDigitar 0.01s linear forwards; animation-delay: calc(var(--i) * 0.055s + 0.2s); }
+.te-m-digitar::after { content: ''; display: inline-block; width: 0.08em; height: 0.9em; margin-left: 0.06em; vertical-align: -0.08em; background: currentColor; animation: teCursor 0.9s steps(1) infinite; }
+@keyframes teDigitar { to { opacity: 1; } }
+@keyframes teCursor { 50% { opacity: 0; } }
+
+.te-m-onda .te-l { animation: teOnda 2.4s ease-in-out infinite; animation-delay: calc(var(--i) * 0.07s); }
+@keyframes teOnda { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(-0.18em); } }
+
+.te-m-brilho { background: linear-gradient(100deg, currentColor 40%, color-mix(in srgb, var(--te-cor) 70%, #fff) 50%, currentColor 60%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: teBrilho 3.2s ease-in-out infinite; }
+@keyframes teBrilho { from { background-position: 100% 0; } to { background-position: -50% 0; } }
+
+.te-m-pulsar { display: inline-block; animation: tePulsar 2.6s ease-in-out infinite; transform-origin: left center; }
+@keyframes tePulsar { 50% { transform: scale(1.035); } }
+
+/* faixa correndo na horizontal (texto em loop sem fim) */
+.te-m-faixa { overflow: hidden; white-space: nowrap; max-width: 100%; -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.te-m-faixa .te-trilho { display: inline-flex; flex-wrap: nowrap; width: max-content; animation: teFaixa 12s linear infinite; }
+.te-m-faixa .te-trilho > span { flex: 0 0 auto; white-space: nowrap; padding-right: 1.2em; }
+@keyframes teFaixa { to { transform: translateX(-50%); } }
+
+/* subindo na vertical (o título passa de baixo pra cima, em loop) */
+.te-m-girar .te-janela { display: block; height: var(--te-altura, 2.4em); overflow: hidden; -webkit-mask: linear-gradient(180deg, transparent, #000 15%, #000 85%, transparent); mask: linear-gradient(180deg, transparent, #000 15%, #000 85%, transparent); }
+.te-m-girar .te-trilho { display: flex; flex-direction: column; animation: teGirar 7s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+.te-m-girar .te-trilho > span { display: block; }
+@keyframes teGirar { 0%, 40% { transform: translateY(0); } 50%, 90% { transform: translateY(-50%); } 100% { transform: translateY(-50%); } }
+
+/* ---- letra ---- */
+.te-f-classica { font-family: 'Fraunces', Georgia, serif !important; font-weight: 700 !important; letter-spacing: -0.01em; }
+.te-f-elegante { font-family: 'Cormorant Garamond', Georgia, serif !important; font-weight: 600 !important; font-style: italic; }
+.te-f-moderna { font-family: 'Jost', 'Manrope', system-ui, sans-serif !important; font-weight: 600 !important; letter-spacing: -0.02em; }
+.te-f-impacto { font-family: 'Oswald', 'Arial Narrow', sans-serif !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 0.01em; }
+.te-f-manuscrita { font-family: 'Caveat', 'Segoe Script', cursive !important; font-weight: 700 !important; font-size: 1.15em; line-height: 1.05; }
+
+/* ---- estilo ---- */
+.te-s-degrade, .te-s-degrade .te-l, .te-s-degrade .te-p { background: linear-gradient(90deg, var(--te-cor), color-mix(in srgb, var(--te-cor) 45%, #f2c14e)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.te-s-contorno { -webkit-text-stroke: 1.5px currentColor; -webkit-text-fill-color: transparent; }
+.te-s-neon { color: #fff !important; text-shadow: 0 0 6px var(--te-cor), 0 0 18px var(--te-cor), 0 0 36px color-mix(in srgb, var(--te-cor) 60%, transparent); }
+.te-s-sombra { text-shadow: 1px 1px 0 var(--te-cor), 2px 2px 0 var(--te-cor), 3px 3px 0 color-mix(in srgb, var(--te-cor) 70%, #000), 6px 8px 14px rgba(0, 0, 0, 0.3); }
+.te-s-caixa { text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* escolha no editor */
+.te-opcoes { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.8rem; }
+.te-opcao { padding: 0.45rem 0.75rem; border: 1.5px solid rgba(31, 32, 36, 0.14); border-radius: 999px; background: #fff; color: #1f2024; font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.te-opcao.ativo { background: var(--terracotta, var(--accent, #0F6B5C)); border-color: transparent; color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .te-m-onda .te-l, .te-m-brilho, .te-m-pulsar, .te-m-faixa .te-trilho, .te-m-girar .te-trilho, .te-m-digitar::after { animation: none !important; }
+  .te-m-surgir .te-p, .te-m-digitar .te-l { animation-duration: 0.01s !important; animation-delay: 0s !important; }
+}

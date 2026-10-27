@@ -39,6 +39,8 @@
   var VEICULO = false;   // pergunta o veículo (borracharia, guincho)
   var AREA = 'delivery';
   var CART_KEY = null;
+  var efeitoTitulo = {}, efeitoCarregado = false;
+  function definirEfeitoTitulo(cfg) { efeitoTitulo = cfg || {}; if (window.VBTituloEfeitos && $('tplHeadline')) window.VBTituloEfeitos.aplicar($('tplHeadline'), efeitoTitulo); }
   var PEDIDOS_KEY = 'vbdelivery_meus_pedidos';
   var CLIENTE_KEY = 'vbdelivery_cliente';
 
@@ -86,6 +88,8 @@
     urgente: function () { return URGENTE; },
     vocab: function () { return V; },
     recarregar: recarregarDados,
+    efeitoTitulo: function () { return efeitoTitulo; },
+    definirEfeitoTitulo: definirEfeitoTitulo,
     prever: prever
   };
 
@@ -221,13 +225,28 @@
     $('tplNomeRodape').textContent = nome;
     $('tplEyebrow').textContent = (U.SEGMENTOS[estab.segmento] || 'Estabelecimento') + ' · ' + U.cidadeLegivel(estab.cidade);
     var tx = textoHero();
-    $('tplHeadline').textContent = tx.titulo;
+    // título com o efeito escolhido pelo dono (movimento/letra/estilo)
+    if (window.VBTituloEfeitos) {
+      window.VBTituloEfeitos.aplicar($('tplHeadline'), efeitoTitulo, tx.titulo);
+      if (!efeitoCarregado && !MODO_DEMO) {
+        efeitoCarregado = true;
+        window.VBTituloEfeitos.carregar(estab.id).then(function (cfg) { efeitoTitulo = cfg || {}; window.VBTituloEfeitos.aplicar($('tplHeadline'), efeitoTitulo); });
+      }
+    } else $('tplHeadline').textContent = tx.titulo;
     $('tplSubcopy').textContent = tx.sub;
     $('tplCtaTexto').textContent = textoCta();
     var foto = $('tplHeroFoto');
     var capa = fotoCapa();
     foto.style.backgroundColor = 'var(--linen-deep)';
     if (capa) { foto.style.backgroundImage = 'url("' + encodeURI(capa) + '")'; foto.style.backgroundSize = 'cover'; }
+    // faixa de contatos na foto (WhatsApp, redes, mapa e o botão de pedir/chamar)
+    if (window.VBFaixaContatos) {
+      window.VBFaixaContatos.montar(foto, {
+        whatsapp: estab.telefone_whatsapp, instagram: estab.instagram_url || ident.instagram_url, facebook: ident.facebook_url,
+        tiktok: ident.tiktok_url, endereco: estab.endereco || ident.endereco, cidade: U.cidadeLegivel(estab.cidade),
+        acao: { tipo: SERVICO ? 'chamar' : 'pedir', rotulo: textoCta(), aoTocar: function () { $('lojaCta').click(); } }
+      });
+    }
     $('tplCidadeRodape').textContent = U.cidadeLegivel(estab.cidade);
     if (estab.endereco || ident.endereco) {
       $('tplEnderecoRodape').textContent = estab.endereco || ident.endereco;

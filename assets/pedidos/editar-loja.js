@@ -141,6 +141,19 @@
     });
   }
 
+  function passoEfeito(caixa) {
+    // o título fica embaixo da foto no celular: traz ele pro topo da tela, acima da bolha
+    var tituloVivo = document.getElementById('tplHeadline');
+    if (tituloVivo) window.scrollTo({ top: Math.max(0, tituloVivo.getBoundingClientRect().top + window.scrollY - 70), behavior: 'smooth' });
+    var bloco = document.createElement('div');
+    caixa.appendChild(bloco);
+    window.VBTituloEfeitos.montarEscolha(bloco, api.efeitoTitulo(), function (cfg) {
+      api.definirEfeitoTitulo(cfg);
+      avisar('Salvando…');
+      window.VBTituloEfeitos.salvar(estab().id, cfg).then(function () { avisar('Salvo ✓'); }, function (e) { avisar((e && e.message) || 'Não deu pra salvar.', true); });
+    });
+  }
+
   function passoEstilo(caixa) {
     var T = window.VibeTemplates;
     var tplAtual = ident().template || 'classico-boiserie';
@@ -306,6 +319,7 @@
       { id: 'foto', titulo: 'Foto principal', texto: 'A foto grande do topo do site.', render: passoFoto },
       { id: 'logo', titulo: 'Logo', texto: 'Aparece redondinha ao lado do nome.', render: passoLogo },
       { id: 'textos', titulo: 'Nome e frases', texto: 'O que aparece escrito no site. Salva quando você sai do campo.', render: passoTextos },
+      { id: 'efeito', titulo: 'Efeito do título', texto: 'Faça a frase grande do topo se mexer, trocar de letra ou ganhar brilho.', render: passoEfeito },
       { id: 'estilo', titulo: 'Cores e estilo', texto: 'O visual do site inteiro — muda ao vivo aqui atrás.', render: passoEstilo },
       { id: 'itens', titulo: S ? 'Serviços e preços' : 'Cardápio', texto: S ? 'O que o cliente pode pedir.' : 'O que o cliente pode pedir.', render: passoItens },
       { id: 'atendimento', titulo: S ? 'Atendimento' : 'Entrega e retirada', texto: S ? 'Onde você atende, taxa e prazo.' : 'Como o pedido chega no cliente.', render: passoAtendimento },

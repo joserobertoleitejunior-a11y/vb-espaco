@@ -582,7 +582,8 @@
   }
 
   function salvarTextoHero() {
-    var titulo = document.getElementById('tplHeadline').textContent.trim();
+    var tituloEl = document.getElementById('tplHeadline');
+    var titulo = (tituloEl.getAttribute('data-te-texto') != null ? tituloEl.getAttribute('data-te-texto') : tituloEl.textContent).trim();
     var subtitulo = document.getElementById('tplSubcopy').textContent.trim();
     linhaAtual.titulo_hero = titulo;
     linhaAtual.subtitulo_hero = subtitulo;
@@ -1064,7 +1065,7 @@
   function renderPassoEdicaoTextos(container) {
     var campos = [
       ['tplNomeTopo', 'Nome do negócio', linhaAtual.nome, salvarNome],
-      ['tplHeadline', 'Frase grande do topo', document.getElementById('tplHeadline').textContent, salvarTextoHero],
+      ['tplHeadline', 'Frase grande do topo', textoDoTitulo(), salvarTextoHero],
       ['tplSubcopy', 'Frase pequena embaixo', document.getElementById('tplSubcopy').textContent, salvarTextoHero],
       ['tplCtaTexto', 'Texto do botão de agendar', linhaAtual.texto_cta || document.getElementById('tplCtaTexto').textContent, salvarCta]
     ];
@@ -1077,7 +1078,9 @@
     campos.forEach(function (c, i) {
       var input = document.getElementById('vbEdTexto' + i);
       // escreve no site ao vivo e salva quando sai do campo
-      input.addEventListener('input', function () { document.getElementById(c[0]).textContent = input.value; });
+      input.addEventListener('input', function () {
+        if (c[0] === 'tplHeadline') aplicarEfeitoTitulo(input.value); else document.getElementById(c[0]).textContent = input.value;
+      });
       input.addEventListener('change', function () {
         c[3]();
         var msg = document.getElementById('vbEdTextosMsg');
@@ -1122,6 +1125,7 @@
   var PASSOS_EDICAO = [
     { id: 'foto', titulo: 'Foto principal', texto: 'A foto grande do topo do site.', render: renderPassoTutorialFoto },
     { id: 'textos', titulo: 'Nome e frases', texto: 'O que aparece escrito no topo do site. Muda ao vivo aqui atrás.', render: renderPassoEdicaoTextos },
+    { id: 'efeito', titulo: 'Efeito do título', texto: 'Faça a frase grande do topo se mexer, trocar de letra ou ganhar brilho. Aparece ao vivo aqui atrás.', render: renderPassoEdicaoTituloEfeito },
     { id: 'estilo', titulo: 'Cores e estilo', texto: 'O visual do site inteiro — vale pra Agendar, Pedir e Chamar.', render: renderPassoEdicaoEstilo },
     { id: 'servicos', titulo: 'Serviços e preços', texto: 'O que o cliente pode agendar.', render: renderPassoTutorialServicos },
     { id: 'equipe', titulo: 'Quem atende', texto: 'As pessoas que o cliente escolhe na hora de agendar.', render: renderPassoTutorialEquipe },
@@ -1508,7 +1512,7 @@
     // slug+cidade — o mesmo site sempre mostra a mesma frase, mas
     // dificilmente igual à de outro estabelecimento do mesmo segmento.
     var frase = window.fraseEfeitoPara ? window.fraseEfeitoPara(linhaAtual.segmento, (linhaAtual.slug || '') + linhaAtual.cidade) : COPY[g];
-    document.getElementById('tplHeadline').textContent = linhaAtual.titulo_hero || frase.headline;
+    aplicarEfeitoTitulo(linhaAtual.titulo_hero || frase.headline);
     document.getElementById('tplSubcopy').textContent = linhaAtual.subtitulo_hero || frase.sub;
 
     var fotoHero = fotoPrincipal(g);
@@ -1523,6 +1527,7 @@
       heroFoto.style.backgroundImage = 'url("' + boiseriePlaceholder(linhaAtual.cor_destaque) + '")';
       heroFoto.style.backgroundSize = '72px 72px';
     }
+    montarFaixaContatos();
 
     var trocaBtn = document.getElementById('tplTrocaGenero');
     if (separaPorGenero()) {
@@ -1550,6 +1555,48 @@
     if (!splash) return;
     splash.classList.remove('oculto');
     setTimeout(function () { splash.classList.add('oculto'); }, 1500);
+  }
+
+  // ---- efeito do título (movimento/letra/estilo) e faixa de contatos na foto ----
+  var efeitoTitulo = {};
+  var efeitoCarregado = false;
+  function textoDoTitulo() {
+    var el = document.getElementById('tplHeadline');
+    return el.getAttribute('data-te-texto') != null ? el.getAttribute('data-te-texto') : el.textContent;
+  }
+  function aplicarEfeitoTitulo(texto) {
+    var el = document.getElementById('tplHeadline');
+    if (!window.VBTituloEfeitos) { if (texto != null) el.textContent = texto; return; }
+    window.VBTituloEfeitos.aplicar(el, efeitoTitulo, texto);
+    if (!efeitoCarregado && estabId) {
+      efeitoCarregado = true;
+      window.VBTituloEfeitos.carregar(estabId).then(function (cfg) {
+        efeitoTitulo = cfg || {};
+        window.VBTituloEfeitos.aplicar(el, efeitoTitulo);
+      });
+    }
+  }
+  function montarFaixaContatos() {
+    if (!window.VBFaixaContatos || !linhaAtual) return;
+    window.VBFaixaContatos.montar(document.getElementById('tplHeroFoto'), {
+      whatsapp: linhaAtual.telefone_whatsapp, instagram: linhaAtual.instagram_url, facebook: linhaAtual.facebook_url,
+      tiktok: linhaAtual.tiktok_url, endereco: linhaAtual.endereco, cidade: linhaAtual.cidade,
+      acao: { tipo: 'agendar', rotulo: 'Agendar horário', aoTocar: function () { if (window.VBAgenda) window.VBAgenda.abrir(); } }
+    });
+  }
+  function renderPassoEdicaoTituloEfeito(container) {
+    // o título fica embaixo da foto no celular: traz ele pro topo da tela, acima da bolha
+    var tituloVivo = document.getElementById('tplHeadline');
+    if (tituloVivo) window.scrollTo({ top: Math.max(0, tituloVivo.getBoundingClientRect().top + window.scrollY - 70), behavior: 'smooth' });
+    var demo = document.createElement('div');
+    container.appendChild(demo);
+    window.VBTituloEfeitos.montarEscolha(demo, efeitoTitulo, function (cfg) {
+      efeitoTitulo = cfg;
+      aplicarEfeitoTitulo();
+      window.VBTituloEfeitos.salvar(estabId, cfg).catch(function (e) {
+        if (window.VBDialogo) window.VBDialogo.alert('Não deu pra salvar o efeito: ' + ((e && e.message) || 'tenta de novo.'));
+      });
+    });
   }
 
   function iniciarGenero() {
@@ -1608,6 +1655,7 @@
   ];
 
   function carregarRedesSociais() {
+    montarFaixaContatos();
     var strip = document.getElementById('tplRedesSociais');
     if (!strip) return;
     var linksVisiveis = REDES.filter(function (r) {
