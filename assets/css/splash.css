@@ -286,3 +286,6 @@ body[data-tela="splash"] .sp {
 /* na lista (Explorar) a torre vai junto pro topo do hero, menor */
 .hero-cubo:has(.mz-simbolo) { width: auto; height: auto; display: flex; justify-content: center; }
 .hero-cubo .mz-pullRefreshCubo { --mz-n: 56; }
+.sp-aviso { margin: 0.5rem 0 0; }
+@media (prefers-reduced-motion: no-preference) { .sp-aviso { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both; } }
+@media (max-height: 760px) and (max-width: 719px) { .sp-aviso { margin-top: 0.3rem; } }

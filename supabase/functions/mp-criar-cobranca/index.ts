@@ -23,6 +23,13 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return resposta({ erro: "método não permitido" }, 405);
 
+  // fase de finalização: nenhuma cobrança é criada. Pra voltar a cobrar
+  // (quando o app for finalizado, R$ 19,90/mês), cadastra o secret
+  // COBRANCA_ATIVA=sim no Supabase.
+  if (Deno.env.get("COBRANCA_ATIVA") !== "sim") {
+    return resposta({ erro: "A Matriz está em fase de finalização: tudo grátis, nenhuma taxa é cobrada agora." }, 403);
+  }
+
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -61,12 +68,12 @@ Deno.serve(async (req) => {
   if (estabErro || !estab) return resposta({ erro: "Estabelecimento não encontrado." }, 404);
   if (estab.dono_user_id !== userData.user.id) return resposta({ erro: "Sem permissão pra este estabelecimento." }, 403);
 
-  const valor = Number(estab.mensalidade) || 39.9;
+  const valor = Number(estab.mensalidade) || 19.9;
 
   const preferencia = {
     items: [
       {
-        title: "Assinatura Pertin — " + estab.nome,
+        title: "Assinatura Matriz — " + estab.nome,
         quantity: 1,
         currency_id: "BRL",
         unit_price: valor,
@@ -80,7 +87,7 @@ Deno.serve(async (req) => {
     },
     auto_return: "approved",
     notification_url: SUPABASE_URL + "/functions/v1/mp-webhook",
-    statement_descriptor: "PERTIN",
+    statement_descriptor: "MATRIZ",
   };
 
   const mpResposta = await fetch("https://api.mercadopago.com/checkout/preferences", {

@@ -425,35 +425,13 @@
     return 'R$ ' + Number(v).toFixed(2).replace('.', ',');
   }
 
-  // ---- assinatura da plataforma (mensalidade via Mercado Pago) ----
-  function formatarDataBr(iso) {
-    if (!iso) return '';
-    var p = iso.split('-');
-    return p[2] + '/' + p[1];
-  }
+  // ---- fase de finalização: nada é cobrado. No lugar do cartão de
+  // pagamento, o aviso de que está tudo grátis e de quanto vai ser a
+  // mensalidade quando o app for finalizado (texto em aviso-gratis.js) ----
   function pagamentoCardHtml(e) {
-    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    var fim = e.trial_termina_em ? new Date(e.trial_termina_em + 'T00:00:00') : null;
-    var diasRestantes = fim ? Math.round((fim - hoje) / 86400000) : null;
-    var venceu = diasRestantes != null && diasRestantes < 0;
-    var status = e.pagamento_status;
-    var bonusTxt = e.bonus_3_meses ? ' Você é um dos 20 primeiros — ganha <strong>3 meses grátis</strong> de bônus, já contando aí.' : '';
-    var botao = '<button type="button" class="btn btn-primario dash-card-pagar-btn" data-pagar-mensalidade="' + e.id + '" style="margin-top:0.5rem; padding:0.45rem 1rem; font-size:0.82rem;">Pagar ' + formatarPreco(e.mensalidade) + ' agora</button>';
-    if (status === 'bloqueado' || (status === 'atrasado')) {
-      return '<div class="dash-card-pagamento dash-card-pagamento-urgente">🔴 ' +
-        (status === 'bloqueado' ? 'Assinatura bloqueada — o site fica fora do ar até o pagamento.' : 'Mensalidade atrasada.') +
-        '<br>' + botao + '</div>';
-    }
-    if (status === 'trial' && venceu) {
-      return '<div class="dash-card-pagamento dash-card-pagamento-urgente">🔴 Seu teste grátis acabou.' +
-        '<br>' + botao + '</div>';
-    }
-    if (status === 'trial') {
-      return '<div class="dash-card-pagamento dash-card-pagamento-emdia">🎉 Teste grátis até ' + formatarDataBr(e.trial_termina_em) +
-        ' (' + diasRestantes + (diasRestantes === 1 ? ' dia' : ' dias') + ').' + bonusTxt + '</div>';
-    }
-    // em_dia
-    return '<div class="dash-card-pagamento dash-card-pagamento-emdia">✅ Assinatura em dia — próxima cobrança em ' + formatarDataBr(e.trial_termina_em) + '.' + bonusTxt + '</div>';
+    var bonus = e.bonus_3_meses ? '<span class="aviso-gratis-bonus">Você é um dos 20 primeiros: quando a mensalidade começar, ganha 3 meses grátis.</span>' : '';
+    var aviso = window.VBAvisoGratis ? window.VBAvisoGratis.html('') : '<span>Fase de finalização — tudo grátis, sem nenhuma taxa.</span>';
+    return '<div class="aviso-gratis" role="note">' + aviso.replace(/<\/span>$/, bonus + '</span>') + '</div>';
   }
   // ---- exportação em PDF (antes era CSV puro, que abria feito bloco de
   // notas sem formatação nenhuma) — tabela limpa, com título, cabeçalho
@@ -1720,26 +1698,6 @@
   // Botão de apagar site — só pro admin por enquanto (sem senha ainda,
   // fica pra depois). Apaga de verdade, sem volta.
   listaEl.addEventListener('click', function (e) {
-    var pagarBtn = e.target.closest('[data-pagar-mensalidade]');
-    if (pagarBtn) {
-      pagarBtn.disabled = true;
-      var textoOriginal = pagarBtn.textContent;
-      pagarBtn.textContent = 'Abrindo pagamento…';
-      db.functions.invoke('mp-criar-cobranca', { body: { estabelecimento_id: pagarBtn.getAttribute('data-pagar-mensalidade') } }).then(function (res) {
-        if (res.error || !res.data || !res.data.init_point) {
-          pagarBtn.disabled = false;
-          pagarBtn.textContent = textoOriginal;
-          window.VBDialogo.alert((res.data && res.data.erro) || 'Não deu pra abrir o pagamento agora. Tenta de novo em instantes.');
-          return;
-        }
-        window.location.href = res.data.init_point;
-      }, function () {
-        pagarBtn.disabled = false;
-        pagarBtn.textContent = textoOriginal;
-        window.VBDialogo.alert('Sem conexão agora — tenta de novo em instantes.');
-      });
-      return;
-    }
     var btn = e.target.closest('[data-apagar-id]');
     if (!btn) return;
     var nome = btn.getAttribute('data-apagar-nome');
