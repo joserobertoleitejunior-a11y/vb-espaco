@@ -25,20 +25,17 @@
     });
   }
 
-  // torre da Matriz (viewBox 0 0 100 163): cruz, telhado de quatro águas
-  // com beiral, campanário com três arcos, relógio, três janelas altas e
-  // a base. Os furos (arcos, janelas, aro do relógio) são vazados de
-  // verdade (evenodd), então mostram o fundo, claro ou escuro.
-  var TORRE = 'M48.6 1H51.4V8.5H57.5V11.5H51.4V27H53.5L89 45.5H91V49.5H82V77H86.5V81.5H82V125H86.5V129.5H82V156H87V163H13V156H18V129.5H13.5V125H18V81.5H13.5V77H18V49.5H9V45.5H11L46.5 27H48.6V11.5H42.5V8.5H48.6Z' +
+  // torre da Matriz (viewBox 0 26 100 137): telhado de quatro águas com
+  // beiral, campanário com três arcos, o relógio (onde mora o cubo), três
+  // janelas altas e a base. Os arcos e as janelas são vazados de verdade
+  // (evenodd), então mostram o fundo, claro ou escuro.
+  var TORRE = 'M46.5 27H53.5L89 45.5H91V49.5H82V77H86.5V81.5H82V125H86.5V129.5H82V156H87V163H13V156H18V129.5H13.5V125H18V81.5H13.5V77H18V49.5H9V45.5H11L46.5 27Z' +
     'M27.25 72V59.75A4.75 4.75 0 0 1 36.75 59.75V72ZM45.25 72V59.75A4.75 4.75 0 0 1 54.75 59.75V72ZM63.25 72V59.75A4.75 4.75 0 0 1 72.75 59.75V72Z';
   var TORRE_BAIXO = 'M33.5 152V137.5A3.5 3.5 0 0 1 40.5 137.5V152ZM46.5 152V137.5A3.5 3.5 0 0 1 53.5 137.5V152ZM59.5 152V137.5A3.5 3.5 0 0 1 66.5 137.5V152Z';
-  var ARO = 'M30.5 103.25a19.5 19.5 0 1 0 39 0a19.5 19.5 0 1 0 -39 0Z';
-  var MOSTRADOR = 'M32.4 103.25a17.6 17.6 0 1 0 35.2 0a17.6 17.6 0 1 0 -35.2 0Z';
-  // fundo claro: relógio preto com aro vazado (o cubo dourado brilha no
-  // preto); fundo escuro: torre clara com o relógio todo vazado
-  function torreSvg(escuro) {
-    var d = TORRE + (escuro ? '' : ARO) + MOSTRADOR + TORRE_BAIXO;
-    return '<svg class="mz-torre" viewBox="0 0 100 163" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="' + d + '"/></svg>';
+  // o cubo gira direto na silhueta, onde fica o relógio (sem aro nem
+  // mostrador): no preto, o dourado do cubo é que desenha o relógio
+  function torreSvg() {
+    return '<svg class="mz-torre" viewBox="0 26 100 137" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="' + TORRE + TORRE_BAIXO + '"/></svg>';
   }
   MARCA.torreSvg = torreSvg;
 
@@ -49,7 +46,7 @@
       var simbolo = document.createElement('span');
       simbolo.className = 'mz-simbolo' + (escuro ? ' mz-escuro' : '') + (cubo.id ? ' mz-' + cubo.id : '');
       simbolo.setAttribute('aria-hidden', 'true');
-      simbolo.innerHTML = torreSvg(escuro) + '<span class="mz-relogio"></span>';
+      simbolo.innerHTML = torreSvg() + '<span class="mz-relogio"></span>';
       cubo.parentNode.insertBefore(simbolo, cubo);
       simbolo.lastChild.appendChild(cubo);
     });

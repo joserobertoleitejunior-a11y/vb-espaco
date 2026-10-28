@@ -248,24 +248,24 @@ html.pt-motion-fim [data-vibe-marca-logo="hero"] .mz-ponto { transition: opacity
 .mz-simbolo {
   --mz-n: 32;
   position: relative; display: inline-block; flex-shrink: 0;
-  height: calc(var(--mz-n) * 1px); width: calc(var(--mz-n) * 0.6135px);
+  height: calc(var(--mz-n) * 1px); width: calc(var(--mz-n) * 0.7299px);
   color: #111214;
 }
 .mz-simbolo.mz-escuro { color: #f4f4f6; }
 .mz-torre { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
-.mz-relogio { position: absolute; left: 33%; top: 52.9%; width: 34%; height: 20.86%; display: block; }
+.mz-relogio { position: absolute; left: 30%; top: 41.79%; width: 40%; height: 29.2%; display: block; }
 .mz-relogio > #cube3d, .mz-relogio > #pullRefreshCubo { display: block; width: 100%; height: 100%; }
 .mz-relogio > .vt-cubo {
   position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px;
-  scale: calc(var(--mz-n) * 0.2086 / 23);
+  scale: calc(var(--mz-n) * 0.292 / 23);
 }
 .faixa-marca .mz-relogio > .vt-cubo { width: 20px; height: 20px; }
 .faixa-marca .mz-relogio > .vt-cubo .vt-cubo-3d { --lado: 12px; margin: 4px; }
-.mz-pullRefreshCubo { --mz-n: 118; }
+.mz-pullRefreshCubo { --mz-n: 100; }
 .sp-topo .mz-pullRefreshCubo { margin-bottom: 0.35rem; }
-.mz-cube3d { --mz-n: 36; }
-.faixa-marca .mz-simbolo { --mz-n: 30; }
-.brand .mz-simbolo { --mz-n: 32; vertical-align: middle; }
+.mz-cube3d { --mz-n: 32; }
+.faixa-marca .mz-simbolo { --mz-n: 28; }
+.brand .mz-simbolo { --mz-n: 30; vertical-align: middle; }
 /* pingo do "i": losango dourado (o cubo visto de quina) */
 .mz-ponto {
   position: absolute; left: 50%; bottom: 0.64em;
