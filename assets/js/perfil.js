@@ -684,6 +684,8 @@
     // só marca como "já contou" depois da RPC confirmar sucesso — assim,
     // se a chamada falhar (rede, permissão, etc.), a próxima visita na
     // mesma sessão tenta de novo em vez de ficar zerada pra sempre.
+    // carregada de antemão (prerender) e ainda não aberta: só conta a visita quando abrir
+    if (document.prerendering) { document.addEventListener('prerenderingchange', registrarAcessoSeNecessario, { once: true }); return; }
     db.rpc('tenant_registrar_acesso', { p_estabelecimento_id: estabId }).then(function (res) {
       if (res && res.error) {
         console.error('Falha ao registrar acesso:', res.error);
@@ -2689,12 +2691,28 @@
   // Agenda + Delivery/Serviços no mesmo estabelecimento: o toggle da faixa
   // (espaço da plataforma, fora da área do estabelecimento) troca de área
   var SEG_URGENTE = ['borracharia', 'chaveiro', 'guincho', 'eletricista', 'encanador', 'assistencia_tecnica'];
+  // deixa a loja/chamado já com os dados neste aparelho (cópia local), pra
+  // troca pelo toggle abrir na hora mesmo onde não dá pra carregar a
+  // página de antemão (iPhone)
+  function aquecerOutraArea(linha) {
+    if (!window.VBCache) return;
+    var ir = function () {
+      db.rpc('delivery_buscar_estabelecimento', { p_slug: linha.slug, p_cidade: linha.cidade }).then(function (r) {
+        if (r.error || !r.data) return;
+        db.rpc('delivery_cardapio_publico', { p_estabelecimento_id: r.data.id }).then(function (c) {
+          window.VBCache.salvar('loja_' + linha.slug + '_' + linha.cidade, { estab: r.data, cardapio: (!c.error && c.data) || null, ident: linha });
+        });
+      });
+    };
+    if (window.requestIdleCallback) requestIdleCallback(ir, { timeout: 3000 }); else setTimeout(ir, 1200);
+  }
   function ligarOutraArea(linha) {
     var areas = linha.areas || [];
     var temPedido = areas.indexOf('delivery') !== -1, temServico = areas.indexOf('servicos') !== -1;
     if ((!temPedido && !temServico) || !window.VibeToggle) return;
     var base = '/' + encodeURIComponent(linha.slug) + '/' + encodeURIComponent(linha.cidade);
     var urgente = SEG_URGENTE.indexOf(linha.segmento) !== -1;
+    aquecerOutraArea(linha);
     window.VibeToggle.montar(document.getElementById('faixaAreas'), {
       tema: 'escuro', atual: 'agenda', swipe: true, semCubo: true, rotulo: 'O que você quer fazer',
       opcoes: [
@@ -2711,9 +2729,19 @@
     }
   }
 
-  var chaveCachePerfil = 'perfil_' + slug + '_' + cidade;
+  // chave com o endereço decodificado (igual à da loja, que guarda a cópia de lá)
+  function semCodigo(t) { try { return decodeURIComponent(t); } catch (e) { return t; } }
+  var chaveCachePerfil = 'perfil_' + semCodigo(slug) + '_' + semCodigo(cidade);
+  // veio do toggle Agendar/Pedir e este aparelho viu o site há pouco? abre
+  // na hora com o que já tinha (o banco só atualiza a cópia pra próxima)
+  var veioDaTroca = false;
+  try { veioDaTroca = sessionStorage.getItem('vbTrocaArea') === '1'; sessionStorage.removeItem('vbTrocaArea'); } catch (e) {}
+  var copia = veioDaTroca && !/[?&](editar|tutorial|passo)=/.test(location.search) && window.VBCache ? window.VBCache.carregar(chaveCachePerfil) : null;
+  var abriuDaCopia = !!(copia && copia.dados && Date.now() - copia.quando < 15 * 60 * 1000 && (copia.dados.areas || ['agenda']).indexOf('agenda') > -1);
+  if (abriuDaCopia) renderizar(copia.dados);
   db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }).then(function (res) {
     var linha = res.data && res.data[0];
+    if (abriuDaCopia) { if (linha && window.VBCache) window.VBCache.salvar(chaveCachePerfil, linha); return; }
     if (res.error || !linha) {
       mostrarNaoEncontrado();
       return;

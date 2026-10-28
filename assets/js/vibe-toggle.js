@@ -52,6 +52,9 @@
   // roda o mais cedo possível na página nova: diz pro View Transition
   // pra que lado deslizar; sem suporte, anima a entrada por CSS
   function prepararEntrada() {
+    // página carregada de antemão (prerender): a direção só existe quando
+    // ela vira a página de verdade
+    if (document.prerendering) { document.addEventListener('prerenderingchange', prepararEntrada, { once: true }); return; }
     var dir = null;
     try { dir = sessionStorage.getItem(CHAVE_DIRECAO); sessionStorage.removeItem(CHAVE_DIRECAO); } catch (e) {}
     if (!dir) return;
@@ -74,6 +77,29 @@
     try { dir = sessionStorage.getItem(CHAVE_DIRECAO); } catch (er) {}
     if (e.viewTransition && e.viewTransition.types && dir) e.viewTransition.types.add(dir);
   });
+
+  /* ---------- a outra área já carregada antes do toque ----------
+     Chrome/Android: a página da outra área é montada inteira em segundo
+     plano (Speculation Rules) e o toque só troca de tela — nada de
+     "carregando". Outros navegadores: o HTML já vem do cache e a página
+     abre com os dados que este aparelho acabou de ver (vbTrocaArea). */
+  var preparadas = {};
+  function prepararOutraArea(href) {
+    if (!href || preparadas[href]) return;
+    preparadas[href] = true;
+    try {
+      if (global.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules')) {
+        var s = document.createElement('script');
+        s.type = 'speculationrules';
+        s.textContent = JSON.stringify({ prerender: [{ urls: [href], eagerness: 'immediate' }] });
+        document.head.appendChild(s);
+        return;
+      }
+    } catch (e) {}
+    var l = document.createElement('link');
+    l.rel = 'prefetch'; l.href = href;
+    document.head.appendChild(l);
+  }
 
   /* ---------- componente ---------- */
   function montar(el, opts) {
@@ -139,12 +165,15 @@
       var dir = i > idx ? 'avanca' : 'volta';
       ativar(i, true);
       var o = opcoes[i];
-      if (!opts.aoTrocar) marcarDirecao(dir); // troca dentro da mesma página não precisa
+      if (!opts.aoTrocar) {
+        marcarDirecao(dir); // troca dentro da mesma página não precisa
+        try { sessionStorage.setItem('vbTrocaArea', '1'); } catch (e) {}
+      }
       // deixa a bolha chegar antes de trocar de tela
       setTimeout(function () {
         if (opts.aoTrocar) opts.aoTrocar(o.chave, o, dir);
         else if (o.href) global.location.href = o.href;
-      }, reduz ? 0 : (viaGesto ? 260 : 380));
+      }, reduz ? 0 : (viaGesto ? 180 : 240));
     }
 
     trilho.addEventListener('click', function (e) {
@@ -161,6 +190,7 @@
 
     // posição inicial sem animação; os ícones ativos já aparecem desenhados
     posicionar(idx, false);
+    if (!opts.aoTrocar) opcoes.forEach(function (o, k) { if (k !== idx) prepararOutraArea(o.href); });
     requestAnimationFrame(function () { bolha.classList.remove('sem-anim'); });
 
     if (opts.swipe && n > 1) ligarGesto(escolher, function () { return idx; }, n, bolha, opts.gestoAtivo);

@@ -93,6 +93,37 @@
     prever: prever
   };
 
+  /* ===================== cópia local (troca de área sem carregar) ===================== */
+  function chaveCacheLoja() { return 'loja_' + slug + '_' + cidade; }
+  function guardarCopia() {
+    if (!window.VBCache || !estab) return;
+    window.VBCache.salvar(chaveCacheLoja(), { estab: estab, cardapio: cardapio, ident: ident });
+    // e a Agenda do mesmo negócio já fica pronta pra abrir pelo toggle
+    if (ident && ident.id) window.VBCache.salvar('perfil_' + slug + '_' + cidade, ident);
+  }
+  // abriu da cópia: busca o atual e só redesenha se algo mudou
+  async function atualizarPorTras() {
+    try {
+      var antes = JSON.stringify([estab, cardapio, ident]);
+      var duas = await Promise.all([
+        window.db.rpc('delivery_buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }),
+        window.db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade })
+      ]);
+      if (duas[0].error || !duas[0].data) return;
+      var novoEstab = duas[0].data;
+      var novoIdent = (!duas[1].error && duas[1].data && duas[1].data[0]) || ident;
+      var cResp = await window.db.rpc('delivery_cardapio_publico', { p_estabelecimento_id: novoEstab.id });
+      var novoCardapio = (!cResp.error && cResp.data) || cardapio;
+      if (JSON.stringify([novoEstab, novoCardapio, novoIdent]) === antes) return;
+      estab = novoEstab; cardapio = novoCardapio; ident = novoIdent;
+      guardarCopia();
+      await aplicarVisual();
+      renderizarLoja();
+      renderizarCardapio();
+      atualizarStatus();
+    } catch (e) { /* sem rede: fica com a cópia */ }
+  }
+
   /* ===================== carga ===================== */
   async function iniciar() {
     $('buscaIcone').outerHTML = U.ICONES.busca;
@@ -103,15 +134,31 @@
       cardapio = d.cardapio;
     } else {
       if (!slug || !cidade || !window.db) { mostrarEstado('estadoNaoEncontrado'); return; }
-      var resp = await window.db.rpc('delivery_buscar_estabelecimento', { p_slug: slug, p_cidade: cidade });
-      if (resp.error || !resp.data) { mostrarEstado('estadoNaoEncontrado'); return; }
-      estab = resp.data;
-      var cResp = await window.db.rpc('delivery_cardapio_publico', { p_estabelecimento_id: estab.id });
-      if (!cResp.error && cResp.data) cardapio = cResp.data;
-      if (!MODO_PREVIEW) window.db.rpc('delivery_registrar_acesso', { p_estabelecimento_id: estab.id });
-      // o visual vem do site do negócio (o mesmo da Agenda)
-      var iResp = await window.db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade });
-      if (!iResp.error && iResp.data && iResp.data[0]) ident = iResp.data[0];
+      // veio do toggle Agendar/Pedir com uma cópia recente neste aparelho?
+      // abre na hora com ela e atualiza por trás (redesenha se algo mudou)
+      var veioDaTroca = false;
+      try { veioDaTroca = sessionStorage.getItem('vbTrocaArea') === '1'; sessionStorage.removeItem('vbTrocaArea'); } catch (e) {}
+      var copia = veioDaTroca && !MODO_PREVIEW && !/[?&]editar=/.test(location.search) && window.VBCache ? window.VBCache.carregar(chaveCacheLoja()) : null;
+      if (copia && copia.dados && copia.dados.estab && Date.now() - copia.quando < 15 * 60 * 1000) {
+        estab = copia.dados.estab; cardapio = copia.dados.cardapio || cardapio; ident = copia.dados.ident || ident;
+        atualizarPorTras();
+      } else {
+        // a loja e o visual do site vêm juntos (antes era um depois do outro)
+        var duas = await Promise.all([
+          window.db.rpc('delivery_buscar_estabelecimento', { p_slug: slug, p_cidade: cidade }),
+          window.db.rpc('buscar_estabelecimento', { p_slug: slug, p_cidade: cidade })
+        ]);
+        var resp = duas[0], iResp = duas[1];
+        if (resp.error || !resp.data) { mostrarEstado('estadoNaoEncontrado'); return; }
+        estab = resp.data;
+        if (!iResp.error && iResp.data && iResp.data[0]) ident = iResp.data[0];
+        var cResp = await window.db.rpc('delivery_cardapio_publico', { p_estabelecimento_id: estab.id });
+        if (!cResp.error && cResp.data) cardapio = cResp.data;
+        guardarCopia();
+      }
+      // carregada de antemão (prerender): só conta a visita quando abrir
+      var contar = function () { if (!MODO_PREVIEW) window.db.rpc('delivery_registrar_acesso', { p_estabelecimento_id: estab.id }); };
+      if (document.prerendering) document.addEventListener('prerenderingchange', contar, { once: true }); else contar();
     }
 
     V = U.vocab(estab.segmento, estab.modo);
