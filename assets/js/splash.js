@@ -1,4 +1,4 @@
-/* Tela inicial do Passo a passo (splash) + troca de telas sem recarregar.
+/* Tela inicial da Matriz (splash) + troca de telas sem recarregar.
 
    A splash e o Explorar moram na mesma página (index.html). Escolher
    Agendar / Pedir / Chamar só desliza a tela pro lado e mostra a lista
@@ -15,9 +15,9 @@
   var AREAS = ['agenda', 'delivery', 'servicos'];
   var TITULOS = {
     splash: document.title,
-    agenda: 'Agendar horário em Itapetininga — Passo a passo',
-    delivery: 'Pedir delivery em Itapetininga — Passo a passo',
-    servicos: 'Chamar um profissional em Itapetininga — Passo a passo'
+    agenda: 'Agendar horário em Itapetininga — Matriz',
+    delivery: 'Pedir delivery em Itapetininga — Matriz',
+    servicos: 'Chamar um profissional em Itapetininga — Matriz'
   };
   var T = window.VibeToggle || {};
   var ICONES = T.ICONES || {};
@@ -198,8 +198,10 @@
     var lugar = tela === 'splash' ? slotSplash : slotHero;
     if (!lugar) return;
     cubo.className = tela === 'splash' ? 'sp-cubo' : 'cubo-no-hero';
-    if (cubo.parentNode !== lugar) {
-      if (tela === 'splash') lugar.insertBefore(cubo, lugar.firstChild); else lugar.appendChild(cubo);
+    // o cubo mora no relógio da torre da Matriz (marca.js): muda a torre inteira
+    var peca = cubo.closest('.mz-simbolo') || cubo;
+    if (peca.parentNode !== lugar) {
+      if (tela === 'splash') lugar.insertBefore(peca, lugar.firstChild); else lugar.appendChild(peca);
     }
   }
 

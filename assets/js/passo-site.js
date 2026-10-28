@@ -57,7 +57,7 @@
     var sub = typeof cfg.sub === 'function' ? cfg.sub() : cfg.sub;
     folha.innerHTML = '<div class="passo-folha-caixa">' +
       '<button type="button" class="passo-folha-fechar" data-fechar aria-label="Fechar">×</button>' +
-      '<p class="passo-folha-marca">' + DEGRAUS + 'Passo a passo</p>' +
+      '<p class="passo-folha-marca">' + DEGRAUS + 'Matriz</p>' +
       '<h2>' + esc(cfg.titulo || 'O que você quer fazer aqui?') + '</h2>' +
       (sub ? '<p class="passo-folha-sub">' + esc(sub) + '</p>' : '') +
       '<ol>' + opcoes.map(function (o, i) {

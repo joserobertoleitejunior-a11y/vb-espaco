@@ -68,7 +68,7 @@
     }
     folha.innerHTML = '<div class="passo-folha-caixa aval-form">' +
       '<button type="button" class="passo-folha-fechar" data-fechar aria-label="Fechar">×</button>' +
-      '<p class="passo-folha-marca">Passo a passo</p>' +
+      '<p class="passo-folha-marca">Matriz</p>' +
       '<h2>Como foi o atendimento?</h2>' +
       '<p class="passo-folha-sub">Toque nas estrelas, escreva umas palavras e pronto.</p>' +
       '<div class="aval-estrelas" role="group" aria-label="Nota">' + [1, 2, 3, 4, 5].map(function (n) {
@@ -99,7 +99,7 @@
     window.db.rpc('avaliacao_criar', { p_estabelecimento_id: estabId, p_nome: v.nome, p_telefone: v.tel, p_nota: nota, p_comentario: v.texto }).then(function (r) {
       if (r.error) { msg.textContent = r.error.message || 'Não deu pra publicar agora.'; btn.disabled = false; return; }
       folha.querySelector('.passo-folha-caixa').innerHTML = '<button type="button" class="passo-folha-fechar" data-fechar aria-label="Fechar">×</button>' +
-        '<p class="passo-folha-marca">Passo a passo</p><h2>Obrigado!</h2><p class="passo-folha-sub">Seu comentário já está no site e ajuda quem está escolhendo.</p>';
+        '<p class="passo-folha-marca">Matriz</p><h2>Obrigado!</h2><p class="passo-folha-sub">Seu comentário já está no site e ajuda quem está escolhendo.</p>';
       ligar(estabId);
     }, function () { msg.textContent = 'Sem conexão agora — tenta de novo em instantes.'; btn.disabled = false; });
   }

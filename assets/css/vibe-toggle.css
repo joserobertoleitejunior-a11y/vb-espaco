@@ -150,7 +150,7 @@ body:has(.sheet.aberto, .wizard-overlay.open, .catalog-overlay.open, .site-menu.
 /* montado pelo marca.js em todo elemento [data-vibe-marca-logo] (visual
    lá embaixo, em "logotipo minimalista"); se o nome tiver "i", o pino
    entra no lugar do ponto. Tudo escala com o tamanho da letra. */
-.pt-idot { position: relative; display: inline-block; }
+.pt-idot { position: relative; display: inline-block; line-height: 1; }
 .pt-word { white-space: nowrap; }
 .pt-pin {
   position: absolute; left: 50%; bottom: 0.62em;
@@ -232,20 +232,49 @@ html.pt-marca-pronta .pt-word { animation-play-state: running; }
   .pt-word { animation: none; }
 }
 
-/* ---- motion do nome grande (marca-motion.js, three.js): enquanto os
-   pontos montam o nome, a letra do DOM espera escondida; quando pousam,
-   ela entra nítida e fica um cursor de código piscando ---- */
+/* ---- motion do nome grande (marca-motion.js, three.js): uma matriz de
+   pontos acende dentro do vidro, uma linha dourada varre da esquerda pra
+   direita e só os pontos das letras ficam; aí a letra nítida do DOM
+   entra no lugar ---- */
 [data-vibe-marca-logo="hero"] { position: relative; }
-.pt-motion-tela { position: absolute; pointer-events: none; z-index: 1; }
+.pt-motion-tela { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; pointer-events: none; z-index: 1; }
 html.pt-motion [data-vibe-marca-logo="hero"] .pt-word { animation: none; opacity: 0; }
-html.pt-motion-fim [data-vibe-marca-logo="hero"] .pt-word { animation: none; opacity: 1; transition: opacity 0.6s ease-out; }
-[data-vibe-marca-logo="hero"] .pt-word { position: relative; }
-html.pt-motion-fim [data-vibe-marca-logo="hero"] .pt-word::after {
-  content: '_'; position: absolute; left: 100%; bottom: 0; margin-left: 0.08em;
-  color: #C9A227; font-weight: 400; opacity: 0;
-  animation: ptCursor 0.5s steps(1) 0.35s 7 alternate;
+html.pt-motion-fim [data-vibe-marca-logo="hero"] .pt-word { animation: none; opacity: 1; transition: opacity 0.7s ease-out; }
+html.pt-motion [data-vibe-marca-logo="hero"] .mz-ponto { opacity: 0; transform: rotate(45deg) scale(0); }
+html.pt-motion-fim [data-vibe-marca-logo="hero"] .mz-ponto { transition: opacity 0.3s 0.35s, transform 0.6s cubic-bezier(0.34, 1.6, 0.64, 1) 0.35s; }
+
+/* ---- símbolo: a torre da Matriz em preto, com o cubo no relógio
+   (montado pelo marca.js em volta de cada cubo do logotipo) ---- */
+.mz-simbolo {
+  --mz-n: 32;
+  position: relative; display: inline-block; flex-shrink: 0;
+  height: calc(var(--mz-n) * 1px); width: calc(var(--mz-n) * 0.6135px);
+  color: #111214;
 }
-@keyframes ptCursor { from { opacity: 1; } to { opacity: 0; } }
+.mz-simbolo.mz-escuro { color: #f4f4f6; }
+.mz-torre { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.mz-relogio { position: absolute; left: 33%; top: 52.9%; width: 34%; height: 20.86%; display: block; }
+.mz-relogio > #cube3d, .mz-relogio > #pullRefreshCubo { display: block; width: 100%; height: 100%; }
+.mz-relogio > .vt-cubo {
+  position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px;
+  scale: calc(var(--mz-n) * 0.2086 / 23);
+}
+.faixa-marca .mz-relogio > .vt-cubo { width: 20px; height: 20px; }
+.faixa-marca .mz-relogio > .vt-cubo .vt-cubo-3d { --lado: 12px; margin: 4px; }
+.mz-pullRefreshCubo { --mz-n: 118; }
+.sp-topo .mz-pullRefreshCubo { margin-bottom: 0.35rem; }
+.mz-cube3d { --mz-n: 36; }
+.faixa-marca .mz-simbolo { --mz-n: 30; }
+.brand .mz-simbolo { --mz-n: 32; vertical-align: middle; }
+/* pingo do "i": losango dourado (o cubo visto de quina) */
+.mz-ponto {
+  position: absolute; left: 50%; bottom: 0.64em;
+  width: 0.19em; height: 0.19em; margin-left: -0.095em;
+  background: #C9A227; border-radius: 0.02em;
+  transform: rotate(45deg);
+}
+.faixa-vibe .mz-ponto { background: #e2bf4f; }
+
 /* pastilhas pequenas: um reflexo de luz atravessa o vidro de vez em quando */
 [data-vibe-marca-logo]:not([data-vibe-marca-logo="hero"]) {
   background-image:

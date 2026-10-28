@@ -1,4 +1,4 @@
-/* Service worker do Passo a passo — deixa o "casco" do app (HTML/CSS/JS)
+/* Service worker da Matriz — deixa o "casco" do app (HTML/CSS/JS)
    abrir mesmo sem internet, pra quem já instalou como app conseguir
    trabalhar (caixa, agenda) offline. NUNCA mexe em chamada pro
    Supabase nem pro CDN — essas sempre vão direto pra rede, sem cache,
@@ -8,7 +8,7 @@
 
    Bump o número da versão sempre que mudar a lista de arquivos aqui
    embaixo — isso descarta o cache antigo e busca tudo de novo. */
-var VERSAO = 'vb-cache-v31';
+var VERSAO = 'vb-cache-v32';
 
 var CASCO = [
   '/',

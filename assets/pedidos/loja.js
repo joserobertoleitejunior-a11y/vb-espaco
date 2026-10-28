@@ -255,7 +255,7 @@
     var fone = U.soDigitos(estab.telefone_whatsapp || ident.telefone_whatsapp);
     $('tplTelefoneRodape').textContent = fone ? 'WhatsApp' : '';
     $('tplTelefoneRodape').href = linkWhats('Olá! Vim pelo site.');
-    $('tplCopyright').innerHTML = '© ' + new Date().getFullYear() + ' ' + esc(nome) + ' · Feito com <a href="/">Passo a passo</a>';
+    $('tplCopyright').innerHTML = '© ' + new Date().getFullYear() + ' ' + esc(nome) + ' · Feito na <a href="/">Matriz</a>';
     var base = '/' + encodeURIComponent(estab.slug) + '/' + encodeURIComponent(estab.cidade);
     $('tplLinkInstitucional').href = base + '/institucional';
     if ((ident.areas || estab.areas || []).indexOf('agenda') > -1) {

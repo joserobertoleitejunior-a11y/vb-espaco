@@ -66,7 +66,7 @@ body[data-tela="explorar"] .sp-video { display: none; }
 .sp-topo { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-top: auto; }
 .sp-cubo { display: block; width: 58px; height: 58px; }
 .cubo-no-hero { display: block; width: 100%; height: 100%; }
-.sp-nome { margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: 0.01em; line-height: 1; }
+.sp-nome { margin: 0; font-size: 2.1rem; font-weight: 800; letter-spacing: 0.01em; line-height: 1; }
 .sp-slogan { margin: 0.15rem 0 0; font-size: 0.86rem; font-weight: 600; font-style: italic; letter-spacing: 0.01em; color: #8f7318; }
 .sp-local {
   margin: 0; display: inline-flex; align-items: center; gap: 0.25rem;
@@ -273,3 +273,16 @@ body[data-tela="splash"] .sp {
   body[data-tela="splash"] .sp-meus { grid-column: 1; grid-row: 3; align-self: end; margin: 0.6rem auto 0; }
   body[data-tela="splash"] .sp-rodape { grid-column: 1; grid-row: 4; margin-top: 0.5rem; }
 }
+
+/* ---------- símbolo da Matriz (torre + cubo no relógio, marca.js) ---------- */
+@media (max-height: 760px) and (max-width: 719px) { .mz-pullRefreshCubo { --mz-n: 86; } }
+@media (max-height: 520px) and (max-width: 719px), (orientation: landscape) and (max-height: 520px) { body[data-tela="splash"] .mz-pullRefreshCubo { --mz-n: 64; } }
+@media (prefers-reduced-motion: no-preference) {
+  /* a torre sobe devagar saindo do desfoque; o cubo chega no relógio depois */
+  .mz-pullRefreshCubo .mz-torre { animation: mzTorre 1.1s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .mz-pullRefreshCubo .sp-cubo { animation-delay: 0.45s; }
+}
+@keyframes mzTorre { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+/* na lista (Explorar) a torre vai junto pro topo do hero, menor */
+.hero-cubo:has(.mz-simbolo) { width: auto; height: auto; display: flex; justify-content: center; }
+.hero-cubo .mz-pullRefreshCubo { --mz-n: 64; }

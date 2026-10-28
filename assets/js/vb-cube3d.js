@@ -5,9 +5,9 @@
    sair do quadro ao girar — ortográfica não tem esse problema).
    Gira sozinho bem devagar e responde a arrastar o dedo/mouse, mas
    sem parecer um botão: sem cursor de link, sem destaque ao tocar —
-   só o logotipo se mexendo. Depois do primeiro quadro renderizado,
-   usa o próprio cubo como favicon da aba. Carregado via import()
-   dinâmico: se o CDN falhar, o elemento some sozinho e o site segue
+   só o logotipo se mexendo — dentro do relógio da torre da Matriz
+   (marca.js). Carregado via import()
+   dinâmico: se o CDN falhar, o cubo some sozinho (a torre fica) e o site segue
    normal. */
 (function () {
   var container = document.getElementById('cube3d');
@@ -40,7 +40,7 @@
     );
     camera.position.z = 5;
 
-    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(largura, altura);
     renderer.setClearColor(0x000000, 0);
@@ -100,19 +100,6 @@
       renderer.setSize(w, h);
     });
 
-    var faviconGerado = false;
-    function atualizarFavicon() {
-      if (faviconGerado) return;
-      faviconGerado = true;
-      try {
-        var dataUrl = renderer.domElement.toDataURL('image/png');
-        ['icon', 'apple-touch-icon'].forEach(function (rel) {
-          var link = document.querySelector('link[rel="' + rel + '"]');
-          if (link) { link.type = 'image/png'; link.href = dataUrl; }
-        });
-      } catch (e) { /* canvas tainted ou navegador sem suporte — mantém o favicon padrão */ }
-    }
-
     function animar() {
       requestAnimationFrame(animar);
       if (!arrastando && !reduzMovimento) {
@@ -120,7 +107,6 @@
         cubo.rotation.x += velX;
       }
       renderer.render(scene, camera);
-      if (!faviconGerado) atualizarFavicon();
     }
     animar();
   }

@@ -1,19 +1,22 @@
-/* Nome da plataforma num lugar só: "Passo a passo". Pra trocar, muda
-   aqui (e nos <title>/meta das páginas).
+/* Nome da plataforma num lugar só: "Matriz". Pra trocar, muda aqui (e
+   nos <title>/meta das páginas).
 
-   Dois jeitos de marcar um elemento:
+   Três jeitos de marcar um elemento:
    - data-vibe-marca: recebe o nome como texto puro (menus, rodapés,
      legendas — qualquer menção ao nome que não seja o logotipo).
-   - data-vibe-marca-logo: recebe o logotipo de verdade (a letra
-     em letra de código (JetBrains Mono), numa pastilha de vidro; o "a"
-     do meio sai mais leve, como o degrau entre um passo e o próximo — e, se o nome tiver "i", o pino
-     dourado entra no lugar do ponto).
-     Vazio ("") é a versão pequena, junto do cubo na faixa fina do
-     topo; ="hero" é a versão grande da splash. Some sozinho se o nome não tiver "i" minúsculo (troca de
-     nome no futuro). A fonte é carregada aqui mesmo (carregarFonte). */
+   - data-vibe-marca-logo: recebe o logotipo de verdade — a letra de
+     código (JetBrains Mono) numa pastilha de vidro, com o pingo do "i"
+     virando um losango dourado (o cubo visto de quina). Vazio ("") é a
+     versão pequena; ="hero" é a grande da splash (que ainda ganha o
+     motion de marca-motion.js).
+   - o símbolo: a silhueta da torre da Igreja Matriz de Itapetininga, em
+     preto, com o cubo que gira no lugar do relógio. Não precisa marcar
+     nada: todo cubo do logotipo (#cube3d, #pullRefreshCubo e o .vt-cubo
+     de .brand/.faixa-marca) é posto dentro da torre por montarSimbolos().
+   A fonte é carregada aqui mesmo (carregarFonte). */
 (function (global) {
   'use strict';
-  var MARCA = { nome: 'Passo a passo', slogan: 'O próximo passo a um clique.' };
+  var MARCA = { nome: 'Matriz', slogan: 'Tudo começa na Matriz.' };
   global.VIBE_MARCA = MARCA;
 
   function escapeHtml(t) {
@@ -22,40 +25,57 @@
     });
   }
 
-  // pino de localização (o mesmo ícone-padrão de mapa, só que dourado):
-  // contorno + furo central desenhados no mesmo path, então o "buraco"
-  // sempre mostra o que tiver atrás, seja fundo claro ou escuro
-  var PINO = '<svg class="pt-pin" viewBox="0 0 24 24" aria-hidden="true">' +
-    '<path fill="currentColor" d="M12 1.8C7.9 1.8 4.6 5.1 4.6 9.2c0 5.7 6.4 12.1 7 12.7.2.2.5.3.8.3s.6-.1.8-.3c.6-.6 7-7 7-12.7 0-4.1-3.3-7.4-7.4-7.4zm0 10.1c-1.5 0-2.7-1.2-2.7-2.7S10.5 6.5 12 6.5s2.7 1.2 2.7 2.7-1.2 2.7-2.7 2.7z"/>' +
-    '</svg>';
+  // torre da Matriz (viewBox 0 0 100 163): cruz, telhado de quatro águas
+  // com beiral, campanário com três arcos, relógio, três janelas altas e
+  // a base. Os furos (arcos, janelas, aro do relógio) são vazados de
+  // verdade (evenodd), então mostram o fundo, claro ou escuro.
+  var TORRE = 'M48.6 1H51.4V8.5H57.5V11.5H51.4V27H53.5L89 45.5H91V49.5H82V77H86.5V81.5H82V125H86.5V129.5H82V156H87V163H13V156H18V129.5H13.5V125H18V81.5H13.5V77H18V49.5H9V45.5H11L46.5 27H48.6V11.5H42.5V8.5H48.6Z' +
+    'M27.25 72V59.75A4.75 4.75 0 0 1 36.75 59.75V72ZM45.25 72V59.75A4.75 4.75 0 0 1 54.75 59.75V72ZM63.25 72V59.75A4.75 4.75 0 0 1 72.75 59.75V72Z';
+  var TORRE_BAIXO = 'M33.5 152V137.5A3.5 3.5 0 0 1 40.5 137.5V152ZM46.5 152V137.5A3.5 3.5 0 0 1 53.5 137.5V152ZM59.5 152V137.5A3.5 3.5 0 0 1 66.5 137.5V152Z';
+  var ARO = 'M30.5 103.25a19.5 19.5 0 1 0 39 0a19.5 19.5 0 1 0 -39 0Z';
+  var MOSTRADOR = 'M32.4 103.25a17.6 17.6 0 1 0 35.2 0a17.6 17.6 0 1 0 -35.2 0Z';
+  // fundo claro: relógio preto com aro vazado (o cubo dourado brilha no
+  // preto); fundo escuro: torre clara com o relógio todo vazado
+  function torreSvg(escuro) {
+    var d = TORRE + (escuro ? '' : ARO) + MOSTRADOR + TORRE_BAIXO;
+    return '<svg class="mz-torre" viewBox="0 0 100 163" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="' + d + '"/></svg>';
+  }
+  MARCA.torreSvg = torreSvg;
 
-  // "Passo a passo": o " a " do meio vira o degrau dourado. Senão, troca a
-  // última letra "i" minúscula pelo "ı" sem ponto + o pino por cima dele;
-  // sem "i" no nome, fica só o texto normal
+  function montarSimbolos() {
+    document.querySelectorAll('#cube3d, #pullRefreshCubo, .brand > .vt-cubo, .faixa-marca > .vt-cubo').forEach(function (cubo) {
+      if (cubo.closest('.mz-simbolo')) return;
+      var escuro = !!cubo.closest('.faixa-vibe');
+      var simbolo = document.createElement('span');
+      simbolo.className = 'mz-simbolo' + (escuro ? ' mz-escuro' : '') + (cubo.id ? ' mz-' + cubo.id : '');
+      simbolo.setAttribute('aria-hidden', 'true');
+      simbolo.innerHTML = torreSvg(escuro) + '<span class="mz-relogio"></span>';
+      cubo.parentNode.insertBefore(simbolo, cubo);
+      simbolo.lastChild.appendChild(cubo);
+    });
+  }
+
+  // o pingo do "i" vira um losango dourado — o cubo visto de quina
   function palavraHtml(nome) {
-    var degrau = nome.match(/^(\S+) (a|e|de) (\S+)$/);
-    if (degrau) {
-      return escapeHtml(degrau[1]) + ' <span class="pt-degrau">' + escapeHtml(degrau[2]) + '</span> ' + escapeHtml(degrau[3]);
-    }
     var idx = nome.lastIndexOf('i');
     if (idx === -1) return escapeHtml(nome);
     return escapeHtml(nome.slice(0, idx)) +
-      '<span class="pt-idot">ı' + PINO + '</span>' +
+      '<span class="pt-idot">ı<i class="mz-ponto" aria-hidden="true"></i></span>' +
       escapeHtml(nome.slice(idx + 1));
   }
 
-  function logoHtml(nome, variante) {
-    var palavra = '<span class="pt-word">' + palavraHtml(nome) + '</span>';
-    return palavra;
+  function logoHtml(nome) {
+    return '<span class="pt-word">' + palavraHtml(nome) + '</span>';
   }
 
   function aplicar() {
     document.querySelectorAll('[data-vibe-marca]').forEach(function (el) { el.textContent = MARCA.nome; });
     document.querySelectorAll('[data-vibe-slogan]').forEach(function (el) { el.textContent = MARCA.slogan; });
     document.querySelectorAll('[data-vibe-marca-logo]').forEach(function (el) {
-      el.innerHTML = logoHtml(MARCA.nome, el.getAttribute('data-vibe-marca-logo'));
+      el.innerHTML = logoHtml(MARCA.nome);
       el.setAttribute('aria-label', MARCA.nome);
     });
+    montarSimbolos();
   }
   // letra "de código" (monoespaçada) só pro logotipo; o nome aparece
   // devagar quando a letra já chegou — sem trocar de fonte na frente da pessoa
@@ -77,6 +97,9 @@
   }
 
   function iniciar() { carregarFonte(); aplicar(); }
+  // a torre entra já (o script fica no fim do <body>), antes dos cubos
+  // em three.js medirem o lugar deles
+  montarSimbolos();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
   else iniciar();
 })(window);
