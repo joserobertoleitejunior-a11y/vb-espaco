@@ -243,7 +243,6 @@ img { max-width: 100%; display: block; }
 .btn:active { transform: scale(0.98); }
 .btn:disabled { opacity: 0.6; cursor: default; }
 .btn-primario { background: var(--cor-marca); color: var(--branco); }
-.btn-google { background: var(--branco); color: var(--tinta); border: 1px solid var(--borda); width: 100%; }
 .btn-ghost { background: transparent; color: var(--tinta-suave); border: 1px solid var(--borda); }
 
 .card {
@@ -3276,3 +3275,15 @@ html, body { max-width: 100%; overflow-x: clip; }
   html:not([data-tpl]) .topbar .cliente-global-btn { font-size: 0 !important; gap: 0; padding: 0.3rem !important; }
 }
 @media (max-width: 330px) { .topbar-local { display: none; } }
+
+/* login do dono (só e-mail): link discreto "Esqueci minha senha" */
+.auth-card .auth-sub { margin: -0.3rem 0 1rem; }
+.auth-link {
+  display: block; margin: 0.7rem auto 0; padding: 0.35rem 0.6rem;
+  background: none; border: 0; border-radius: 8px;
+  color: var(--tinta-suave); font: inherit; font-size: 0.86rem; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.auth-link:hover { color: var(--tinta); }
+.auth-link:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; }
+.auth-card #authDivisor { margin-top: 1.1rem; }

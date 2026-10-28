@@ -1,4 +1,4 @@
-/* Fluxo de onboarding: login/cadastro de dono (e-mail+senha ou Google)
+/* Fluxo de onboarding: login/cadastro de dono (e-mail e senha)
    e criação do estabelecimento — o coração do "já quero testar criar
    os primeiros dentro desse app". */
 (function () {
@@ -18,8 +18,8 @@
     return chamarComFila('tenant_admin_registrar_venda', params, 'Venda: ' + params.p_descricao);
   }
 
-  // Login de verdade: precisa criar conta ou entrar (e-mail+senha, ou
-  // Google) pra ver e criar estabelecimentos — a conta (dono_user_id) é
+  // Login de verdade: precisa criar conta ou entrar (e-mail e senha)
+  // pra ver e criar estabelecimentos — a conta (dono_user_id) é
   // o que decide quem é dono de cada site, sem PIN nenhum envolvido.
   var TESTE_SEM_LOGIN = false;
 
@@ -114,79 +114,104 @@
   document.addEventListener('click', fecharDropdowns);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fecharDropdowns(); });
 
-  document.getElementById('googleBtn').addEventListener('click', function () {
-    db.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/cadastro.html' }
-    });
-  });
+  // ---- entrar / criar conta (só e-mail e senha por enquanto) ----
+  // um formulário só, que troca de modo: entrar ↔ criar conta
+  var modoAuth = 'entrar';
+  var authTitulo = document.getElementById('authTitulo');
+  var authSub = document.getElementById('authSub');
+  var entrarBtn = document.getElementById('entrarBtn');
+  var trocarModoBtn = document.getElementById('trocarModoBtn');
+  var esqueciBtn = document.getElementById('esqueciBtn');
+  var authDivisor = document.getElementById('authDivisor');
+  var senhaInput = document.getElementById('authSenha');
+
+  function trocarModo(modo) {
+    modoAuth = modo;
+    var criando = modo === 'criar';
+    authTitulo.textContent = criando ? 'Criar conta' : 'Entrar';
+    authSub.textContent = criando
+      ? 'Use seu e-mail e crie uma senha (mínimo 6 caracteres). Chega um link no seu e-mail pra confirmar a conta.'
+      : 'Entre com o e-mail e a senha da sua conta.';
+    entrarBtn.textContent = criando ? 'Criar conta' : 'Entrar';
+    authDivisor.textContent = criando ? 'já tem conta?' : 'ainda não tem conta?';
+    trocarModoBtn.textContent = criando ? 'Entrar com minha conta' : 'Criar conta com e-mail';
+    esqueciBtn.classList.toggle('oculto', criando);
+    senhaInput.setAttribute('autocomplete', criando ? 'new-password' : 'current-password');
+    authMsg.className = 'msg'; authMsg.textContent = '';
+  }
+  trocarModoBtn.addEventListener('click', function () { trocarModo(modoAuth === 'criar' ? 'entrar' : 'criar'); });
+
+  // mensagens do Supabase em português, do jeito que a pessoa entende
+  function erroAuth(err) {
+    var m = String((err && err.message) || err || '');
+    if (/invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
+    if (/email not confirmed/i.test(m)) return 'Falta confirmar seu e-mail: abra o link que mandamos pra você (olhe também o spam).';
+    if (/already registered|already been registered/i.test(m)) return 'Esse e-mail já tem conta — é só entrar (ou use "Esqueci minha senha").';
+    if (/rate limit|too many|security purposes/i.test(m)) return 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.';
+    if (/password should be at least|weak password/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+    if (/invalid.*email|unable to validate email|email address .* invalid/i.test(m)) return 'Esse e-mail não parece válido — confira se digitou certo.';
+    if (/failed to fetch|network/i.test(m)) return 'Sem conexão agora — tente de novo em instantes.';
+    return m || 'Não deu certo agora. Tente de novo em instantes.';
+  }
+  function avisoAuth(tipo, texto) {
+    authMsg.className = 'msg' + (tipo ? ' msg-' + tipo : '');
+    authMsg.textContent = texto;
+  }
+  function emailValido(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email); }
 
   document.getElementById('emailForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    var email = document.getElementById('authEmail').value.trim();
-    var senha = document.getElementById('authSenha').value;
-    var btn = document.getElementById('entrarBtn');
-    btn.disabled = true;
-    authMsg.className = 'msg';
-    authMsg.textContent = 'Um instante…';
-
-    db.auth.signInWithPassword({ email: email, password: senha }).then(function (res) {
-      btn.disabled = false;
-      if (res.error) {
-        authMsg.className = 'msg msg-erro';
-        authMsg.textContent = res.error.message;
-        return;
+    var email = document.getElementById('authEmail').value.trim().toLowerCase();
+    var senha = senhaInput.value;
+    if (!emailValido(email)) return avisoAuth('erro', 'Digite um e-mail válido (ex.: nome@gmail.com).');
+    if (senha.length < 6) return avisoAuth('erro', 'A senha precisa ter pelo menos 6 caracteres.');
+    var criando = modoAuth === 'criar';
+    entrarBtn.disabled = true; trocarModoBtn.disabled = true;
+    avisoAuth('', criando ? 'Criando sua conta…' : 'Entrando…');
+    var pedido = criando
+      ? db.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: window.location.origin + '/cadastro.html' } })
+      : db.auth.signInWithPassword({ email: email, password: senha });
+    pedido.then(function (res) {
+      entrarBtn.disabled = false; trocarModoBtn.disabled = false;
+      if (res.error) return avisoAuth('erro', erroAuth(res.error));
+      if (res.data && res.data.session) { avisoAuth('', ''); mostrarPainel(); return; }
+      // com confirmação por e-mail ligada, e-mail repetido volta sem erro
+      // e sem nenhuma identidade — avisa em vez de mandar esperar um link
+      var u = res.data && res.data.user;
+      if (criando && u && Array.isArray(u.identities) && u.identities.length === 0) {
+        return avisoAuth('erro', 'Esse e-mail já tem conta — é só entrar (ou use "Esqueci minha senha").');
       }
-      authMsg.textContent = '';
-      mostrarPainel();
-    }, function () {
-      btn.disabled = false;
-      authMsg.className = 'msg msg-erro';
-      authMsg.textContent = 'Sem conexão agora — tenta de novo em instantes.';
+      trocarModo('entrar');
+      avisoAuth('ok', 'Conta criada! Mandamos um link pra ' + email + ' — abra pra confirmar e depois é só entrar aqui (olhe também o spam).');
+    }, function (err) {
+      entrarBtn.disabled = false; trocarModoBtn.disabled = false;
+      avisoAuth('erro', erroAuth(err));
     });
   });
 
-  // Criar conta nova com e-mail e senha (alternativa ao Google) — o
-  // dono_user_id do estabelecimento vai ser essa conta do mesmo jeito.
-  document.getElementById('criarContaBtn').addEventListener('click', function () {
-    var email = document.getElementById('authEmail').value.trim();
-    var senha = document.getElementById('authSenha').value;
-    var btn = document.getElementById('criarContaBtn');
-    if (!email || !senha) {
-      authMsg.className = 'msg msg-erro';
-      authMsg.textContent = 'Preencha e-mail e senha pra criar a conta.';
-      return;
-    }
-    if (senha.length < 6) {
-      authMsg.className = 'msg msg-erro';
-      authMsg.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
-      return;
-    }
-    btn.disabled = true;
-    authMsg.className = 'msg';
-    authMsg.textContent = 'Criando sua conta…';
-
-    db.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: window.location.origin + '/cadastro.html' } }).then(function (res) {
-      btn.disabled = false;
-      if (res.error) {
-        authMsg.className = 'msg msg-erro';
-        authMsg.textContent = res.error.message;
-        return;
-      }
-      if (res.data && res.data.session) {
-        authMsg.textContent = '';
-        mostrarPainel();
-        return;
-      }
-      // projeto configurado pra exigir confirmação por e-mail antes de liberar sessão
-      authMsg.className = 'msg msg-ok';
-      authMsg.textContent = 'Conta criada! Confira seu e-mail pra confirmar antes de entrar.';
-    }, function () {
-      btn.disabled = false;
-      authMsg.className = 'msg msg-erro';
-      authMsg.textContent = 'Sem conexão agora — tenta de novo em instantes.';
-    });
+  // esqueci a senha: manda o link de troca pro e-mail digitado
+  esqueciBtn.addEventListener('click', function () {
+    var email = document.getElementById('authEmail').value.trim().toLowerCase();
+    if (!emailValido(email)) return avisoAuth('erro', 'Digite seu e-mail no campo acima e toque de novo em "Esqueci minha senha".');
+    esqueciBtn.disabled = true;
+    avisoAuth('', 'Enviando o link…');
+    db.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/cadastro.html' }).then(function (res) {
+      esqueciBtn.disabled = false;
+      if (res.error) return avisoAuth('erro', erroAuth(res.error));
+      avisoAuth('ok', 'Se esse e-mail tiver conta, chega um link pra trocar a senha em instantes (olhe também o spam).');
+    }, function (err) { esqueciBtn.disabled = false; avisoAuth('erro', erroAuth(err)); });
   });
+
+  // voltou do link de "esqueci a senha": pede a senha nova
+  function pedirSenhaNova() {
+    window.VBDialogo.prompt('Crie sua senha nova (mínimo 6 caracteres):', '').then(function (nova) {
+      if (nova == null) return;
+      if (String(nova).length < 6) { window.VBDialogo.alert('A senha precisa ter pelo menos 6 caracteres.').then(pedirSenhaNova); return; }
+      db.auth.updateUser({ password: String(nova) }).then(function (res) {
+        window.VBDialogo.alert(res.error ? erroAuth(res.error) : 'Senha trocada! Da próxima vez, entre com a senha nova.');
+      });
+    });
+  }
 
   sairBtn.addEventListener('click', function () {
     db.auth.signOut().then(function () {
@@ -1732,7 +1757,7 @@
     carregarEstabelecimentos();
   }
 
-  // O Google/Supabase manda erro de volta pela própria URL (hash ou
+  // O Supabase manda erro de volta pela própria URL (hash ou
   // query), tipo ?error=... ou #error=access_denied&error_description=...
   // Sem isso, a tela só voltava pro login calada, sem dizer o motivo.
   (function mostrarErroDoRedirect() {
@@ -1742,7 +1767,8 @@
       (hash && hash.get('error')) || query.get('error');
     if (erro) {
       authMsg.className = 'msg msg-erro';
-      authMsg.textContent = decodeURIComponent(erro).replace(/\+/g, ' ');
+      var texto = decodeURIComponent(erro).replace(/\+/g, ' ');
+      authMsg.textContent = /expired|invalid/i.test(texto) ? 'Esse link do e-mail expirou ou já foi usado. Entre com sua senha ou peça outro em "Esqueci minha senha".' : erroAuth(texto);
       history.replaceState(null, '', window.location.pathname);
     }
   })();
@@ -1754,9 +1780,10 @@
       var session = res.data && res.data.session;
       if (session) mostrarPainel(session.user && session.user.email);
     });
-    // cobre o retorno do login do Google (a sessão só fica pronta
-    // depois que o supabase-js processa o redirect) e o logout.
+    // cobre a volta dos links do e-mail (confirmar conta, trocar senha —
+    // a sessão só fica pronta depois que o supabase-js lê o link) e o logout.
     db.auth.onAuthStateChange(function (evento, session) {
+      if (evento === 'PASSWORD_RECOVERY') setTimeout(pedirSenhaNova, 300);
       if (session) mostrarPainel(session.user && session.user.email);
       else if (evento === 'SIGNED_OUT') window.location.reload();
     });

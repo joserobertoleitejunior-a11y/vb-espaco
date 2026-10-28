@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css?v=92">
+<link rel="stylesheet" href="assets/css/styles.css?v=93">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="/assets/css/vb-local.css?v=1">
 </head>
@@ -78,29 +78,29 @@
   <div class="container" style="padding-top:1.75rem; padding-bottom:3rem;">
 
     <!-- Login do ESTABELECIMENTO (dono) — separado do login do cliente,
-         que fica no site (número de WhatsApp + nome). Este aqui libera o
-         acesso admin: contas novas só entram por Google; contas antigas
-         de e-mail/senha continuam funcionando pra não perder acesso. -->
+         que fica no site (número de WhatsApp + nome). Por enquanto só
+         e-mail e senha (o Google saiu até funcionar de verdade). O mesmo
+         formulário serve pra entrar e pra criar conta (cadastro.js). -->
     <section id="authBox">
-      <div class="card">
+      <div class="card auth-card">
         <p class="eyebrow">Acesso do dono do estabelecimento</p>
-        <h2>Entrar com Google</h2>
-        <p class="cidade" style="margin:-0.3rem 0 1rem;">Ainda não tem conta? Sem problema — é só clicar abaixo: sua conta é criada automaticamente na primeira vez, e depois é só cadastrar seu negócio.</p>
-        <button class="btn btn-google" id="googleBtn" type="button">Continuar com Google</button>
-        <div class="divisor">ou com e-mail e senha</div>
-        <form id="emailForm">
+        <h2 id="authTitulo">Entrar</h2>
+        <p class="cidade auth-sub" id="authSub">Entre com o e-mail e a senha da sua conta.</p>
+        <form id="emailForm" novalidate>
           <div class="field">
             <label for="authEmail">E-mail</label>
-            <input type="email" id="authEmail" required autocomplete="email">
+            <input type="email" id="authEmail" required autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false">
           </div>
           <div class="field">
             <label for="authSenha">Senha</label>
             <input type="password" id="authSenha" required minlength="6" autocomplete="current-password">
           </div>
-          <button class="btn btn-ghost" id="entrarBtn" type="submit" style="width:100%;">Entrar</button>
-          <button class="btn btn-ghost" id="criarContaBtn" type="button" style="width:100%; margin-top:0.5rem;">Criar conta com e-mail</button>
+          <button class="btn btn-primario" id="entrarBtn" type="submit" style="width:100%;">Entrar</button>
+          <button class="auth-link" id="esqueciBtn" type="button">Esqueci minha senha</button>
         </form>
-        <p class="msg" id="authMsg"></p>
+        <p class="msg" id="authMsg" role="status"></p>
+        <div class="divisor" id="authDivisor">ainda não tem conta?</div>
+        <button class="btn btn-ghost" id="trocarModoBtn" type="button" style="width:100%;">Criar conta com e-mail</button>
       </div>
     </section>
 
@@ -189,7 +189,7 @@
   <script src="assets/js/vibe-toggle.js?v=3"></script>
   <script src="/assets/js/vb-local.js?v=1"></script>
   <script src="assets/js/aviso-gratis.js?v=1"></script>
-  <script src="assets/js/cadastro.js?v=48"></script>
+  <script src="assets/js/cadastro.js?v=49"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
