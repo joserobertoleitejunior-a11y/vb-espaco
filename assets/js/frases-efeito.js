@@ -45,6 +45,16 @@
       { headline: 'Pele em dia, mente tranquila.', sub: 'Veja a agenda em tempo real e marque seu horário agora.' },
       { headline: 'Seu cuidado, no seu tempo.', sub: 'Agende em poucos toques e sinta a diferença.' }
     ],
+    tatuador: [
+      { headline: 'Sua ideia, na pele.', sub: 'Conte o que você imagina, escolha o dia e garanta sua sessão — sem ficar trocando mensagem.' },
+      { headline: 'Arte que fica pra sempre.', sub: 'Veja o portfólio, mande sua referência e marque a sessão com poucos toques.' },
+      { headline: 'Traço firme, hora marcada.', sub: 'Escolha o tamanho, o estilo e o dia — o estúdio já recebe sua ideia pronta.' },
+      { headline: 'Cada tatuagem conta uma história.', sub: 'Comece a sua: agende a avaliação ou a sessão direto por aqui.' },
+      { headline: 'Do rascunho à pele.', sub: 'Mande a ideia, a gente transforma em desenho e marca sua sessão.' },
+      { headline: 'Fineline, blackwork, realismo — o seu estilo.', sub: 'Veja os trabalhos por estilo e agende quando quiser.' },
+      { headline: 'Tinta boa, mão firme, agenda fácil.', sub: 'Escolha o horário livre e chegue no dia certo, sem enrolação.' },
+      { headline: 'Pronto pra próxima?', sub: 'Agende sua sessão em segundos — o tempo todo já fica reservado pra você.' }
+    ],
     estetica_automotiva: [
       { headline: 'Seu carro, sempre impecável.', sub: 'Agende seu horário com poucos toques — escolha o serviço e o dia que preferir.' },
       { headline: 'Brilho que dura, cuidado que aparece.', sub: 'Escolha o serviço ideal e marque seu horário sem complicação.' },

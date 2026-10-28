@@ -16,6 +16,7 @@
     manicure_pedicure: 'Manicure e pedicure',
     estetica: 'Estética',
     estetica_automotiva: 'Estética automotiva',
+    tatuador: 'Estúdio de tatuagem',
     pizzaria: 'Pizzaria',
     petshop: 'Petshop',
     outro: 'Estabelecimento'

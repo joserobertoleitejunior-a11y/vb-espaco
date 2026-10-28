@@ -55,7 +55,7 @@
     pedreiro: 'Pedreiro e reformas', vidraceiro: 'Vidraçaria', ar_condicionado: 'Ar-condicionado', dedetizacao: 'Dedetização',
     montador: 'Montador de móveis', diarista: 'Diarista e limpeza', jardinagem: 'Jardinagem', assistencia_tecnica: 'Assistência técnica',
     barbearia: 'Barbearia', salao: 'Salão de beleza', manicure_pedicure: 'Manicure e pedicure', estetica: 'Estética',
-    estetica_automotiva: 'Estética automotiva', outro: 'Estabelecimento'
+    estetica_automotiva: 'Estética automotiva', tatuador: 'Estúdio de tatuagem', outro: 'Estabelecimento'
   };
 
   // Área de Serviços: o mesmo motor de pedido vira "chamado" (urgência,

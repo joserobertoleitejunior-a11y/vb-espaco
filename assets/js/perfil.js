@@ -456,6 +456,8 @@
     });
   }
   function formatarPreco(v) {
+    // preço zero é de propósito (orçamento, retoque): mostra "Grátis"
+    if (v !== null && v !== undefined && v !== '' && Number(v) === 0) return 'Grátis';
     return 'R$ ' + Number(v).toFixed(2).replace('.', ',');
   }
 
@@ -465,6 +467,7 @@
     manicure_pedicure: 'Manicure e pedicure',
     estetica: 'Estética',
     estetica_automotiva: 'Estética automotiva',
+    tatuador: 'Estúdio de tatuagem',
     outro: 'Estabelecimento'
   };
 
@@ -552,6 +555,7 @@
     manicure_pedicure: ['Manicure', 'Pedicure', 'Unhas em gel'],
     estetica: ['Limpeza de pele', 'Massagens', 'Depilação'],
     estetica_automotiva: ['Lavagem e detalhamento', 'Polimento e vitrificação', 'Estética interna'],
+    tatuador: ['Fineline', 'Blackwork', 'Realismo', 'Old school', 'Aquarela', 'Lettering'],
     outro: ['Atendimento geral']
   };
   function especialidadesSugeridasPara(segmento) {
@@ -1036,9 +1040,23 @@
     function renderGrid() {
       db.rpc('tenant_listar_galeria', { p_estabelecimento_id: estabId }).then(function (res) {
         var linhas = res.data || [];
-        document.getElementById('vbTutGaleriaGrid').innerHTML = linhas.slice(0, 6).map(function (g) {
-          return '<img src="' + escapeHtml(g.foto_url) + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px;">';
+        var tattoo = linhaAtual.segmento === 'tatuador';
+        var estilos = tattoo ? especialidadesSugeridasPara('tatuador') : [];
+        var gradeEl = document.getElementById('vbTutGaleriaGrid');
+        gradeEl.innerHTML = linhas.slice(0, tattoo ? 12 : 6).map(function (g) {
+          var img = '<img src="' + escapeHtml(g.foto_url) + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px;">';
+          if (!tattoo) return img;
+          // cada foto do portfólio ganha um estilo (vira filtro no site)
+          return '<div class="vb-foto-estilo">' + img +
+            '<select data-estilo-foto="' + g.id + '" aria-label="Estilo da foto"><option value="">Estilo…</option>' +
+            estilos.map(function (e) { return '<option' + (g.estilo === e ? ' selected' : '') + '>' + escapeHtml(e) + '</option>'; }).join('') +
+            '</select></div>';
         }).join('');
+        gradeEl.querySelectorAll('[data-estilo-foto]').forEach(function (sel) {
+          sel.addEventListener('change', function () {
+            db.rpc('tenant_admin_estilo_foto', { p_estabelecimento_id: estabId, p_id: sel.getAttribute('data-estilo-foto'), p_estilo: sel.value || null }).then(carregarGaleria);
+          });
+        });
       });
     }
     renderGrid();
@@ -1280,6 +1298,34 @@
   ];
 
 
+  // ---- duração do serviço: a agenda bloqueia o tempo todo (uma sessão de
+  // tatuagem de 4h não deixa ninguém marcar no meio dela) ----
+  var DURACOES = [30, 45, 60, 90, 120, 180, 240, 300, 360, 480];
+  function rotuloDuracao(min) {
+    min = Number(min) || 30;
+    if (min < 60) return min + ' min';
+    var h = Math.floor(min / 60), m = min % 60;
+    return h + ' h' + (m ? ' ' + m : '');
+  }
+  function selectDuracaoHtml(id) {
+    return '<select id="' + id + '" class="vb-servico-duracao" aria-label="Duração">' +
+      DURACOES.map(function (d) { return '<option value="' + d + '"' + (d === 30 ? ' selected' : '') + '>' + rotuloDuracao(d) + '</option>'; }).join('') +
+      '</select>';
+  }
+  // salva o serviço e, se a duração não for a padrão (30 min), grava ela também
+  function salvarServicoComDuracao(nome, preco, duracao) {
+    return db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome.trim(), p_preco: preco || 0, p_categoria: 'unissex' }).then(function (res) {
+      var id = res && res.data && res.data.id;
+      if (!id || !duracao || Number(duracao) === 30) return res;
+      return db.rpc('tenant_admin_duracao_servico', { p_estabelecimento_id: estabId, p_id: id, p_duracao_min: Number(duracao) }).then(function () { return res; });
+    });
+  }
+  function duracaoSugerida(nome) {
+    var lista = window.servicosSugeridosPara ? window.servicosSugeridosPara(linhaAtual.segmento) : [];
+    var s = lista.filter(function (x) { return x.nome === nome; })[0];
+    return s && s.duracao ? s.duracao : 30;
+  }
+
   // ---- passo "serviços": mesma sugestão por nicho + campo manual do
   // painel "+Novo serviço" de sempre, só que já aberto aqui dentro —
   // precisa ter pelo menos 1 cadastrado pra continuar. ----
@@ -1289,17 +1335,18 @@
     });
     container.innerHTML =
       (servicosCache.length ? '<ul class="vb-tutorial-lista">' + servicosCache.map(function (s) {
-        return '<li>' + escapeHtml(s.nome) + ' · ' + formatarPreco(s.preco) +
+        return '<li>' + escapeHtml(s.nome) + ' · ' + formatarPreco(s.preco) + (s.duracao_min ? ' · ' + rotuloDuracao(s.duracao_min) : '') +
           '<button type="button" class="vb-remover-x" data-remover-servico-tut="' + s.id + '" style="position:static; margin-left:0.5rem; display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;">×</button></li>';
       }).join('') + '</ul>' : '') +
       (sugestoes.length ? '<p class="vb-servico-novo-legenda">Sugestões pro seu tipo de negócio (toque pra usar o nome, o preço você define agora):</p><div class="vb-servico-chips">' +
         sugestoes.map(function (s) {
           return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
         }).join('') + '</div>' : '') +
-      '<p class="vb-servico-novo-legenda">Nome e preço do serviço:</p>' +
+      '<p class="vb-servico-novo-legenda">Nome, preço e quanto tempo leva:</p>' +
       '<div class="vb-servico-manual">' +
       '<input type="text" id="vbTutServicoNome" placeholder="Nome do serviço">' +
       '<input type="text" inputmode="decimal" id="vbTutServicoPreco" placeholder="Preço">' +
+      selectDuracaoHtml('vbTutServicoDuracao') +
       '<button type="button" class="btn btn-primario" id="vbTutServicoSalvar">Adicionar</button>' +
       '</div>';
 
@@ -1310,9 +1357,9 @@
         mostrarPassoTutorial(passoCriacaoAtual);
       });
     }
-    function salvar(nome, preco) {
+    function salvar(nome, preco, duracao) {
       if (!nome || !nome.trim()) return;
-      db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome.trim(), p_preco: preco || 0, p_categoria: 'unissex' }).then(atualizarERenderizar);
+      salvarServicoComDuracao(nome, preco, duracao).then(atualizarERenderizar);
     }
     // a sugestão só preenche o NOME — o preço é sempre digitado na hora
     // pelo dono (nenhum valor "chutado" entra sem ele decidir).
@@ -1321,6 +1368,7 @@
         var nomeInput = document.getElementById('vbTutServicoNome');
         var precoInput = document.getElementById('vbTutServicoPreco');
         nomeInput.value = chip.getAttribute('data-chip-nome');
+        document.getElementById('vbTutServicoDuracao').value = String(duracaoSugerida(nomeInput.value));
         precoInput.focus();
       });
     });
@@ -1332,7 +1380,7 @@
     document.getElementById('vbTutServicoSalvar').addEventListener('click', function () {
       var nome = document.getElementById('vbTutServicoNome').value;
       var preco = parseFloat(document.getElementById('vbTutServicoPreco').value.replace(',', '.')) || 0;
-      salvar(nome, preco);
+      salvar(nome, preco, document.getElementById('vbTutServicoDuracao').value);
     });
   }
 
@@ -1714,6 +1762,7 @@
     manicure_pedicure: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6v3l1.5 2v13a1 1 0 01-1 1h-7a1 1 0 01-1-1V7L9 5V2z"/><path d="M9 2h6"/></svg>',
     estetica: '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M12 2L14.3 7.7L20 10L14.3 12.3L12 18L9.7 12.3L4 10L9.7 7.7z"/></svg>',
     estetica_automotiva: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12l1.5-4.5A2 2 0 0 1 6.4 6h11.2a2 2 0 0 1 1.9 1.5L21 12"/><path d="M3 12h18v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/></svg>',
+    tatuador: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 3l3 3-9.5 9.5-3-3z"/><path d="M8.5 12.5L5 16l3 3 3.5-3.5"/><path d="M5 19l-2 2"/><path d="M15 6l3 3"/></svg>',
     outro: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg>'
   };
   // alguns nomes de serviço são tão comuns entre nichos diferentes que dá
@@ -1803,9 +1852,9 @@
           });
         });
 
-        function salvarNovoServico(nome, preco) {
+        function salvarNovoServico(nome, preco, duracao) {
           if (!nome || !nome.trim()) return;
-          db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: null, p_nome: nome.trim(), p_preco: preco || 0, p_categoria: 'unissex' }).then(carregarServicos);
+          salvarServicoComDuracao(nome, preco, duracao).then(carregarServicos);
         }
 
         var addBtn = document.getElementById('vbAddServico');
@@ -1819,23 +1868,25 @@
               sugestoes.map(function (s) {
                 return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
               }).join('') + '</div>' : '') +
-            '<p class="vb-servico-novo-legenda">Nome e preço do serviço:</p>' +
+            '<p class="vb-servico-novo-legenda">Nome, preço e quanto tempo leva:</p>' +
             '<div class="vb-servico-manual">' +
             '<input type="text" id="vbNovoServicoNome" placeholder="Nome do serviço">' +
             '<input type="text" inputmode="decimal" id="vbNovoServicoPreco" placeholder="Preço">' +
+            selectDuracaoHtml('vbNovoServicoDuracao') +
             '<button type="button" class="btn btn-primario" id="vbNovoServicoSalvar">Adicionar</button>' +
             '</div>';
           painel.classList.remove('oculto');
           painel.querySelectorAll('[data-chip-nome]').forEach(function (chip) {
             chip.addEventListener('click', function () {
               document.getElementById('vbNovoServicoNome').value = chip.getAttribute('data-chip-nome');
+              document.getElementById('vbNovoServicoDuracao').value = String(duracaoSugerida(chip.getAttribute('data-chip-nome')));
               document.getElementById('vbNovoServicoPreco').focus();
             });
           });
           document.getElementById('vbNovoServicoSalvar').addEventListener('click', function () {
             var nome = document.getElementById('vbNovoServicoNome').value;
             var preco = parseFloat(document.getElementById('vbNovoServicoPreco').value.replace(',', '.')) || 0;
-            salvarNovoServico(nome, preco);
+            salvarNovoServico(nome, preco, document.getElementById('vbNovoServicoDuracao').value);
           });
         });
       }
@@ -2020,6 +2071,8 @@
       if (!linhas.length && !edicaoNoSite) return;
 
       var grid = document.getElementById('tplGrid');
+      // tatuagem: a galeria vira portfólio, com filtro por estilo
+      if (linhaAtual.segmento === 'tatuador' && !edicaoNoSite) { montarPortfolio(grid, linhas); return; }
       var fotosHtml = linhas.slice(0, 9).map(function (g) {
         var remover = edicaoNoSite ? '<button type="button" class="vb-remover-x" data-remover-galeria="' + g.id + '">×</button>' : '';
         return '<div class="vb-foto-wrap"><img src="' + escapeHtml(g.foto_url) + '" alt="" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px;" loading="lazy">' + remover + '</div>';
@@ -2046,6 +2099,39 @@
         })).then(carregarGaleria);
       });
     });
+  }
+
+  // portfólio do tatuador: chips com os estilos que existem nas fotos
+  // ("Todos" primeiro) e a grade filtrando na hora, sem recarregar
+  function montarPortfolio(grid, linhas) {
+    var secao = document.getElementById('tplGaleriaSecao');
+    var eyebrow = secao.querySelector('.eyebrow');
+    if (eyebrow) eyebrow.textContent = 'Portfólio';
+    var estilos = [];
+    linhas.forEach(function (g) { if (g.estilo && estilos.indexOf(g.estilo) === -1) estilos.push(g.estilo); });
+    var filtros = secao.querySelector('.portfolio-filtros');
+    if (!filtros) {
+      filtros = document.createElement('div');
+      filtros.className = 'portfolio-filtros';
+      secao.insertBefore(filtros, grid);
+    }
+    filtros.innerHTML = estilos.length ? ['Todos'].concat(estilos).map(function (e, i) {
+      return '<button type="button" class="portfolio-chip' + (i === 0 ? ' ativo' : '') + '" data-estilo="' + (i === 0 ? '' : escapeHtml(e)) + '">' + escapeHtml(e) + '</button>';
+    }).join('') : '';
+    function desenhar(estilo) {
+      grid.innerHTML = linhas.filter(function (g) { return !estilo || g.estilo === estilo; }).slice(0, 18).map(function (g) {
+        return '<figure class="portfolio-item"><img src="' + escapeHtml(g.foto_url) + '" alt="' + escapeHtml(g.estilo || 'Tatuagem') + '" loading="lazy">' +
+          (g.estilo ? '<figcaption>' + escapeHtml(g.estilo) + '</figcaption>' : '') + '</figure>';
+      }).join('');
+    }
+    filtros.onclick = function (e) {
+      var b = e.target.closest('[data-estilo]');
+      if (!b) return;
+      filtros.querySelectorAll('.portfolio-chip').forEach(function (c) { c.classList.toggle('ativo', c === b); });
+      desenhar(b.getAttribute('data-estilo'));
+    };
+    desenhar('');
+    secao.classList.remove('oculto');
   }
 
   // ---------- agenda em passo a passo (mesmo fluxo do Rafael, com dados
@@ -2082,6 +2168,76 @@
     var diasDisponiveis = [];
     var lastFocused = null;
     var ultimoPedidoHorarios = null;
+    var briefingEl = document.getElementById('wizBriefing');
+
+    // ---- tatuagem: antes do dia e horário, a pessoa conta a ideia (vai pra
+    // agenda do estúdio e pro WhatsApp — o tatuador já chega sabendo) ----
+    var BRIEF_LOCAIS = ['Braço', 'Antebraço', 'Mão', 'Perna', 'Costas', 'Peito', 'Costela', 'Pescoço', 'Pé', 'Outro'];
+    var BRIEF_TAMANHOS = ['Pequena (até 7 cm)', 'Média (7 a 15 cm)', 'Grande (15 cm+)', 'Fechamento'];
+    function ehTattoo() { return !!linhaAtual && linhaAtual.segmento === 'tatuador'; }
+    function montarBriefing() {
+      if (!briefingEl) return;
+      briefingEl.classList.toggle('oculto', !ehTattoo());
+      if (!ehTattoo()) return;
+      var estilos = especialidadesSugeridasPara('tatuador').concat(['Ainda não sei']);
+      var chips = function (campo, lista) {
+        return '<div class="wiz-brief-chips" data-brief="' + campo + '">' + lista.map(function (v) {
+          return '<button type="button" class="wiz-brief-chip" data-v="' + escapeHtml(v) + '">' + escapeHtml(v) + '</button>';
+        }).join('') + '</div>';
+      };
+      briefingEl.innerHTML =
+        '<p class="wiz-brief-titulo">Sua ideia</p>' +
+        '<p class="wiz-brief-rotulo">Onde no corpo?</p>' + chips('local', BRIEF_LOCAIS) +
+        '<p class="wiz-brief-rotulo">Tamanho aproximado</p>' + chips('tamanho', BRIEF_TAMANHOS) +
+        '<p class="wiz-brief-rotulo">Estilo</p>' + chips('estilo', estilos) +
+        '<label class="wiz-brief-rotulo" for="wizBriefIdeia">Conte em poucas palavras <span>(opcional)</span></label>' +
+        '<textarea id="wizBriefIdeia" class="wiz-brief-ideia" rows="2" maxlength="600" placeholder="Ex.: rosa fineline com o nome da minha filha"></textarea>' +
+        '<p class="wiz-brief-dica">Tem foto de referência? Depois de confirmar, é só mandar no WhatsApp do estúdio.</p>' +
+        '<label class="wiz-brief-check"><input type="checkbox" id="wizBriefMaior"> Tenho 18 anos ou mais <span>(menor só com responsável presente)</span></label>';
+      marcarBriefing();
+    }
+    function marcarBriefing() {
+      if (!briefingEl) return;
+      briefingEl.querySelectorAll('[data-brief]').forEach(function (g) {
+        var campo = g.getAttribute('data-brief');
+        g.querySelectorAll('[data-v]').forEach(function (b) {
+          var on = choices['b_' + campo] === b.getAttribute('data-v');
+          b.classList.toggle('selected', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      });
+      var ideia = document.getElementById('wizBriefIdeia');
+      if (ideia && ideia.value !== (choices.b_ideia || '')) ideia.value = choices.b_ideia || '';
+      var maior = document.getElementById('wizBriefMaior');
+      if (maior) maior.checked = !!choices.b_maior;
+    }
+    if (briefingEl) {
+      briefingEl.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-v]');
+        if (!b) return;
+        var campo = b.closest('[data-brief]').getAttribute('data-brief');
+        choices['b_' + campo] = choices['b_' + campo] === b.getAttribute('data-v') ? undefined : b.getAttribute('data-v');
+        marcarBriefing(); render();
+      });
+      briefingEl.addEventListener('input', function (e) {
+        if (e.target.id === 'wizBriefIdeia') choices.b_ideia = e.target.value.slice(0, 600);
+      });
+      briefingEl.addEventListener('change', function (e) {
+        if (e.target.id === 'wizBriefMaior') { choices.b_maior = e.target.checked; render(); }
+      });
+    }
+    function briefingDetalhes() {
+      if (!ehTattoo()) return null;
+      return { local: choices.b_local || '', tamanho: choices.b_tamanho || '', estilo: choices.b_estilo || '', ideia: choices.b_ideia || '', maior_idade: !!choices.b_maior };
+    }
+    function briefingLinhas() {
+      if (!ehTattoo()) return [];
+      return [['Local', choices.b_local], ['Tamanho', choices.b_tamanho], ['Estilo', choices.b_estilo], ['Ideia', choices.b_ideia]]
+        .filter(function (l) { return l[1]; });
+    }
+    function duracaoDoServico(nome) {
+      var s = servicosCache.filter(function (x) { return x.nome === nome; })[0];
+      return s && s.duracao_min ? Number(s.duracao_min) : 30;
+    }
 
     function storageKey() { return WIZ_STORAGE_PREFIX + estabId; }
 
@@ -2119,7 +2275,8 @@
       }
       servicoGrid.innerHTML = lista.map(function (s) {
         var preco = Number(s.preco) > 0 ? ' <small class="pick-preco">' + formatarPreco(s.preco) + '</small>' : '';
-        return '<button type="button" class="pick-btn" data-value="' + escapeHtml(s.nome) + '" data-key="' + escapeHtml(String(s.id)) + '">' + escapeHtml(s.nome) + preco + '</button>';
+        var dur = Number(s.duracao_min) > 30 ? ' <small class="pick-duracao">' + rotuloDuracao(s.duracao_min) + '</small>' : '';
+        return '<button type="button" class="pick-btn" data-value="' + escapeHtml(s.nome) + '" data-key="' + escapeHtml(String(s.id)) + '">' + escapeHtml(s.nome) + preco + dur + '</button>';
       }).join('');
       marcarSelecionados();
     }
@@ -2167,10 +2324,12 @@
       var iso = choices.diaKey;
       if (!iso) return;
       var staffId = choices.profissionalKey && choices.profissionalKey !== 'qualquer' ? choices.profissionalKey : null;
-      var pedido = iso + '|' + (staffId || '');
+      var pedido = iso + '|' + (staffId || '') + '|' + (choices.servico || '');
       ultimoPedidoHorarios = pedido;
       horarioGrid.innerHTML = '<p style="grid-column:1/-1; color:var(--ink-soft); font-size:0.9rem;">Carregando…</p>';
-      db.rpc('tenant_public_agenda_slots', { p_estabelecimento_id: estabId, p_dia: iso, p_staff_id: staffId || null }).then(function (res) {
+      // horários que cabem o serviço inteiro (uma sessão de 4h só aparece
+      // onde tem 4h livres antes de fechar)
+      db.rpc('tenant_public_horarios_servico', { p_estabelecimento_id: estabId, p_dia: iso, p_staff_id: staffId || null, p_servico: choices.servico || '' }).then(function (res) {
         if (pedido !== ultimoPedidoHorarios) return; // trocou de dia/profissional enquanto carregava
         renderHorarios(res.data || []);
       }, function () {
@@ -2186,7 +2345,9 @@
         return Array.prototype.every.call(requiredInputs, function (inp) { return inp.value.trim().length > 0; });
       }
       var grupos = stepEl.querySelectorAll('[data-group]');
-      return Array.prototype.every.call(grupos, function (g) { return Boolean(choices[g.getAttribute('data-group')]); });
+      var ok = Array.prototype.every.call(grupos, function (g) { return Boolean(choices[g.getAttribute('data-group')]); });
+      if (ok && step === 1 && ehTattoo()) ok = !!choices.b_local && !!choices.b_maior;
+      return ok;
     }
 
     function render() {
@@ -2204,7 +2365,9 @@
         document.getElementById('wizSummaryBox').innerHTML =
           'Nome: <strong>' + escapeHtml(choices.nome || '—') + '</strong><br>' +
           'Profissional: <strong>' + escapeHtml(choices.profissional || '—') + '</strong><br>' +
-          'Serviço: <strong>' + escapeHtml(choices.servico || '—') + '</strong><br>' +
+          'Serviço: <strong>' + escapeHtml(choices.servico || '—') + '</strong>' +
+          (duracaoDoServico(choices.servico) > 30 ? ' <small>(' + rotuloDuracao(duracaoDoServico(choices.servico)) + ')</small>' : '') + '<br>' +
+          briefingLinhas().map(function (l) { return l[0] + ': <strong>' + escapeHtml(l[1]) + '</strong><br>'; }).join('') +
           'Dia: <strong>' + escapeHtml(choices.dia || '—') + '</strong><br>' +
           'Horário: <strong>' + escapeHtml(choices.horario || '—') + '</strong>';
       }
@@ -2227,7 +2390,7 @@
       var mudou = choices[groupName + 'Key'] !== key;
       choices[groupName] = value;
       choices[groupName + 'Key'] = key;
-      if (mudou && (groupName === 'profissional' || groupName === 'dia')) {
+      if (mudou && (groupName === 'profissional' || groupName === 'dia' || groupName === 'servico')) {
         delete choices.horario; delete choices.horarioKey;
         atualizarHorarios();
       }
@@ -2285,8 +2448,13 @@
       // (pulado quando já sabemos quem é), 5 confirmar. Veio de um botão
       // de serviço (ou do passo a passo da busca)? já começa no profissional.
       if (servicoPreSelecionado) choices.servico = servicoPreSelecionado;
-      current = servicoPreSelecionado ? 2 : 1;
+      // tatuagem sempre passa pelo passo 1: é lá que a pessoa conta a ideia
+      current = servicoPreSelecionado && !ehTattoo() ? 2 : 1;
       carregarServicosWizard();
+      montarBriefing();
+      var passo1 = steps[0];
+      passo1.querySelector('h2').textContent = ehTattoo() ? 'Qual sessão?' : 'Qual serviço?';
+      passo1.querySelector('.hint').textContent = ehTattoo() ? 'Escolha o tipo de sessão e conte sua ideia.' : 'Comece pelo que você quer fazer.';
       if (saved && saved.nome && saved.telefone) {
         choices.nome = saved.nome;
         choices.telefone = saved.telefone;
@@ -2362,7 +2530,7 @@
       }
 
       nextBtn.disabled = true;
-      db.rpc('tenant_criar_agendamento', {
+      db.rpc('tenant_agendar', {
         p_estabelecimento_id: estabId,
         p_cliente_nome: choices.nome || '',
         p_cliente_telefone: choices.telefone || '',
@@ -2371,7 +2539,8 @@
         p_servico: choices.servico || null,
         p_dia: choices.diaKey || null,
         p_dia_label: choices.dia || null,
-        p_horario: choices.horario || ''
+        p_horario: choices.horario || '',
+        p_detalhes: briefingDetalhes()
       }).then(function (res) {
         nextBtn.disabled = false;
         if (res.error) {
@@ -2383,12 +2552,14 @@
           return;
         }
         var tel = (linhaAtual.telefone_whatsapp || '').replace(/\D/g, '');
-        var msg = 'Olá! Quero agendar um horário:%0A' +
+        var msg = (ehTattoo() ? 'Olá! Quero agendar uma sessão de tatuagem:%0A' : 'Olá! Quero agendar um horário:%0A') +
           '• Nome: ' + encodeURIComponent(choices.nome || '') + '%0A' +
           '• Profissional: ' + encodeURIComponent(choices.profissional || '') + '%0A' +
           '• Serviço: ' + encodeURIComponent(choices.servico || '') + '%0A' +
           '• Dia: ' + encodeURIComponent(choices.dia || '') + '%0A' +
-          '• Horário: ' + encodeURIComponent(choices.horario || '');
+          '• Horário: ' + encodeURIComponent(choices.horario || '') +
+          briefingLinhas().map(function (l) { return '%0A• ' + encodeURIComponent(l[0] + ': ' + l[1]); }).join('') +
+          (ehTattoo() ? '%0A%0A' + encodeURIComponent('Vou mandar a foto de referência por aqui.') : '');
         var url = tel ? ('https://wa.me/55' + tel + '?text=' + msg) : '#';
         mostrarSucesso(url);
       }, function () {
@@ -2437,7 +2608,7 @@
     document.title = linha.nome;
     document.getElementById('tplNomeTopo').textContent = linha.nome;
     document.getElementById('tplNomeRodape').textContent = linha.nome;
-    document.getElementById('tplCtaTexto').textContent = linha.texto_cta || 'Agendar horário';
+    document.getElementById('tplCtaTexto').textContent = linha.texto_cta || (linha.segmento === 'tatuador' ? 'Agendar sessão' : 'Agendar horário');
     ligarOutraArea(linha);
     document.getElementById('tplCidadeRodape').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';
     document.getElementById('tplEnderecoMenu').textContent = linha.cidade.charAt(0).toUpperCase() + linha.cidade.slice(1) + '/SP';

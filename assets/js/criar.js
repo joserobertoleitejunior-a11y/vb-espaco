@@ -179,6 +179,9 @@
     desenhar();
     aoEscolher(container.querySelector('#criarOpcoesSegmento'), 'segmento', function (k) {
       estado.segmento = k;
+      // estúdio de tatuagem já começa no visual escuro (dá pra trocar no
+      // passo do visual); o botão do site vira "Agendar sessão" sozinho
+      if (k === 'tatuador' && !params.get('template')) { estado.template = 'escuro-premium'; }
       desenhar();
       if (tem('agenda')) postEstado(); else trocarPreview();
       atualizarCabecalho();

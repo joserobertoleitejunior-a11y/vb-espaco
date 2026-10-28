@@ -26,6 +26,7 @@
       { url: '/assets/estoque/avatares/avatar-esteticista-frasco.png', legenda: 'Esteticista' },
       { url: '/assets/estoque/avatares/avatar-massagem-pes.png', legenda: 'Massoterapeuta' }
     ].concat(GENERICOS),
+    tatuador: GENERICOS,
     estetica_automotiva: [
       { url: '/assets/estoque/avatares/avatar-automotiva-polimento.png', legenda: 'Detalhamento automotivo' },
       { url: '/assets/estoque/avatares/avatar-automotiva-lavagem.png', legenda: 'Lavagem automotiva' },

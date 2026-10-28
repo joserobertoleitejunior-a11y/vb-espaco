@@ -20,8 +20,8 @@
   var AREAS = {
     agenda: {
       titulo: 'Seu próximo horário está a um toque',
-      sub: 'Barbearias, salões, manicure, estética e mais em Itapetininga — agende direto com quem atende.',
-      chips: ['barbearia', 'salao', 'manicure_pedicure', 'estetica', 'estetica_automotiva', 'petshop'],
+      sub: 'Barbearias, salões, manicure, estética, tatuagem e mais em Itapetininga — agende direto com quem atende.',
+      chips: ['barbearia', 'salao', 'manicure_pedicure', 'estetica', 'tatuador', 'estetica_automotiva', 'petshop'],
       vazio: 'Tem um salão, barbearia ou estúdio? Seja um dos primeiros por aqui.'
     },
     delivery: {
@@ -60,6 +60,7 @@
     manicure_pedicure: 'Manicure e pedicure',
     estetica: 'Estética',
     estetica_automotiva: 'Estética automotiva',
+    tatuador: 'Estúdio de tatuagem',
     pizzaria: 'Pizzaria', hamburgueria: 'Hamburgueria', lanchonete: 'Lanchonete', restaurante: 'Restaurante',
     japonesa: 'Japonesa', marmitaria: 'Marmitaria', acaiteria: 'Açaí', sorveteria: 'Sorveteria', doceria: 'Doceria',
     padaria: 'Padaria', mercado: 'Mercado', adega: 'Adega', petshop: 'Petshop',
@@ -86,6 +87,7 @@
     manicure_pedicure: SVG_ESMALTE,
     estetica: SVG_SPARKLE,
     estetica_automotiva: SVG_CARRO,
+    tatuador: '<svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3l3 3-9.5 9.5-3-3z"/><path d="M8.5 12.5L5 16l3 3 3.5-3.5"/><path d="M5 19l-2 2"/><path d="M15 6l3 3"/></svg>',
     pizzaria: SVG_PIZZA,
     petshop: SVG_PATA,
     outro: SVG_LOJA

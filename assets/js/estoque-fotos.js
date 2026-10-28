@@ -31,6 +31,15 @@
       { url: '/assets/estoque/estetica/massagem-facial.jpg', legenda: 'Massagem facial' },
       { url: '/assets/estoque/estetica/massagem-pedras-quentes.jpg', legenda: 'Massagem com pedras quentes' }
     ],
+    tatuador: [
+      { url: '/assets/estoque/tatuador/tatuador-braco-fechado.jpg', legenda: 'Fechamento de braço' },
+      { url: '/assets/estoque/tatuador/tatuagem-perna.jpg', legenda: 'Tatuagem na perna' },
+      { url: '/assets/estoque/tatuador/tatuagem-ombro.jpg', legenda: 'Blackwork no ombro' },
+      { url: '/assets/estoque/tatuador/decalque-mao.jpg', legenda: 'Decalque do desenho' },
+      { url: '/assets/estoque/tatuador/maquina-tintas.jpg', legenda: 'Máquina e tintas' },
+      { url: '/assets/estoque/tatuador/bancada-escura.jpg', legenda: 'Bancada do estúdio' },
+      { url: '/assets/estoque/tatuador/tatuadora.jpg', legenda: 'Tatuadora' }
+    ],
     estetica_automotiva: [
       { url: '/assets/estoque/estetica_automotiva/lavagem-espuma.jpg', legenda: 'Lavagem com espuma' },
       { url: '/assets/estoque/estetica_automotiva/lavagem-roda.jpg', legenda: 'Detalhamento de roda' },

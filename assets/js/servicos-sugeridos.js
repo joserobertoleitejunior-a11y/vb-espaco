@@ -36,6 +36,16 @@
       { nome: 'Depilação', preco: 50 },
       { nome: 'Pedras quentes', preco: 150 }
     ],
+    // tatuagem: o tempo da sessão importa mais que o preço fechado — a
+    // agenda bloqueia a sessão inteira (duracao em minutos)
+    tatuador: [
+      { nome: 'Orçamento e avaliação', preco: 0, duracao: 30 },
+      { nome: 'Flash tattoo', preco: 150, duracao: 60 },
+      { nome: 'Tatuagem pequena (até 7 cm)', preco: 250, duracao: 120 },
+      { nome: 'Tatuagem média (7 a 15 cm)', preco: 450, duracao: 240 },
+      { nome: 'Sessão fechada (dia inteiro)', preco: 900, duracao: 480 },
+      { nome: 'Retoque', preco: 0, duracao: 60 }
+    ],
     estetica_automotiva: [
       { nome: 'Lavagem simples', preco: 40 },
       { nome: 'Lavagem completa', preco: 70 },

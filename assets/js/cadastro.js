@@ -225,6 +225,7 @@
     manicure_pedicure: 'Manicure e pedicure',
     estetica: 'Estética',
     estetica_automotiva: 'Estética automotiva',
+    tatuador: 'Estúdio de tatuagem',
     outro: 'Estabelecimento'
   };
 
@@ -680,7 +681,12 @@
         '</div>' +
         '<div id="dashAgendaLista">' + (linhas.length ? linhas.map(function (a) {
           return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(a.cliente_nome) + '</span><br>' +
-            '<span class="secundario">' + escapeHtml(a.servico || '') + (a.staff_nome ? ' · ' + escapeHtml(a.staff_nome) : '') + ' · ' + escapeHtml(a.dia_label || a.dia) + ' ' + escapeHtml(a.horario) + '</span></span>' +
+            '<span class="secundario">' + escapeHtml(a.servico || '') + (a.staff_nome ? ' · ' + escapeHtml(a.staff_nome) : '') + ' · ' + escapeHtml(a.dia_label || a.dia) + ' ' + escapeHtml(a.horario) +
+            (Number(a.duracao_min) > 30 ? ' (' + (a.duracao_min >= 60 ? Math.floor(a.duracao_min / 60) + 'h' + (a.duracao_min % 60 ? a.duracao_min % 60 : '') : a.duracao_min + 'min') + ')' : '') + '</span>' +
+            // tatuagem: a ideia que o cliente contou no agendamento
+            (a.detalhes ? '<br><span class="secundario dash-ag-ideia">' + ['local', 'tamanho', 'estilo', 'ideia'].filter(function (k) { return a.detalhes[k]; }).map(function (k) { return escapeHtml(a.detalhes[k]); }).join(' · ') +
+              (String(a.detalhes.maior_idade) === 'true' ? ' · 18+' : '') + '</span>' : '') +
+            '</span>' +
             '<span class="dash-agenda-acoes">' +
             '<span class="painel-status-badge ' + a.status + '">' + (STATUS_LABEL[a.status] || a.status) + '</span>' +
             (a.status === 'pendente' ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="confirmado" style="padding:0.2rem 0.5rem; font-size:0.72rem;">Confirmar</button>' : '') +

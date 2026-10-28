@@ -19,7 +19,7 @@
 
   var NOMES_SEG = {
     barbearia: 'Barbearia', salao: 'Salão de beleza', manicure_pedicure: 'Unhas', estetica: 'Estética',
-    estetica_automotiva: 'Estética automotiva', petshop: 'Petshop', pizzaria: 'Pizza', hamburgueria: 'Hambúrguer',
+    estetica_automotiva: 'Estética automotiva', tatuador: 'Tatuagem', petshop: 'Petshop', pizzaria: 'Pizza', hamburgueria: 'Hambúrguer',
     lanchonete: 'Lanche', restaurante: 'Restaurante', japonesa: 'Comida japonesa', marmitaria: 'Marmita',
     acaiteria: 'Açaí', sorveteria: 'Sorvete', doceria: 'Doces', padaria: 'Padaria', mercado: 'Mercado', adega: 'Bebidas',
     borracharia: 'Borracheiro', chaveiro: 'Chaveiro', guincho: 'Guincho', eletricista: 'Eletricista', encanador: 'Encanador',
