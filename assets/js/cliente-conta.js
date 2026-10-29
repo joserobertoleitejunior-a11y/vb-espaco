@@ -229,17 +229,11 @@
   // esqueci a senha
   function passoEsqueci() {
     var rosto = temPasskey && estado.status && estado.status.tem_rosto;
-    var neg = estado.negocio;
-    var linkCodigo = neg && neg.whatsapp ? 'https://wa.me/' + (soDigitos(neg.whatsapp).length <= 11 ? '55' : '') + soDigitos(neg.whatsapp) + '?text=' +
-      encodeURIComponent('Olá! Esqueci minha senha da Matriz. Pode me mandar um código pra eu criar uma nova? Meu WhatsApp é ' + formatar(estado.telefone) + '.') : null;
     var corpo = tela(cab('Criar uma senha nova', 'Escolha como confirmar que o WhatsApp é seu:') +
       (rosto ? '<button type="button" class="vbc-opcao" id="vbcPeloRosto">' + ICONE_ROSTO + '<span><strong>Com rosto ou digital</strong><small>Na hora, neste aparelho</small></span></button>' : '') +
-      (linkCodigo ? '<a class="vbc-opcao" href="' + linkCodigo + '" target="_blank" rel="noopener" id="vbcPedirCodigo">' + ICONE_WHATS + '<span><strong>Pedir um código pra ' + esc(neg.nome) + '</strong><small>Eles mandam 6 números no seu WhatsApp</small></span></a>'
-        : '<div class="vbc-opcao vbc-opcao-info">' + ICONE_WHATS + '<span><strong>Peça um código</strong><small>Qualquer negócio onde você já agendou ou pediu manda 6 números no seu WhatsApp (no painel deles, em Clientes).</small></span></div>') +
-      '<button type="button" class="vbc-btn" id="vbcTenhoCodigo">Já tenho o código</button>' +
+      (rosto ? '' : '<div class="vbc-opcao vbc-opcao-info"><span><strong>Sem rosto ou digital neste aparelho</strong><small>Por segurança, nenhum negócio consegue criar senha por você. Entre num aparelho onde você ativou o rosto/digital, ou fale com o suporte da Matriz.</small></span></div>') +
       '<p class="vbc-msg"></p><button type="button" class="vbc-link" id="vbcVoltar">Voltar</button>');
     corpo.querySelector('#vbcVoltar').addEventListener('click', passoSenha);
-    corpo.querySelector('#vbcTenhoCodigo').addEventListener('click', passoCodigo);
     var pr = corpo.querySelector('#vbcPeloRosto');
     if (pr) pr.addEventListener('click', function () {
       entrarComRosto(estado.telefone).then(function (s) { estado.sessao = s; passoNovaSenha(); }, function (e) { aviso(corpo, e && e.name === 'NotAllowedError' ? 'Cancelado.' : msgErro(e)); });

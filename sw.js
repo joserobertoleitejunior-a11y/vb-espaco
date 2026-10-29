@@ -8,7 +8,7 @@
 
    Bump o número da versão sempre que mudar a lista de arquivos aqui
    embaixo — isso descarta o cache antigo e busca tudo de novo. */
-var VERSAO = 'vb-cache-v59';
+var VERSAO = 'vb-cache-v60';
 
 // cache dos arquivos com ?v= e das imagens: o nome muda a cada versão, então
 // não precisa jogar fora a cada atualização (antes tudo era baixado de novo

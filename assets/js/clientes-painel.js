@@ -109,7 +109,6 @@
           '<div class="cl-det oculto" id="clDet-' + i + '">' + detalhes(c) +
             '<div class="cl-acoes">' +
               '<a class="cl-btn" href="' + whats(c.telefone, 'Olá, ' + c.nome + '! Tudo bem?') + '" target="_blank" rel="noopener">Chamar no WhatsApp</a>' +
-              '<button type="button" class="cl-btn cl-btn-suave" data-cl-codigo="' + i + '">Código pra senha nova</button>' +
             '</div>' +
             '<p class="cl-sub">Histórico</p><div class="cl-hist" data-cl-hist="' + i + '"><p class="cl-vazio-busca">Carregando…</p></div>' +
           '</div></div>';
@@ -140,23 +139,6 @@
       var f = e.target.closest('[data-cl-filtro]');
       if (f) { filtro = f.getAttribute('data-cl-filtro'); var pos = caixa.querySelector('.cl-busca'); tudo(); if (pos && busca) caixa.querySelector('.cl-busca').focus(); return; }
       if (e.target.closest('[data-cl-exportar]')) { opts.aoExportar(visiveis()); return; }
-
-      var cod = e.target.closest('[data-cl-codigo]');
-      if (cod) {
-        var cli = linhas[cod.getAttribute('data-cl-codigo')];
-        cod.disabled = true;
-        global.db.rpc('tenant_admin_codigo_cliente', { p_estabelecimento_id: estabId, p_telefone: cli.telefone }).then(function (r) {
-          cod.disabled = false;
-          if (r.error) { if (global.VBDialogo) global.VBDialogo.alert(r.error.message || 'Não deu agora.'); return; }
-          var texto = 'Olá, ' + cli.nome + '! Seu código pra criar uma senha nova na Matriz é ' + r.data + '. Ele vale por 15 minutos. Se não foi você que pediu, pode ignorar.';
-          // o link na mão (abrir sozinho depois de esperar o servidor o celular bloqueia)
-          var a = document.createElement('a');
-          a.className = 'cl-btn'; a.target = '_blank'; a.rel = 'noopener'; a.href = whats(cli.telefone, texto);
-          a.textContent = 'Enviar o código ' + r.data + ' no WhatsApp';
-          cod.replaceWith(a);
-        });
-        return;
-      }
 
       var topo = e.target.closest('[data-cl-abrir]');
       if (!topo) return;
