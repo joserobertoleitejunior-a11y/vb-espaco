@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <script src="/assets/js/sem-zoom.js?v=2"></script>
+<script src="/assets/js/vb-sessao-cedo.js?v=1"></script>
+<style>
+  /* sessão salva neste aparelho: nada de piscar o login antes do painel */
+  #painelEspera { display: none; }
+  html.vb-dono-sessao #authBox { display: none !important; }
+  html.vb-dono-sessao #painelEspera { display: block; }
+</style>
 <title>Cadastre seu estabelecimento — Matriz</title>
 <meta name="description" content="Crie sua conta e coloque seu negócio na Matriz">
 <link rel="canonical" href="https://vb-espaco.joserobertoleitejunior.workers.dev/cadastro.html">
@@ -89,6 +96,11 @@
          que fica no site (número de WhatsApp + nome). Por enquanto só
          e-mail e senha (o Google saiu até funcionar de verdade). O mesmo
          formulário serve pra entrar e pra criar conta (cadastro.js). -->
+    <div id="painelEspera" class="card" aria-busy="true" aria-label="Abrindo seu painel">
+      <div class="skeleton" style="height:1.6rem; width:55%; margin-bottom:1rem;"></div>
+      <div class="skeleton" style="height:7rem; border-radius:16px; margin-bottom:0.7rem;"></div>
+      <div class="skeleton" style="height:3.2rem; border-radius:14px;"></div>
+    </div>
     <section id="authBox">
       <div class="card auth-card">
         <p class="eyebrow">Acesso do dono do estabelecimento</p>
@@ -200,7 +212,7 @@
   <script src="assets/js/aviso-gratis.js?v=2"></script>
   <script src="assets/js/perguntas-segmento.js?v=1"></script>
   <script src="assets/js/meu-site.js?v=2"></script>
-  <script src="assets/js/cadastro.js?v=55"></script>
+  <script src="assets/js/cadastro.js?v=56"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {

@@ -242,6 +242,7 @@
   if (excluirContaBtn) excluirContaBtn.addEventListener('click', excluirConta);
 
   sairBtn.addEventListener('click', function () {
+    try { localStorage.removeItem('vbPainelDono'); } catch (e) {}
     db.auth.signOut().then(function () {
       window.location.reload();
     });
@@ -289,6 +290,11 @@
       // ?abrir=<id> (volta do painel de outra área) abre direto o painel de gestão
       carregarMeuNegocio().then(function (n) {
         var abrirId = new URLSearchParams(location.search).get('abrir');
+        // da próxima vez, "Meu painel" já abre direto no painel da área (vb-sessao-cedo.js)
+        try {
+          if (n && n.areas && n.areas.indexOf('agenda') === -1) localStorage.setItem('vbPainelDono', '/painel-area.html?id=' + encodeURIComponent(n.id));
+          else localStorage.removeItem('vbPainelDono');
+        } catch (e) {}
         if (n && n.areas && n.areas.indexOf('agenda') === -1) { location.replace('/painel-area.html?id=' + encodeURIComponent(n.id)); return; }
         var alvo = abrirId && linhas.find(function (l) { return l.id === abrirId; });
         if (alvo) abrirDashboard(alvo.id, alvo.nome, new URLSearchParams(location.search).get('aba'));
@@ -1553,6 +1559,8 @@
     // cada volta pra aba recarregava a lista do zero (some e aparece):
     // já com o painel na tela, não tem o que fazer de novo aqui.
     if (!painelBox.classList.contains('oculto')) return;
+    var espera = document.getElementById('painelEspera');
+    if (espera) espera.remove();
     authBox.classList.add('oculto');
     painelBox.classList.remove('oculto');
     topbarIcones.classList.remove('oculto');
@@ -1581,6 +1589,8 @@
     db.auth.getSession().then(function (res) {
       var session = res.data && res.data.session;
       if (session) mostrarPainel(session.user && session.user.email);
+      // a sessão salva tinha vencido: aí sim mostra o login
+      else { document.documentElement.classList.remove('vb-dono-sessao'); try { localStorage.removeItem('vbPainelDono'); } catch (e) {} }
     });
     // cobre a volta dos links do e-mail (confirmar conta, trocar senha —
     // a sessão só fica pronta depois que o supabase-js lê o link) e o logout.

@@ -111,6 +111,7 @@
 
   document.addEventListener('click', async function (e) {
     if (e.target.closest('[data-sair]')) {
+      try { localStorage.removeItem('vbPainelDono'); } catch (err) {}
       await db.auth.signOut();
       location.href = '/cadastro.html';
     }
@@ -122,6 +123,11 @@
     negocio = rn.data || null;
     if (!negocio) { location.href = '/criar.html'; return; }
     var areas = negocio.areas || [];
+    // "Meu painel" abre direto aqui quem não tem Agenda (vb-sessao-cedo.js)
+    try {
+      if (areas.indexOf('agenda') === -1) localStorage.setItem('vbPainelDono', '/painel-area.html?id=' + encodeURIComponent(negocio.id));
+      else localStorage.removeItem('vbPainelDono');
+    } catch (e) {}
     if (areas.indexOf('delivery') === -1 && areas.indexOf('servicos') === -1) { mostrarTelaAtivar(); return; }
     var r = await db.rpc('delivery_admin_meus_estabelecimentos');
     lojas = r.data || [];
