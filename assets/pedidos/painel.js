@@ -12,6 +12,19 @@
   var db = window.db;
   var $ = function (id) { return document.getElementById(id); };
   var esc = U.escapeHtml;
+  // observação do cliente: a linha "Fotos: link link" (anexo-fotos.js) vira
+  // miniaturas que abrem a foto inteira
+  function obsComFotos(obs) {
+    if (!obs) return '';
+    var fotos = [], texto = String(obs).replace(/(?:^|\n)Fotos:\s*([^\n]+)/, function (m, lista) {
+      fotos = lista.split(/\s+/).filter(function (u) { return /^https:\/\//.test(u); });
+      return '';
+    }).trim();
+    return (texto ? '<div class="pa-obs"><strong>Obs.:</strong> ' + esc(texto) + '</div>' : '') +
+      (fotos.length ? '<div class="pa-fotos">' + fotos.map(function (u) {
+        return '<a href="' + esc(u) + '" target="_blank" rel="noopener"><img src="' + esc(u) + '" alt="Foto do cliente" loading="lazy"></a>';
+      }).join('') + '</div>' : '');
+  }
   var q = new URLSearchParams(location.search);
 
   var LOJA_KEY = 'vbdelivery_loja_atual';
@@ -362,7 +375,7 @@
           return '<li><b>' + l.qtd + 'x</b><span>' + esc(l.descricao) + '</span><em>' + U.precoOuCombinar(l.total != null ? l.total : l.preco * l.qtd) + '</em>' +
             (l.obs ? '<small>“' + esc(l.obs) + '”</small>' : '') + '</li>';
         }).join('') + '</ul>' +
-        (p.observacao ? '<div class="pa-obs"><strong>Obs.:</strong> ' + esc(p.observacao) + '</div>' : '') +
+        obsComFotos(p.observacao) +
         '<div class="pa-rodape"><span class="pa-total">' + U.preco(p.total) + '</span><div class="pa-acoes">' +
           '<button type="button" class="icon-btn" data-imprimir="' + p.id + '" aria-label="Imprimir" title="Imprimir">' + U.ICONES.impressora + '</button>' +
           '<a class="icon-btn" data-whats-cliente="' + p.id + '" target="_blank" rel="noopener" aria-label="WhatsApp do cliente" title="WhatsApp do cliente" href="' + esc(linkWhatsCliente(p)) + '">' + U.ICONES.whats + '</a>' +

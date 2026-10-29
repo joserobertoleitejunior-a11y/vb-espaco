@@ -686,7 +686,11 @@
             (Number(a.duracao_min) > 30 ? ' (' + (a.duracao_min >= 60 ? Math.floor(a.duracao_min / 60) + 'h' + (a.duracao_min % 60 ? a.duracao_min % 60 : '') : a.duracao_min + 'min') + ')' : '') + '</span>' +
             // tatuagem: a ideia que o cliente contou no agendamento
             (a.detalhes ? '<br><span class="secundario dash-ag-ideia">' + ['local', 'tamanho', 'estilo', 'ideia'].filter(function (k) { return a.detalhes[k]; }).map(function (k) { return escapeHtml(a.detalhes[k]); }).join(' · ') +
-              (String(a.detalhes.maior_idade) === 'true' ? ' · 18+' : '') + '</span>' : '') +
+              (String(a.detalhes.maior_idade) === 'true' ? ' · 18+' : '') + '</span>' +
+              // foto(s) de referência que o cliente mandou
+              (a.detalhes.referencia ? '<span class="dash-ag-fotos">' + String(a.detalhes.referencia).split(/\s+/).filter(function (u) { return /^https:\/\//.test(u); }).map(function (u) {
+                return '<a href="' + escapeHtml(u) + '" target="_blank" rel="noopener"><img src="' + escapeHtml(u) + '" alt="Referência" loading="lazy"></a>';
+              }).join('') + '</span>' : '') : '') +
             '</span>' +
             '<span class="dash-agenda-acoes">' +
             '<span class="painel-status-badge ' + a.status + '">' + (STATUS_LABEL[a.status] || a.status) + '</span>' +

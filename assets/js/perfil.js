@@ -2194,10 +2194,20 @@
         '<p class="wiz-brief-rotulo">Estilo</p>' + chips('estilo', estilos) +
         '<label class="wiz-brief-rotulo" for="wizBriefIdeia">Conte em poucas palavras <span>(opcional)</span></label>' +
         '<textarea id="wizBriefIdeia" class="wiz-brief-ideia" rows="2" maxlength="600" placeholder="Ex.: rosa fineline com o nome da minha filha"></textarea>' +
-        '<p class="wiz-brief-dica">Tem foto de referência? Depois de confirmar, é só mandar no WhatsApp do estúdio.</p>' +
+        '<div id="wizBriefFotos" class="wiz-brief-fotos"></div>' +
         '<label class="wiz-brief-check"><input type="checkbox" id="wizBriefMaior"> Tenho 18 anos ou mais <span>(menor só com responsável presente)</span></label>';
+      choices.b_fotos = choices.b_fotos || [];
+      desenharFotosBriefing();
       marcarBriefing();
     }
+    // foto de referência: desenho, outra tattoo, o lugar do corpo
+    function desenharFotosBriefing() {
+      var caixa = document.getElementById('wizBriefFotos');
+      if (!caixa || !window.VBAnexoFotos) return;
+      caixa.innerHTML = window.VBAnexoFotos.bloco(choices.b_fotos, { titulo: 'Foto de referência', ajuda: 'Um desenho, outra tatuagem que você curtiu ou o lugar do corpo — o estúdio já chega com o orçamento mais certo.' });
+      window.VBAnexoFotos.ligar(caixa, choices.b_fotos, estabId, desenharFotosBriefing);
+    }
+    function fotosBriefing() { return window.VBAnexoFotos && choices.b_fotos ? window.VBAnexoFotos.urls(choices.b_fotos) : []; }
     function marcarBriefing() {
       if (!briefingEl) return;
       briefingEl.querySelectorAll('[data-brief]').forEach(function (g) {
@@ -2229,11 +2239,13 @@
     }
     function briefingDetalhes() {
       if (!ehTattoo()) return null;
-      return { local: choices.b_local || '', tamanho: choices.b_tamanho || '', estilo: choices.b_estilo || '', ideia: choices.b_ideia || '', maior_idade: !!choices.b_maior };
+      return { local: choices.b_local || '', tamanho: choices.b_tamanho || '', estilo: choices.b_estilo || '', ideia: choices.b_ideia || '', maior_idade: !!choices.b_maior, referencia: fotosBriefing().join(' ') };
     }
     function briefingLinhas() {
       if (!ehTattoo()) return [];
-      return [['Local', choices.b_local], ['Tamanho', choices.b_tamanho], ['Estilo', choices.b_estilo], ['Ideia', choices.b_ideia]]
+      var fotos = fotosBriefing();
+      return [['Local', choices.b_local], ['Tamanho', choices.b_tamanho], ['Estilo', choices.b_estilo], ['Ideia', choices.b_ideia],
+        ['Referência', fotos.length ? fotos.join(' ') : '']]
         .filter(function (l) { return l[1]; });
     }
     function duracaoDoServico(nome) {
@@ -2369,7 +2381,10 @@
           'Profissional: <strong>' + escapeHtml(choices.profissional || '—') + '</strong><br>' +
           'Serviço: <strong>' + escapeHtml(choices.servico || '—') + '</strong>' +
           (duracaoDoServico(choices.servico) > 30 ? ' <small>(' + rotuloDuracao(duracaoDoServico(choices.servico)) + ')</small>' : '') + '<br>' +
-          briefingLinhas().map(function (l) { return l[0] + ': <strong>' + escapeHtml(l[1]) + '</strong><br>'; }).join('') +
+          briefingLinhas().map(function (l) {
+            var v = l[0] === 'Referência' ? fotosBriefing().length + (fotosBriefing().length > 1 ? ' fotos' : ' foto') : l[1];
+            return l[0] + ': <strong>' + escapeHtml(v) + '</strong><br>';
+          }).join('') +
           'Dia: <strong>' + escapeHtml(choices.dia || '—') + '</strong><br>' +
           'Horário: <strong>' + escapeHtml(choices.horario || '—') + '</strong>';
       }
@@ -2532,7 +2547,8 @@
       }
 
       nextBtn.disabled = true;
-      db.rpc('tenant_agendar', {
+      // foto de referência ainda subindo? espera antes de marcar
+      (window.VBAnexoFotos && choices.b_fotos ? window.VBAnexoFotos.esperar(choices.b_fotos) : Promise.resolve()).then(function () { return db.rpc('tenant_agendar', {
         p_estabelecimento_id: estabId,
         p_cliente_nome: choices.nome || '',
         p_cliente_telefone: choices.telefone || '',
@@ -2543,7 +2559,7 @@
         p_dia_label: choices.dia || null,
         p_horario: choices.horario || '',
         p_detalhes: briefingDetalhes()
-      }).then(function (res) {
+      }); }).then(function (res) {
         nextBtn.disabled = false;
         if (res.error) {
           window.VBDialogo.alert(res.error.message);
@@ -2561,7 +2577,7 @@
           '• Dia: ' + encodeURIComponent(choices.dia || '') + '%0A' +
           '• Horário: ' + encodeURIComponent(choices.horario || '') +
           briefingLinhas().map(function (l) { return '%0A• ' + encodeURIComponent(l[0] + ': ' + l[1]); }).join('') +
-          (ehTattoo() ? '%0A%0A' + encodeURIComponent('Vou mandar a foto de referência por aqui.') : '');
+          (ehTattoo() && !fotosBriefing().length ? '%0A%0A' + encodeURIComponent('Vou mandar a foto de referência por aqui.') : '');
         var url = tel ? ('https://wa.me/55' + tel + '?text=' + msg) : '#';
         mostrarSucesso(url);
       }, function () {

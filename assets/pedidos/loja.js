@@ -877,6 +877,12 @@
       corpo += '</div>';
     }
 
+    // orçamento/chamado: foto do problema deixa o valor mais certo
+    if (SERVICO && window.VBAnexoFotos && !MODO_DEMO) {
+      c.fotos = c.fotos || [];
+      corpo += '<div class="grupo"><div class="grupo-titulo">Fotos <em>Opcional</em></div>' +
+        window.VBAnexoFotos.bloco(c.fotos, { ajuda: URGENTE ? 'Uma foto do problema ajuda o profissional a já vir preparado.' : 'Mande fotos do que precisa — o orçamento sai mais completo e mais certo.' }) + '</div>';
+    }
     corpo += '<div class="grupo"><div class="grupo-titulo">Observação do pedido <em>Opcional</em></div>' +
       '<div class="campo"><textarea id="ckObs" maxlength="280" rows="2" placeholder="Ex.: campainha não funciona, pode ligar">' + esc(c.obs) + '</textarea></div></div>';
 
@@ -899,6 +905,12 @@
     abrirSheet('checkout', cabecaSheet(V.finalizar, 'carrinho') + '<div class="sheet-corpo">' + corpo + '</div><div class="sheet-rodape">' + rodape + '</div>');
     var novo = $('sheetConteudo').querySelector('.sheet-corpo');
     if (novo) novo.scrollTop = c.erro && focoErro ? 0 : scroll;
+    if (c.fotos && window.VBAnexoFotos) {
+      window.VBAnexoFotos.ligar($('sheetConteudo').querySelector('[data-anexo-fotos]'), c.fotos, estab.id, function () {
+        if (sheetNome !== 'checkout') return;
+        lerCamposCheckout(); renderCheckout();
+      });
+    }
     var tel = $('ckTel');
     if (tel) {
       U.mascaraTelefone(tel);
@@ -1011,6 +1023,13 @@
     c.erro = null;
     c.enviando = true;
     renderCheckout();
+    // fotos ainda subindo? espera elas terminarem antes de mandar
+    var fotos = [];
+    if (c.fotos && window.VBAnexoFotos) {
+      await window.VBAnexoFotos.esperar(c.fotos);
+      fotos = window.VBAnexoFotos.urls(c.fotos);
+    }
+    var obsComFotos = [c.obs.trim(), fotos.length ? 'Fotos: ' + fotos.join(' ') : ''].filter(Boolean).join('\n') || null;
 
     var resultado;
     if (MODO_DEMO) {
@@ -1031,13 +1050,14 @@
         p_referencia: c.forma === 'entrega' ? (c.referencia.trim() || null) : null,
         p_forma_pagamento: c.pagamento,
         p_troco_para: c.pagamento === 'dinheiro' && c.troco ? Number(c.troco) : null,
-        p_observacao: c.obs.trim() || null,
+        p_observacao: obsComFotos,
         p_lat: c.forma === 'entrega' && c.gps && c.gps.status === 'ok' ? c.gps.lat : null,
         p_lng: c.forma === 'entrega' && c.gps && c.gps.status === 'ok' ? c.gps.lng : null,
         p_detalhes: SERVICO ? {
           veiculo: VEICULO ? c.veiculo : null, modelo: VEICULO ? ((c.modelo || '').trim() || null) : null,
           quando: !URGENTE ? ((c.quando || '').trim() || null) : null,
-          precisao_m: c.gps && c.gps.status === 'ok' ? c.gps.precisao : null } : null
+          precisao_m: c.gps && c.gps.status === 'ok' ? c.gps.precisao : null,
+          fotos: fotos.length ? fotos : null } : null
       });
       if (resp.error) {
         c.enviando = false;
@@ -1057,7 +1077,7 @@
     }
     var dados = { nome: c.nome.trim(), telefone: c.telefone, forma: c.forma, endereco: c.endereco.trim(), referencia: c.referencia.trim(), pagamento: c.pagamento, troco: c.troco, obs: c.obs.trim(),
       gps: c.forma === 'entrega' && c.gps && c.gps.status === 'ok' ? c.gps : null,
-      veiculo: VEICULO ? c.veiculo : null, modelo: VEICULO ? (c.modelo || '').trim() : '', quando: !URGENTE && SERVICO ? (c.quando || '').trim() : '' };
+      veiculo: VEICULO ? c.veiculo : null, modelo: VEICULO ? (c.modelo || '').trim() : '', quando: !URGENTE && SERVICO ? (c.quando || '').trim() : '', fotos: fotos };
     carrinho = [];
     salvarCarrinho();
     renderizarCarrinhoBar();
@@ -1065,6 +1085,7 @@
     checkout.enviando = false;
     checkout.obs = '';
     checkout.troco = '';
+    checkout.fotos = [];
     atualizarBadgePedidos();
     abrirSucesso(resultado, dados);
   }
@@ -1101,6 +1122,11 @@
     if (d.quando) L.push('Quando: ' + d.quando);
     if (d.pagamento) L.push('Pagamento: ' + (U.PAGAMENTOS[d.pagamento] || d.pagamento) + (d.pagamento === 'dinheiro' && d.troco ? ' — troco para ' + U.preco(d.troco) : ''));
     if (d.obs) L.push('Obs.: ' + d.obs);
+    if (d.fotos && d.fotos.length) {
+      L.push('');
+      L.push('Fotos:');
+      d.fotos.forEach(function (u) { L.push(u); });
+    }
     return L.join('\n');
   }
 
