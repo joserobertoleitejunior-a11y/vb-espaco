@@ -68,6 +68,7 @@
   function iniciar(area) {
     st = { area: area, todos: [], servicos: {}, servicosProntos: false, r: {}, local: null, notas: {}, semNotas: false, comentarios: {}, carregando: true };
     desenhar();
+    carregarAnuncios(area);
     // guia_estabelecimentos traz entrega/retirada, taxa, tempo e menor preço;
     // sem ela (banco antigo), cai na lista simples
     db.rpc('guia_estabelecimentos', { p_area: area }).then(function (res) {
@@ -407,17 +408,56 @@
     if (!lista.length) lista = st.todos.filter(function (e) { return e.tem_promocao_ativa; });
     return lista;
   }
+  // anúncios publicados (anunciar.html) da área aberta: os do tipo de
+  // negócio que a pessoa escolheu vêm primeiro, depois os da área toda
+  var anunciosArea = {};
+  function carregarAnuncios(area) {
+    if (anunciosArea[area]) return;
+    anunciosArea[area] = [];
+    db.rpc('anuncios_ativos', { p_area: area, p_cidade: null }).then(function (r) {
+      if (!r || r.error) return;
+      anunciosArea[area] = r.data || [];
+      if (st && st.area === area) desenharPaineis();
+    }, function () {});
+  }
+  function anunciosDaVez() {
+    var lista = (st && anunciosArea[st.area]) || [];
+    var seg = st && st.r && st.r.segmento;
+    return lista.filter(function (a) { return !a.segmento || !seg || a.segmento === seg; })
+      .sort(function (a, b) { return (b.segmento === seg ? 1 : 0) - (a.segmento === seg ? 1 : 0); });
+  }
+  var anunciosVistos = {};
+  function contarVisto(a) {
+    if (anunciosVistos[a.id]) return;
+    anunciosVistos[a.id] = true;
+    db.rpc('anuncio_registrar', { p_id: a.id, p_tipo: 'visto' }).then(function () {}, function () {});
+  }
   function desenharPaineis() {
     var pool = destaques();
     var passo = respondidos();
+    var anuncios = anunciosDaVez(), usados = [];
     var paineis = raiz.querySelectorAll('[data-painel]');
     for (var i = 0; i < paineis.length; i++) {
-      // painel da esquerda mostra quem está em destaque (se tiver); o da
-      // direita fica sempre à venda, com um texto diferente a cada passo
+      // painel da esquerda: quem está em destaque (promoção); o da direita
+      // (e o da esquerda, sem destaque) mostra um anúncio publicado — e,
+      // sem anúncio, fica à venda ("Anuncie aqui" → anunciar.html)
       var e = i === 0 && pool.length ? pool[passo % pool.length] : null;
-      paineis[i].innerHTML = e ? destaqueHtml(e) : anuncieHtml((passo + i) % ANUNCIE.length);
+      var a = !e && anuncios.length ? anuncios[(passo + i) % anuncios.length] : null;
+      if (a && usados.indexOf(a.id) > -1) a = null; // o mesmo anúncio nunca nos dois lados
+      if (a) usados.push(a.id);
+      paineis[i].innerHTML = e ? destaqueHtml(e) : a ? anuncioHtml(a) : anuncieHtml((passo + i) % ANUNCIE.length);
       if (e) carregarComentarios(e, paineis[i]);
+      if (a) { contarVisto(a); carregarComentarios({ id: a.estabelecimento_id }, paineis[i]); }
     }
+  }
+  function anuncioHtml(a) {
+    var base = '/' + encodeURIComponent(a.slug) + '/' + encodeURIComponent(a.cidade) + (st.area === 'agenda' ? '' : '/pedir');
+    return '<a class="guia-anuncio" href="' + base + '" data-anuncio="' + esc(a.id) + '" style="--cor:' + esc(a.cor_destaque || '#0F6B5C') + ';">' +
+      '<span class="guia-anuncio-rotulo">Patrocinado</span>' +
+      '<span class="guia-anuncio-capa"' + (a.foto_url ? ' style="background-image:url(\'' + esc(a.foto_url) + '\')"' : '') + '></span>' +
+      '<span class="guia-anuncio-nome">' + esc(a.titulo) + '</span>' +
+      '<span class="guia-anuncio-txt">' + esc(a.texto) + ' →</span>' +
+      '</a><div class="guia-comentarios" data-comentarios="' + esc(a.estabelecimento_id) + '"></div>';
   }
   function destaqueHtml(e) {
     var foto = e.foto_capa_url || e.foto_hero_url;
@@ -431,7 +471,7 @@
   }
   function anuncieHtml(i) {
     var t = ANUNCIE[i];
-    return '<a class="guia-anuncio guia-anuncio-vago" href="/parceiros.html">' +
+    return '<a class="guia-anuncio guia-anuncio-vago" href="/anunciar.html">' +
       '<span class="guia-anuncio-rotulo">Anuncie aqui</span>' +
       '<span class="guia-anuncio-nome">' + esc(t[0]) + '</span>' +
       '<span class="guia-anuncio-txt">' + esc(t[1]) + '</span>' +
@@ -458,6 +498,8 @@
 
   // ---------- cliques ----------
   raiz.addEventListener('click', function (ev) {
+    var anuncio = ev.target.closest('[data-anuncio]');
+    if (anuncio) db.rpc('anuncio_registrar', { p_id: anuncio.getAttribute('data-anuncio'), p_tipo: 'clique' }).then(function () {}, function () {});
     var op = ev.target.closest('.guia-op');
     if (op) {
       var passo = PASSOS.filter(function (p) { return p.chave === op.getAttribute('data-passo'); })[0];

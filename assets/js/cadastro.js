@@ -237,6 +237,7 @@
   var ICONE_STAT_EQUIPE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6"/><circle cx="17.5" cy="9" r="2.2"/><path d="M15 20c.2-2.6 1.7-4.6 4-5.2"/></svg>';
   var ICONE_ACAO_GESTAO = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="19" height="13" rx="2"/><path d="M2.5 11h19"/><path d="M7 7V5.5A2.5 2.5 0 0 1 9.5 3h5A2.5 2.5 0 0 1 17 5.5V7"/><circle cx="12" cy="14.5" r="1.8"/></svg>';
   var ICONE_ACAO_VER = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var ICONE_ANUNCIO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16.5 9a4 4 0 0 1 0 6"/><path d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg>';
   var ICONE_ACAO_EDITAR = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
   var ICONE_ACAO_APAGAR = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
   var ICONE_ACAO_CAIXA = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6.5v11"/><path d="M15.5 9c0-1.4-1.6-2.5-3.5-2.5S8.5 7.6 8.5 9s1.6 2 3.5 2.5 3.5 1.1 3.5 2.5-1.6 2.5-3.5 2.5-3.5-1.1-3.5-2.5"/></svg>';
@@ -341,6 +342,7 @@
           atalho('', ICONE_ACAO_CAIXA, 'Caixa', 'registrar venda', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="caixa"') +
           atalho('', ICONE_STAT_EQUIPE, 'Clientes', 'quem já veio', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="clientes"') +
           atalho('', ICONE_ACAO_COMUNIDADE, 'Promoções', 'e status do dia', ' data-abrir-dashboard-id="' + e.id + '" data-abrir-dashboard-nome="' + escapeHtml(e.nome) + '" data-abrir-dashboard-aba="comunidade"') +
+          atalho('', ICONE_ANUNCIO, 'Anunciar', 'destaque na busca', ' href="/anunciar.html"') +
           '</div>' +
           '</div>' +
           '<div class="dono-numeros">' +
@@ -1754,7 +1756,22 @@
     });
   });
 
+  // veio de outra tela que pediu login (ex.: anunciar.html?…→ ?depois=anunciar):
+  // guarda pra voltar pra lá depois de entrar — vale até pro link de
+  // confirmação do e-mail, que volta sem o parâmetro
+  var DEPOIS_OK = { anunciar: '/anunciar.html' };
+  try {
+    var depoisUrl = new URLSearchParams(location.search).get('depois');
+    if (DEPOIS_OK[depoisUrl]) localStorage.setItem('vbDepoisLogin', depoisUrl);
+  } catch (e) {}
   function mostrarPainel(email) {
+    var depois = null;
+    try { depois = localStorage.getItem('vbDepoisLogin'); } catch (e) {}
+    if (depois && DEPOIS_OK[depois]) {
+      try { localStorage.removeItem('vbDepoisLogin'); } catch (e) {}
+      location.replace(DEPOIS_OK[depois]);
+      return;
+    }
     if (email) topbarMenuEmail.textContent = email;
     // onAuthStateChange dispara de novo (com uma sessão válida) toda vez
     // que a aba volta a ficar visível — o supabase-js reconfere/renova o
