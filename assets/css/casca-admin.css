@@ -1,0 +1,99 @@
+/* Casca do painel de gestão da Agenda (cadastro.html → #dashboardOverlay).
+   É a mesma casca do painel "No local" / Delivery (painel-area.html): topo com
+   as áreas do negócio, nome, ver site e menu; abas na barra de baixo (no
+   computador, em cima). Antes a Agenda abria numa folha por cima da página e
+   as outras áreas numa página inteira — agora é tudo igual. */
+#dashboardOverlay.admin-painel-overlay {
+  display: block; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background-color: var(--linho, #f4f4f6);
+  background-image:
+    linear-gradient(180deg, rgba(var(--area-rgb, 15, 107, 92), 0.10) 0, rgba(var(--area-rgb, 15, 107, 92), 0) 360px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect x='8' y='8' width='48' height='48' rx='5' fill='none' stroke='%23C9A227' stroke-opacity='0.08' stroke-width='1.4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat;
+}
+#dashboardOverlay.admin-painel-overlay.oculto { display: none; }
+#dashboardOverlay .admin-painel-box.ca-casca {
+  width: 100%; max-width: none; min-height: 100%; max-height: none; border-radius: 0; overflow: visible;
+  background: transparent; background-image: none; display: flex; flex-direction: column;
+  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  --ink: #1f2024; --ink-soft: rgba(31, 32, 36, 0.62);
+}
+
+/* topo */
+.ca-topo {
+  position: sticky; top: 0; z-index: 60; order: 0;
+  display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--borda, #e6e6ea);
+}
+.ca-topo .vt { margin-right: 0; flex: 0 0 auto; }
+.ca-marca { flex: 1; min-width: 0; padding-left: 0.2rem; }
+.ca-marca strong { display: block; font-size: 0.95rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ca-marca span { display: block; font-size: 0.75rem; color: var(--tinta-suave, #6b6d75); }
+.ca-icone {
+  width: 40px; height: 40px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 12px; background: none; color: inherit; cursor: pointer; text-decoration: none;
+}
+.ca-icone:active { background: rgba(0, 0, 0, 0.06); }
+
+/* menu do topo */
+.ca-menu {
+  position: fixed; top: 62px; right: 4vw; z-index: 330; width: min(300px, 92vw);
+  background: #fff; border: 1px solid var(--borda, #e6e6ea); border-radius: 16px; padding: 0.5rem;
+  box-shadow: 0 12px 32px rgba(20, 20, 30, 0.16);
+  opacity: 0; transform: translateY(-8px) scale(0.98); pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.ca-menu.aberto { opacity: 1; transform: none; pointer-events: auto; }
+.ca-menu-item {
+  display: block; width: 100%; box-sizing: border-box; padding: 0.75rem 0.8rem; border: 0; border-radius: 10px; background: none;
+  font: inherit; font-size: 0.92rem; font-weight: 600; text-align: left; color: #1f2024; text-decoration: none; cursor: pointer;
+}
+.ca-menu-item:hover, .ca-menu-item:focus-visible { background: #f4f4f6; outline: none; }
+.ca-menu-item.oculto { display: none; }
+.ca-perigo { color: #b3261e; }
+
+/* o conteúdo da aba: um cartão branco sobre o fundo, como nas outras áreas */
+.ca-corpo {
+  order: 2; box-sizing: border-box; width: calc(100% - 2rem); max-width: 880px; margin: 1rem auto 0; padding: 1.1rem; flex: 0 0 auto;
+  overflow: visible; background: #fff; border: 1px solid var(--borda, #e6e6ea); border-radius: 18px;
+}
+
+/* abas: barra de baixo no celular */
+.ca-abas {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 65; order: 1; display: flex;
+  padding: 0.4rem 0.3rem calc(0.4rem + env(safe-area-inset-bottom));
+  background: #fff; border-top: 1px solid var(--borda, #e6e6ea);
+}
+.ca-aba {
+  position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  padding: 0.45rem 0.1rem; border: 0; border-radius: 12px; background: none; color: var(--tinta-suave, #6b6d75);
+  font: inherit; font-size: 0.66rem; font-weight: 700; cursor: pointer; transition: color 0.2s ease, background 0.2s ease;
+}
+.ca-aba svg { width: 21px; height: 21px; flex: 0 0 auto; }
+.ca-aba span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ca-aba.is-ativa { color: var(--cor-marca, #0F6B5C); }
+
+/* computador: abas em cima, como no painel "No local" */
+@media (min-width: 900px) {
+  #dashboardOverlay .admin-painel-box.ca-casca { padding-bottom: 2rem; }
+  .ca-abas {
+    position: sticky; top: 61px; bottom: auto; width: 100%; max-width: 880px; box-sizing: border-box; margin: 0 auto;
+    border-top: 0; border-bottom: 1px solid var(--borda, #e6e6ea); background: transparent; padding: 0.5rem 1.25rem;
+  }
+  .ca-aba { flex-direction: row; justify-content: center; gap: 0.5rem; padding: 0.65rem; font-size: 0.85rem; }
+  .ca-aba.is-ativa { background: #fff; box-shadow: inset 0 0 0 1px var(--borda, #e6e6ea); }
+}
+@media (max-width: 480px) { .ca-topo .vt-op .vt-txt { max-width: 5.5rem; } }
+@media (prefers-reduced-motion: reduce) { .ca-menu { transition: none; } }
+
+/* celular: o nome do negócio ganha uma linha só pra ele (antes era espremido pelas áreas e pelos ícones) */
+@media (max-width: 560px) {
+  .ca-topo { flex-wrap: wrap; gap: 0.3rem; row-gap: 0.05rem; padding: 0.55rem 0.6rem 0.45rem 0.75rem; }
+  .ca-icone { width: 36px; height: 36px; }
+  .ca-topo #dashAreas { flex: 1 1 auto; min-width: 0; }
+  .ca-marca { order: 3; flex: 0 0 100%; padding: 0 0.2rem; display: flex; align-items: baseline; gap: 0.5rem; }
+  .ca-marca strong { flex: 0 1 auto; font-size: 1rem; }
+  .ca-marca span { flex: 0 0 auto; }
+  .ca-menu { top: 56px; }
+}

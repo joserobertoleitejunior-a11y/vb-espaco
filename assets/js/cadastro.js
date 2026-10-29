@@ -240,6 +240,7 @@
   function ativarDigital() {
     return window.VBConta.ativarDonoDigital().then(function () {
       if (ativarDigitalBtn) ativarDigitalBtn.classList.add('oculto');
+      var dm = document.getElementById('dashMenuDigital'); if (dm) dm.classList.add('oculto');
       window.VBDialogo.alert('Pronto! Da próxima vez é só tocar em "Entrar com digital".');
     }, function (err) {
       window.VBDialogo.alert(err && err.name === 'NotAllowedError' ? 'Tudo bem — dá pra ativar depois, no menu da conta.' : ((err && err.message) || 'Não deu agora.'));
@@ -251,6 +252,7 @@
     if (!podeDigital) return;
     var ja = false; try { ja = localStorage.getItem('vbDonoDigital') === '1'; } catch (e) {}
     if (!ja && ativarDigitalBtn) ativarDigitalBtn.classList.remove('oculto');
+    var dm = document.getElementById('dashMenuDigital'); if (dm && !ja) dm.classList.remove('oculto');
     var perguntou = false; try { perguntou = localStorage.getItem('vbDonoDigitalPerguntou') === '1'; } catch (e) {}
     if (ja || perguntou) return;
     try { localStorage.setItem('vbDonoDigitalPerguntou', '1'); } catch (e) {}
@@ -341,7 +343,10 @@
         } catch (e) {}
         if (n && n.areas && n.areas.indexOf('agenda') === -1) { location.replace('/painel-area.html?id=' + encodeURIComponent(n.id)); return; }
         var alvo = abrirId && linhas.find(function (l) { return l.id === abrirId; });
-        if (alvo) abrirDashboard(alvo.id, alvo.nome, new URLSearchParams(location.search).get('aba'));
+        // dono de um negócio só vai direto pro painel; "?lista=1" (e o menu do painel) mostram a lista
+        var quer = new URLSearchParams(location.search);
+        if (!alvo && linhas.length === 1 && !quer.get('lista') && !quer.get('excluir')) alvo = linhas[0];
+        if (alvo) abrirDashboard(alvo.id, alvo.nome, quer.get('aba'));
       });
       // quem já tem um site não precisa ver "criar outro" toda hora — some
       // sozinho assim que existe pelo menos um estabelecimento cadastrado.
@@ -667,6 +672,15 @@
   function abrirDashboard(estabId, nome, abaInicial) {
     dashEstabId = estabId;
     dashboardTitulo.textContent = nome;
+    // links do topo e do menu (mesma casca do painel "No local")
+    var e = meusEstabs[estabId];
+    if (e) {
+      var site = '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade);
+      ['dashVerSite', 'dashMenuSite'].forEach(function (id) { var a = document.getElementById(id); if (a) a.href = site; });
+      var ed = document.getElementById('dashMenuEditar'); if (ed) ed.href = site + '?editar=1';
+    }
+    fecharMenuDash();
+    dashboardOverlay.scrollTop = 0;
     dashboardOverlay.classList.remove('oculto');
     if (meuNegocio) montarCuboAreas(estabId);
     else carregarMeuNegocio().then(function () { if (dashEstabId === estabId) montarCuboAreas(estabId); });
@@ -674,7 +688,13 @@
     // e constante) — abre direto nela, em vez do Resumo.
     mostrarAbaDashboard(abaInicial || 'agenda');
   }
+  function fecharMenuDash() {
+    var m = document.getElementById('dashMenu'), b = document.getElementById('dashMenuBtn');
+    if (m) m.classList.remove('aberto');
+    if (b) b.setAttribute('aria-expanded', 'false');
+  }
   function fecharDashboard() {
+    fecharMenuDash();
     dashboardOverlay.classList.add('oculto');
     dashEstabId = null;
   }
@@ -689,6 +709,7 @@
     // disso, mantém o conteúdo da aba anterior visível (só esmaecido)
     // até o novo conteúdo estar pronto pra entrar de uma vez.
     dashboardCorpo.classList.add('dash-carregando');
+    dashboardOverlay.scrollTop = 0;
     if (aba === 'resumo') renderizarDashResumo();
     else if (aba === 'agenda') renderizarDashAgenda();
     else if (aba === 'clientes') renderizarDashClientes();
@@ -1494,7 +1515,20 @@
     });
   }
 
-  document.getElementById('dashboardFechar').addEventListener('click', fecharDashboard);
+  // menu do topo do painel (mesmos itens da conta que ficavam no topo da página)
+  var dashMenuBtn = document.getElementById('dashMenuBtn'), dashMenu = document.getElementById('dashMenu');
+  dashMenuBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var abrir = !dashMenu.classList.contains('aberto');
+    dashMenu.classList.toggle('aberto', abrir);
+    dashMenuBtn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  });
+  document.addEventListener('click', function (e) { if (!e.target.closest('#dashMenu')) fecharMenuDash(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fecharMenuDash(); });
+  document.getElementById('dashFechar').addEventListener('click', fecharDashboard);
+  document.getElementById('dashMenuSair').addEventListener('click', function () { fecharMenuDash(); sairBtn.click(); });
+  document.getElementById('dashMenuExcluir').addEventListener('click', function () { fecharMenuDash(); excluirConta(); });
+  document.getElementById('dashMenuDigital').addEventListener('click', function () { fecharMenuDash(); ativarDigital(); });
   document.getElementById('dashboardAbas').addEventListener('click', function (e) {
     var btn = e.target.closest('[data-dash-aba]');
     if (!btn) return;

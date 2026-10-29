@@ -385,3 +385,14 @@ body.painel {
 .ca-modelo-ou { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--ink-faint, #8a8c94); }
 .pa-fotos { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
 .pa-fotos img { width: 4.2rem; height: 4.2rem; object-fit: cover; border-radius: 10px; display: block; }
+
+/* celular: o nome do negócio ganha uma linha só pra ele (igual ao painel da Agenda — casca-admin.css) */
+@media (max-width: 560px) {
+  .p-topo-app { flex-wrap: wrap; gap: 0.3rem; row-gap: 0.05rem; padding: 0.55rem 0.6rem 0.45rem 0.75rem; }
+  .p-topo-app .icon-btn { width: 36px; height: 36px; }
+  .p-topo-app #pAreas { flex: 1 1 auto; min-width: 0; }
+  .p-topo-app .p-marca { order: 3; flex: 0 0 100%; padding: 0 0.2rem; }
+  .p-topo-app .p-marca > div { display: flex; align-items: baseline; gap: 0.5rem; max-width: 100%; }
+  .p-topo-app .p-marca strong { font-size: 1rem; }
+  .p-menu { top: 56px; }
+}
