@@ -971,6 +971,36 @@
   function noPedido() { return sheetNome === 'checkout' || sheetNome === 'guia'; }
   function redesenharPedido(foco) { if (sheetNome === 'guia') renderGuia(); else renderCheckout(foco); }
 
+  // das coordenadas do GPS ao endereço: rua, número, bairro e cidade (e um
+  // lugar conhecido por perto, pro "como te achar"). Photon primeiro, Nominatim de reserva.
+  function endDoPonto(lat, lng) {
+    var limite = function (url) {
+      var ctl = window.AbortController ? new AbortController() : null;
+      var t = setTimeout(function () { if (ctl) ctl.abort(); }, 6000);
+      return fetch(url, ctl ? { signal: ctl.signal } : undefined).then(function (r) { clearTimeout(t); return r.ok ? r.json() : Promise.reject(); });
+    };
+    var montar = function (rua, num, bairro, cidade, lugar) {
+      var linha = [rua, num].filter(Boolean).join(', ');
+      var resto = [bairro, cidade].filter(Boolean).join(', ');
+      return { endereco: linha ? (resto ? linha + ' — ' + resto : linha) : resto, lugar: lugar || '' };
+    };
+    return limite('https://photon.komoot.io/reverse?limit=1&lat=' + lat + '&lon=' + lng).then(function (d) {
+      var p = d.features && d.features[0] && d.features[0].properties;
+      if (!p) return Promise.reject();
+      var viaPrincipal = p.osm_key === 'highway';
+      var rua = p.street || (viaPrincipal ? p.name : '');
+      var lugar = !viaPrincipal && p.name && p.name !== rua && !/^\d+$/.test(p.name) ? p.name : '';
+      var r = montar(rua, p.housenumber, p.district || p.locality, p.city || p.town || p.village || p.county, lugar);
+      return r.endereco ? r : Promise.reject();
+    }).catch(function () {
+      return limite('https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=pt-BR&lat=' + lat + '&lon=' + lng).then(function (d) {
+        var a = (d && d.address) || {};
+        return montar(a.road, a.house_number, a.suburb || a.neighbourhood || a.quarter, a.city || a.town || a.village || a.municipality,
+          d && d.category !== 'highway' && d.name && d.name !== a.road ? d.name : '');
+      });
+    });
+  }
+
   function pegarLocalizacao() {
     lerCamposCheckout();
     if (!navigator.geolocation) { checkout.gps = { status: 'erro', msg: 'Seu aparelho não liberou a localização — digite o endereço.' }; redesenharPedido(); return; }
@@ -980,6 +1010,20 @@
       if (noPedido()) lerCamposCheckout();
       checkout.gps = { status: 'ok', lat: Number(pos.coords.latitude.toFixed(6)), lng: Number(pos.coords.longitude.toFixed(6)), precisao: Math.round(pos.coords.accuracy || 0) };
       if (noPedido()) redesenharPedido();
+      // completa os campos de baixo com o que o mapa souber desse ponto
+      // (só os que ainda estão vazios — o que a pessoa já digitou fica)
+      var pedido = checkout, ponto = checkout.gps;
+      endDoPonto(ponto.lat, ponto.lng).then(function (r) {
+        if (!r || checkout !== pedido || pedido.gps !== ponto) return;
+        if (noPedido()) lerCamposCheckout();
+        if (r.endereco && !(pedido.endereco || '').trim()) pedido.endereco = r.endereco;
+        if (r.lugar && !(pedido.referencia || '').trim()) pedido.referencia = 'Perto de ' + r.lugar;
+        ponto.endereco = r.endereco;
+        if (noPedido()) { redesenharPedido(); U.toast('Endereço preenchido — confira se está certo'); }
+      }, function () {
+        // sem internet pro mapa: a localização já foi, o endereço a pessoa digita
+        if (noPedido()) U.toast('Não achei o nome da rua — digite o endereço, a localização já foi.');
+      });
     }, function (err) {
       if (noPedido()) lerCamposCheckout();
       checkout.gps = { status: 'erro', msg: err && err.code === 1 ? 'Você não permitiu a localização. Libere nas configurações do navegador ou digite o endereço.' : 'Não consegui pegar a localização agora. Digite o endereço ou tente de novo.' };
