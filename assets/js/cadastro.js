@@ -256,6 +256,7 @@
         return;
       }
       var linhas = res.data || [];
+      linhas.forEach(function (l) { meusEstabs[l.id] = l; });
       // negócio só de Delivery/Serviços (sem agenda) usa o painel da área dele;
       // ?abrir=<id> (volta do painel de outra área) abre direto o painel de gestão
       carregarMeuNegocio().then(function (n) {
@@ -537,6 +538,7 @@
   var dashboardCorpo = document.getElementById('dashboardCorpo');
   var dashboardTitulo = document.getElementById('dashboardTitulo');
   var dashEstabId = null;
+  var meusEstabs = {};
   var dashAbaAtual = 'resumo';
   var STATUS_LABEL = { pendente: 'Pendente', confirmado: 'Confirmado', cancelado: 'Cancelado', concluido: 'Concluído' };
   var FORMAS_PAGAMENTO = [
@@ -1051,291 +1053,34 @@
   // no painel de gestão. ----
   function formatarPrecoInput(v) { return (Number(v) || 0).toFixed(2).replace('.', ','); }
 
+  // "Meu site": a mesma aba de Pedir/Chamar (assets/js/meu-site.js). A
+  // edição em si é o passo a passo do site; aqui só o que falta e os atalhos.
   function renderizarDashPerfil() {
     var estabId = dashEstabId;
+    var e = meusEstabs[estabId];
+    if (!e) { dashboardCorpo.classList.remove('dash-carregando'); return; }
+    var dado = function (r) { return (r && !r.error && r.data) || null; };
+    var falhou = function () { return null; };
     Promise.all([
-      db.rpc('tenant_admin_obter_estabelecimento', { p_estabelecimento_id: estabId }),
-      db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }),
-      db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId })
-    ]).then(function (resultados) {
+      db.rpc('buscar_estabelecimento', { p_slug: e.slug, p_cidade: e.cidade }).then(dado, falhou),
+      db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }).then(dado, falhou),
+      db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }).then(dado, falhou),
+      db.rpc('tenant_listar_horarios', { p_estabelecimento_id: estabId }).then(dado, falhou),
+      db.rpc('tenant_listar_galeria', { p_estabelecimento_id: estabId }).then(dado, falhou),
+      window.VBPerguntas ? window.VBPerguntas.carregar(estabId) : Promise.resolve({})
+    ]).then(function (r) {
       if (dashEstabId !== estabId) return;
-      var estabRes = resultados[0], servRes = resultados[1], equipeRes = resultados[2];
-      var estab = estabRes.data && estabRes.data[0];
-      if (estabRes.error || !estab) {
-        dashboardCorpo.classList.remove('dash-carregando');
-        dashboardCorpo.innerHTML = '<p class="msg msg-erro">Não deu pra carregar o perfil agora.</p>';
-        return;
-      }
-      var servicos = servRes.data || [];
-      var equipe = equipeRes.data || [];
-
-      function servicoItemHtml(s) {
-        return '<div class="painel-lista-item">' +
-          '<span style="flex:1; min-width:0;"><span class="principal">' + escapeHtml(s.nome) + '</span><br>' +
-          '<span class="secundario">' + escapeHtml(s.categoria || 'Geral') + ' · ' + formatarPreco(s.preco) + '</span></span>' +
-          '<button type="button" class="dash-comunidade-editar" data-editar-servico="' + s.id + '" data-nome="' + escapeHtml(s.nome) + '" data-preco="' + s.preco + '" data-categoria="' + escapeHtml(s.categoria || '') + '" aria-label="Editar serviço">' + ICONE_ACAO_EDITAR + '</button>' +
-          '<button type="button" class="dash-comunidade-apagar" data-apagar-servico="' + s.id + '" aria-label="Apagar serviço">×</button>' +
-          '</div>';
-      }
-      function staffItemHtml(s) {
-        return '<div class="painel-lista-item">' +
-          (s.foto_url ? '<span class="dash-comunidade-thumb" style="background-image:url(\'' + s.foto_url + '\'); border-radius:50%;"></span>' : '<span class="dash-comunidade-thumb dash-comunidade-thumb-vazia" style="border-radius:50%;"></span>') +
-          '<span style="flex:1; min-width:0;"><span class="principal">' + escapeHtml(s.nome) + '</span><br>' +
-          '<span class="secundario">' + escapeHtml(s.especialidade || (s.role === 'owner' ? 'Dono(a)' : 'Profissional')) + '</span></span>' +
-          (s.role === 'owner' ? '' :
-            '<button type="button" class="dash-comunidade-editar" data-editar-staff="' + s.id + '" data-nome="' + escapeHtml(s.nome) + '" data-especialidade="' + escapeHtml(s.especialidade || '') + '" aria-label="Editar profissional">' + ICONE_ACAO_EDITAR + '</button>' +
-            '<button type="button" class="dash-comunidade-apagar" data-apagar-staff="' + s.id + '" aria-label="Apagar profissional">×</button>') +
-          '</div>';
-      }
-
+      var linha = (r[0] && r[0][0]) || e;
+      var link = location.origin + '/' + encodeURIComponent(e.slug) + '/' + encodeURIComponent(e.cidade);
       dashboardCorpo.classList.remove('dash-carregando');
-      dashboardCorpo.innerHTML =
-        '<p class="dash-secao-intro" style="margin-top:0;">Fotos, localização, serviços e equipe do seu site — tudo num lugar só.</p>' +
-
-        '<p class="dash-resumo-subtitulo" style="margin-top:0;">Fotos</p>' +
-        '<div class="dash-perfil-fotos">' +
-        '<label class="dash-perfil-foto-item">' +
-        '<span class="dash-perfil-foto-preview"' + (estab.foto_capa_url ? " style=\"background-image:url('" + estab.foto_capa_url + "')\"" : '') + '>' + (estab.foto_capa_url ? '' : 'Sem foto') + '</span>' +
-        '<span class="dash-perfil-foto-label">Foto de capa</span>' +
-        '<span class="btn btn-ghost dash-perfil-foto-trocar">Trocar</span>' +
-        '<input type="file" accept="image/*" id="dashFotoCapaInput" style="display:none;">' +
-        '</label>' +
-        '<label class="dash-perfil-foto-item">' +
-        '<span class="dash-perfil-foto-preview is-redonda"' + (estab.foto_perfil_url ? " style=\"background-image:url('" + estab.foto_perfil_url + "')\"" : '') + '>' + (estab.foto_perfil_url ? '' : 'Sem foto') + '</span>' +
-        '<span class="dash-perfil-foto-label">Foto de perfil</span>' +
-        '<span class="btn btn-ghost dash-perfil-foto-trocar">Trocar</span>' +
-        '<input type="file" accept="image/*" id="dashFotoPerfilInput" style="display:none;">' +
-        '</label>' +
-        '</div>' +
-        '<p class="msg" id="dashFotoMsg"></p>' +
-
-        '<p class="dash-resumo-subtitulo">Localização</p>' +
-        '<div id="dashLocal" style="margin-bottom:0.8rem;"></div>' +
-        '<button type="button" class="btn btn-ghost" id="dashSalvarEnderecoBtn" style="margin-bottom:0.3rem;">Salvar localização</button>' +
-        '<p class="msg" id="dashEnderecoMsg"></p>' +
-
-        '<div class="dash-lista-cabecalho" style="margin-top:1.4rem;"><p class="dash-resumo-subtitulo" style="margin:0;">Serviços</p>' +
-        '<button type="button" class="btn btn-primario" id="dashAdicionarServicoBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Adicionar</button></div>' +
-        '<form id="dashServicoForm" class="dash-campos-grid oculto" style="margin-bottom:1rem;">' +
-        '<div class="field"><label for="dashServicoNome">Nome do serviço</label><input type="text" id="dashServicoNome" placeholder="Ex: Corte masculino" maxlength="60"></div>' +
-        '<div class="field"><label for="dashServicoPreco">Preço (R$)</label><input type="text" id="dashServicoPreco" inputmode="decimal" placeholder="Ex: 40,00"></div>' +
-        '<div class="field field-full"><label for="dashServicoCategoria">Categoria</label><input type="text" id="dashServicoCategoria" placeholder="Ex: Cabelo" maxlength="40"></div>' +
-        '<div class="field field-full" style="display:flex; gap:0.6rem;">' +
-        '<button type="submit" class="btn btn-primario" style="flex:1;" id="dashServicoSubmitBtn">Adicionar serviço</button>' +
-        '<button type="button" class="btn btn-ghost" id="dashServicoCancelar">Cancelar</button>' +
-        '</div>' +
-        '<p class="msg" id="dashServicoMsg" style="grid-column:1/-1;"></p>' +
-        '</form>' +
-        (servicos.length ? '<div id="dashListaServicosPerfil">' + servicos.map(servicoItemHtml).join('') + '</div>' : blocoVazio(ICONE_STAT_SERVICO, 'Nenhum serviço cadastrado', 'Adicione ao menos um serviço com preço — sem isso, seu site fica escondido de quem visita.')) +
-
-        '<div class="dash-lista-cabecalho" style="margin-top:1.4rem;"><p class="dash-resumo-subtitulo" style="margin:0;">Equipe</p>' +
-        '<button type="button" class="btn btn-primario" id="dashAdicionarStaffBtn" style="padding:0.4rem 0.9rem; font-size:0.8rem;">+ Adicionar</button></div>' +
-        '<form id="dashStaffForm" class="dash-campos-grid oculto" style="margin-bottom:1rem;">' +
-        '<div class="field"><label for="dashStaffNome">Nome</label><input type="text" id="dashStaffNome" placeholder="Ex: Maria Silva" maxlength="60"></div>' +
-        '<div class="field"><label for="dashStaffEspecialidade">Especialidade (opcional)</label><input type="text" id="dashStaffEspecialidade" placeholder="Ex: Coloração" maxlength="60"></div>' +
-        '<div class="field field-full"><label for="dashStaffFoto">Foto (opcional)</label><input type="file" id="dashStaffFoto" accept="image/*"></div>' +
-        '<div class="field field-full" style="display:flex; gap:0.6rem;">' +
-        '<button type="submit" class="btn btn-primario" style="flex:1;" id="dashStaffSubmitBtn">Adicionar profissional</button>' +
-        '<button type="button" class="btn btn-ghost" id="dashStaffCancelar">Cancelar</button>' +
-        '</div>' +
-        '<p class="msg" id="dashStaffMsg" style="grid-column:1/-1;"></p>' +
-        '</form>' +
-        (equipe.length ? '<div id="dashListaEquipePerfil">' + equipe.map(staffItemHtml).join('') + '</div>' : blocoVazio(ICONE_STAT_EQUIPE, 'Nenhum profissional cadastrado', 'Adicione ao menos um profissional — sem isso, seu site fica escondido de quem visita.'));
-
-      if (window.VBSelect) window.VBSelect.enhanceTodos(dashboardCorpo);
-      ligarEventosPerfil(estabId, estab);
-    }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
-  }
-
-  var localDash = null;
-  function ligarEventosPerfil(estabId, estab) {
-    var fotoMsg = document.getElementById('dashFotoMsg');
-    function trocarFoto(inputId, campo) {
-      var input = document.getElementById(inputId);
-      if (!input) return;
-      input.addEventListener('change', function (e) {
-        var file = e.target.files[0];
-        if (!file || !window.VBUpload) return;
-        fotoMsg.className = 'msg'; fotoMsg.textContent = 'Enviando…';
-        window.VBUpload.uploadFoto(file, estabId, campo === 'p_foto_capa_url' ? 'capa' : 'perfil').then(function (url) {
-          var payload = { p_estabelecimento_id: estabId, p_foto_perfil_url: null, p_foto_capa_url: null, p_moldura_foto: null };
-          payload[campo] = url;
-          db.rpc('tenant_admin_atualizar_perfil_capa', payload).then(function (res) {
-            if (res.error) { fotoMsg.className = 'msg msg-erro'; fotoMsg.textContent = res.error.message; return; }
-            fotoMsg.textContent = '';
-            if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
-            renderizarDashPerfil();
-          });
-        }, function (err) {
-          fotoMsg.className = 'msg msg-erro';
-          fotoMsg.textContent = err.message || 'Falha ao enviar a foto.';
-        });
-      });
-    }
-    trocarFoto('dashFotoCapaInput', 'p_foto_capa_url');
-    trocarFoto('dashFotoPerfilInput', 'p_foto_perfil_url');
-
-    // Localização: busca com sugestões, "usar minha localização" e mapa
-    // com o pino fixo no centro (assets/js/vb-local.js).
-    if (localDash) localDash.destruir();
-    var localEl = document.getElementById('dashLocal');
-    localDash = localEl && window.VBLocal ? window.VBLocal.montar(localEl, {
-      endereco: estab.endereco || '', lat: estab.endereco_lat, lng: estab.endereco_lng, cidade: estab.cidade
-    }) : null;
-
-    var enderecoBtn = document.getElementById('dashSalvarEnderecoBtn');
-    if (enderecoBtn) enderecoBtn.addEventListener('click', function () {
-      var local = localDash ? localDash.valor() : { endereco: '', lat: null, lng: null };
-      var endereco = local.endereco;
-      var msg = document.getElementById('dashEnderecoMsg');
-      if (!endereco) { msg.className = 'msg msg-erro'; msg.textContent = 'Escreva o endereço primeiro.'; return; }
-      var pos = local.lat != null ? { lat: local.lat, lng: local.lng } : null;
-      enderecoBtn.disabled = true;
-      msg.className = 'msg'; msg.textContent = 'Salvando…';
-      db.rpc('tenant_admin_atualizar_endereco', {
-        p_estabelecimento_id: estabId, p_endereco: endereco,
-        p_lat: pos ? pos.lat : null, p_lng: pos ? pos.lng : null
-      }).then(function (res) {
-        enderecoBtn.disabled = false;
-        if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
-        msg.textContent = '';
-        if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
-      });
-    });
-
-    // Serviços
-    var formServico = document.getElementById('dashServicoForm');
-    var servicoMsg = document.getElementById('dashServicoMsg');
-    function abrirFormServico(dados) {
-      formServico.classList.remove('oculto');
-      formServico.dataset.editandoId = (dados && dados.id) || '';
-      document.getElementById('dashServicoNome').value = (dados && dados.nome) || '';
-      document.getElementById('dashServicoPreco').value = dados ? formatarPrecoInput(dados.preco) : '';
-      document.getElementById('dashServicoCategoria').value = (dados && dados.categoria) || '';
-      document.getElementById('dashServicoSubmitBtn').textContent = dados ? 'Salvar alterações' : 'Adicionar serviço';
-    }
-    function fecharFormServico() {
-      formServico.reset();
-      formServico.classList.add('oculto');
-      formServico.dataset.editandoId = '';
-      servicoMsg.textContent = '';
-    }
-    var addServicoBtn = document.getElementById('dashAdicionarServicoBtn');
-    if (addServicoBtn) addServicoBtn.addEventListener('click', function () {
-      if (!formServico.classList.contains('oculto') && !formServico.dataset.editandoId) { fecharFormServico(); return; }
-      abrirFormServico(null);
-    });
-    var cancelarServicoBtn = document.getElementById('dashServicoCancelar');
-    if (cancelarServicoBtn) cancelarServicoBtn.addEventListener('click', fecharFormServico);
-    if (formServico) formServico.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var nome = document.getElementById('dashServicoNome').value.trim();
-      var precoTexto = document.getElementById('dashServicoPreco').value.trim().replace(/\./g, '').replace(',', '.');
-      var preco = Number(precoTexto);
-      var categoria = document.getElementById('dashServicoCategoria').value.trim() || 'Geral';
-      if (!nome) { servicoMsg.className = 'msg msg-erro'; servicoMsg.textContent = 'Escreva o nome do serviço.'; return; }
-      if (!precoTexto || isNaN(preco) || preco < 0) { servicoMsg.className = 'msg msg-erro'; servicoMsg.textContent = 'Escreva um preço válido.'; return; }
-      var btn = document.getElementById('dashServicoSubmitBtn');
-      btn.disabled = true;
-      servicoMsg.className = 'msg'; servicoMsg.textContent = 'Salvando…';
-      db.rpc('tenant_admin_salvar_servico', {
-        p_estabelecimento_id: estabId,
-        p_id: formServico.dataset.editandoId || null,
-        p_nome: nome, p_preco: preco, p_categoria: categoria
-      }).then(function (res) {
-        btn.disabled = false;
-        if (res.error) { servicoMsg.className = 'msg msg-erro'; servicoMsg.textContent = res.error.message; return; }
-        if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
-        fecharFormServico();
-        renderizarDashPerfil();
-      });
-    });
-    var listaServicos = document.getElementById('dashListaServicosPerfil');
-    if (listaServicos) listaServicos.addEventListener('click', function (e) {
-      var editarBtn = e.target.closest('[data-editar-servico]');
-      if (editarBtn) {
-        abrirFormServico({ id: editarBtn.getAttribute('data-editar-servico'), nome: editarBtn.getAttribute('data-nome'), preco: editarBtn.getAttribute('data-preco'), categoria: editarBtn.getAttribute('data-categoria') });
-        formServico.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-      var apagarBtn = e.target.closest('[data-apagar-servico]');
-      if (!apagarBtn) return;
-      window.VBDialogo.confirm('Apagar esse serviço?').then(function (ok) {
-        if (!ok) return;
-        db.rpc('tenant_admin_remover_servico', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-servico') }).then(function () {
-          renderizarDashPerfil();
-        });
-      });
-    });
-
-    // Equipe
-    var formStaff = document.getElementById('dashStaffForm');
-    var staffMsg = document.getElementById('dashStaffMsg');
-    function abrirFormStaff(dados) {
-      formStaff.classList.remove('oculto');
-      formStaff.dataset.editandoId = (dados && dados.id) || '';
-      document.getElementById('dashStaffNome').value = (dados && dados.nome) || '';
-      document.getElementById('dashStaffEspecialidade').value = (dados && dados.especialidade) || '';
-      document.getElementById('dashStaffSubmitBtn').textContent = dados ? 'Salvar alterações' : 'Adicionar profissional';
-    }
-    function fecharFormStaff() {
-      formStaff.reset();
-      formStaff.classList.add('oculto');
-      formStaff.dataset.editandoId = '';
-      staffMsg.textContent = '';
-    }
-    var addStaffBtn = document.getElementById('dashAdicionarStaffBtn');
-    if (addStaffBtn) addStaffBtn.addEventListener('click', function () {
-      if (!formStaff.classList.contains('oculto') && !formStaff.dataset.editandoId) { fecharFormStaff(); return; }
-      abrirFormStaff(null);
-    });
-    var cancelarStaffBtn = document.getElementById('dashStaffCancelar');
-    if (cancelarStaffBtn) cancelarStaffBtn.addEventListener('click', fecharFormStaff);
-    if (formStaff) formStaff.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var nome = document.getElementById('dashStaffNome').value.trim();
-      var especialidade = document.getElementById('dashStaffEspecialidade').value.trim();
-      var file = document.getElementById('dashStaffFoto').files[0];
-      if (!nome) { staffMsg.className = 'msg msg-erro'; staffMsg.textContent = 'Escreva o nome do profissional.'; return; }
-      var btn = document.getElementById('dashStaffSubmitBtn');
-      btn.disabled = true;
-      staffMsg.className = 'msg'; staffMsg.textContent = 'Salvando…';
-
-      function salvar(fotoUrl) {
-        db.rpc('tenant_admin_salvar_staff', {
-          p_estabelecimento_id: estabId,
-          p_id: formStaff.dataset.editandoId || null,
-          p_nome: nome, p_especialidade: especialidade || null, p_foto_url: fotoUrl || null
-        }).then(function (res) {
-          btn.disabled = false;
-          if (res.error) { staffMsg.className = 'msg msg-erro'; staffMsg.textContent = res.error.message; return; }
-          if (window.VBSalvo) window.VBSalvo.mostrar('Salvo');
-          fecharFormStaff();
-          renderizarDashPerfil();
-        });
-      }
-      if (!file || !window.VBUpload) { salvar(null); return; }
-      window.VBUpload.uploadFoto(file, estabId, 'staff').then(salvar, function (err) {
-        btn.disabled = false;
-        staffMsg.className = 'msg msg-erro';
-        staffMsg.textContent = err.message || 'Falha ao enviar a foto.';
-      });
-    });
-    var listaStaff = document.getElementById('dashListaEquipePerfil');
-    if (listaStaff) listaStaff.addEventListener('click', function (e) {
-      var editarBtn = e.target.closest('[data-editar-staff]');
-      if (editarBtn) {
-        abrirFormStaff({ id: editarBtn.getAttribute('data-editar-staff'), nome: editarBtn.getAttribute('data-nome'), especialidade: editarBtn.getAttribute('data-especialidade') });
-        formStaff.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-      var apagarBtn = e.target.closest('[data-apagar-staff]');
-      if (!apagarBtn) return;
-      window.VBDialogo.confirm('Apagar esse profissional?').then(function (ok) {
-        if (!ok) return;
-        db.rpc('tenant_admin_remover_staff', { p_estabelecimento_id: estabId, p_id: apagarBtn.getAttribute('data-apagar-staff') }).then(function () {
-          renderizarDashPerfil();
-        });
+      window.VBMeuSite.montar(dashboardCorpo, {
+        nome: e.nome,
+        link: link,
+        editar: link + '?editar=1',
+        passos: window.VBMeuSite.passosAgenda({
+          linha: linha, servicos: r[1], equipe: r[2], horarios: r[3], galeria: r[4], respostas: r[5] || {},
+          areas: (meuNegocio && meuNegocio.id === estabId && meuNegocio.areas) || linha.areas || ['agenda']
+        })
       });
     });
   }

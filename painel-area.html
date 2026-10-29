@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="/assets/css/styles.css?v=96">
 <link rel="stylesheet" href="/assets/pedidos/loja.css?v=2">
 <link rel="stylesheet" href="/assets/pedidos/painel.css?v=6">
+<link rel="stylesheet" href="/assets/css/meu-site.css?v=1">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=20">
 <link rel="stylesheet" href="/assets/css/botoes.css?v=3">
 <script src="/assets/js/vibe-toggle.js?v=4"></script>
@@ -69,7 +70,7 @@
   <nav class="p-abas" id="pAbas" aria-label="Seções do painel">
     <button type="button" class="p-aba-btn ativa" data-aba="pedidos"><span data-icone="pedidos"></span>Pedidos<span class="badge" id="badgeNovos"></span></button>
     <button type="button" class="p-aba-btn" data-aba="cardapio"><span data-icone="menu"></span>Cardápio</button>
-    <button type="button" class="p-aba-btn" data-aba="loja"><span data-icone="loja"></span>Loja</button>
+    <button type="button" class="p-aba-btn" data-aba="loja"><span data-icone="loja"></span>Meu site</button>
     <button type="button" class="p-aba-btn" data-aba="resumo"><span data-icone="moeda"></span>Resumo</button>
   </nav>
 
@@ -130,6 +131,11 @@
   <!-- LOJA -->
   <section class="p-aba oculto" id="abaLoja">
     <!-- mesmo jeito de editar da Agenda: o site ao vivo e as etapas por cima -->
+    <!-- igual à aba "Meu site" da Agenda (assets/js/meu-site.js): o que falta
+         e atalhos pro passo a passo. Editar é só pelo passo a passo do site. -->
+    <div id="meuSitePainel"></div>
+    <!-- campos antigos ficam fora da tela: painel.js ainda lê/escreve neles -->
+    <div hidden>
     <a class="editar-passos-cta" id="editarPassosBtn">
       <span class="editar-passos-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg></span>
       <span class="editar-passos-txt"><strong>Editar meu site</strong><small>Passo a passo, vendo o site mudar na hora</small></span>
@@ -217,6 +223,7 @@
         <div id="gradeHorarios"></div>
       </div>
     </form>
+    </div>
   </section>
 
   <!-- RESUMO -->
@@ -254,7 +261,9 @@
 <script src="/assets/js/segmentos.js?v=4"></script>
 <script src="/assets/js/estoque-fotos.js?v=4"></script>
 <script src="/assets/pedidos/demo.js?v=4"></script>
-<script src="/assets/pedidos/painel.js?v=10"></script>
+<script src="/assets/js/perguntas-segmento.js?v=1"></script>
+<script src="/assets/js/meu-site.js?v=1"></script>
+<script src="/assets/pedidos/painel.js?v=11"></script>
 <script type="module" src="/assets/js/vb-pull-refresh.js?v=4"></script>
 </body>
 </html>

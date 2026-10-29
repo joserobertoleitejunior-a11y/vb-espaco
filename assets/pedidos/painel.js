@@ -257,8 +257,29 @@
     if (!semHistorico) { try { history.replaceState(history.state, '', '#' + nome); } catch (e) {} }
     window.scrollTo(0, 0);
     if (nome === 'resumo') carregarResumo();
-    if (nome === 'loja') { montarAparencia(); gerarQr(); }
+    if (nome === 'loja') montarMeuSite();
   }
+
+  /* ===================== meu site (igual à Agenda: assets/js/meu-site.js) ===================== */
+  function montarMeuSite() {
+    var caixa = $('meuSitePainel');
+    if (!caixa || !window.VBMeuSite) return;
+    var desenhar = function (respostas) {
+      window.VBMeuSite.montar(caixa, {
+        nome: loja.nome,
+        link: urlSite(),
+        editar: '/' + loja.slug + '/' + loja.cidade + '/pedir?editar=1',
+        passos: window.VBMeuSite.passosLoja({ loja: loja, servico: SERVICO, itens: itens.length, respostas: respostas })
+      });
+    };
+    desenhar(respostasLoja || {});
+    if (window.VBPerguntas) window.VBPerguntas.carregar(loja.id).then(function (r) {
+      var mudou = JSON.stringify(r) !== JSON.stringify(respostasLoja || {});
+      respostasLoja = r;
+      if (mudou) desenhar(r);
+    });
+  }
+  var respostasLoja = null;
 
   /* ===================== pedidos (caixa) ===================== */
   var ORDEM_STATUS = { novo: 0, preparando: 1, saiu_entrega: 2, concluido: 3, cancelado: 4 };
@@ -1287,7 +1308,7 @@
     var passos = [
       [SERVICO ? 'Cadastre seus serviços' : 'Monte o cardápio', SERVICO ? 'Nome, descrição e preço (ou "a combinar").' : 'Crie categorias e itens com foto e preço.', 'cardapio'],
       [SERVICO ? 'Onde e quando você atende' : 'Configure entrega e horários', SERVICO ? 'Local do cliente, na loja ou os dois, taxa e horários.' : 'Taxa, pedido mínimo, formas de pagamento e quando abre.', 'loja'],
-      ['Escolha o visual', 'Tom claro ou vibrante, 4 jeitos de mostrar os itens e a cor da sua marca.', 'loja'],
+      ['Deixe o site com a sua cara', 'Fotos, estilo e cores — no passo a passo, vendo o site mudar.', 'loja'],
       ['Divulgue o link', 'Copie, compartilhe ou imprima o QR Code.', 'loja']
     ];
     abrirSheet(SERVICO ? 'Serviços ativados!' : 'Delivery ativado!',

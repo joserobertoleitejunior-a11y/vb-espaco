@@ -1,0 +1,64 @@
+/* Aba "Meu site" (assets/js/meu-site.js) — igual nos painéis de Agendar,
+   Pedir e Chamar. Cores próprias pra não depender da paleta de cada painel. */
+.ms { --ms-tinta: #1f2024; --ms-suave: #6b6d75; --ms-borda: #e6e6ea; --ms-ouro: #C9A227; color: var(--ms-tinta); }
+.ms a { color: inherit; text-decoration: none; }
+
+.ms-topo {
+  display: flex; align-items: center; gap: 0.9rem; padding: 1rem 1.05rem; border-radius: 18px;
+  background: #1f2024; color: #fff !important; box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.5);
+}
+.ms-anel-caixa { position: relative; flex: 0 0 auto; width: 3.6rem; height: 3.6rem; }
+.ms-anel { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ms-anel circle { fill: none; stroke-width: 6; }
+.ms-anel-fundo { stroke: rgba(255, 255, 255, 0.14); }
+.ms-anel-cheio { stroke: var(--ms-ouro); stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.ms-anel-num {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 0.95rem;
+}
+.ms-anel-num small { font-size: 0.6rem; opacity: 0.7; margin-left: 1px; }
+.ms-topo-txt { flex: 1; min-width: 0; }
+.ms-topo-txt strong { display: block; font-size: 1rem; }
+.ms-topo-txt small { display: block; margin-top: 0.15rem; font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ms-topo-btn { flex: 0 0 auto; padding: 0.5rem 0.85rem; border-radius: 999px; background: var(--ms-ouro); color: #1f2024; font-weight: 800; font-size: 0.82rem; }
+
+.ms-ajuda { margin: 0.75rem 0.2rem 0.4rem; font-size: 0.84rem; line-height: 1.45; color: var(--ms-suave); }
+
+.ms-cap { margin-top: 0.85rem; padding: 0.35rem 0.4rem; border-radius: 16px; background: #fff; border: 1px solid var(--ms-borda); }
+.ms-cap header { display: flex; justify-content: space-between; align-items: baseline; padding: 0.5rem 0.6rem 0.3rem; }
+.ms-cap h3 { margin: 0; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #8a6d10; }
+.ms-cap header span { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.75rem; color: var(--ms-suave); }
+
+.ms-passo { display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.6rem; border-radius: 12px; transition: background 0.15s; }
+.ms-passo + .ms-passo { border-top: 1px solid #f0f0f2; }
+.ms-passo:hover, .ms-passo:focus-visible { background: #f6f6f8; }
+.ms-marca {
+  flex: 0 0 auto; width: 1.3rem; height: 1.3rem; border-radius: 50%; display: grid; place-items: center;
+  border: 1.5px solid #cfd0d6; color: #fff;
+}
+.ms-ok .ms-marca { background: #1f2024; border-color: #1f2024; }
+.ms-falta .ms-marca { border-color: var(--ms-ouro); border-style: dashed; }
+.ms-passo-nome { flex: 1; min-width: 0; font-size: 0.92rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ms-passo-est { flex: 0 0 auto; font-size: 0.72rem; font-weight: 700; color: var(--ms-suave); }
+.ms-falta .ms-passo-est { color: #8a6d10; }
+.ms-passo-est::after { content: ' ›'; font-size: 0.9rem; color: #b5b6bc; }
+
+.ms-divulgar { padding: 0.35rem 0.95rem 1rem; }
+.ms-divulgar header { padding-left: 0; padding-right: 0; }
+.ms-link code { display: block; padding: 0.65rem 0.8rem; border-radius: 10px; background: #f4f4f6; font-size: 0.82rem; word-break: break-all; }
+.ms-botoes { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.6rem; }
+.ms-btn {
+  display: inline-flex; align-items: center; padding: 0.5rem 0.9rem; border-radius: 999px; border: 1px solid var(--ms-borda);
+  background: #fff; font: inherit; font-size: 0.82rem; font-weight: 700; color: var(--ms-tinta); cursor: pointer;
+}
+.ms-btn:first-child { background: #1f2024; border-color: #1f2024; color: #fff; }
+.ms-qr { display: flex; align-items: center; gap: 0.9rem; margin-top: 0.9rem; }
+.ms-qr[hidden] { display: none; }
+.ms-qr-img { flex: 0 0 auto; width: 6.5rem; height: 6.5rem; padding: 0.35rem; border-radius: 12px; border: 1px solid var(--ms-borda); background: #fff; }
+.ms-qr-img canvas, .ms-qr-img img { width: 100% !important; height: 100% !important; display: block; }
+.ms-qr p { margin: 0 0 0.5rem; font-size: 0.82rem; line-height: 1.4; color: var(--ms-suave); }
+
+.ms-anunciar { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.85rem; padding: 0.9rem 1rem; border-radius: 16px; background: rgba(201, 162, 39, 0.1); border: 1px solid rgba(201, 162, 39, 0.3); }
+.ms-anunciar-ic { flex: 0 0 auto; width: 2.3rem; height: 2.3rem; border-radius: 50%; display: grid; place-items: center; background: #1f2024; color: var(--ms-ouro); }
+.ms-anunciar strong { display: block; font-size: 0.95rem; }
+.ms-anunciar small { display: block; font-size: 0.8rem; color: var(--ms-suave); }
