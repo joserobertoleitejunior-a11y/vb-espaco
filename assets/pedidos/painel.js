@@ -14,10 +14,10 @@
   var esc = U.escapeHtml;
   // observação do cliente: a linha "Fotos: link link" (anexo-fotos.js) vira
   // miniaturas que abrem a foto inteira
-  function obsComFotos(obs) {
-    if (!obs) return '';
-    var fotos = [], texto = String(obs).replace(/(?:^|\n)Fotos:\s*([^\n]+)/, function (m, lista) {
-      fotos = lista.split(/\s+/).filter(function (u) { return /^https:\/\//.test(u); });
+  function obsComFotos(obs, fotosDetalhes) {
+    // fotos ficam em detalhes.fotos; pedidos antigos podem ter "Fotos:" no texto
+    var fotos = Array.isArray(fotosDetalhes) ? fotosDetalhes.slice() : [], texto = String(obs || '').replace(/(?:^|\n)Fotos:\s*([^\n]+)/, function (m, lista) {
+      fotos = fotos.concat(lista.split(/\s+/).filter(function (u) { return /^https:\/\//.test(u); }));
       return '';
     }).trim();
     return (texto ? '<div class="pa-obs"><strong>Obs.:</strong> ' + esc(texto) + '</div>' : '') +
@@ -375,7 +375,7 @@
           return '<li><b>' + l.qtd + 'x</b><span>' + esc(l.descricao) + '</span><em>' + U.precoOuCombinar(l.total != null ? l.total : l.preco * l.qtd) + '</em>' +
             (l.obs ? '<small>“' + esc(l.obs) + '”</small>' : '') + '</li>';
         }).join('') + '</ul>' +
-        obsComFotos(p.observacao) +
+        obsComFotos(p.observacao, det.fotos) +
         '<div class="pa-rodape"><span class="pa-total">' + U.preco(p.total) + '</span><div class="pa-acoes">' +
           '<button type="button" class="icon-btn" data-imprimir="' + p.id + '" aria-label="Imprimir" title="Imprimir">' + U.ICONES.impressora + '</button>' +
           '<a class="icon-btn" data-whats-cliente="' + p.id + '" target="_blank" rel="noopener" aria-label="WhatsApp do cliente" title="WhatsApp do cliente" href="' + esc(linkWhatsCliente(p)) + '">' + U.ICONES.whats + '</a>' +

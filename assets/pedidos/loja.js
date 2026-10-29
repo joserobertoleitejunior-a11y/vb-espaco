@@ -1029,7 +1029,6 @@
       await window.VBAnexoFotos.esperar(c.fotos);
       fotos = window.VBAnexoFotos.urls(c.fotos);
     }
-    var obsComFotos = [c.obs.trim(), fotos.length ? 'Fotos: ' + fotos.join(' ') : ''].filter(Boolean).join('\n') || null;
 
     var resultado;
     if (MODO_DEMO) {
@@ -1050,7 +1049,7 @@
         p_referencia: c.forma === 'entrega' ? (c.referencia.trim() || null) : null,
         p_forma_pagamento: c.pagamento,
         p_troco_para: c.pagamento === 'dinheiro' && c.troco ? Number(c.troco) : null,
-        p_observacao: obsComFotos,
+        p_observacao: c.obs.trim() || null,
         p_lat: c.forma === 'entrega' && c.gps && c.gps.status === 'ok' ? c.gps.lat : null,
         p_lng: c.forma === 'entrega' && c.gps && c.gps.status === 'ok' ? c.gps.lng : null,
         p_detalhes: SERVICO ? {
