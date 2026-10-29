@@ -1,15 +1,16 @@
-/* Motion do nome na splash (three.js): "Matriz" nasce de uma matriz de
-   pontos. Uma grade fina de pontos acende dentro da pastilha de vidro, do
-   centro pra fora; uma linha dourada varre da esquerda pra direita e, por
-   onde ela passa, os pontos que caem dentro das letras crescem, brilham
-   dourados e esfriam na cor da letra — os outros apagam. Quando a linha
-   termina, a letra nítida do DOM entra no lugar dos pontos e o pingo do
-   "i" (o losango dourado) cai por último. Tocar no nome refaz.
+/* Motion do nome na splash: "Matriz" nasce de uma matriz de pontos. Uma
+   grade fina de pontos acende dentro da pastilha de vidro, do centro pra
+   fora; uma linha dourada varre da esquerda pra direita e, por onde ela
+   passa, os pontos que caem dentro das letras crescem, brilham dourados e
+   esfriam na cor da letra — os outros apagam. Quando a linha termina, a
+   letra nítida do DOM entra no lugar dos pontos e o pingo do "i" (o losango
+   dourado) cai por último. Tocar no nome refaz.
 
-   Só roda no logotipo grande ([data-vibe-marca-logo="hero"]); depois que
-   termina, o laço de desenho para — não gasta bateria parado. Sem WebGL,
-   sem three.js (CDN fora) ou com "reduzir movimento", fica o aparecer
-   devagar do CSS. */
+   Desenhado em canvas 2D puro, com as mesmas contas do efeito antigo em
+   three.js (que baixava ≈1 MB e ligava um motor 3D só pra isso). Só roda no
+   logotipo grande ([data-vibe-marca-logo="hero"]); depois que termina, o
+   laço de desenho para. Com "reduzir movimento", fica o aparecer devagar
+   do CSS. */
 (function () {
   var el = document.querySelector('[data-vibe-marca-logo="hero"]');
   if (!el || !window.requestAnimationFrame) return;
@@ -28,14 +29,8 @@
     });
     obs.observe(raiz, { attributes: true, attributeFilter: ['class'] });
   });
-
-  Promise.all([
-    import('https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js'),
-    fontePronta
-  ]).then(function (r) {
-    // espera a splash terminar de subir (spSobe) pra medir no lugar final
-    setTimeout(function () { iniciar(r[0]); }, 200);
-  }).catch(revelar);
+  // espera a splash terminar de subir (spSobe) pra medir no lugar final
+  fontePronta.then(function () { setTimeout(iniciar, 200); });
 
   var PASSO = 2.3;                    // distância entre pontos da grade (px)
   var T_VARRE = 0.55, D_VARRE = 1.35; // a linha dourada: quando começa e quanto dura
@@ -72,7 +67,9 @@
     };
   }
 
-  function iniciar(THREE) {
+  function suave(a, b, x) { var t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); }
+
+  function iniciar() {
     var palavra = el.querySelector('.pt-word');
     if (!palavra) return revelar();
     var caixa = el.getBoundingClientRect();
@@ -81,111 +78,71 @@
     var cobre = mascara(palavra, larg, alt);
 
     // grade dentro da pastilha (cápsula: some nos cantos arredondados)
-    var raio = alt / 2, pos = [], letra = [], dist = [], xn = [];
+    var raio = alt / 2, P = [];
     for (var y = PASSO / 2 + 1; y < alt - 1; y += PASSO) {
       for (var x = PASSO / 2 + 1; x < larg - 1; x += PASSO) {
         var cxp = Math.min(Math.max(x, raio), larg - raio);
         if (Math.hypot(x - cxp, y - raio) > raio - 1.5) continue;
-        var k = cobre(x, y);
-        pos.push(x, -y, 0);
-        letra.push(k > 0.42 ? 1 : 0);
-        dist.push(Math.hypot((x - larg / 2) / larg, (y - alt / 2) / alt) * 1.4);
-        xn.push(x / larg);
+        P.push({ x: x, y: y, letra: cobre(x, y) > 0.42 ? 1 : 0, dist: Math.hypot((x - larg / 2) / larg, (y - alt / 2) / alt) * 1.4, xn: x / larg });
       }
     }
-    var n = letra.length;
-    if (n < 100 || letra.indexOf(1) === -1) return revelar();
+    if (P.length < 100 || !P.some(function (p) { return p.letra; })) return revelar();
 
     var canvas = document.createElement('canvas');
     canvas.className = 'pt-motion-tela';
     canvas.setAttribute('aria-hidden', 'true');
-    var renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false, powerPreference: 'low-power' });
-    } catch (e) { return revelar(); }
+    var g = canvas.getContext('2d');
+    if (!g) return revelar();
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    renderer.setPixelRatio(dpr);
-    renderer.setSize(larg, alt, false);
-    renderer.setClearColor(0x000000, 0);
+    canvas.width = larg * dpr; canvas.height = alt * dpr;
     el.appendChild(canvas);
+    g.scale(dpr, dpr);
 
-    // câmera em pixels: (0,0) no canto de cima, y pra baixo, igual ao DOM
-    var camera = new THREE.OrthographicCamera(0, larg, 0, -alt, -10, 10);
-    var cena = new THREE.Scene();
-
-    var geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    geo.setAttribute('aLetra', new THREE.Float32BufferAttribute(letra, 1));
-    geo.setAttribute('aDist', new THREE.Float32BufferAttribute(dist, 1));
-    geo.setAttribute('aX', new THREE.Float32BufferAttribute(xn, 1));
-
-    var tinta = new THREE.Color(getComputedStyle(el).color);
-    var uniformes = {
-      uT: { value: 0 }, uSome: { value: 1 }, uDpr: { value: dpr },
-      uTinta: { value: tinta }, uOuro: { value: new THREE.Color(0xC9A227) },
-      uVarre: { value: -1 }
-    };
-    var pontos = new THREE.Points(geo, new THREE.ShaderMaterial({
-      transparent: true, depthTest: false, depthWrite: false, uniforms: uniformes,
-      vertexShader: [
-        'attribute float aLetra, aDist, aX;',
-        'uniform float uT, uDpr, uVarre;',
-        'varying float vAlfa, vOuro;',
-        'void main(){',
-        // 1) a grade acende do centro pra fora
-        '  float acende = smoothstep(0., .4, uT - aDist * .5);',
-        // 2) a linha passa: d > 0 depois que ela passou pelo ponto
-        '  float d = uVarre - aX;',
-        '  float perto = exp(-d * d / .0012);',
-        '  float passou = smoothstep(0., .05, d);',
-        '  float fica = aLetra * passou;',
-        '  float apaga = (1. - aLetra) * smoothstep(0., .18, d);',
-        '  vAlfa = acende * (.2 * (1. - apaga) * (1. - fica) + fica) + perto * .9;',
-        // as letras chegam douradas e esfriam na cor da tinta
-        '  vOuro = max(perto, aLetra * passou * (1. - smoothstep(.05, .35, d)));',
-        '  vec3 p = position;',
-        '  p.y += perto * 1.6 * aLetra;',
-        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);',
-        '  gl_PointSize = (1.05 + fica * .9 + perto * 1.1) * uDpr;',
-        '}'
-      ].join('\n'),
-      fragmentShader: [
-        'uniform vec3 uTinta, uOuro; uniform float uSome;',
-        'varying float vAlfa, vOuro;',
-        'void main(){',
-        '  float a = smoothstep(.5, .2, length(gl_PointCoord - .5));',
-        '  gl_FragColor = vec4(mix(uTinta, uOuro, vOuro), a * vAlfa * uSome);',
-        '}'
-      ].join('\n')
-    }));
-    cena.add(pontos);
-
-    // a linha dourada que varre (um fio vertical, mais forte no meio)
-    var fio = new THREE.Mesh(new THREE.PlaneGeometry(1.4, alt), new THREE.ShaderMaterial({
-      transparent: true, depthTest: false, depthWrite: false,
-      uniforms: { uOuro: uniformes.uOuro, uForca: { value: 0 } },
-      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
-      fragmentShader: 'uniform vec3 uOuro; uniform float uForca; varying vec2 vUv; void main(){ float m = sin(vUv.y * 3.14159); gl_FragColor = vec4(uOuro, m * m * .85 * uForca); }'
-    }));
-    fio.position.y = -alt / 2;
-    cena.add(fio);
-
+    var tinta = getComputedStyle(el).color, OURO = '#C9A227';
     var FIM = T_VARRE + D_VARRE;
     var t0 = 0, rodando = false, quadro = 0;
+
     function desenhar(agora) {
       if (!t0) t0 = agora;
       var t = (agora - t0) / 1000;
       var v = (t - T_VARRE) / D_VARRE;                    // 0..1 durante a varrida
       var ve = v <= 0 ? 0 : v >= 1 ? 1 : 1 - Math.pow(1 - v, 2.2);
-      uniformes.uT.value = t;
-      uniformes.uVarre.value = v <= 0 ? -1 : -0.06 + ve * 1.18;
-      fio.position.x = uniformes.uVarre.value * larg;
-      fio.material.uniforms.uForca.value = v <= 0 || v >= 1 ? 0 : Math.sin(Math.min(v * 1.15, 1) * Math.PI);
+      var varre = v <= 0 ? -1 : -0.06 + ve * 1.18;
       // a letra nítida entra por baixo enquanto os pontos somem
       var troca = Math.min(Math.max((t - FIM + 0.1) / 0.7, 0), 1);
-      uniformes.uSome.value = 1 - troca;
+      var some = 1 - troca;
       if (troca > 0 && raiz.classList.contains('pt-motion')) { clearTimeout(seguranca); revelar(); }
-      renderer.render(cena, camera);
+
+      g.clearRect(0, 0, larg, alt);
+      for (var i = 0; i < P.length; i++) {
+        var p = P[i];
+        // 1) a grade acende do centro pra fora
+        var acende = suave(0, 0.4, t - p.dist * 0.5);
+        // 2) a linha passa: d > 0 depois que ela passou pelo ponto
+        var d = varre - p.xn;
+        var perto = Math.exp(-d * d / 0.0012);
+        var passou = suave(0, 0.05, d);
+        var fica = p.letra * passou;
+        var apaga = (1 - p.letra) * suave(0, 0.18, d);
+        var alfa = (acende * (0.2 * (1 - apaga) * (1 - fica) + fica) + perto * 0.9) * some;
+        if (alfa < 0.01) continue;
+        // as letras chegam douradas e esfriam na cor da tinta
+        var ouro = Math.max(perto, p.letra * passou * (1 - suave(0.05, 0.35, d)));
+        var lado = 1.05 + fica * 0.9 + perto * 1.1;
+        var px = p.x - lado / 2, py = p.y - perto * 1.6 * p.letra - lado / 2;
+        if (ouro < 0.99) { g.globalAlpha = Math.min(1, alfa * (1 - ouro)); g.fillStyle = tinta; g.fillRect(px, py, lado, lado); }
+        if (ouro > 0.01) { g.globalAlpha = Math.min(1, alfa * ouro); g.fillStyle = OURO; g.fillRect(px, py, lado, lado); }
+      }
+      // a linha dourada que varre (um fio vertical, mais forte no meio)
+      var forca = v <= 0 || v >= 1 ? 0 : Math.sin(Math.min(v * 1.15, 1) * Math.PI);
+      if (forca > 0.01) {
+        var fx = varre * larg, grad = g.createLinearGradient(0, 0, 0, alt);
+        grad.addColorStop(0, 'rgba(201,162,39,0)');
+        grad.addColorStop(0.5, 'rgba(201,162,39,' + (0.85 * forca).toFixed(3) + ')');
+        grad.addColorStop(1, 'rgba(201,162,39,0)');
+        g.globalAlpha = 1; g.fillStyle = grad; g.fillRect(fx - 0.7, 0, 1.4, alt);
+      }
+      g.globalAlpha = 1;
       if (troca < 1) quadro = requestAnimationFrame(desenhar);
       else { rodando = false; canvas.style.visibility = 'hidden'; }
     }

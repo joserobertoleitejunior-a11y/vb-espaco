@@ -9,3 +9,8 @@
 /sw.js
   Cache-Control: no-cache
   Service-Worker-Allowed: /
+
+# arquivos com ?v= mudam de nome a cada versão; os outros (fotos prontas,
+# ícones) se renovam em até um dia
+/assets/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

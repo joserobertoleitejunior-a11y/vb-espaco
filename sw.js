@@ -8,44 +8,20 @@
 
    Bump o número da versão sempre que mudar a lista de arquivos aqui
    embaixo — isso descarta o cache antigo e busca tudo de novo. */
-var VERSAO = 'vb-cache-v52';
+var VERSAO = 'vb-cache-v53';
 
+// cache dos arquivos com ?v= e das imagens: o nome muda a cada versão, então
+// não precisa jogar fora a cada atualização (antes tudo era baixado de novo
+// a cada publicação). Fica com no máximo LIMITE_ARQUIVOS itens.
+var ARQUIVOS = 'vb-arquivos-1';
+var LIMITE_ARQUIVOS = 400;
+
+// só o mínimo pra abrir sem internet (as páginas que o app instalado usa)
 var CASCO = [
   '/',
   '/index.html',
-  '/explorar.html',
   '/cadastro.html',
-  '/editar.html',
   '/manifest.json',
-  '/assets/css/styles.css',
-  '/assets/js/supabase-client.js',
-  '/assets/js/cadastro.js',
-  '/assets/js/editar.js',
-  '/assets/js/vb-select.js',
-  '/assets/js/vb-dialogo.js',
-  '/assets/js/vb-salvo.js',
-  '/assets/js/vb-offline.js',
-  '/assets/js/vb-cache.js',
-  '/assets/js/vb-dono-sessao.js',
-  '/assets/js/upload-fotos.js',
-  '/assets/js/marca.js',
-  '/assets/js/segmentos.js',
-  '/assets/js/templates.js',
-  '/assets/js/vibe-toggle.js',
-  '/assets/css/vibe-toggle.css',
-  '/assets/js/vb-status.js',
-  '/assets/js/outdoor-promocoes.js',
-  '/assets/js/catalogo.js',
-  '/assets/js/guia.js',
-  '/assets/css/guia.css',
-  '/assets/js/splash.js',
-  '/assets/css/splash.css',
-  '/assets/js/sem-zoom.js',
-  '/assets/js/site-visual.js',
-  '/assets/js/vb-pull-refresh.js',
-  '/assets/js/vb-cliente-global.js',
-  '/assets/js/meus-agendamentos.js',
-  '/assets/js/vb-cliente-global-index.js',
   '/assets/img/favicon.svg',
   '/assets/img/icons/icon-192.png',
   '/assets/img/icons/icon-512.png'
@@ -67,7 +43,7 @@ self.addEventListener('install', function (evento) {
 self.addEventListener('activate', function (evento) {
   evento.waitUntil(
     caches.keys().then(function (chaves) {
-      return Promise.all(chaves.filter(function (k) { return k !== VERSAO; }).map(function (k) { return caches.delete(k); }));
+      return Promise.all(chaves.filter(function (k) { return k !== VERSAO && k !== ARQUIVOS; }).map(function (k) { return caches.delete(k); }));
     }).then(function () { return self.clients.claim(); })
   );
 });
@@ -78,6 +54,17 @@ function ehApi(url) {
     || url.hostname.indexOf('googleapis.com') > -1
     || url.hostname.indexOf('gstatic.com') > -1
     || url.hostname.indexOf('nominatim.openstreetmap.org') > -1;
+}
+
+// o cache dos arquivos não cresce pra sempre: tira os mais antigos
+var aparando = false;
+function aparar(cache) {
+  if (aparando) return;
+  aparando = true;
+  cache.keys().then(function (chaves) {
+    var sobra = chaves.length - LIMITE_ARQUIVOS;
+    return Promise.all(chaves.slice(0, Math.max(0, sobra)).map(function (k) { return cache.delete(k); }));
+  }).then(function () { aparando = false; }, function () { aparando = false; });
 }
 
 self.addEventListener('fetch', function (evento) {
@@ -94,12 +81,16 @@ self.addEventListener('fetch', function (evento) {
   var versionado = url.origin === self.location.origin && /[?&]v=/.test(url.search);
   var imagem = req.destination === 'image' || req.destination === 'font';
   if (versionado || imagem) {
+    var guardar = function (resposta) {
+      if (resposta && resposta.ok && resposta.type !== 'opaque') { var copia = resposta.clone(); caches.open(ARQUIVOS).then(function (c) { c.put(req, copia).then(function () { aparar(c); }); }); }
+      return resposta;
+    };
     evento.respondWith(
       caches.match(req).then(function (emCache) {
-        return emCache || fetch(req).then(function (resposta) {
-          if (resposta && resposta.ok) { var copia = resposta.clone(); caches.open(VERSAO).then(function (c) { c.put(req, copia); }); }
-          return resposta;
-        });
+        // imagem sem ?v= (fotos prontas, ícones): mostra a guardada e já
+        // confere a do servidor por trás, pra trocar se mudou
+        if (emCache && !versionado) evento.waitUntil(fetch(req).then(guardar).catch(function () {}));
+        return emCache || fetch(req).then(guardar);
       })
     );
     return;

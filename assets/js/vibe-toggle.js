@@ -87,6 +87,22 @@
   function prepararOutraArea(href) {
     if (!href || preparadas[href]) return;
     preparadas[href] = true;
+    // só depois que esta página terminou de carregar e o aparelho ficou
+    // livre: antes, a outra área era baixada junto e deixava esta mais lenta
+    quandoLivre(function () { prepararAgora(href); });
+  }
+  function quandoLivre(fn) {
+    var depois = function () {
+      if (global.requestIdleCallback) global.requestIdleCallback(fn, { timeout: 2500 });
+      else setTimeout(fn, 1200);
+    };
+    if (document.readyState === 'complete') depois();
+    else global.addEventListener('load', depois, { once: true });
+  }
+  function prepararAgora(href) {
+    // economia de dados ligada no celular: não baixa nada a mais
+    var con = navigator.connection;
+    if (con && (con.saveData || /(^|-)2g$/.test(con.effectiveType || ''))) return;
     try {
       if (global.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules')) {
         var s = document.createElement('script');
