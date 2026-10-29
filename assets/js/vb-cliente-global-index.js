@@ -50,6 +50,7 @@
     window.VBClienteEntrar = function (fn) { depoisDeEntrar = fn || null; abrirLoginCliente(); };
 
     aplicarNaTela(window.VBClienteGlobal.obter());
+    if (window.VBClienteGlobal.obter() && window.VBConta) window.VBConta.conferir().then(function (c) { if (!c) aplicarNaTela(null); });
 
     function resetarEstagios() {
       estagioTelefone.classList.add('oculto');
@@ -64,12 +65,13 @@
       if (estagioEscolha) estagioEscolha.classList.remove('oculto');
       overlay.classList.remove('oculto');
     }
+    // WhatsApp + senha de 6 números (cliente-conta.js)
     function abrirLoginCliente() {
-      resetarEstagios();
-      if (estagioEscolha) estagioEscolha.classList.add('oculto');
-      estagioTelefone.classList.remove('oculto');
-      overlay.classList.remove('oculto');
-      setTimeout(function () { telefoneInput.focus(); }, 50);
+      fechar();
+      if (!window.VBConta) return;
+      window.VBConta.entrar().then(function (c) {
+        if (c) entrou(c); else depoisDeEntrar = null;
+      });
     }
     function fechar() { overlay.classList.add('oculto'); }
     var cancelarTel = document.getElementById('clienteGlobalCancelar');

@@ -23,11 +23,25 @@
     var sairBtn = document.getElementById('magSair');
     if (!overlay || !corpo || !window.VBClienteGlobal) return;
 
+    // a sessão venceu (ou a senha foi trocada em outro aparelho): entra de novo
+    function sessaoVencida(erro) {
+      if (!/entre de novo|senha/i.test((erro && erro.message) || '')) { window.VBDialogo.alert((erro && erro.message) || 'Não deu agora.'); return; }
+      var tel = (window.VBClienteGlobal.obter() || {}).telefone;
+      window.VBClienteGlobal.limpar();
+      if (!window.VBConta) return;
+      window.VBConta.entrar({ telefone: tel, motivo: 'Por segurança, entre de novo com sua senha.' }).then(function (c) {
+        if (c) carregar(); else overlay.classList.add('oculto');
+      });
+    }
+
     function carregar() {
       var cliente = window.VBClienteGlobal.obter();
       if (!cliente) return;
+      var tk = window.VBClienteGlobal.token();
       corpo.innerHTML = '<div class="skeleton" style="height:1.4rem; margin-bottom:0.5rem;"></div><div class="skeleton" style="height:1rem; width:60%;"></div>';
-      db.rpc('cliente_listar_meus_agendamentos', { p_telefone: cliente.telefone }).then(function (res) {
+      // só com a sessão da senha (antes bastava o número de telefone)
+      db.rpc('cliente_meus_agendamentos', { p_token: tk }).then(function (res) {
+        if (res.error) { sessaoVencida(res.error); return; }
         var linhas = res.data || [];
         if (!linhas.length) {
           corpo.innerHTML = '<p style="color:var(--tinta-suave); font-size:0.9rem;">Você ainda não tem agendamentos.</p>';
@@ -55,7 +69,7 @@
           btn.addEventListener('click', function () {
             window.VBDialogo.confirm('Cancelar esse agendamento? Não tem como desfazer.').then(function (ok) {
               if (!ok) return;
-              db.rpc('cliente_cancelar_agendamento', { p_id: btn.getAttribute('data-cancelar'), p_telefone: cliente.telefone }).then(carregar);
+              db.rpc('cliente_cancelar_seguro', { p_id: btn.getAttribute('data-cancelar'), p_token: tk }).then(function (r) { if (r.error) sessaoVencida(r.error); else carregar(); });
             });
           });
         });
@@ -98,8 +112,8 @@
                       if (!ok || slotsEl.getAttribute('data-salvando')) return;
                       slotsEl.setAttribute('data-salvando', '1');
                       slotsEl.querySelectorAll('[data-slot]').forEach(function (b) { b.disabled = true; });
-                      db.rpc('cliente_reagendar_agendamento', {
-                        p_id: id, p_telefone: cliente.telefone, p_dia: diaIso, p_dia_label: diaLabel, p_horario: horario
+                      db.rpc('cliente_reagendar_seguro', {
+                        p_id: id, p_token: tk, p_dia: diaIso, p_dia_label: diaLabel, p_horario: horario
                       }).then(function (res2) {
                         slotsEl.removeAttribute('data-salvando');
                         if (res2.error) {

@@ -288,6 +288,8 @@
     var clienteAtual = window.VBClienteGlobal.obter();
     aplicarClienteGlobalNaTela(clienteAtual);
     if (clienteAtual) registrarVisitaCliente(clienteAtual);
+    // a sessão salva ainda vale? (venceu ou a senha foi trocada noutro aparelho)
+    if (clienteAtual && window.VBConta) window.VBConta.conferir().then(function (c) { if (!c) aplicarClienteGlobalNaTela(null); });
 
     function resetarEstagios() {
       estagioTelefone.classList.add('oculto');
@@ -308,12 +310,17 @@
       if (estagioEscolha) estagioEscolha.classList.remove('oculto');
       overlay.classList.remove('oculto');
     }
-    function abrirLoginCliente() {
-      resetarEstagios();
-      if (estagioEscolha) estagioEscolha.classList.add('oculto');
-      estagioTelefone.classList.remove('oculto');
-      overlay.classList.remove('oculto');
-      setTimeout(function () { telefoneInput.focus(); }, 50);
+    // login do cliente: WhatsApp + senha de 6 números (cliente-conta.js);
+    // "esqueci a senha" já oferece pedir o código pro WhatsApp deste negócio
+    function abrirLoginCliente(depois) {
+      fechar();
+      if (!window.VBConta) return;
+      window.VBConta.entrar({ negocio: { nome: linhaAtual && linhaAtual.nome, whatsapp: linhaAtual && linhaAtual.telefone_whatsapp } }).then(function (c) {
+        if (!c) return;
+        aplicarClienteGlobalNaTela(c);
+        registrarVisitaCliente(c);
+        if (typeof depois === 'function') depois(c);
+      });
     }
     function fechar() { overlay.classList.add('oculto'); }
 
@@ -404,7 +411,7 @@
     var menuAgendamentosBtn = document.getElementById('menuMeusAgendamentos');
     if (menuAgendamentosBtn) menuAgendamentosBtn.addEventListener('click', function () {
       if (window.RafaelMenu) window.RafaelMenu.close();
-      if (!window.VBClienteGlobal.obter()) { abrirLoginCliente(); return; }
+      if (!window.VBClienteGlobal.obter()) { abrirLoginCliente(function () { if (window.VBMeusAgendamentos) window.VBMeusAgendamentos.abrir(); }); return; }
       if (window.VBMeusAgendamentos) window.VBMeusAgendamentos.abrir();
     });
     var menuDadosBtn = document.getElementById('menuMeusDados');
@@ -415,12 +422,16 @@
       window.VBDialogo.prompt('Seu nome:', cliente.nome).then(function (novoNome) {
         if (novoNome === null) return;
         novoNome = novoNome.trim() || cliente.nome;
-        window.VBDialogo.prompt('Seu WhatsApp com DDD:', cliente.telefone).then(function (novoTelefone) {
-          if (novoTelefone === null) return;
-          novoTelefone = window.VBClienteGlobal.normalizarTelefone(novoTelefone) || cliente.telefone;
-          window.VBClienteGlobal.salvar(novoTelefone, novoNome);
-          aplicarClienteGlobalNaTela({ telefone: novoTelefone, nome: novoNome });
-          registrarVisitaCliente({ telefone: novoTelefone, nome: novoNome });
+        var depois = function () {
+          window.VBDialogo.confirm('Quer trocar sua senha de 6 números também?').then(function (sim) { if (sim && window.VBConta) window.VBConta.trocarSenha(); });
+        };
+        if (novoNome === cliente.nome) { depois(); return; }
+        db.rpc('cliente_trocar_nome', { p_token: window.VBClienteGlobal.token(), p_nome: novoNome }).then(function (r) {
+          if (r.error) { window.VBDialogo.alert(r.error.message); return; }
+          window.VBClienteGlobal.salvar(cliente.telefone, novoNome);
+          aplicarClienteGlobalNaTela({ telefone: cliente.telefone, nome: novoNome });
+          registrarVisitaCliente({ telefone: cliente.telefone, nome: novoNome });
+          depois();
         });
       });
     });

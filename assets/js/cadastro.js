@@ -867,6 +867,7 @@
             '<span><strong>Última visita:</strong> ' + (c.ultima_visita ? new Date(c.ultima_visita).toLocaleDateString('pt-BR') : '—') + '</span>' +
             '</div>' +
             '<a class="btn btn-ghost dash-cliente-whatsapp" href="' + linkWhatsapp(c.telefone, 'Olá, ' + c.nome + '! Tudo bem?') + '" target="_blank" rel="noopener">' + ICONE_WHATSAPP + ' Chamar no WhatsApp</a>' +
+            '<button type="button" class="btn btn-ghost dash-cliente-whatsapp" data-codigo-senha="' + i + '" style="margin-top:0.5rem;">Mandar código pra criar senha nova</button>' +
             '<p class="dash-card-menu-titulo" style="margin-top:1rem;">Histórico</p>' +
             '<div class="dash-cliente-historico" data-historico-container="' + i + '"><p class="topbar-dropdown-vazio">Carregando…</p></div>' +
             '</div>' +
@@ -881,6 +882,26 @@
       var historicoCarregado = {};
       var lista = document.getElementById('dashClientesLista');
       if (lista) lista.addEventListener('click', function (e) {
+        // cliente esqueceu a senha da Matriz: gera 6 números e manda no WhatsApp dele
+        var cod = e.target.closest('[data-codigo-senha]');
+        if (cod) {
+          var cli = linhas[cod.getAttribute('data-codigo-senha')];
+          cod.disabled = true;
+          db.rpc('tenant_admin_codigo_cliente', { p_estabelecimento_id: estabId, p_telefone: cli.telefone }).then(function (r) {
+            cod.disabled = false;
+            if (r.error) { window.VBDialogo.alert(r.error.message || 'Não deu agora.'); return; }
+            var texto = 'Olá, ' + cli.nome + '! Seu código pra criar uma senha nova na Matriz é ' + r.data + '. Ele vale por 15 minutos. Se não foi você que pediu, pode ignorar.';
+            // o link na mão (abrir sozinho depois de esperar o servidor o celular bloqueia)
+            var link = document.createElement('a');
+            link.className = 'btn btn-primario dash-cliente-whatsapp';
+            link.style.marginTop = '0.5rem';
+            link.href = linkWhatsapp(cli.telefone, texto);
+            link.target = '_blank'; link.rel = 'noopener';
+            link.innerHTML = ICONE_WHATSAPP + ' Enviar o código ' + r.data + ' no WhatsApp';
+            cod.replaceWith(link);
+          });
+          return;
+        }
         var btn = e.target.closest('[data-cliente-toggle]');
         if (!btn) return;
         var i = btn.getAttribute('data-cliente-toggle');
