@@ -274,8 +274,20 @@
     }, function () { galeriaPedida = false; });
   }
 
+  // quem entrou na conta da Matriz (senha) aparece na lista de clientes do negócio
+  var acessoRegistrado = false;
+  function registrarAcesso() {
+    if (acessoRegistrado || MODO_DEMO || MODO_PREVIEW || !window.db || !estab) return;
+    var tk = null;
+    try { var d = JSON.parse(localStorage.getItem('vbClienteConta') || 'null'); tk = d && d.token; } catch (e) {}
+    if (!tk) return;
+    acessoRegistrado = true;
+    window.db.rpc('tenant_registrar_acesso_cliente', { p_estabelecimento_id: estab.id, p_token: tk });
+  }
+
   function renderizarLoja() {
     carregarGaleria();
+    registrarAcesso();
     var nome = ident.nome || estab.nome;
     document.title = nome + ' · ' + (SERVICO ? (URGENTE ? 'Chamar agora' : 'Pedir orçamento') : 'Fazer pedido');
     var meta = document.querySelector('meta[name="description"]');

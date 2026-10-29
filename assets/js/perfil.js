@@ -269,7 +269,10 @@
 
   function registrarVisitaCliente(cliente) {
     if (!cliente || !estabId) return;
-    db.rpc('tenant_registrar_cliente', { p_estabelecimento_id: estabId, p_nome: cliente.nome, p_telefone: cliente.telefone });
+    // quem entrou com a senha fica na lista de clientes ("só acessou") até agendar ou pedir;
+    // vale o token da sessão — ninguém consegue cadastrar nome falso de outra pessoa
+    var tk = window.VBClienteGlobal && window.VBClienteGlobal.token();
+    if (tk) db.rpc('tenant_registrar_acesso_cliente', { p_estabelecimento_id: estabId, p_token: tk });
   }
 
   function iniciarClienteGlobal() {
@@ -2587,7 +2590,6 @@
         telefoneInput.value = saved.telefone;
         welcomeHint.textContent = 'Bem-vindo de volta, ' + saved.nome.split(' ')[0] + '! Já preenchemos seus dados — é só conferir.';
         welcomeHint.style.display = '';
-        db.rpc('tenant_registrar_cliente', { p_estabelecimento_id: estabId, p_nome: saved.nome, p_telefone: saved.telefone });
       } else {
         welcomeHint.style.display = 'none';
         nomeInput.value = '';
@@ -2650,7 +2652,6 @@
         if (current === 4 && choices.nome && choices.telefone) current = 5;
         render();
         overlay.scrollTop = 0;
-        if (eraContato) db.rpc('tenant_registrar_cliente', { p_estabelecimento_id: estabId, p_nome: choices.nome || '', p_telefone: choices.telefone || '' });
         return;
       }
 

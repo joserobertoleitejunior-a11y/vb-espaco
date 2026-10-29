@@ -349,3 +349,17 @@ html.pt-motion-fim [data-vibe-marca-logo="hero"] .mz-ponto { transition: opacity
 .ag-bonus { margin: 0.5rem 0 0; font-size: 0.8rem; font-weight: 600; color: #8a6d10; }
 .dash-aviso-gratis { margin-bottom: 0.8rem; }
 .criar-aviso-gratis { margin: 0 0 0.6rem; }
+
+/* cartão recolhido: uma linha em código; ao tocar abre e digita */
+.ag-cartao { padding: 0; overflow: hidden; }
+.ag-cab { display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.8rem 1.05rem; border: 0; background: none; color: #ecebe6; font: inherit; font-size: 0.8rem; text-align: left; cursor: pointer; }
+.ag-cab-txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ag-cab-seta { flex: 0 0 auto; color: var(--ag-ouro); font-weight: 700; transition: transform 0.25s; }
+.ag-cartao.ag-aberto .ag-cab-seta { transform: rotate(90deg); }
+.ag-cartao .ag-cab .ag-ponto { animation: agPulso 2.4s ease-out infinite; }
+.ag-cartao .ag-corpo { padding: 0 1.05rem 1.05rem; }
+.ag-cartao .ag-corpo:not([hidden]) { animation: agAbre 0.28s ease; }
+@keyframes agAbre { from { opacity: 0; transform: translateY(-4px); } }
+.ag-cartao .ag-corpo .ag-titulo { min-height: 1.3em; }
+.ag-cartao .ag-corpo .ag-cursor { margin-left: 1px; animation: agCursor 0.8s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) { .ag-cartao .ag-cab .ag-ponto, .ag-cartao .ag-corpo .ag-cursor { animation: none; } }

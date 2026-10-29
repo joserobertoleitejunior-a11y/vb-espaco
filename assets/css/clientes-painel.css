@@ -1,0 +1,42 @@
+/* Lista de clientes (assets/js/clientes-painel.js) — igual nos dois painéis. */
+.cl { --cl-tinta: #1f2024; --cl-suave: #6b6d75; --cl-borda: #e6e6ea; color: var(--cl-tinta); }
+.cl .oculto { display: none; }
+.cl-intro { margin: 0 0 0.8rem; font-size: 0.85rem; line-height: 1.45; color: var(--cl-suave); }
+.cl-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.cl-chips::-webkit-scrollbar { display: none; }
+.cl-chip { flex: 0 0 auto; padding: 0.5rem 0.85rem; border-radius: 999px; border: 1.5px solid var(--cl-borda); background: #fff; font: inherit; font-size: 0.82rem; font-weight: 700; color: var(--cl-tinta); cursor: pointer; white-space: nowrap; }
+.cl-chip b { margin-left: 0.2rem; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.78rem; opacity: 0.6; }
+.cl-chip.ativo { background: var(--cl-tinta); border-color: var(--cl-tinta); color: #fff; }
+.cl-chip.ativo b { opacity: 0.85; }
+.cl-busca { width: 100%; box-sizing: border-box; margin-top: 0.7rem; padding: 0.7rem 0.9rem; border-radius: 12px; border: 1.5px solid var(--cl-borda); background: #fff; font: inherit; font-size: 0.95rem; color: var(--cl-tinta); }
+.cl-exportar { margin-top: 0.6rem; padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid var(--cl-borda); background: #fff; font: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+.cl-lista { margin-top: 0.8rem; }
+.cl-item { margin-bottom: 0.5rem; border-radius: 14px; border: 1px solid var(--cl-borda); background: #fff; overflow: hidden; }
+.cl-topo { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; width: 100%; padding: 0.8rem 0.9rem; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.cl-quem { min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.cl-quem strong { font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl-quem small, .cl-resto small { font-size: 0.78rem; color: var(--cl-suave); }
+.cl-resto { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; text-align: right; }
+.cl-tag { font-style: normal; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.02em; }
+.cl-verde { background: rgba(15, 107, 92, 0.12); color: #0b5c4e; }
+.cl-azul { background: rgba(40, 92, 190, 0.12); color: #2a54b0; }
+.cl-ouro { background: rgba(201, 162, 39, 0.2); color: #7a5f08; }
+.cl-cinza { background: #efeff2; color: #5c5e66; }
+.cl-det { padding: 0 0.9rem 0.9rem; border-top: 1px solid #f0f0f2; }
+.cl-dados { display: grid; gap: 0.1rem; padding-top: 0.6rem; }
+.cl-dado { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3rem 0; font-size: 0.84rem; }
+.cl-dado span { color: var(--cl-suave); flex: 0 0 auto; }
+.cl-dado strong { font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.cl-acoes { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.7rem; }
+.cl-btn { display: inline-flex; align-items: center; padding: 0.55rem 0.9rem; border-radius: 999px; border: 0; background: var(--cl-tinta); color: #fff !important; font: inherit; font-size: 0.82rem; font-weight: 700; text-decoration: none; cursor: pointer; }
+.cl-btn-suave { background: #fff; color: var(--cl-tinta) !important; border: 1.5px solid var(--cl-borda); }
+.cl-btn:disabled { opacity: 0.6; }
+.cl-sub { margin: 0.9rem 0 0.3rem; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #8a6d10; }
+.cl-h { display: flex; justify-content: space-between; gap: 0.8rem; padding: 0.5rem 0; border-top: 1px solid #f0f0f2; font-size: 0.85rem; }
+.cl-h span { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.cl-h small { color: var(--cl-suave); font-size: 0.76rem; }
+.cl-h em { font-style: normal; flex: 0 0 auto; font-size: 0.72rem; font-weight: 700; color: var(--cl-suave); }
+.cl-vazio { padding: 1.4rem 1rem; text-align: center; border-radius: 14px; background: #fafafb; }
+.cl-vazio p { margin: 0.4rem 0 0; font-size: 0.85rem; line-height: 1.45; color: var(--cl-suave); }
+.cl-vazio-busca { margin: 0.4rem 0; font-size: 0.85rem; color: var(--cl-suave); }
+.cl-erro { margin: 0; font-size: 0.88rem; color: #b3261e; }

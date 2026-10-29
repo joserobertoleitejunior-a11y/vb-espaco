@@ -255,15 +255,16 @@
 
   /* ===================== abas ===================== */
   function trocarAba(nome, semHistorico) {
-    if (['pedidos', 'cardapio', 'loja', 'resumo'].indexOf(nome) === -1) nome = 'pedidos';
+    if (['pedidos', 'cardapio', 'loja', 'clientes', 'resumo'].indexOf(nome) === -1) nome = 'pedidos';
     document.querySelectorAll('.p-aba-btn').forEach(function (b) { b.classList.toggle('ativa', b.getAttribute('data-aba') === nome); });
-    ['pedidos', 'cardapio', 'loja', 'resumo'].forEach(function (a) {
+    ['pedidos', 'cardapio', 'loja', 'clientes', 'resumo'].forEach(function (a) {
       $('aba' + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('oculto', a !== nome);
     });
     if (!semHistorico) { try { history.replaceState(history.state, '', '#' + nome); } catch (e) {} }
     window.scrollTo(0, 0);
     if (nome === 'resumo') carregarResumo();
     if (nome === 'loja') montarMeuSite();
+    if (nome === 'clientes' && window.VBClientes) window.VBClientes.montar($('clientesPainel'), { estabId: loja.id });
   }
 
   /* ===================== meu site (igual à Agenda: assets/js/meu-site.js) ===================== */

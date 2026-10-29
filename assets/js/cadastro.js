@@ -888,89 +888,18 @@
     return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
+  // lista de clientes: a mesma dos dois painéis (assets/js/clientes-painel.js)
   function renderizarDashClientes() {
     var estabId = dashEstabId;
-    db.rpc('tenant_admin_listar_clientes', { p_estabelecimento_id: estabId }).then(function (res) {
-      if (dashEstabId !== estabId) return;
-      var linhas = res.data || [];
-      dashboardCorpo.classList.remove('dash-carregando');
-      dashboardCorpo.innerHTML =
-        '<p class="dash-secao-intro" style="margin-top:0;">Todo cliente que agenda pelo site — ou é cadastrado na aba Agenda — entra aqui automaticamente. Toque num cliente pra ver dados completos, chamar no WhatsApp e o histórico de visitas.</p>' +
-        '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Clientes cadastrados</p>' +
-        (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashClientesExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar PDF</button>' : '') +
-        '</div>' +
-        (linhas.length ? '<div id="dashClientesLista">' + linhas.map(function (c, i) {
-          return '<div class="dash-cliente-item">' +
-            '<button type="button" class="dash-cliente-cabecalho" data-cliente-toggle="' + i + '">' +
-            '<span><span class="principal">' + escapeHtml(c.nome) + '</span><br><span class="secundario">' + escapeHtml(formatarTelefone(c.telefone)) + '</span></span>' +
-            '<span class="valor">' + c.total_visitas + ' visita(s)' + ICONE_MENU_CHEVRON + '</span>' +
-            '</button>' +
-            '<div class="dash-cliente-detalhe oculto" id="clienteDetalhe-' + i + '">' +
-            '<div class="dash-cliente-info">' +
-            '<span><strong>Primeira visita:</strong> ' + (c.primeira_visita ? new Date(c.primeira_visita).toLocaleDateString('pt-BR') : '—') + '</span>' +
-            '<span><strong>Última visita:</strong> ' + (c.ultima_visita ? new Date(c.ultima_visita).toLocaleDateString('pt-BR') : '—') + '</span>' +
-            '</div>' +
-            '<a class="btn btn-ghost dash-cliente-whatsapp" href="' + linkWhatsapp(c.telefone, 'Olá, ' + c.nome + '! Tudo bem?') + '" target="_blank" rel="noopener">' + ICONE_WHATSAPP + ' Chamar no WhatsApp</a>' +
-            '<button type="button" class="btn btn-ghost dash-cliente-whatsapp" data-codigo-senha="' + i + '" style="margin-top:0.5rem;">Mandar código pra criar senha nova</button>' +
-            '<p class="dash-card-menu-titulo" style="margin-top:1rem;">Histórico</p>' +
-            '<div class="dash-cliente-historico" data-historico-container="' + i + '"><p class="topbar-dropdown-vazio">Carregando…</p></div>' +
-            '</div>' +
-            '</div>';
-        }).join('') + '</div>' : blocoVazio(ICONE_VAZIO_CLIENTES, 'Nenhum cliente ainda', 'Assim que alguém agendar pelo seu site — ou você cadastrar um agendamento manual na aba Agenda — o cliente aparece aqui, com o total de visitas atualizado a cada nova vinda.'));
-      var exportarBtn = document.getElementById('dashClientesExportar');
-      if (exportarBtn) exportarBtn.addEventListener('click', function () {
-        baixarPdf('Clientes', 'clientes.pdf', ['Nome', 'Telefone', 'Visitas', 'Primeira visita', 'Última visita'], linhas.map(function (c) {
-          return [c.nome, c.telefone, c.total_visitas, c.primeira_visita, c.ultima_visita];
+    dashboardCorpo.classList.remove('dash-carregando');
+    window.VBClientes.montar(dashboardCorpo, {
+      estabId: estabId,
+      aoExportar: function (linhas) {
+        baixarPdf('Clientes', 'clientes.pdf', ['Nome', 'Telefone', 'Agendamentos', 'Pedidos', 'Primeiro contato', 'Último agendamento'], linhas.map(function (c) {
+          return [c.nome, c.telefone, c.agendamentos || 0, c.pedidos || 0, c.primeira_visita, c.ultimo_agendamento || ''];
         }));
-      });
-      var historicoCarregado = {};
-      var lista = document.getElementById('dashClientesLista');
-      if (lista) lista.addEventListener('click', function (e) {
-        // cliente esqueceu a senha da Matriz: gera 6 números e manda no WhatsApp dele
-        var cod = e.target.closest('[data-codigo-senha]');
-        if (cod) {
-          var cli = linhas[cod.getAttribute('data-codigo-senha')];
-          cod.disabled = true;
-          db.rpc('tenant_admin_codigo_cliente', { p_estabelecimento_id: estabId, p_telefone: cli.telefone }).then(function (r) {
-            cod.disabled = false;
-            if (r.error) { window.VBDialogo.alert(r.error.message || 'Não deu agora.'); return; }
-            var texto = 'Olá, ' + cli.nome + '! Seu código pra criar uma senha nova na Matriz é ' + r.data + '. Ele vale por 15 minutos. Se não foi você que pediu, pode ignorar.';
-            // o link na mão (abrir sozinho depois de esperar o servidor o celular bloqueia)
-            var link = document.createElement('a');
-            link.className = 'btn btn-primario dash-cliente-whatsapp';
-            link.style.marginTop = '0.5rem';
-            link.href = linkWhatsapp(cli.telefone, texto);
-            link.target = '_blank'; link.rel = 'noopener';
-            link.innerHTML = ICONE_WHATSAPP + ' Enviar o código ' + r.data + ' no WhatsApp';
-            cod.replaceWith(link);
-          });
-          return;
-        }
-        var btn = e.target.closest('[data-cliente-toggle]');
-        if (!btn) return;
-        var i = btn.getAttribute('data-cliente-toggle');
-        var detalhe = document.getElementById('clienteDetalhe-' + i);
-        detalhe.classList.toggle('oculto');
-        if (detalhe.classList.contains('oculto') || historicoCarregado[i]) return;
-        historicoCarregado[i] = true;
-        var cliente = linhas[i];
-        db.rpc('tenant_admin_historico_cliente', { p_estabelecimento_id: estabId, p_telefone: cliente.telefone }).then(function (res) {
-          var container = document.querySelector('[data-historico-container="' + i + '"]');
-          if (!container) return;
-          var itens = res.data || [];
-          container.innerHTML = itens.length ? itens.map(function (h) {
-            var detalheTexto = [h.detalhe];
-            if (h.staff_nome) detalheTexto.push(h.staff_nome);
-            return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(h.titulo || '—') + '</span><br>' +
-              '<span class="secundario">' + escapeHtml(formatarDataHora(h.data)) + ' · ' + escapeHtml(detalheTexto.join(' · ')) + '</span></span>' +
-              '<span class="secundario">' + (h.tipo === 'venda' ? 'Venda' : 'Agendamento') + '</span></div>';
-          }).join('') : '<p class="topbar-dropdown-vazio">Nenhum histórico registrado ainda.</p>';
-        }, function () {
-          var container = document.querySelector('[data-historico-container="' + i + '"]');
-          if (container) container.innerHTML = '<p class="msg msg-erro">Não deu pra carregar o histórico agora.</p>';
-        });
-      });
-    }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
+      }
+    });
   }
 
   // ---- Comunidade: Status (24h, tipo Stories) e Promoções — antes o

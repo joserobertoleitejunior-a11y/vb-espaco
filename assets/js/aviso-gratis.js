@@ -79,12 +79,60 @@
       return '<span class="ag-convite-linha">Você é <span class="ag-giro" data-ag-giro>' + esc(PROFISSIONAIS[0]) + '</span><span class="ag-cursor" aria-hidden="true">_</span>?</span>' +
         '<span class="ag-convite-sub">Crie seu perfil grátis — enquanto dura.</span>';
     }
-    return '<p class="ag-rotulo">' + PONTO + '<span data-ag-decode>fase de finalização</span></p>' +
-      '<p class="ag-titulo" data-ag-decode>Entrada liberada. Por pouco tempo.</p>' +
+    return '<button type="button" class="ag-cab" aria-expanded="false">' + PONTO +
+        '<span class="ag-cab-txt">grátis por tempo limitado</span><span class="ag-cab-seta" aria-hidden="true">&gt;_</span></button>' +
+      '<div class="ag-corpo" hidden>' +
+      '<p class="ag-rotulo">' + PONTO + '<span>fase de finalização</span></p>' +
+      '<p class="ag-titulo">Entrada liberada. Por pouco tempo.</p>' +
       '<p class="ag-texto">Enquanto a Matriz termina os últimos ajustes, tudo é grátis — sem taxa e sem cartão. ' +
       'Quando a mensalidade começar, vai ser <strong>' + MENSALIDADE + ' por mês</strong>: <strong>' + POR_DIA + ' por dia</strong>, menos que um cafezinho. ' +
       'E você é avisado antes de qualquer cobrança.</p>' +
-      '<p class="ag-corre">Quem entra agora já sai na frente.</p>';
+      '<p class="ag-corre">Quem entra agora já sai na frente.</p></div>';
+  }
+
+  // digita o conteúdo de um bloco, letra por letra (mantendo negrito e o resto do HTML)
+  function digitarBloco(corpo) {
+    var elementos = Array.prototype.slice.call(corpo.querySelectorAll('.ag-rotulo, .ag-titulo, .ag-texto, .ag-corre'));
+    if (reduz) return { parar: function () {} };
+    var parado = false, cursor = document.createElement('span');
+    cursor.className = 'ag-cursor'; cursor.setAttribute('aria-hidden', 'true'); cursor.textContent = '▌';
+    var fila = [];
+    elementos.forEach(function (el) {
+      var andar = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), no;
+      while ((no = andar.nextNode())) { if (no.data.length) fila.push({ no: no, texto: no.data, el: el }); }
+    });
+    fila.forEach(function (f) { f.no.data = ''; });
+    corpo.setAttribute('aria-label', elementos.map(function (e) { return fila.filter(function (f) { return f.el === e; }).map(function (f) { return f.texto; }).join(''); }).join('. '));
+    var i = 0, c = 0, ultimo = 0;
+    function passo(agora) {
+      if (parado) return;
+      // ~34 letras por segundo (a primeira linha mais rápida, o texto longo mais)
+      var por = agora - ultimo; if (por < 24) return requestAnimationFrame(passo);
+      ultimo = agora;
+      var f = fila[i];
+      if (!f) { cursor.remove(); return; }
+      var n = f.texto.length > 60 ? 2 : 1;
+      c = Math.min(f.texto.length, c + n);
+      f.no.data = f.texto.slice(0, c);
+      if (f.no.nextSibling !== cursor) f.no.parentNode.insertBefore(cursor, f.no.nextSibling);
+      if (c >= f.texto.length) { i++; c = 0; if (fila[i] && fila[i].el !== f.el) ultimo += 160; }
+      requestAnimationFrame(passo);
+    }
+    requestAnimationFrame(passo);
+    return { parar: function () { parado = true; fila.forEach(function (f) { f.no.data = f.texto; }); cursor.remove(); } };
+  }
+
+  // cartão: recolhido; toque abre e digita, toque de novo recolhe
+  function ligarCartao(el) {
+    var cab = el.querySelector('.ag-cab'), corpo = el.querySelector('.ag-corpo'), digitando = null;
+    cab.addEventListener('click', function () {
+      var abrir = corpo.hidden;
+      if (digitando) { digitando.parar(); digitando = null; }
+      corpo.hidden = !abrir;
+      cab.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+      el.classList.toggle('ag-aberto', abrir);
+      if (abrir) digitando = digitarBloco(corpo);
+    });
   }
 
   // "Você é ___?": o profissional vai sendo trocado, em código
@@ -106,6 +154,7 @@
       el.classList.add('aviso-gratis', 'ag-' + (tipo || 'cartao'));
       el.setAttribute('role', 'note');
       el.innerHTML = html(tipo);
+      if (el.querySelector('.ag-cab')) { ligarCartao(el); return; }
       var partes = Array.prototype.slice.call(el.querySelectorAll('[data-ag-decode]'));
       var textos = partes.map(function (p) { return p.textContent; });
       // guarda o espaço do texto (letra monoespaçada: nada pula quando decodifica)
