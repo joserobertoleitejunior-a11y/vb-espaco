@@ -3375,3 +3375,7 @@ html, body { max-width: 100%; overflow-x: clip; }
   border: 1px solid rgba(127, 127, 127, 0.28); font-size: 0.84rem; line-height: 1.25;
 }
 .bom-saber li span { color: var(--cor-destaque, var(--accent, #C9A227)); font-weight: 800; }
+
+/* aviso curto de privacidade onde o cliente manda nome e telefone (LGPD) */
+.nota-privacidade { margin: 0.6rem 0 0; font-size: 0.74rem; line-height: 1.4; opacity: 0.72; }
+.nota-privacidade a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

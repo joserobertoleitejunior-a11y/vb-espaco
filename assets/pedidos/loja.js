@@ -834,6 +834,7 @@
     corpo += '<div class="grupo" style="margin-top:0"><div class="grupo-titulo">Seus dados</div>' +
       campo('ckNome', 'Seu nome', '<input id="ckNome" autocomplete="name" maxlength="80" value="' + esc(c.nome) + '" placeholder="Como te chamamos?">') +
       campo('ckTel', 'WhatsApp', '<input id="ckTel" type="tel" inputmode="numeric" autocomplete="tel-national" value="' + esc(c.telefone) + '" placeholder="(15) 99999-9999">', 'A loja confirma o pedido por esse número.') +
+      '<p class="nota-privacidade">Seus dados vão só pra ' + esc(estab.nome) + ', pra fazer o seu pedido. <a href="/privacidade.html" target="_blank" rel="noopener">Privacidade</a></p>' +
       '</div>';
 
     corpo += '<div class="grupo"><div class="grupo-titulo">' + V.comoReceber + '</div>' +

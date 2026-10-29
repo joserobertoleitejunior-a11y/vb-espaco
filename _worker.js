@@ -32,7 +32,13 @@ export default {
     if (partes.length === 2) {
       return servirComo(request, env, '/perfil.html');
     }
-    return env.ASSETS.fetch(request);
+    const resposta = await env.ASSETS.fetch(request);
+    // endereço que não existe: página "não achei" da Matriz em vez da tela crua
+    if (resposta.status === 404 && (request.headers.get('accept') || '').includes('text/html')) {
+      const pagina = await servirComo(request, env, '/404.html');
+      return new Response(pagina.body, { status: 404, headers: pagina.headers });
+    }
+    return resposta;
   }
 };
 

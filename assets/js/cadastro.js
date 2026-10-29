@@ -136,6 +136,8 @@
     authDivisor.textContent = criando ? 'já tem conta?' : 'ainda não tem conta?';
     trocarModoBtn.textContent = criando ? 'Entrar com minha conta' : 'Criar conta com e-mail';
     esqueciBtn.classList.toggle('oculto', criando);
+    var legal = document.getElementById('authLegal');
+    if (legal) legal.hidden = !criando;
     senhaInput.setAttribute('autocomplete', criando ? 'new-password' : 'current-password');
     authMsg.className = 'msg'; authMsg.textContent = '';
   }
@@ -212,6 +214,32 @@
       });
     });
   }
+
+  // LGPD: o dono apaga a conta e tudo do negócio (privacidade.html → ?excluir=1)
+  var pedirExclusao = new URLSearchParams(location.search).get('excluir') === '1';
+  if (pedirExclusao) {
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    authMsg.className = 'msg';
+    authMsg.textContent = 'Entre na sua conta pra excluir.';
+  }
+  function excluirConta() {
+    window.VBDialogo.confirm('Excluir a conta apaga, na hora e pra sempre, o seu site, a agenda, os clientes, o caixa, o cardápio e os anúncios. Não dá pra desfazer. Continuar?').then(function (ok) {
+      if (!ok) return;
+      window.VBDialogo.prompt('Pra confirmar, digite EXCLUIR:', '').then(function (txt) {
+        if (txt == null) return;
+        if (String(txt).trim().toUpperCase() !== 'EXCLUIR') { window.VBDialogo.alert('Não excluí nada: o texto não bateu.'); return; }
+        db.rpc('vibe_excluir_minha_conta', { p_confirmacao: 'EXCLUIR' }).then(function (res) {
+          if (res.error) { window.VBDialogo.alert('Não consegui excluir agora: ' + (res.error.message || 'tente de novo.')); return; }
+          try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+          db.auth.signOut().catch(function () {}).then(function () {
+            window.VBDialogo.alert('Pronto: sua conta e os dados do seu negócio foram apagados.').then(function () { location.replace('/'); });
+          });
+        });
+      });
+    });
+  }
+  var excluirContaBtn = document.getElementById('excluirContaBtn');
+  if (excluirContaBtn) excluirContaBtn.addEventListener('click', excluirConta);
 
   sairBtn.addEventListener('click', function () {
     db.auth.signOut().then(function () {
@@ -1518,6 +1546,7 @@
       return;
     }
     if (email) topbarMenuEmail.textContent = email;
+    if (pedirExclusao) { pedirExclusao = false; setTimeout(excluirConta, 400); }
     // onAuthStateChange dispara de novo (com uma sessão válida) toda vez
     // que a aba volta a ficar visível — o supabase-js reconfere/renova o
     // token nesse momento — não só num login de verdade. Sem essa trava,
