@@ -396,3 +396,9 @@ body.painel {
   .p-topo-app .p-marca strong { font-size: 1rem; }
   .p-menu { top: 56px; }
 }
+
+/* dentro do painel único (cadastro.html): sem topo nem abas próprios */
+html.embutido .p-topo-app, html.embutido .p-abas, html.embutido .p-menu, html.embutido [data-aviso-gratis], html.embutido .p-secao:has([data-aviso-gratis]) { display: none !important; }
+html.embutido body, html.embutido .painel { background: transparent; padding-top: 0; }
+html.embutido #app { padding-top: 0; }
+html.embutido .barra-salvar { bottom: 0; }

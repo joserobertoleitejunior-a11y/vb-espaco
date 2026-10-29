@@ -6,6 +6,15 @@
 /preview-embutido.html
   X-Frame-Options: SAMEORIGIN
 
+# o painel de pedidos aparece dentro do painel único (cadastro.html)
+/painel-area.html
+  ! X-Frame-Options
+  X-Frame-Options: SAMEORIGIN
+
+/painel-area
+  ! X-Frame-Options
+  X-Frame-Options: SAMEORIGIN
+
 /sw.js
   Cache-Control: no-cache
   Service-Worker-Allowed: /

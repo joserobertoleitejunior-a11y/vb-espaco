@@ -49,6 +49,10 @@
   var SERVICO = false;
   var URGENTE = false;
   var negocio = null;
+  // dentro do painel único (cadastro.html): sem topo nem abas, quem manda é a casca de fora
+  var EMBUTIDO = q.get('embed') === '1';
+  if (EMBUTIDO) document.documentElement.classList.add('embutido');
+  function avisarPai(msg) { if (EMBUTIDO && window.parent !== window) { try { window.parent.postMessage(Object.assign({ vbPainel: true }, msg), location.origin); } catch (e) {} } }
 
   // ícones das ações de linha (subir, descer, renomear) desenhados em SVG
   var ICONE_SOBE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>';
@@ -123,20 +127,20 @@
     negocio = rn.data || null;
     if (!negocio) { location.href = '/criar.html'; return; }
     var areas = negocio.areas || [];
-    // "Meu painel" abre direto aqui quem não tem Agenda (vb-sessao-cedo.js)
-    try {
-      if (areas.indexOf('agenda') === -1) localStorage.setItem('vbPainelDono', '/painel-area.html?id=' + encodeURIComponent(negocio.id));
-      else localStorage.removeItem('vbPainelDono');
-    } catch (e) {}
-    if (areas.indexOf('delivery') === -1 && areas.indexOf('servicos') === -1) { mostrarTelaAtivar(); return; }
+    // painel único: tudo mora em cadastro.html (esta página só aparece dentro dele)
+    try { localStorage.removeItem('vbPainelDono'); } catch (e) {}
+    var temPedidos = areas.indexOf('delivery') !== -1 || areas.indexOf('servicos') !== -1;
+    if (!EMBUTIDO && temPedidos) { location.replace('/cadastro.html?abrir=' + encodeURIComponent(negocio.id) + '&aba=' + encodeURIComponent((location.hash || '#pedidos').slice(1))); return; }
+    if (!temPedidos) { mostrarTelaAtivar(); avisarPai({ pronto: true }); return; }
     var r = await db.rpc('delivery_admin_meus_estabelecimentos');
     lojas = r.data || [];
     loja = lojas.find(function (l) { return l.id === negocio.id; });
     if (!loja) { mostrarTelaAtivar(); return; }
     loja.areas = areas;
     mostrarTela('app');
-    montarCubo();
+    if (!EMBUTIDO) montarCubo();
     await abrirLoja();
+    avisarPai({ pronto: true });
     if (q.get('nova') === '1') abrirBoasVindas();
   }
 
@@ -191,7 +195,7 @@
       if (!ativarEscolha) return;
       this.disabled = true;
       var areas = (negocio.areas || []).filter(function (a) { return a === 'agenda'; }).concat([ativarEscolha]);
-      if (await definirAreas(areas, ativarEscolha === 'servicos' ? ativarOnde : null)) location.href = '/painel-area.html?nova=1';
+      if (await definirAreas(areas, ativarEscolha === 'servicos' ? ativarOnde : null)) (EMBUTIDO ? window.parent : window).location.href = '/cadastro.html?abrir=' + encodeURIComponent(negocio.id) + '&aba=pedidos';
       else this.disabled = false;
     });
   }
@@ -231,7 +235,7 @@
     conhecidos = null;
     await Promise.all([carregarCardapio(), carregarPedidos(true)]);
     iniciarPolling();
-    trocarAba((location.hash || '#pedidos').slice(1), true);
+    trocarAba((EMBUTIDO ? (q.get('aba') || 'pedidos') : (location.hash || '#pedidos').slice(1)), true);
   }
 
   function urlSite() { return location.origin + '/' + loja.slug + '/' + loja.cidade + '/pedir'; }
@@ -322,6 +326,7 @@
     $('badgeNovos').textContent = nNovos || '';
     $('nNovos').textContent = nNovos ? ' ' + nNovos : '';
     $('nAtivos').textContent = nAtivos ? ' ' + nAtivos : '';
+    avisarPai({ novos: nNovos });
     document.title = nNovos ? '(' + nNovos + ') Novo ' + V.pedido.toLowerCase() + ' · VB Delivery' : tituloOriginal;
   }
 
@@ -1349,6 +1354,11 @@
     window.addEventListener('beforeunload', function (e) { if (Object.keys(rascunho).length) { e.preventDefault(); e.returnValue = ''; } });
   }
 
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || !e.data || !e.data.vbAba || !loja) return;
+    trocarAba(e.data.vbAba, true);
+  });
+
   async function iniciar() {
     preencherIcones();
     if (!db) { $('telaCarregando').innerHTML = '<div class="p-secao"><p class="p-msg erro">Sem conexão com o servidor. Confere a internet.</p></div>'; return; }
@@ -1362,7 +1372,7 @@
     ligarResumo();
     var s = await db.auth.getSession();
     sessao = s.data && s.data.session;
-    if (!sessao) { location.href = '/cadastro.html'; return; }
+    if (!sessao) { if (EMBUTIDO) window.parent.location.href = '/cadastro.html'; else location.href = '/cadastro.html'; return; }
     carregarLojas();
   }
 

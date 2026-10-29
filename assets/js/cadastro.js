@@ -336,12 +336,7 @@
       // ?abrir=<id> (volta do painel de outra área) abre direto o painel de gestão
       carregarMeuNegocio().then(function (n) {
         var abrirId = new URLSearchParams(location.search).get('abrir');
-        // da próxima vez, "Meu painel" já abre direto no painel da área (vb-sessao-cedo.js)
-        try {
-          if (n && n.areas && n.areas.indexOf('agenda') === -1) localStorage.setItem('vbPainelDono', '/painel-area.html?id=' + encodeURIComponent(n.id));
-          else localStorage.removeItem('vbPainelDono');
-        } catch (e) {}
-        if (n && n.areas && n.areas.indexOf('agenda') === -1) { location.replace('/painel-area.html?id=' + encodeURIComponent(n.id)); return; }
+        try { localStorage.removeItem('vbPainelDono'); } catch (e) {}
         var alvo = abrirId && linhas.find(function (l) { return l.id === abrirId; });
         // dono de um negócio só vai direto pro painel; "?lista=1" (e o menu do painel) mostram a lista
         var quer = new URLSearchParams(location.search);
@@ -652,22 +647,64 @@
   function carregarMeuNegocio() {
     return db.rpc('vibe_meu_negocio').then(function (r) { meuNegocio = r.data || null; return meuNegocio; }, function () { return null; });
   }
-  function montarCuboAreas(estabId) {
-    var alvo = document.getElementById('dashAreas');
-    if (!alvo || !window.VibeToggle) return;
-    var negocio = meuNegocio && meuNegocio.id === estabId ? meuNegocio : { id: estabId, areas: ['agenda'] };
-    var areas = negocio.areas || ['agenda'];
-    var outra = areas.indexOf('delivery') !== -1 ? 'delivery' : areas.indexOf('servicos') !== -1 ? 'servicos' : null;
-    var N = window.VibeToggle.NOMES;
-    var opcoes = [{ chave: 'agenda', rotulo: N.agenda }];
-    if (outra) opcoes.push({ chave: outra, rotulo: N[outra], selo: negocio.pedidos_novos ? String(negocio.pedidos_novos) : null });
-    window.VibeToggle.montar(alvo, {
-      tema: 'claro', atual: 'agenda', swipe: !!outra, rotulo: 'Áreas do negócio', opcoes: opcoes,
-      aoTrocar: function () { location.href = '/painel-area.html'; },
-      // ainda sem Delivery/No local: o "+" abre a tela de ativar
-      extra: outra ? null : { rotulo: 'Ativar Delivery ou ' + N.servicos, aoClicar: function () { location.href = '/painel-area.html'; } }
+  // um painel só: as abas aparecem conforme o que o negócio tem (Agenda, Pedidos/Chamados)
+  function areasDe(estabId) {
+    return (meuNegocio && meuNegocio.id === estabId && meuNegocio.areas) || ['agenda'];
+  }
+  function temAgendaNeg() { return areasDe(dashEstabId).indexOf('agenda') !== -1; }
+  function temPedidosNeg() { var a = areasDe(dashEstabId); return a.indexOf('delivery') !== -1 || a.indexOf('servicos') !== -1; }
+  function aplicarAbas(estabId) {
+    var a = areasDe(estabId), agenda = a.indexOf('agenda') !== -1, pedidos = a.indexOf('delivery') !== -1 || a.indexOf('servicos') !== -1;
+    var ba = document.querySelector('#dashboardAbas [data-dash-aba="agenda"]'), bp = document.querySelector('#dashboardAbas [data-dash-aba="pedidos"]');
+    if (ba) ba.classList.toggle('oculto', !agenda);
+    if (bp) bp.classList.toggle('oculto', !pedidos);
+    var r = document.getElementById('dashRotuloPedidos');
+    if (r) r.textContent = a.indexOf('delivery') === -1 && a.indexOf('servicos') !== -1 ? 'Chamados' : 'Pedidos';
+  }
+
+  // o painel de pedidos fica dentro desta página (iframe) e continua vivo nas outras abas:
+  // assim o aviso de pedido novo e o som não somem quando você olha a agenda
+  var pedidosHost = null, pedidosPronto = false, pedidosSubPendente = null;
+  function prepararPedidos(estabId) {
+    if (pedidosHost) { pedidosHost.remove(); pedidosHost = null; }
+    pedidosPronto = false;
+    var selo = document.getElementById('dashSeloPedidos'); if (selo) selo.classList.add('oculto');
+    if (!temPedidosNeg()) return;
+    var servico = areasDe(estabId).indexOf('servicos') !== -1 && areasDe(estabId).indexOf('delivery') === -1;
+    pedidosHost = document.createElement('section');
+    pedidosHost.className = 'ca-corpo ca-pedidos oculto';
+    pedidosHost.innerHTML =
+      '<div class="ca-chips" id="dashPedidosChips">' +
+        '<button type="button" class="ca-chip ativo" data-ped-sub="pedidos">' + (servico ? 'Chamados' : 'Pedidos') + '</button>' +
+        '<button type="button" class="ca-chip" data-ped-sub="cardapio">' + (servico ? 'Serviços' : 'Cardápio') + '</button>' +
+        '<button type="button" class="ca-chip" data-ped-sub="loja">Loja</button>' +
+      '</div><iframe class="ca-frame" title="Pedidos" src="/painel-area.html?embed=1&aba=pedidos"></iframe>';
+    dashboardCorpo.insertAdjacentElement('afterend', pedidosHost);
+    pedidosHost.querySelector('#dashPedidosChips').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-ped-sub]'); if (b) irPedidosSub(b.getAttribute('data-ped-sub'));
     });
   }
+  function irPedidosSub(sub, semChips) {
+    if (!pedidosHost) return;
+    pedidosHost.querySelectorAll('[data-ped-sub]').forEach(function (c) { c.classList.toggle('ativo', c.getAttribute('data-ped-sub') === sub); });
+    pedidosHost.querySelector('#dashPedidosChips').classList.toggle('oculto', !!semChips);
+    var f = pedidosHost.querySelector('iframe');
+    if (pedidosPronto && f.contentWindow) f.contentWindow.postMessage({ vbAba: sub }, location.origin);
+    else pedidosSubPendente = sub;
+  }
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || !e.data || !e.data.vbPainel) return;
+    if (e.data.pronto) {
+      pedidosPronto = true;
+      if (pedidosSubPendente && pedidosHost) { var f = pedidosHost.querySelector('iframe'); if (f && f.contentWindow) f.contentWindow.postMessage({ vbAba: pedidosSubPendente }, location.origin); pedidosSubPendente = null; }
+    }
+    if (typeof e.data.novos === 'number') {
+      var selo = document.getElementById('dashSeloPedidos');
+      if (selo) { selo.textContent = e.data.novos; selo.classList.toggle('oculto', !e.data.novos); }
+      pedidosNovos = e.data.novos;
+    }
+  });
+  var pedidosNovos = 0;
 
   function abrirDashboard(estabId, nome, abaInicial) {
     dashEstabId = estabId;
@@ -682,11 +719,16 @@
     fecharMenuDash();
     dashboardOverlay.scrollTop = 0;
     dashboardOverlay.classList.remove('oculto');
-    if (meuNegocio) montarCuboAreas(estabId);
-    else carregarMeuNegocio().then(function () { if (dashEstabId === estabId) montarCuboAreas(estabId); });
-    // Caixa é a aba mais usada no dia a dia (registrar uma venda é rápido
-    // e constante) — abre direto nela, em vez do Resumo.
-    mostrarAbaDashboard(abaInicial || 'agenda');
+    var iniciar = function () {
+      if (dashEstabId !== estabId) return;
+      aplicarAbas(estabId);
+      prepararPedidos(estabId);
+      var padrao = temAgendaNeg() ? 'agenda' : 'pedidos';
+      var aba = abaInicial === 'caixa' || abaInicial === 'comunidade' || abaInicial === 'clientes' || abaInicial === 'resumo' || abaInicial === 'perfil' ? abaInicial
+        : abaInicial === 'pedidos' && temPedidosNeg() ? 'pedidos' : abaInicial === 'agenda' && temAgendaNeg() ? 'agenda' : padrao;
+      mostrarAbaDashboard(aba);
+    };
+    if (meuNegocio) iniciar(); else carregarMeuNegocio().then(iniciar);
   }
   function fecharMenuDash() {
     var m = document.getElementById('dashMenu'), b = document.getElementById('dashMenuBtn');
@@ -695,19 +737,26 @@
   }
   function fecharDashboard() {
     fecharMenuDash();
+    if (pedidosHost) { pedidosHost.remove(); pedidosHost = null; }
     dashboardOverlay.classList.add('oculto');
     dashEstabId = null;
   }
-  function mostrarAbaDashboard(aba) {
+  function mostrarAbaDashboard(aba, sub) {
     dashAbaAtual = aba;
+    var vb = document.getElementById('dashVoltar'); if (vb) { vb.classList.toggle('oculto', aba !== 'caixa' && aba !== 'comunidade'); vb.setAttribute('data-ir-aba', aba === 'caixa' ? 'resumo' : 'perfil'); }
+    // Meu site de quem só tem pedidos = a aba "Loja" do painel de pedidos
+    var noPedidos = aba === 'pedidos' || (aba === 'perfil' && !temAgendaNeg() && temPedidosNeg());
+    var marcada = aba === 'caixa' ? 'resumo' : aba === 'comunidade' ? 'perfil' : aba;
     document.querySelectorAll('#dashboardAbas [data-dash-aba]').forEach(function (b) {
-      b.classList.toggle('is-ativa', b.getAttribute('data-dash-aba') === aba);
+      b.classList.toggle('is-ativa', b.getAttribute('data-dash-aba') === marcada);
     });
-    // trocar o innerHTML por um skeleton na hora e substituir de novo
-    // assim que a RPC responde (quase instantâneo, sobretudo em rede boa)
-    // pisca a tela — dá a sensação de algo quebrando no clique. Em vez
-    // disso, mantém o conteúdo da aba anterior visível (só esmaecido)
-    // até o novo conteúdo estar pronto pra entrar de uma vez.
+    if (pedidosHost) pedidosHost.classList.toggle('oculto', !noPedidos);
+    dashboardCorpo.classList.toggle('oculto', noPedidos);
+    if (noPedidos) {
+      if (aba === 'perfil') irPedidosSub('loja', true); else irPedidosSub(sub || 'pedidos');
+      dashboardOverlay.scrollTop = 0;
+      return;
+    }
     dashboardCorpo.classList.add('dash-carregando');
     dashboardOverlay.scrollTop = 0;
     if (aba === 'resumo') renderizarDashResumo();
@@ -717,6 +766,8 @@
     else if (aba === 'comunidade') renderizarDashComunidade();
     else if (aba === 'perfil') renderizarDashPerfil();
   }
+  // atalhos das telas (Caixa, Promoções, Pedidos…) sem trocar de painel
+  function irPara(aba, sub) { if (dashEstabId) mostrarAbaDashboard(aba, sub); }
 
   function renderizarDashResumo() {
     var estabId = dashEstabId;
@@ -732,14 +783,17 @@
       dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
         '<p class="dash-secao-intro">Visão geral dos últimos 14 dias: quanto entrou, quantos agendamentos e quantos clientes já passaram por aqui.</p>' +
-        '<div class="dash-como"><strong>Como o dinheiro chega aqui</strong><ol>' +
+        '<div class="ca-atalhos"><button type="button" class="ca-atalho" data-ir-aba="caixa"><strong>Lançar venda</strong><small>Caixa: venda avulsa</small></button></div>' +
+        '<details class="dash-como"><summary>Como o dinheiro chega aqui?</summary><ol>' +
         '<li>Na <b>Agenda</b>, toque em <b>Concluir</b> quando o serviço for feito e informe o valor.</li>' +
-        '<li>Ou lance direto na aba <b>Caixa</b> (vendas avulsas, produtos).</li>' +
-        '<li>Pronto: o valor aparece nos cartões e no gráfico abaixo.</li></ol></div>' +
+        (temPedidosNeg() ? '<li>Pedido <b>Concluído</b> na aba de Pedidos entra sozinho.</li>' : '') +
+        '<li>Ou toque em <b>Lançar venda</b> aqui embaixo (vendas avulsas, produtos).</li>' +
+        '<li>Pronto: o valor aparece nos cartões e no gráfico.</li></ol></details>' +
         '<div class="dash-resumo-cards">' +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(r.total_hoje || 0) + '</span><span class="dash-resumo-label">Faturado hoje</span></div>' +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(r.total_periodo || 0) + '</span><span class="dash-resumo-label">Últimos 14 dias</span></div>' +
-        '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.agendamentos_periodo || 0) + '</span><span class="dash-resumo-label">Agendamentos (14 dias)</span></div>' +
+        (temAgendaNeg() ? '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.agendamentos_periodo || 0) + '</span><span class="dash-resumo-label">Agendamentos (14 dias)</span></div>' : '') +
+        (temPedidosNeg() ? '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.pedidos_periodo || 0) + '</span><span class="dash-resumo-label">Pedidos (14 dias)</span></div>' : '') +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.total_clientes || 0) + '</span><span class="dash-resumo-label">Clientes no total</span></div>' +
         '</div>' +
         '<p class="dash-resumo-subtitulo">Faturamento por dia</p>' +
@@ -755,8 +809,8 @@
             '</div>'
           : blocoVazio(ICONE_VAZIO_GRAFICO, 'Ainda sem vendas no período', (status.concluido > 0 ? 'Você tem ' + status.concluido + ' agendamento(s) concluído(s), mas sem valor lançado — por isso o faturamento está zerado. Dos próximos em diante, ao tocar em Concluir na Agenda, o app pergunta o valor e lança no Caixa sozinho. Pra os antigos, lance na aba Caixa.' : 'Quando você concluir um agendamento (informando o valor) ou lançar uma venda na aba Caixa, o faturamento de cada dia aparece aqui, em barras.'))
         ) +
-        '<p class="dash-resumo-subtitulo">Agendamentos por status</p>' +
-        (statusComMovimento.length
+        (!temAgendaNeg() ? '' : '<p class="dash-resumo-subtitulo">Agendamentos por status</p>') +
+        (!temAgendaNeg() ? '' : statusComMovimento.length
           ? '<div class="dash-status-resumo">' +
             statusComMovimento.map(function (k) {
               return '<span class="painel-status-badge ' + k + '">' + STATUS_LABEL[k] + ': ' + status[k] + '</span>';
@@ -784,6 +838,10 @@
       var semCadastroBase = !servicos.length || !equipe.length;
       dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
+        '<div class="ca-atalhos">' +
+        (temPedidosNeg() && pedidosNovos ? '<button type="button" class="ca-atalho destaque" data-ir-aba="pedidos"><strong>' + pedidosNovos + ' pedido(s) novo(s)</strong><small>Toque pra ver</small></button>' : '') +
+        '<button type="button" class="ca-atalho" data-ir-aba="caixa"><strong>Lançar venda</strong><small>Caixa: quanto entrou</small></button>' +
+        '</div>' +
         '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Próximos horários</p>' +
         (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashAgendaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar PDF</button>' : '') +
         '</div>' +
@@ -1156,6 +1214,11 @@
           areas: (meuNegocio && meuNegocio.id === estabId && meuNegocio.areas) || linha.areas || ['agenda']
         })
       });
+      var at = document.createElement('div');
+      at.className = 'ca-atalhos';
+      at.innerHTML = '<button type="button" class="ca-atalho" data-ir-aba="comunidade"><strong>Promoções</strong><small>e status do dia</small></button>' +
+        (temPedidosNeg() ? '<button type="button" class="ca-atalho" data-ir-aba="pedidos" data-ir-sub="loja"><strong>Cardápio e loja</strong><small>entrega, pagamento, horário</small></button>' : '');
+      dashboardCorpo.insertBefore(at, dashboardCorpo.firstChild);
     });
   }
 
@@ -1554,6 +1617,10 @@
   document.getElementById('dashMenuSair').addEventListener('click', function () { fecharMenuDash(); sairBtn.click(); });
   document.getElementById('dashMenuExcluir').addEventListener('click', function () { fecharMenuDash(); excluirConta(); });
   document.getElementById('dashMenuDigital').addEventListener('click', function () { fecharMenuDash(); ativarDigital(); });
+  document.getElementById('dashboardOverlay').addEventListener('click', function (e) {
+    var at = e.target.closest('[data-ir-aba]');
+    if (at && dashEstabId) irPara(at.getAttribute('data-ir-aba'), at.getAttribute('data-ir-sub'));
+  });
   document.getElementById('dashboardAbas').addEventListener('click', function (e) {
     var btn = e.target.closest('[data-dash-aba]');
     if (!btn) return;

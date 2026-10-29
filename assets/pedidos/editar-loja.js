@@ -383,7 +383,7 @@
   /* ---------- o editor único (assets/js/editor-matriz.js) ---------- */
   var editor = null;
   function redesenhar() { if (editor) editor.atualizar(); }
-  function concluir() { window.location.href = '/painel-area.html'; }
+  function concluir() { window.location.href = '/cadastro.html?aba=pedidos'; }
 
   // "Bom saber" do site: as respostas do dono sobre o negócio
   function desenharBomSaberLoja(respostas) {
@@ -406,7 +406,7 @@
     var barra = document.createElement('div');
     barra.id = 'vbDonoAtalho';
     barra.className = 'vb-dono-atalho';
-    barra.innerHTML = '<span>Este site é seu</span><a href="' + location.pathname + '?editar=1">Editar meu site</a><a href="/painel-area.html" class="vb-dono-atalho-painel">Painel</a>';
+    barra.innerHTML = '<span>Este site é seu</span><a href="' + location.pathname + '?editar=1">Editar meu site</a><a href="/cadastro.html" class="vb-dono-atalho-painel">Painel</a>';
     document.body.appendChild(barra);
   }
 

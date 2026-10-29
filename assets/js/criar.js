@@ -467,7 +467,7 @@
       if (window.VibeToggle) window.VibeToggle.marcarDirecao('avanca');
       var base = '/' + encodeURIComponent(estado.slug) + '/' + encodeURIComponent(cidadeDoLink());
       // Agenda: a criação continua no site real (tutorial guiado; a numeração segue)
-      window.location.href = tem('agenda') ? base + '?tutorial=1&desde=' + passos.length : '/painel-area.html?nova=1';
+      window.location.href = tem('agenda') ? base + '?tutorial=1&desde=' + passos.length : '/cadastro.html?aba=pedidos';
     }
     function falhou(err) {
       btn.disabled = false;
