@@ -92,6 +92,7 @@
     recarregar: recarregarDados,
     efeitoTitulo: function () { return efeitoTitulo; },
     definirEfeitoTitulo: definirEfeitoTitulo,
+    recarregarGaleria: function () { galeriaPedida = false; carregarGaleria(); },
     prever: prever
   };
 
@@ -263,7 +264,18 @@
       : estab.segmento === 'chaveiro' ? 'Ficou trancado? Chamar agora'
       : estab.segmento === 'guincho' ? 'Carro parado? Chamar agora' : 'Chamar agora';
   }
+  // galeria: as fotos que o dono sobe no editor, numa vitrine depois da lista
+  var galeriaPedida = false;
+  function carregarGaleria() {
+    if (galeriaPedida || MODO_DEMO || !window.VBGaleria || !$('tplGaleriaVitrine')) return;
+    galeriaPedida = true;
+    window.db.rpc('tenant_listar_galeria', { p_estabelecimento_id: ident.id || estab.id }).then(function (r) {
+      window.VBGaleria.montar($('tplGaleriaVitrine'), (r && r.data) || [], { titulo: 'Galeria' });
+    }, function () { galeriaPedida = false; });
+  }
+
   function renderizarLoja() {
+    carregarGaleria();
     var nome = ident.nome || estab.nome;
     document.title = nome + ' · ' + (SERVICO ? (URGENTE ? 'Chamar agora' : 'Pedir orçamento') : 'Fazer pedido');
     var meta = document.querySelector('meta[name="description"]');

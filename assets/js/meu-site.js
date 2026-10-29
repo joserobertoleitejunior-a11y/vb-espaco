@@ -176,6 +176,7 @@
       { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', feito: d.identidade ? !!ident.template : null },
       { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', feito: null },
       { id: 'itens', capitulo: 'oferta', titulo: S ? 'Serviços e preços' : 'Cardápio', feito: d.itens == null ? null : d.itens > 0 },
+      { id: 'galeria', capitulo: 'oferta', titulo: 'Galeria de fotos', feito: d.galeria == null ? null : d.galeria > 0 },
       { id: 'atendimento', capitulo: 'funciona', titulo: S ? 'Atendimento' : 'Entrega e retirada', feito: !!(e.aceita_entrega || e.aceita_retirada) },
       { id: 'pagamento', capitulo: 'funciona', titulo: 'Pagamento', feito: !!(e.formas_pagamento && e.formas_pagamento.length) },
       { id: 'horario', capitulo: 'funciona', titulo: 'Horário', feito: !!(h && Object.keys(h).length) },

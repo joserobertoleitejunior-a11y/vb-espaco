@@ -203,6 +203,43 @@
       rpc('delivery_admin_listar_itens', { p_estabelecimento_id: estab().id })
     ]).then(function (r) { categoriasAdmin = r[0] || []; itensAdmin = r[1] || []; });
   }
+  // galeria: as mesmas fotos do site da Agenda (tenant_gallery)
+  var galeriaQtd = null;
+  function passoGaleria(caixa) {
+    var id = ident().id || estab().id;
+    function desenhar() {
+      window.db.rpc('tenant_listar_galeria', { p_estabelecimento_id: id }).then(function (r) {
+        var fotos = (r && r.data) || [];
+        galeriaQtd = fotos.length;
+        caixa.innerHTML =
+          '<div class="vb-ed-grade">' + fotos.map(function (f) {
+            return '<div class="vb-ed-foto" style="position:relative"><img src="' + esc(f.foto_url) + '" alt="" loading="lazy">' +
+              '<button type="button" class="vb-remover-x" data-tirar="' + f.id + '" aria-label="Tirar foto">×</button></div>';
+          }).join('') +
+          '<label class="vb-ed-foto vb-ed-mais" style="display:grid;place-items:center;font-size:1.8rem;cursor:pointer">+<input type="file" id="vbEdGalUp" accept="image/*" multiple hidden></label></div>' +
+          '<p class="vb-ed-rotulo" style="margin-top:0.6rem">' + (fotos.length ? fotos.length + (fotos.length === 1 ? ' foto' : ' fotos') + ' no site' : 'Mande fotos do seu trabalho, do espaço, da equipe.') + '</p>';
+        caixa.querySelectorAll('[data-tirar]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            avisar('Tirando…');
+            window.db.rpc('tenant_admin_remover_foto', { p_estabelecimento_id: id, p_id: b.getAttribute('data-tirar') }).then(function () { avisar('Salvo ✓'); api.recarregarGaleria(); desenhar(); });
+          });
+        });
+        $('vbEdGalUp').addEventListener('change', function () {
+          var arquivos = Array.prototype.slice.call(this.files);
+          if (!arquivos.length) return;
+          avisar('Enviando ' + arquivos.length + (arquivos.length === 1 ? ' foto…' : ' fotos…'));
+          Promise.all(arquivos.map(function (a) {
+            return enviarFoto(a, 'galeria').then(function (url) {
+              return window.db.rpc('tenant_admin_adicionar_foto', { p_estabelecimento_id: id, p_foto_url: url, p_staff_id: null }).then(function (r) { if (r.error) throw r.error; });
+            });
+          })).then(function () { avisar('Salvo ✓'); api.recarregarGaleria(); desenhar(); }, function (e) { avisar((e && e.message) || 'Não deu pra enviar.', true); desenhar(); });
+        });
+      });
+    }
+    caixa.innerHTML = '<div class="skeleton" style="height:6rem;border-radius:12px"></div>';
+    desenhar();
+  }
+
   function passoItens(caixa) {
     var palavra = api.servico() ? 'serviço' : 'item';
     caixa.innerHTML = '<p class="vb-ed-rotulo">Carregando…</p>';
@@ -333,6 +370,7 @@
       { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', pergunta: 'Qual a cara do seu site?', ajuda: 'O visual inteiro — muda ao vivo aqui atrás.', completo: function () { return !!ident().template; }, render: passoEstilo },
       { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: o nome (ou a frase) se mexe — entrando, na horizontal, na vertical ou junto com a rolagem.', render: passoEfeito },
       { id: 'itens', capitulo: 'oferta', titulo: S ? 'Serviços e preços' : 'Cardápio', pergunta: S ? 'Que serviços você faz?' : 'O que tem no cardápio?', ajuda: S ? 'Com preço — ou "a combinar" pra quem prefere orçar.' : 'Pelo menos um item pra começar a receber pedidos.', completo: function () { var c = api.cardapio(); return !!(c && c.itens && c.itens.length); }, render: passoItens },
+      { id: 'galeria', capitulo: 'oferta', titulo: 'Galeria de fotos', pergunta: 'Mostre o seu trabalho', ajuda: 'Fotos de verdade passam confiança. Aparecem nos dois sites (Agendar e ' + (S ? 'Chamar' : 'Pedir') + ').', completo: function () { return galeriaQtd > 0; }, render: passoGaleria },
       { id: 'atendimento', capitulo: 'funciona', titulo: S ? 'Atendimento' : 'Entrega e retirada', pergunta: S ? (U2 ? 'Como você chega até o cliente?' : 'Onde você atende?') : 'Como o pedido chega no cliente?', ajuda: S ? 'Onde você atende, taxa e prazo.' : 'Entrega, retirada, taxa e tempo.', completo: function () { return !!(e().aceita_entrega || e().aceita_retirada); }, render: passoAtendimento },
       { id: 'pagamento', capitulo: 'funciona', titulo: 'Pagamento', pergunta: 'Como o cliente pode pagar?', completo: function () { return !!(e().formas_pagamento && e().formas_pagamento.length); }, render: passoPagamento },
       { id: 'horario', capitulo: 'funciona', titulo: 'Horário', pergunta: 'Que dias e horários você atende?', ajuda: 'Fora do horário o site mostra "Fechado".', completo: function () { var h = e().horarios; return !!(h && Object.keys(h).length); }, render: passoHorario },

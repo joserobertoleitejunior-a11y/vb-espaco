@@ -2152,6 +2152,18 @@
       if (!linhas.length && !edicaoNoSite) return;
 
       var grid = document.getElementById('tplGrid');
+      var vitrine = document.getElementById('tplGaleriaVitrine');
+      var rotulo = document.getElementById('tplGaleriaRotulo');
+      // quem visita vê a vitrine (fotos grandes, tela cheia); o dono editando, a grade com + e ×
+      var vendoVitrine = !edicaoNoSite && linhaAtual.segmento !== 'tatuador' && window.VBGaleria && vitrine;
+      grid.style.display = vendoVitrine ? 'none' : 'grid';
+      if (rotulo) rotulo.style.display = vendoVitrine ? 'none' : '';
+      if (vitrine) vitrine.classList.toggle('oculto', !vendoVitrine);
+      if (vendoVitrine) {
+        window.VBGaleria.montar(vitrine, linhas, { titulo: 'Galeria' });
+        document.getElementById('tplGaleriaSecao').classList.remove('oculto');
+        return;
+      }
       // tatuagem: a galeria vira portfólio, com filtro por estilo
       if (linhaAtual.segmento === 'tatuador' && !edicaoNoSite) { montarPortfolio(grid, linhas); return; }
       var fotosHtml = linhas.slice(0, 9).map(function (g) {
@@ -2200,8 +2212,14 @@
       return '<button type="button" class="portfolio-chip' + (i === 0 ? ' ativo' : '') + '" data-estilo="' + (i === 0 ? '' : escapeHtml(e)) + '">' + escapeHtml(e) + '</button>';
     }).join('') : '';
     function desenhar(estilo) {
-      grid.innerHTML = linhas.filter(function (g) { return !estilo || g.estilo === estilo; }).slice(0, 18).map(function (g) {
-        return '<figure class="portfolio-item"><img src="' + escapeHtml(g.foto_url) + '" alt="' + escapeHtml(g.estilo || 'Tatuagem') + '" loading="lazy">' +
+      var vistas = linhas.filter(function (g) { return !estilo || g.estilo === estilo; }).slice(0, 18);
+      // tocar numa tatuagem abre em tela cheia, passando só pelas do filtro
+      grid.onclick = function (e) {
+        var f = e.target.closest('[data-i]');
+        if (f && window.VBGaleria) window.VBGaleria.telaCheia(vistas, Number(f.getAttribute('data-i')));
+      };
+      grid.innerHTML = vistas.map(function (g, i) {
+        return '<figure class="portfolio-item" data-i="' + i + '" style="cursor:zoom-in"><img src="' + escapeHtml(g.foto_url) + '" alt="' + escapeHtml(g.estilo || 'Tatuagem') + '" loading="lazy">' +
           (g.estilo ? '<figcaption>' + escapeHtml(g.estilo) + '</figcaption>' : '') + '</figure>';
       }).join('');
     }
