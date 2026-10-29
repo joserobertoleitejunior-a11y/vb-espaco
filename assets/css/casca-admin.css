@@ -97,3 +97,8 @@
   .ca-marca span { flex: 0 0 auto; }
   .ca-menu { top: 56px; }
 }
+
+/* Resumo: caixinha que explica de onde vem o dinheiro */
+.dash-como { margin: 0 0 1rem; padding: 0.8rem 1rem; border-radius: 14px; background: rgba(201, 162, 39, 0.1); border: 1px solid rgba(201, 162, 39, 0.3); font-size: 0.85rem; line-height: 1.45; }
+.dash-como strong { display: block; margin-bottom: 0.3rem; }
+.dash-como ol { margin: 0; padding-left: 1.2rem; }

@@ -732,6 +732,10 @@
       dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
         '<p class="dash-secao-intro">Visão geral dos últimos 14 dias: quanto entrou, quantos agendamentos e quantos clientes já passaram por aqui.</p>' +
+        '<div class="dash-como"><strong>Como o dinheiro chega aqui</strong><ol>' +
+        '<li>Na <b>Agenda</b>, toque em <b>Concluir</b> quando o serviço for feito e informe o valor.</li>' +
+        '<li>Ou lance direto na aba <b>Caixa</b> (vendas avulsas, produtos).</li>' +
+        '<li>Pronto: o valor aparece nos cartões e no gráfico abaixo.</li></ol></div>' +
         '<div class="dash-resumo-cards">' +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(r.total_hoje || 0) + '</span><span class="dash-resumo-label">Faturado hoje</span></div>' +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(r.total_periodo || 0) + '</span><span class="dash-resumo-label">Últimos 14 dias</span></div>' +
@@ -749,7 +753,7 @@
                 '</div>';
             }).join('') +
             '</div>'
-          : blocoVazio(ICONE_VAZIO_GRAFICO, 'Ainda sem vendas no período', 'Assim que você registrar uma venda na aba Caixa (ou um cliente concluir um serviço), o faturamento de cada dia aparece aqui, em barras.')
+          : blocoVazio(ICONE_VAZIO_GRAFICO, 'Ainda sem vendas no período', (status.concluido > 0 ? 'Você tem ' + status.concluido + ' agendamento(s) concluído(s), mas sem valor lançado — por isso o faturamento está zerado. Dos próximos em diante, ao tocar em Concluir na Agenda, o app pergunta o valor e lança no Caixa sozinho. Pra os antigos, lance na aba Caixa.' : 'Quando você concluir um agendamento (informando o valor) ou lançar uma venda na aba Caixa, o faturamento de cada dia aparece aqui, em barras.'))
         ) +
         '<p class="dash-resumo-subtitulo">Agendamentos por status</p>' +
         (statusComMovimento.length
@@ -869,9 +873,29 @@
       document.getElementById('dashAgendaLista').addEventListener('click', function (e) {
         var btn = e.target.closest('[data-status-agendamento-id]');
         if (!btn) return;
-        btn.disabled = true;
         var novoStatus = btn.getAttribute('data-status-novo');
-        chamarComFila('tenant_admin_atualizar_agendamento', {
+        var agId = btn.getAttribute('data-status-agendamento-id');
+        // concluir = o serviço foi feito: pergunta quanto foi e já lança no caixa, que alimenta o Resumo
+        var antes = Promise.resolve(null);
+        if (novoStatus === 'concluido') {
+          var ag = linhas.filter(function (x) { return String(x.id) === agId; })[0] || {};
+          var sv = servicos.filter(function (x) { return x.nome === ag.servico; })[0];
+          antes = window.VBDialogo.prompt('Serviço concluído! Quanto foi pago por "' + (ag.servico || 'este serviço') + '"? (R$)\nEsse valor entra no Caixa e no Resumo. Deixe 0 se não quiser lançar.', sv ? String(sv.preco).replace('.', ',') : '').then(function (txt) {
+            if (txt === null || txt === undefined) return 'cancelou';
+            var v = parseFloat(String(txt).replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.'));
+            if (!(v > 0)) return null;
+            return chamarVendaComFila({
+              p_estabelecimento_id: estabId, p_staff_id: ag.staff_id || null, p_staff_nome: ag.staff_nome || null,
+              p_cliente_nome: ag.cliente_nome || null, p_cliente_telefone: ag.cliente_telefone || null,
+              p_descricao: ag.servico || 'Serviço', p_valor: Math.round(v * 100) / 100,
+              p_forma_pagamento: FORMAS_PAGAMENTO[0].chave, p_servico_id: sv ? sv.id : null
+            });
+          });
+        }
+        antes.then(function (r) {
+          if (r === 'cancelou') return;
+          btn.disabled = true;
+          return chamarComFila('tenant_admin_atualizar_agendamento', {
           p_estabelecimento_id: estabId,
           p_id: btn.getAttribute('data-status-agendamento-id'),
           p_status: novoStatus
@@ -881,6 +905,7 @@
           if (resultado.offline && window.VBDialogo) {
             window.VBDialogo.alert('Sem internet agora — a mudança foi salva neste aparelho e sobe sozinha assim que a conexão voltar.');
           }
+        });
         });
       });
 
