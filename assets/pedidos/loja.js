@@ -40,7 +40,9 @@
   var AREA = 'delivery';
   var CART_KEY = null;
   var efeitoTitulo = {}, efeitoCarregado = false;
-  function definirEfeitoTitulo(cfg) { efeitoTitulo = cfg || {}; if (window.VBTituloEfeitos && $('tplHeadline')) window.VBTituloEfeitos.aplicar($('tplHeadline'), efeitoTitulo); }
+  // topo: nome do negócio (título grande), frase e foco da foto
+  function alvosTopo() { return { nome: $('tplNomeHero'), frase: $('tplHeadline'), foto: $('tplHeroFoto') }; }
+  function definirEfeitoTitulo(cfg) { efeitoTitulo = cfg || {}; if (window.VBTituloEfeitos && $('tplHeadline')) window.VBTituloEfeitos.aplicarTopo(alvosTopo(), efeitoTitulo); }
   var PEDIDOS_KEY = 'vbdelivery_meus_pedidos';
   var CLIENTE_KEY = 'vbdelivery_cliente';
 
@@ -274,12 +276,12 @@
     var tx = textoHero();
     // título com o efeito escolhido pelo dono (movimento/letra/estilo)
     if (window.VBTituloEfeitos) {
-      window.VBTituloEfeitos.aplicar($('tplHeadline'), efeitoTitulo, tx.titulo);
+      window.VBTituloEfeitos.aplicarTopo(alvosTopo(), efeitoTitulo, { nome: nome, frase: tx.titulo });
       if (!efeitoCarregado && !MODO_DEMO) {
         efeitoCarregado = true;
-        window.VBTituloEfeitos.carregar(estab.id).then(function (cfg) { efeitoTitulo = cfg || {}; window.VBTituloEfeitos.aplicar($('tplHeadline'), efeitoTitulo); });
+        window.VBTituloEfeitos.carregar(estab.id).then(function (cfg) { efeitoTitulo = cfg || {}; window.VBTituloEfeitos.aplicarTopo(alvosTopo(), efeitoTitulo); });
       }
-    } else $('tplHeadline').textContent = tx.titulo;
+    } else { $('tplHeadline').textContent = tx.titulo; if ($('tplNomeHero')) $('tplNomeHero').textContent = nome; }
     $('tplSubcopy').textContent = tx.sub;
     $('tplCtaTexto').textContent = textoCta();
     var foto = $('tplHeroFoto');

@@ -572,6 +572,7 @@
     }
     linhaAtual.nome = nome;
     document.getElementById('tplNomeRodape').textContent = nome;
+    aplicarEfeitoTitulo(null, nome);
     db.rpc('tenant_admin_atualizar_nome', { p_estabelecimento_id: estabId, p_nome: nome });
   }
 
@@ -1055,7 +1056,7 @@
   function renderPassoEdicaoTextos(container) {
     var campos = [
       ['tplNomeTopo', 'Nome do negócio', linhaAtual.nome, salvarNome],
-      ['tplHeadline', 'Frase grande do topo', textoDoTitulo(), salvarTextoHero],
+      ['tplHeadline', 'Frase embaixo do nome', textoDoTitulo(), salvarTextoHero],
       ['tplSubcopy', 'Frase pequena embaixo', document.getElementById('tplSubcopy').textContent, salvarTextoHero],
       ['tplCtaTexto', 'Texto do botão de agendar', linhaAtual.texto_cta || document.getElementById('tplCtaTexto').textContent, salvarCta]
     ];
@@ -1069,7 +1070,9 @@
       var input = document.getElementById('vbEdTexto' + i);
       // escreve no site ao vivo e salva quando sai do campo
       input.addEventListener('input', function () {
-        if (c[0] === 'tplHeadline') aplicarEfeitoTitulo(input.value); else document.getElementById(c[0]).textContent = input.value;
+        if (c[0] === 'tplHeadline') aplicarEfeitoTitulo(input.value);
+        else if (c[0] === 'tplNomeTopo') { document.getElementById(c[0]).textContent = input.value; aplicarEfeitoTitulo(null, input.value); }
+        else document.getElementById(c[0]).textContent = input.value;
       });
       input.addEventListener('change', function () {
         c[3]();
@@ -1121,7 +1124,7 @@
       { id: 'foto', capitulo: 'impressao', titulo: 'Foto principal', pergunta: 'Qual foto mostra melhor o seu negócio?', ajuda: 'É a primeira coisa que o cliente vê. Mande do celular ou toque numa pronta.', completo: function () { return !!fotoPrincipal(); }, render: renderPassoTutorialFoto },
       { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frases', pergunta: 'Como você quer se apresentar?', ajuda: 'O nome e as frases do topo. Muda ao vivo aqui atrás.', completo: function () { return !!(linhaAtual.titulo_hero || '').trim(); }, render: renderPassoEdicaoTextos },
       { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', pergunta: 'Qual a cara do seu site?', ajuda: 'O visual inteiro — vale pra Agendar, Pedir e Chamar.', completo: function () { return !!linhaAtual.template; }, render: renderPassoEdicaoEstilo },
-      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: a frase grande se mexe, troca de letra ou ganha brilho.', render: renderPassoEdicaoTituloEfeito },
+      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: o nome (ou a frase) se mexe — entrando, na horizontal, na vertical ou junto com a rolagem.', render: renderPassoEdicaoTituloEfeito },
       { id: 'servicos', capitulo: 'oferta', titulo: tattoo ? 'Sessões e preços' : 'Serviços e preços', pergunta: tattoo ? 'Que sessões o cliente pode marcar?' : 'O que o cliente pode agendar?', ajuda: 'Com preço e quanto tempo leva — a agenda reserva o tempo todo.', completo: function () { return servicosCache.length > 0; }, render: renderPassoTutorialServicos },
       { id: 'equipe', capitulo: 'oferta', titulo: 'Quem atende', pergunta: 'Quem atende os clientes?', ajuda: 'O cliente escolhe na hora de agendar.', completo: function () { return equipeCache.length > 0; }, render: renderPassoTutorialEquipe },
       { id: 'galeria', capitulo: 'oferta', titulo: tattoo ? 'Portfólio' : 'Galeria de fotos', pergunta: tattoo ? 'Mostre os seus trabalhos' : 'Mostre o seu espaço e os seus trabalhos', ajuda: tattoo ? 'Marque o estilo de cada foto: no site vira filtro.' : 'Fotos de verdade passam confiança.', completo: function () { return galeriaQtd > 0; }, render: renderPassoTutorialGaleria },
@@ -1151,7 +1154,7 @@
     var fotoAtual = fotoPrincipal();
     var estoque = window.estoqueFotosPara ? window.estoqueFotosPara(linhaAtual.segmento) : ESTOQUE_FOTOS_ADMIN;
     container.innerHTML =
-      (fotoAtual ? '<div style="width:100%; aspect-ratio:16/9; border-radius:12px; background-size:cover; background-position:center; margin-bottom:0.7rem; background-image:url(\'' + fotoAtual + '\')"></div>' : '') +
+      (fotoAtual ? '<div id="vbTutFoco" style="margin-bottom:0.7rem;"></div>' : '') +
       '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.7rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto do celular<input type="file" id="vbTutFotoUpload" accept="image/*"></label>' +
       '<p class="vb-servico-novo-legenda">ou toque numa foto pronta:</p>' +
       '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem;">' +
@@ -1162,6 +1165,7 @@
       '</div>' +
       '<p class="msg" id="vbTutFotoMsg" style="margin-top:0.5rem;"></p>' +
       renderBlocoFotoPerfil();
+    montarFocoFoto(document.getElementById('vbTutFoco'));
 
     function renderBlocoFotoPerfil() {
       var fotoPerfil = linhaAtual.foto_perfil_url || fotoAtual;
@@ -1594,15 +1598,24 @@
     var el = document.getElementById('tplHeadline');
     return el.getAttribute('data-te-texto') != null ? el.getAttribute('data-te-texto') : el.textContent;
   }
-  function aplicarEfeitoTitulo(texto) {
-    var el = document.getElementById('tplHeadline');
-    if (!window.VBTituloEfeitos) { if (texto != null) el.textContent = texto; return; }
-    window.VBTituloEfeitos.aplicar(el, efeitoTitulo, texto);
+  // o topo inteiro: nome do negócio (título grande), frase e foco da foto
+  function alvosTopo() {
+    return { nome: document.getElementById('tplNomeHero'), frase: document.getElementById('tplHeadline'), foto: document.getElementById('tplHeroFoto') };
+  }
+  function aplicarEfeitoTitulo(texto, nome) {
+    var alvos = alvosTopo();
+    if (nome == null && linhaAtual && alvos.nome && alvos.nome.getAttribute('data-te-texto') == null) nome = linhaAtual.nome;
+    if (!window.VBTituloEfeitos) {
+      if (texto != null) alvos.frase.textContent = texto;
+      if (nome != null && alvos.nome) alvos.nome.textContent = nome;
+      return;
+    }
+    window.VBTituloEfeitos.aplicarTopo(alvos, efeitoTitulo, { frase: texto, nome: nome });
     if (!efeitoCarregado && estabId) {
       efeitoCarregado = true;
       window.VBTituloEfeitos.carregar(estabId).then(function (cfg) {
         efeitoTitulo = cfg || {};
-        window.VBTituloEfeitos.aplicar(el, efeitoTitulo);
+        window.VBTituloEfeitos.aplicarTopo(alvosTopo(), efeitoTitulo);
       });
     }
   }
@@ -1614,9 +1627,22 @@
       acao: { tipo: 'agendar', rotulo: 'Agendar horário', aoTocar: function () { if (window.VBAgenda) window.VBAgenda.abrir(); } }
     });
   }
+  // enquadrar a foto do topo: o ponto escolhido fica no centro do corte
+  var salvarFocoDepois = 0;
+  function montarFocoFoto(caixa) {
+    if (!caixa || !window.VBTituloEfeitos) return;
+    window.VBTituloEfeitos.montarFoco(caixa, fotoPrincipal(), efeitoTitulo, function (cfg) {
+      efeitoTitulo = cfg;
+      window.VBTituloEfeitos.aplicarFoco(document.getElementById('tplHeroFoto'), cfg.foco);
+      clearTimeout(salvarFocoDepois);
+      salvarFocoDepois = setTimeout(function () {
+        window.VBTituloEfeitos.salvar(estabId, efeitoTitulo).catch(function () {});
+      }, 400);
+    });
+  }
   function renderPassoEdicaoTituloEfeito(container) {
     // o título fica embaixo da foto no celular: traz ele pro topo da tela, acima da bolha
-    var tituloVivo = document.getElementById('tplHeadline');
+    var tituloVivo = document.getElementById('tplNomeHero') || document.getElementById('tplHeadline');
     if (tituloVivo) window.scrollTo({ top: Math.max(0, tituloVivo.getBoundingClientRect().top + window.scrollY - 70), behavior: 'smooth' });
     var demo = document.createElement('div');
     container.appendChild(demo);

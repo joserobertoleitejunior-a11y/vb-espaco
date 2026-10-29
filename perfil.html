@@ -33,7 +33,8 @@
   body { transition: background-color 0.25s ease; }
 </style>
 <link rel="stylesheet" href="/assets/css/passo-site.css?v=3">
-<link rel="stylesheet" href="/assets/css/titulo-efeitos.css?v=2">
+<link rel="stylesheet" href="/assets/css/titulo-efeitos.css?v=4">
+<link rel="stylesheet" href="/assets/css/hero-matriz.css?v=1">
 <link rel="stylesheet" href="/assets/css/faixa-contatos.css?v=1">
 <link rel="stylesheet" href="/assets/css/botoes.css?v=3">
 <link rel="stylesheet" href="/assets/css/editor-matriz.css?v=3">
@@ -110,7 +111,8 @@
         <div class="hero-split-copy">
           <p class="cliente-saudacao oculto" id="clienteSaudacao"></p>
           <p class="eyebrow" id="tplEyebrow"></p>
-          <h1 id="tplHeadline" data-vb-editavel="titulo"></h1>
+          <h1 class="hero-nome" id="tplNomeHero"></h1>
+          <p class="hero-frase display" id="tplHeadline" data-vb-editavel="titulo"></p>
           <p id="tplSubcopy" data-vb-editavel="subtitulo"></p>
           <div class="hero-cta">
             <button class="btn" type="button" data-open-widget><span id="tplCtaTexto" data-vb-editavel="cta">Agendar horário</span> →</button>
@@ -388,11 +390,11 @@
   <script src="/assets/js/passo-site.js?v=1"></script>
   <script src="/assets/js/avaliacoes-site.js?v=1"></script>
   <script src="/assets/js/segmentos.js?v=4"></script>
-  <script src="/assets/js/titulo-efeitos.js?v=1"></script>
+  <script src="/assets/js/titulo-efeitos.js?v=3"></script>
   <script src="/assets/js/faixa-contatos.js?v=2"></script>
   <script src="/assets/js/perguntas-segmento.js?v=1"></script>
   <script src="/assets/js/editor-matriz.js?v=1"></script>
-  <script src="/assets/js/perfil.js?v=72"></script>
+  <script src="/assets/js/perfil.js?v=73"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {

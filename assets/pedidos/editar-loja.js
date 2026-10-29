@@ -73,11 +73,22 @@
     var atual = ident().foto_hero_url || estab().foto_capa_url;
     var fotos = window.estoqueFotosPara ? window.estoqueFotosPara(estab().segmento) : [];
     caixa.innerHTML =
+      (atual ? '<div id="vbEdFoco" style="margin-bottom:0.7rem;"></div>' : '') +
       '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.7rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto do celular<input type="file" id="vbEdFotoUp" accept="image/*"></label>' +
       '<p class="vb-ed-rotulo">ou toque numa foto pronta:</p>' +
       '<div class="vb-ed-grade">' + fotos.map(function (f) {
         return '<button type="button" class="vb-ed-foto' + (f.url === atual ? ' ativo' : '') + '" data-foto="' + esc(f.url) + '" title="' + esc(f.legenda) + '"><img src="' + esc(f.url) + '" alt="" loading="lazy"></button>';
       }).join('') + '</div>';
+    // enquadrar: o ponto tocado fica no centro do corte da foto do topo
+    var focoDepois = 0;
+    if (atual && window.VBTituloEfeitos) window.VBTituloEfeitos.montarFoco($('vbEdFoco'), atual, api.efeitoTitulo(), function (cfg) {
+      api.definirEfeitoTitulo(cfg);
+      clearTimeout(focoDepois);
+      focoDepois = setTimeout(function () {
+        avisar('Salvando…');
+        window.VBTituloEfeitos.salvar(estab().id, cfg).then(function () { avisar('Salvo ✓'); }, function (e) { avisar((e && e.message) || 'Não deu pra salvar.', true); });
+      }, 400);
+    });
     function usar(url) {
       return salvarIdent('tenant_admin_atualizar_hero', { p_foto_hero_url: url, p_foto_hero_feminino_url: ident().foto_hero_feminino_url || null })
         .then(function () { redesenhar(); });
@@ -142,7 +153,7 @@
 
   function passoEfeito(caixa) {
     // o título fica embaixo da foto no celular: traz ele pro topo da tela, acima da bolha
-    var tituloVivo = document.getElementById('tplHeadline');
+    var tituloVivo = document.getElementById('tplNomeHero') || document.getElementById('tplHeadline');
     if (tituloVivo) window.scrollTo({ top: Math.max(0, tituloVivo.getBoundingClientRect().top + window.scrollY - 70), behavior: 'smooth' });
     var bloco = document.createElement('div');
     caixa.appendChild(bloco);
@@ -320,7 +331,7 @@
       { id: 'logo', capitulo: 'impressao', titulo: 'Logo', pergunta: 'Tem uma logo?', ajuda: 'Aparece redondinha ao lado do nome. Sem logo, fica a inicial.', completo: function () { return !!e().foto_perfil_url; }, render: passoLogo },
       { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frases', pergunta: 'Como você quer se apresentar?', ajuda: 'Salva quando você sai do campo.', completo: function () { return !!(e().descricao || '').trim(); }, render: passoTextos },
       { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', pergunta: 'Qual a cara do seu site?', ajuda: 'O visual inteiro — muda ao vivo aqui atrás.', completo: function () { return !!ident().template; }, render: passoEstilo },
-      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: a frase grande se mexe, troca de letra ou ganha brilho.', render: passoEfeito },
+      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: o nome (ou a frase) se mexe — entrando, na horizontal, na vertical ou junto com a rolagem.', render: passoEfeito },
       { id: 'itens', capitulo: 'oferta', titulo: S ? 'Serviços e preços' : 'Cardápio', pergunta: S ? 'Que serviços você faz?' : 'O que tem no cardápio?', ajuda: S ? 'Com preço — ou "a combinar" pra quem prefere orçar.' : 'Pelo menos um item pra começar a receber pedidos.', completo: function () { var c = api.cardapio(); return !!(c && c.itens && c.itens.length); }, render: passoItens },
       { id: 'atendimento', capitulo: 'funciona', titulo: S ? 'Atendimento' : 'Entrega e retirada', pergunta: S ? (U2 ? 'Como você chega até o cliente?' : 'Onde você atende?') : 'Como o pedido chega no cliente?', ajuda: S ? 'Onde você atende, taxa e prazo.' : 'Entrega, retirada, taxa e tempo.', completo: function () { return !!(e().aceita_entrega || e().aceita_retirada); }, render: passoAtendimento },
       { id: 'pagamento', capitulo: 'funciona', titulo: 'Pagamento', pergunta: 'Como o cliente pode pagar?', completo: function () { return !!(e().formas_pagamento && e().formas_pagamento.length); }, render: passoPagamento },

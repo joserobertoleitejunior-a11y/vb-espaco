@@ -34,6 +34,64 @@
 .te-m-girar .te-trilho > span { display: block; }
 @keyframes teGirar { 0%, 40% { transform: translateY(0); } 50%, 90% { transform: translateY(-50%); } 100% { transform: translateY(-50%); } }
 
+/* faixa no sentido contrário (→) */
+.te-m-faixa-direita, .te-m-rolar-h, .te-m-dupla .te-linha { display: block; overflow: hidden; white-space: nowrap; max-width: 100%; -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.te-m-faixa-direita .te-trilho, .te-m-rolar-h .te-trilho, .te-m-dupla .te-trilho { display: inline-flex; flex-wrap: nowrap; width: max-content; }
+.te-m-faixa-direita .te-trilho > span, .te-m-rolar-h .te-trilho > span, .te-m-dupla .te-trilho > span { flex: 0 0 auto; white-space: nowrap; padding-right: 1.2em; }
+.te-m-faixa-direita .te-trilho { animation: teFaixa 12s linear infinite reverse; }
+
+/* faixa dupla: duas linhas em sentidos opostos; a de baixo só no contorno */
+.te-m-dupla { display: block; }
+.te-m-dupla .te-linha .te-trilho { animation: teFaixa 14s linear infinite; }
+.te-m-dupla .te-linha-2 { margin-top: -0.08em; opacity: 0.85; }
+.te-m-dupla .te-linha-2 .te-trilho { animation-direction: reverse; animation-duration: 17s; -webkit-text-stroke: 1.2px currentColor; -webkit-text-fill-color: transparent; }
+
+/* vai e volta: o título desliza até a outra ponta e volta (distância medida no JS) */
+.te-m-vaivem { display: block; overflow: hidden; white-space: nowrap; max-width: 100%; }
+.te-m-vaivem .te-vai { display: inline-block; animation: teVaivem 4.5s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate; }
+@keyframes teVaivem { 0%, 35% { transform: translateX(0); } 100% { transform: translateX(var(--te-dist, 0px)); } }
+
+/* desliza ao rolar: a página desce, o título anda pro lado (--te-p vem do JS) */
+.te-m-rolar-h .te-trilho { transform: translateX(calc(var(--te-p, 0) * -50%)); transition: transform 0.12s linear; will-change: transform; }
+
+/* roleta: cada letra gira como caça-níquel, uma atrás da outra */
+.te-m-roleta .te-l { vertical-align: top; }
+.te-m-roleta .te-slot { display: inline-flex; flex-direction: column; height: 1.12em; overflow: hidden; line-height: 1.12; vertical-align: top; }
+.te-m-roleta .te-slot > span { display: block; height: 1.12em; animation: teRoleta 4.2s cubic-bezier(0.7, 0, 0.3, 1) infinite; animation-delay: calc(var(--i) * 0.05s); }
+@keyframes teRoleta { 0%, 55% { transform: translateY(0); } 75%, 100% { transform: translateY(-100%); } }
+
+/* cascata: as letras caem de cima, quicam e somem por baixo, em loop */
+.te-m-cascata .te-l { animation: teCascata 5.5s cubic-bezier(0.3, 0.7, 0.4, 1) infinite both; animation-delay: calc(var(--i) * 0.045s); }
+@keyframes teCascata {
+  0% { transform: translateY(-0.9em); opacity: 0; }
+  12% { transform: translateY(0); opacity: 1; }
+  16% { transform: translateY(-0.1em); }
+  20%, 82% { transform: translateY(0); opacity: 1; }
+  96%, 100% { transform: translateY(0.7em); opacity: 0; }
+}
+
+/* espalha ao rolar: cada letra sobe e gira um pouco diferente conforme rola */
+.te-m-rolar-v .te-l {
+  transform: translateY(calc(var(--te-p, 0) * var(--te-d, 0.5) * -2.4em)) rotate(calc(var(--te-p, 0) * var(--te-r, 0) * 3deg));
+  opacity: calc(1 - var(--te-p, 0) * 0.7);
+  transition: transform 0.12s linear, opacity 0.12s linear; will-change: transform;
+}
+
+/* nenhum efeito pode alargar a coluna do texto (a foto sumia no computador) */
+.te { min-width: 0; }
+
+/* foco da foto (editor) */
+.te-foco-ajuda { margin: -0.2rem 0 0.5rem; font-size: 0.8rem; line-height: 1.4; color: #6b6d75; }
+.te-foco { display: flex; justify-content: center; border-radius: 12px; margin-bottom: 0.5rem; background: #eee; }
+.te-foco-quadro { position: relative; line-height: 0; cursor: crosshair; }
+.te-foco img { display: block; max-width: 100%; max-height: 240px; width: auto; height: auto; }
+.te-foco-ponto {
+  position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%;
+  border: 3px solid #fff; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.35);
+  pointer-events: none; transition: left 0.2s, top 0.2s;
+}
+.te-foco-ponto::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: #fff; }
+
 /* ---- letra ---- */
 .te-f-classica { font-family: 'Fraunces', Georgia, serif !important; font-weight: 700 !important; letter-spacing: -0.01em; }
 .te-f-elegante { font-family: 'Cormorant Garamond', Georgia, serif !important; font-weight: 600 !important; font-style: italic; }
@@ -54,6 +112,8 @@
 .te-opcao.ativo { background: var(--terracotta, var(--accent, #0F6B5C)); border-color: transparent; color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
-  .te-m-onda .te-l, .te-m-brilho, .te-m-pulsar, .te-m-faixa .te-trilho, .te-m-girar .te-trilho, .te-m-digitar::after { animation: none !important; }
+  .te-m-onda .te-l, .te-m-brilho, .te-m-pulsar, .te-m-faixa .te-trilho, .te-m-girar .te-trilho, .te-m-digitar::after,
+  .te-m-faixa-direita .te-trilho, .te-m-dupla .te-trilho, .te-m-vaivem .te-vai, .te-m-roleta .te-slot > span, .te-m-cascata .te-l { animation: none !important; }
+  .te-m-rolar-h .te-trilho, .te-m-rolar-v .te-l { transform: none !important; opacity: 1 !important; }
   .te-m-surgir .te-p, .te-m-digitar .te-l { animation-duration: 0.01s !important; animation-delay: 0s !important; }
 }

@@ -1,0 +1,62 @@
+/* Topo do site (Agendar, Pedir e Chamar), por cima de qualquer estilo.
+   Os estilos (tpl-*) dão cor, letra e moldura; aqui fica o encaixe:
+   - o nome do negócio é o título grande (.hero-nome) e recebe o efeito;
+     a frase (#tplHeadline) vira a linha de apoio logo abaixo;
+   - no celular a foto não toma a tela inteira: nome, frase e botão já
+     aparecem sem rolar;
+   - no computador nenhum efeito alarga a coluna do texto (antes a faixa
+     correndo empurrava a foto pra fora e só sobrava o fundo desfocado);
+   - a foto corta em volta do ponto de foco que o dono escolheu
+     (titulo-efeitos.js → aplicarFoco, inline). */
+
+.hero-split > * { min-width: 0; }
+.hero-split .hero-split-copy { min-width: 0; max-width: 100%; }
+
+.hero-split .hero-nome {
+  margin: 0.55rem 0 0;
+  font-size: clamp(2.3rem, 5.4vw, 4.4rem);
+  line-height: 1.02;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.hero-split .hero-split-copy .hero-frase {
+  margin: 0.75rem 0 0;
+  max-width: 30ch;
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.hero-split .hero-split-copy #tplSubcopy { margin-top: 0.7rem; }
+.hero-split .hero-cta { margin-top: 1.6rem; }
+/* efeitos de linha única (faixas, vai e volta) ocupam a coluna toda */
+.hero-split .hero-split-copy .te-m-faixa,
+.hero-split .hero-split-copy .te-m-faixa-direita,
+.hero-split .hero-split-copy .te-m-dupla,
+.hero-split .hero-split-copy .te-m-rolar-h,
+.hero-split .hero-split-copy .te-m-vaivem { max-width: none; width: 100%; }
+
+/* ---------- computador: duas colunas da mesma altura, sem sobra ---------- */
+@media (min-width: 901px) {
+  .hero-split {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    min-height: min(100svh, 860px);
+  }
+  .hero-split .hero-split-copy { padding: 6rem 3.5vw 3.5rem 6vw; }
+  .hero-split .hero-split-photo { min-height: 420px; background-size: cover; }
+}
+
+/* ---------- celular: foto na medida, texto já na primeira tela ---------- */
+@media (max-width: 900px) {
+  .hero-split .hero-split-photo {
+    min-height: 0;
+    height: clamp(260px, 50svh, 460px);
+    background-position: 50% 40%;
+  }
+  .hero-split .hero-split-copy { padding: 0.9rem 6vw 2rem; }
+  .hero-split .hero-nome { font-size: clamp(2.1rem, 10vw, 3.2rem); }
+  .hero-split .hero-split-copy .hero-frase { font-size: 1.12rem; }
+  .hero-split .hero-split-copy #tplSubcopy { font-size: 0.95rem; }
+  .hero-split .hero-cta { margin-top: 1.2rem; }
+}
