@@ -28,15 +28,25 @@
   }
 
   var linhas = [];
+  // "Tenho um negócio" / "Meu painel": chama pra criar o site, passando por
+  // todos os tipos de negócio do app (das três áreas, sem repetir)
+  var TODOS = [];
+  ['agenda', 'delivery', 'servicos'].forEach(function (a) {
+    (global.VibeSegmentos.POR_AREA[a] || []).forEach(function (k) { if (k !== 'outro' && TODOS.indexOf(k) === -1) TODOS.push(k); });
+  });
   document.querySelectorAll('.sp-op[data-area]').forEach(function (op) {
     var area = op.getAttribute('data-area');
-    var lista = (global.VibeSegmentos.POR_AREA[area] || []).filter(function (k) { return k !== 'outro'; })
-      .map(function (k) { return global.VibeSegmentos.nome(k); });
+    var negocio = area === 'negocio';
+    var chaves = negocio ? TODOS : (global.VibeSegmentos.POR_AREA[area] || []).filter(function (k) { return k !== 'outro'; });
+    var lista = chaves.map(function (k) { return global.VibeSegmentos.nome(k); });
     var small = op.querySelector('.sp-txt small');
     if (!small || lista.length < 2) return;
+    small.removeAttribute('data-aviso-gratis');
     small.classList.add('sp-cod');
-    small.setAttribute('aria-label', small.textContent);
-    small.innerHTML = '<span class="sp-cod-sinal" aria-hidden="true">&gt;</span><span class="sp-cod-txt" aria-hidden="true"></span><span class="sp-cod-cursor" aria-hidden="true"></span>';
+    small.setAttribute('aria-label', negocio ? 'Crie grátis o site do seu negócio' : small.textContent);
+    small.innerHTML = '<span class="sp-cod-sinal" aria-hidden="true">&gt;</span>' +
+      (negocio ? '<span class="sp-cod-fixo" aria-hidden="true">crie grátis:</span>' : '') +
+      '<span class="sp-cod-txt" aria-hidden="true"></span><span class="sp-cod-cursor" aria-hidden="true"></span>';
     var linha = { el: small.querySelector('.sp-cod-txt'), lista: lista, i: 0 };
     linha.el.textContent = lista[0];
     linhas.push(linha);

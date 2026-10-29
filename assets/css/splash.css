@@ -297,3 +297,4 @@ body[data-tela="splash"] .sp {
 .sp-cod-cursor { flex: 0 0 auto; width: 0.5em; height: 1em; background: currentColor; opacity: 0.55; animation: spCodCursor 1s steps(1) infinite; }
 @keyframes spCodCursor { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sp-cod-cursor { animation: none; } }
+.sp-cod-fixo { flex: 0 0 auto; color: inherit; opacity: 0.8; }

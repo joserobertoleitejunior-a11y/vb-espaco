@@ -68,8 +68,9 @@
     document.getElementById('spNegocio').href = '/cadastro.html';
     document.getElementById('spNegocioTitulo').textContent = 'Meu painel';
     var sub = document.getElementById('spNegocioSub');
-    sub.removeAttribute('data-aviso-gratis'); // dono já tem negócio: sem convite
-    sub.textContent = 'Agenda, pedidos e chamados do seu negócio';
+    sub.removeAttribute('data-aviso-gratis');
+    // a linha em código (sp-segmentos-codigo.js) continua chamando pra criar
+    if (!sub.classList.contains('sp-cod')) sub.textContent = 'Agenda, pedidos e chamados do seu negócio';
     var entrar = document.getElementById('spEntrar');
     if (entrar) entrar.textContent = 'Minha conta';
   }
