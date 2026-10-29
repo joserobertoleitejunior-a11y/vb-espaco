@@ -362,6 +362,7 @@
           '</div>' +
           '</li>';
       }).join('');
+      if (window.VBAvisoGratis) window.VBAvisoGratis.aplicar();
       atualizarNotificacoesBarra(linhas);
       alinharFotosDuplicadas();
     }, function () {
@@ -455,9 +456,9 @@
   // pagamento, o aviso de que está tudo grátis e de quanto vai ser a
   // mensalidade quando o app for finalizado (texto em aviso-gratis.js) ----
   function pagamentoCardHtml(e) {
-    var bonus = e.bonus_3_meses ? '<span class="aviso-gratis-bonus">Você é um dos 20 primeiros: quando a mensalidade começar, ganha 3 meses grátis.</span>' : '';
-    var aviso = window.VBAvisoGratis ? window.VBAvisoGratis.html('') : '<span>Fase de finalização — tudo grátis, sem nenhuma taxa.</span>';
-    return '<div class="aviso-gratis" role="note">' + aviso.replace(/<\/span>$/, bonus + '</span>') + '</div>';
+    var bonus = e.bonus_3_meses ? '<p class="ag-bonus">Você é um dos 20 primeiros: quando a mensalidade começar, ganha 3 meses grátis.</p>' : '';
+    // o cartão é montado (com o motion) pelo aviso-gratis.js depois que a lista entra na tela
+    return '<div class="dash-aviso-gratis"><div data-aviso-gratis></div>' + bonus + '</div>';
   }
   // ---- exportação em PDF (antes era CSV puro, que abria feito bloco de
   // notas sem formatação nenhuma) — tabela limpa, com título, cabeçalho

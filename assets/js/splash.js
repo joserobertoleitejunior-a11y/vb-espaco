@@ -67,7 +67,9 @@
   if (donoLogado()) {
     document.getElementById('spNegocio').href = '/cadastro.html';
     document.getElementById('spNegocioTitulo').textContent = 'Meu painel';
-    document.getElementById('spNegocioSub').textContent = 'Agenda, pedidos e chamados do seu negócio';
+    var sub = document.getElementById('spNegocioSub');
+    sub.removeAttribute('data-aviso-gratis'); // dono já tem negócio: sem convite
+    sub.textContent = 'Agenda, pedidos e chamados do seu negócio';
     var entrar = document.getElementById('spEntrar');
     if (entrar) entrar.textContent = 'Minha conta';
   }
