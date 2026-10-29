@@ -8,7 +8,7 @@
 
    Bump o número da versão sempre que mudar a lista de arquivos aqui
    embaixo — isso descarta o cache antigo e busca tudo de novo. */
-var VERSAO = 'vb-cache-v48';
+var VERSAO = 'vb-cache-v49';
 
 var CASCO = [
   '/',
