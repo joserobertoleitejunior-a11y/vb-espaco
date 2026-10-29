@@ -1,0 +1,179 @@
+/* Editor da Matriz (editor-matriz.js) — a mesma cara em qualquer site
+   (Agendar, Pedir, Chamar; estilo claro ou escuro): uma folha clara
+   embaixo, com a letra de código da marca nos números e o dourado nos
+   destaques. O site continua visível em cima. */
+.vbe {
+  --vbe-tinta: #1d1e22; --vbe-suave: #6b6d76; --vbe-borda: rgba(29, 30, 34, 0.1);
+  --vbe-ouro: #C9A227; --vbe-ouro-escuro: #8a6d10; --vbe-fundo: #ffffff;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--vbe-tinta); pointer-events: none;
+}
+.vbe * { box-sizing: border-box; }
+.vbe .oculto { display: none !important; }
+.vbe-dock {
+  pointer-events: auto; margin: 0 auto; max-width: 34rem;
+  display: flex; flex-direction: column; max-height: min(64vh, 34rem);
+  background: var(--vbe-fundo); border-radius: 22px 22px 0 0;
+  box-shadow: 0 -18px 50px -20px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--vbe-borda);
+  padding: 0.75rem 1rem calc(0.8rem + env(safe-area-inset-bottom));
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s;
+  animation: vbeSobe 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes vbeSobe { from { transform: translateY(100%); } to { transform: none; } }
+@media (min-width: 720px) { .vbe-dock { margin-bottom: 1rem; border-radius: 22px; } }
+
+/* topo: anel do % · capítulo · selo salvo · mapa · ver site · sair */
+.vbe-topo { display: flex; align-items: center; gap: 0.55rem; }
+.vbe-anel { position: relative; flex: 0 0 auto; width: 2.4rem; height: 2.4rem; padding: 0; border: 0; background: none; cursor: pointer; }
+.vbe-anel svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.vbe-anel circle { fill: none; stroke-width: 3; }
+.vbe-anel-fundo { stroke: rgba(29, 30, 34, 0.1); }
+.vbe-anel-valor { stroke: var(--vbe-ouro); stroke-linecap: round; stroke-dasharray: 97.4; stroke-dashoffset: 97.4; transition: stroke-dashoffset 0.6s ease; }
+.vbe-anel-num {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.66rem; font-weight: 600; color: var(--vbe-tinta);
+}
+.vbe-anel-num::after { content: '%'; font-size: 0.5rem; opacity: 0.6; margin-left: 1px; }
+.vbe-onde { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+.vbe-capitulo { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--vbe-ouro-escuro); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vbe-contador { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.7rem; color: var(--vbe-suave); }
+.vbe-selo {
+  font-size: 0.72rem; font-weight: 700; color: #1e7a3c; opacity: 0; transform: translateY(4px);
+  transition: opacity 0.25s, transform 0.25s; white-space: nowrap;
+}
+.vbe-selo::before { content: '✓ '; }
+.vbe-selo-on { opacity: 1; transform: none; }
+.vbe-selo-erro { color: #b3261e; }
+.vbe-selo-erro::before { content: '! '; }
+.vbe-ic {
+  flex: 0 0 auto; width: 2.2rem; height: 2.2rem; display: grid; place-items: center; padding: 0;
+  border: 1px solid var(--vbe-borda); border-radius: 50%; background: #fff; color: var(--vbe-tinta); cursor: pointer;
+}
+.vbe-ic:hover { background: #f4f4f6; }
+.vbe-ic:focus-visible, .vbe-anel:focus-visible, .vbe-proximo:focus-visible, .vbe-voltar:focus-visible { outline: 2px solid var(--vbe-ouro); outline-offset: 2px; }
+
+/* barrinhas: uma por pergunta */
+.vbe-barras { display: flex; gap: 3px; margin: 0.65rem 0 0.2rem; }
+.vbe-barras i { flex: 1; height: 3px; border-radius: 3px; background: rgba(29, 30, 34, 0.1); transition: background 0.3s; }
+.vbe-barras i.feito { background: var(--vbe-ouro); }
+.vbe-barras i.agora { background: var(--vbe-tinta); }
+
+/* a pergunta */
+.vbe-palco { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.vbe-entra-dir { animation: vbeEntraDir 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.vbe-entra-esq { animation: vbeEntraEsq 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes vbeEntraDir { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+@keyframes vbeEntraEsq { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: none; } }
+.vbe-pergunta { margin: 0.65rem 0 0.2rem; font-size: 1.18rem; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; color: var(--vbe-tinta); }
+.vbe-ajuda { margin: 0 0 0.7rem; font-size: 0.84rem; line-height: 1.45; color: var(--vbe-suave); }
+.vbe-campos { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.1rem 0.1rem 0.3rem; color: var(--vbe-tinta); }
+.vbe-campos input, .vbe-campos textarea, .vbe-campos select { color: var(--vbe-tinta); }
+.vbe-aviso { margin: 0.4rem 0 0; font-size: 0.8rem; font-weight: 600; color: #b3261e; }
+
+/* ações */
+.vbe-acoes { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-top: 0.7rem; }
+.vbe-voltar { padding: 0.75rem 0.4rem; border: 0; background: none; font: inherit; font-weight: 700; font-size: 0.92rem; color: var(--vbe-suave); cursor: pointer; }
+.vbe-invisivel { visibility: hidden; }
+.vbe-proximo {
+  display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.8rem 1.35rem; border: 0; border-radius: 999px;
+  background: var(--vbe-tinta); color: #fff; font: inherit; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+  transition: transform 0.15s, opacity 0.2s;
+}
+.vbe-proximo:active { transform: scale(0.97); }
+.vbe-proximo:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* recolhido: só uma pílula, o site inteiro à mostra */
+.vbe-pilula {
+  pointer-events: auto; position: absolute; left: 50%; bottom: calc(1rem + env(safe-area-inset-bottom));
+  display: none; align-items: center; gap: 0.45rem; transform: translateX(-50%);
+  padding: 0.75rem 1.2rem; border: 0; border-radius: 999px; background: var(--vbe-tinta); color: #fff;
+  font: inherit; font-weight: 700; font-size: 0.9rem; box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.5); cursor: pointer;
+}
+.vbe-recolhido .vbe-dock { transform: translateY(calc(100% + 2rem)); opacity: 0; pointer-events: none; }
+.vbe-recolhido .vbe-pilula { display: inline-flex; animation: vbeSobe 0.35s ease both; }
+
+/* mapa: todas as perguntas por capítulo */
+.vbe-mapa { pointer-events: auto; position: fixed; inset: 0; background: rgba(10, 10, 12, 0.45); display: flex; align-items: flex-end; justify-content: center; }
+.vbe-mapa-caixa {
+  width: 100%; max-width: 34rem; max-height: 86vh; overflow-y: auto; background: #fff; border-radius: 22px 22px 0 0;
+  padding: 1rem 1rem calc(1.2rem + env(safe-area-inset-bottom)); animation: vbeSobe 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.vbe-mapa-topo { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.6rem; }
+.vbe-mapa-rotulo { margin: 0; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--vbe-ouro-escuro); }
+.vbe-mapa-titulo { margin: 0.1rem 0 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.3rem; font-weight: 600; letter-spacing: -0.03em; }
+.vbe-mapa-cap { margin-top: 0.9rem; }
+.vbe-mapa-cap-nome { margin: 0 0 0.35rem; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--vbe-suave); }
+.vbe-mapa-item {
+  width: 100%; display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.75rem; margin-bottom: 0.35rem;
+  border: 1px solid var(--vbe-borda); border-radius: 14px; background: #fff; font: inherit; color: var(--vbe-tinta); text-align: left; cursor: pointer;
+}
+.vbe-mapa-item.agora { border-color: var(--vbe-tinta); }
+.vbe-mapa-marca { flex: 0 0 auto; width: 1.35rem; height: 1.35rem; border-radius: 50%; display: grid; place-items: center; border: 1.5px dashed rgba(29, 30, 34, 0.3); color: #fff; }
+.vbe-mapa-item.feito .vbe-mapa-marca { border: 0; background: var(--vbe-ouro); }
+.vbe-mapa-txt { flex: 1; font-weight: 600; font-size: 0.92rem; }
+.vbe-mapa-acao { font-size: 0.78rem; font-weight: 700; color: var(--vbe-suave); }
+.vbe-mapa-item:not(.feito) .vbe-mapa-acao { color: var(--vbe-ouro-escuro); }
+
+/* com o editor aberto, o site ganha espaço embaixo pra rolar até o fim */
+body.vbe-aberto { padding-bottom: 60vh !important; }
+@media (prefers-reduced-motion: reduce) {
+  .vbe-dock, .vbe-mapa-caixa, .vbe-entra-dir, .vbe-entra-esq, .vbe-recolhido .vbe-pilula { animation: none !important; }
+}
+
+/* perguntas por tipo de negócio (perguntas-segmento.js) */
+.vbp-opcoes { display: flex; flex-direction: column; gap: 0.45rem; }
+.vbp-op {
+  display: flex; align-items: center; gap: 0.7rem; width: 100%; padding: 0.85rem 0.95rem;
+  border: 1.5px solid var(--vbe-borda); border-radius: 14px; background: #fff;
+  font: inherit; font-size: 0.95rem; font-weight: 600; color: var(--vbe-tinta); text-align: left; cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+.vbp-op.ativo { border-color: var(--vbe-tinta); background: #f6f4ec; }
+.vbp-marca { flex: 0 0 auto; width: 1.2rem; height: 1.2rem; border-radius: 50%; border: 2px solid rgba(29, 30, 34, 0.3); position: relative; }
+.vbp-varios .vbp-marca { border-radius: 6px; }
+.vbp-op.ativo .vbp-marca { border-color: var(--vbe-tinta); background: var(--vbe-tinta); }
+.vbp-op.ativo .vbp-marca::after { content: ''; position: absolute; left: 50%; top: 45%; width: 0.32rem; height: 0.6rem; border: solid #fff; border-width: 0 2px 2px 0; transform: translate(-50%, -50%) rotate(45deg); }
+.vbp-dica { margin: 0.6rem 0 0; font-size: 0.78rem; color: var(--vbe-suave); }
+.vbp-texto { width: 100%; padding: 0.85rem 0.95rem; border: 1.5px solid var(--vbe-borda); border-radius: 14px; font: inherit; font-size: 0.95rem; background: #fff; }
+
+/* horário (Agenda) */
+.vbh-lista { display: flex; flex-direction: column; gap: 0.35rem; }
+.vbh-dia { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0.65rem; border: 1px solid var(--vbe-borda); border-radius: 12px; }
+.vbh-chave { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+.vbh-chave input { width: 1.1rem; height: 1.1rem; accent-color: var(--vbe-tinta); }
+.vbh-horas { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: var(--vbe-suave); }
+.vbh-horas input { padding: 0.35rem 0.4rem; border: 1px solid var(--vbe-borda); border-radius: 8px; font: inherit; font-size: 0.85rem; background: #fff; }
+.vbh-fechado-txt { display: none; font-size: 0.84rem; color: var(--vbe-suave); }
+.vbh-dia.fechado .vbh-horas { display: none; }
+.vbh-dia.fechado .vbh-fechado-txt { display: inline; }
+.vbh-copiar { margin-top: 0.6rem; padding: 0.4rem 0; border: 0; background: none; font: inherit; font-size: 0.82rem; font-weight: 700; color: var(--vbe-tinta); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* o editor tem a própria paleta: os campos antigos dos passos usam as
+   variáveis do estilo do site (no estilo escuro ficavam claros sobre
+   claro) — aqui dentro elas viram as cores do editor */
+.vbe {
+  --ink: #1d1e22; --ink-soft: #6b6d76; --white: #ffffff; --linen: #f6f6f7; --linen-deep: #ececee;
+  --stone: #6b6d76; --superficie: #ffffff; --line-accent: rgba(29, 30, 34, 0.14); --line-accent-dark: rgba(29, 30, 34, 0.22);
+  --terracotta: #1d1e22; --terracotta-deep: #000000; --terracotta-rgb: 29, 30, 34;
+  --dourado: #8a6d10; --dourado-escuro: #6d560c; --dourado-rgb: 138, 109, 16;
+  --tinta: #1d1e22; --tinta-suave: #6b6d76; --borda: rgba(29, 30, 34, 0.12); --cor-destaque: #1d1e22; --accent: #1d1e22;
+}
+.vbe .vbe-pergunta, .vbe .vbe-ajuda, .vbe .vbe-campos { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.vbe .vbe-campos input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+.vbe .vbe-campos textarea, .vbe .vbe-campos select {
+  background: #f6f6f7 !important; color: var(--vbe-tinta) !important; border: 1px solid var(--vbe-borda) !important;
+  border-radius: 12px !important; font-family: inherit !important; font-size: 0.95rem !important; box-shadow: none !important;
+}
+.vbe .vbe-campos .btn-primario, .vbe .vbe-campos .vb-btn-upload {
+  background: var(--vbe-tinta) !important; color: #fff !important; border: 0 !important; box-shadow: none !important; opacity: 1 !important;
+}
+.vbe .vbe-campos .btn-ghost, .vbe .vbe-campos .btn:not(.btn-primario) {
+  background: #fff !important; color: var(--vbe-tinta) !important; border: 1px solid var(--vbe-borda) !important; box-shadow: none !important;
+}
+.vbe .vbe-campos label, .vbe .vbe-campos p, .vbe .vbe-campos span:not(.vbp-marca) { color: inherit; }
+.vbe .vbe-campos a { color: var(--vbe-tinta); }
+.vbh-horas input { width: 6.4rem; }
+@media (max-width: 380px) { .vbh-dia { flex-wrap: wrap; } }
+.vbe-pilula { left: auto; right: 1rem; transform: none; }
+.vbe-anel-num { display: flex; align-items: center; justify-content: center; white-space: nowrap; }

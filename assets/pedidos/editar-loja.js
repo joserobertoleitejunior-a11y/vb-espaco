@@ -21,11 +21,10 @@
   function $(id) { return document.getElementById(id); }
 
   /* ---------- salvar ---------- */
+  // mensagens de salvar viram o selo do editor ("Salvo ✓" no topo)
   function avisar(texto, erro) {
-    var m = $('vbEdMsg');
-    if (!m) return;
-    m.className = 'msg ' + (erro ? 'msg-erro' : 'msg-ok');
-    m.textContent = texto;
+    if (!editor) return;
+    editor.salvo(String(texto || '').replace(/\s*✓$/, ''), !!erro);
   }
   function rpc(nome, params) {
     return db.rpc(nome, params).then(function (r) { if (r.error) throw r.error; return r.data; });
@@ -81,7 +80,7 @@
       }).join('') + '</div>';
     function usar(url) {
       return salvarIdent('tenant_admin_atualizar_hero', { p_foto_hero_url: url, p_foto_hero_feminino_url: ident().foto_hero_feminino_url || null })
-        .then(function () { mostrar(atualIdx); });
+        .then(function () { redesenhar(); });
     }
     caixa.querySelector('.vb-ed-grade').addEventListener('click', function (e) {
       var b = e.target.closest('[data-foto]');
@@ -105,10 +104,10 @@
       avisar('Enviando…');
       enviarFoto(this.files[0], 'logo').then(function (url) {
         return salvarLoja({ foto_perfil_url: url });
-      }, function (e) { avisar(e.message || 'Falha ao enviar.', true); }).then(function () { mostrar(atualIdx); });
+      }, function (e) { avisar(e.message || 'Falha ao enviar.', true); }).then(function () { redesenhar(); });
     });
     var tirar = $('vbEdLogoTirar');
-    if (tirar) tirar.addEventListener('click', function () { salvarLoja({ foto_perfil_url: null }).then(function () { mostrar(atualIdx); }); });
+    if (tirar) tirar.addEventListener('click', function () { salvarLoja({ foto_perfil_url: null }).then(function () { redesenhar(); }); });
   }
 
   function campo(id, rotulo, valor, tipo, extra) {
@@ -172,11 +171,11 @@
       if (!b) return;
       var chave = b.getAttribute('data-tpl');
       api.prever({ template: chave });
-      salvarIdent('tenant_admin_atualizar_template', { p_template: chave }).then(function () { mostrar(atualIdx); });
+      salvarIdent('tenant_admin_atualizar_template', { p_template: chave }).then(function () { redesenhar(); });
     });
     function usarCor(c) {
       api.prever({ cor_destaque: c || null });
-      salvarIdent('tenant_admin_atualizar_cor', { p_cor_destaque: c || null, p_cor_secundaria: null }).then(function () { mostrar(atualIdx); });
+      salvarIdent('tenant_admin_atualizar_cor', { p_cor_destaque: c || null, p_cor_secundaria: null }).then(function () { redesenhar(); });
     }
     caixa.querySelector('.vb-ed-cores').addEventListener('click', function (e) {
       var b = e.target.closest('[data-cor]');
@@ -213,7 +212,7 @@
         if (!b) return;
         avisar('Removendo…');
         rpc('delivery_admin_remover_item', { p_id: b.getAttribute('data-remover'), p_estabelecimento_id: estab().id })
-          .then(function () { return api.recarregar(); }).then(function () { avisar('Removido ✓'); mostrar(atualIdx); }, function (er) { avisar(er.message, true); });
+          .then(function () { return api.recarregar(); }).then(function () { avisar('Removido ✓'); redesenhar(); }, function (er) { avisar(er.message, true); });
       });
       $('vbEdItemAdd').addEventListener('click', function () {
         var nome = $('vbEdItemNome').value.trim();
@@ -227,7 +226,7 @@
             p_id: null, p_estabelecimento_id: estab().id, p_categoria_id: catId || null, p_nome: nome, p_descricao: null, p_preco: preco,
             p_foto_url: null, p_permite_meio_a_meio: false, p_ativo: true, p_ordem: itensAdmin.length, p_aceita_borda: false
           });
-        }).then(function () { return api.recarregar(); }).then(function () { avisar('Adicionado ✓'); mostrar(atualIdx); }, function (er) { avisar(er.message || 'Não deu pra salvar.', true); });
+        }).then(function () { return api.recarregar(); }).then(function () { avisar('Adicionado ✓'); redesenhar(); }, function (er) { avisar(er.message || 'Não deu pra salvar.', true); });
       });
     });
   }
@@ -313,67 +312,44 @@
     $('vbEdInsta').addEventListener('change', function () { salvarLoja({ instagram_url: this.value.trim() }); });
   }
 
-  function montarPassos() {
-    var S = api.servico();
-    return [
-      { id: 'foto', titulo: 'Foto principal', texto: 'A foto grande do topo do site.', render: passoFoto },
-      { id: 'logo', titulo: 'Logo', texto: 'Aparece redondinha ao lado do nome.', render: passoLogo },
-      { id: 'textos', titulo: 'Nome e frases', texto: 'O que aparece escrito no site. Salva quando você sai do campo.', render: passoTextos },
-      { id: 'efeito', titulo: 'Efeito do título', texto: 'Faça a frase grande do topo se mexer, trocar de letra ou ganhar brilho.', render: passoEfeito },
-      { id: 'estilo', titulo: 'Cores e estilo', texto: 'O visual do site inteiro — muda ao vivo aqui atrás.', render: passoEstilo },
-      { id: 'itens', titulo: S ? 'Serviços e preços' : 'Cardápio', texto: S ? 'O que o cliente pode pedir.' : 'O que o cliente pode pedir.', render: passoItens },
-      { id: 'atendimento', titulo: S ? 'Atendimento' : 'Entrega e retirada', texto: S ? 'Onde você atende, taxa e prazo.' : 'Como o pedido chega no cliente.', render: passoAtendimento },
-      { id: 'pagamento', titulo: 'Pagamento', texto: 'Como o cliente pode pagar.', render: passoPagamento },
-      { id: 'horario', titulo: 'Horário', texto: 'Fora do horário o site mostra "Fechado".', render: passoHorario },
-      { id: 'endereco', titulo: 'Endereço e Instagram', texto: 'Aparecem no site pro cliente achar você.', render: passoEndereco }
+  function montarPassos(respostas) {
+    var S = api.servico(), U2 = api.urgente();
+    var e = function () { return estab(); };
+    var base = [
+      { id: 'foto', capitulo: 'impressao', titulo: 'Foto principal', pergunta: 'Qual foto mostra melhor o seu negócio?', ajuda: 'A foto grande do topo do site.', completo: function () { return !!(ident().foto_hero_url || e().foto_capa_url); }, render: passoFoto },
+      { id: 'logo', capitulo: 'impressao', titulo: 'Logo', pergunta: 'Tem uma logo?', ajuda: 'Aparece redondinha ao lado do nome. Sem logo, fica a inicial.', completo: function () { return !!e().foto_perfil_url; }, render: passoLogo },
+      { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frases', pergunta: 'Como você quer se apresentar?', ajuda: 'Salva quando você sai do campo.', completo: function () { return !!(e().descricao || '').trim(); }, render: passoTextos },
+      { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', pergunta: 'Qual a cara do seu site?', ajuda: 'O visual inteiro — muda ao vivo aqui atrás.', completo: function () { return !!ident().template; }, render: passoEstilo },
+      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: a frase grande se mexe, troca de letra ou ganha brilho.', render: passoEfeito },
+      { id: 'itens', capitulo: 'oferta', titulo: S ? 'Serviços e preços' : 'Cardápio', pergunta: S ? 'Que serviços você faz?' : 'O que tem no cardápio?', ajuda: S ? 'Com preço — ou "a combinar" pra quem prefere orçar.' : 'Pelo menos um item pra começar a receber pedidos.', completo: function () { var c = api.cardapio(); return !!(c && c.itens && c.itens.length); }, render: passoItens },
+      { id: 'atendimento', capitulo: 'funciona', titulo: S ? 'Atendimento' : 'Entrega e retirada', pergunta: S ? (U2 ? 'Como você chega até o cliente?' : 'Onde você atende?') : 'Como o pedido chega no cliente?', ajuda: S ? 'Onde você atende, taxa e prazo.' : 'Entrega, retirada, taxa e tempo.', completo: function () { return !!(e().aceita_entrega || e().aceita_retirada); }, render: passoAtendimento },
+      { id: 'pagamento', capitulo: 'funciona', titulo: 'Pagamento', pergunta: 'Como o cliente pode pagar?', completo: function () { return !!(e().formas_pagamento && e().formas_pagamento.length); }, render: passoPagamento },
+      { id: 'horario', capitulo: 'funciona', titulo: 'Horário', pergunta: 'Que dias e horários você atende?', ajuda: 'Fora do horário o site mostra "Fechado".', completo: function () { var h = e().horarios; return !!(h && Object.keys(h).length); }, render: passoHorario },
+      { id: 'endereco', capitulo: 'achar', titulo: 'Endereço e Instagram', pergunta: 'Onde te acham?', ajuda: 'Endereço e Instagram aparecem no site.', completo: function () { return !!(e().endereco || '').trim(); }, render: passoEndereco }
     ];
+    var sobre = window.VBPerguntas ? window.VBPerguntas.passosEditor(e().id, e().segmento, e().areas || [S ? 'servicos' : 'delivery'], respostas, function (r) { desenharBomSaberLoja(r); }) : [];
+    return base.concat(sobre);
   }
 
-  /* ---------- a bolha ---------- */
-  var passos = [], atualIdx = 0;
-  function montarBolha() {
-    var ov = document.createElement('div');
-    ov.className = 'vb-tutorial-overlay vb-editando';
-    ov.id = 'vbEdOverlay';
-    ov.innerHTML =
-      '<div class="vb-tutorial-bolha">' +
-      '<button type="button" class="vb-tutorial-sair" id="vbEdSair" aria-label="Sair da edição">×</button>' +
-      '<div class="vb-tutorial-atalhos" id="vbEdAtalhos" role="tablist" aria-label="Etapas">' +
-      passos.map(function (p, i) { return '<button type="button" data-ir="' + i + '">' + esc(p.titulo) + '</button>'; }).join('') + '</div>' +
-      '<p class="vb-tutorial-contador" id="vbEdContador"></p>' +
-      '<h3 id="vbEdTitulo"></h3><p id="vbEdTexto"></p>' +
-      '<div class="vb-tutorial-campos" id="vbEdCampos"></div>' +
-      '<p class="msg" id="vbEdMsg"></p>' +
-      '<div class="vb-tutorial-acoes"><button type="button" class="btn btn-ghost" id="vbEdVoltar">Voltar</button><button type="button" class="btn btn-primario" id="vbEdProximo">Próximo</button></div>' +
-      '</div>';
-    document.body.appendChild(ov);
-    $('vbEdAtalhos').addEventListener('click', function (e) {
-      var b = e.target.closest('[data-ir]');
-      if (b) mostrar(Number(b.getAttribute('data-ir')));
-    });
-    $('vbEdVoltar').addEventListener('click', function () { if (atualIdx > 0) mostrar(atualIdx - 1); });
-    $('vbEdProximo').addEventListener('click', function () { if (atualIdx < passos.length - 1) mostrar(atualIdx + 1); else concluir(); });
-    $('vbEdSair').addEventListener('click', concluir);
-  }
-  function mostrar(i) {
-    atualIdx = i;
-    var p = passos[i];
-    $('vbEdContador').textContent = 'Editando · ' + (i + 1) + ' de ' + passos.length;
-    $('vbEdTitulo').textContent = p.titulo;
-    $('vbEdTexto').textContent = p.texto;
-    $('vbEdProximo').textContent = i === passos.length - 1 ? 'Concluir' : 'Próximo';
-    $('vbEdVoltar').classList.toggle('oculto', i === 0);
-    document.querySelectorAll('#vbEdAtalhos [data-ir]').forEach(function (b) {
-      var ativo = Number(b.getAttribute('data-ir')) === i;
-      b.classList.toggle('ativo', ativo);
-      if (ativo && b.scrollIntoView) b.scrollIntoView({ block: 'nearest', inline: 'center' });
-    });
-    var msg = $('vbEdMsg'); msg.className = 'msg'; msg.textContent = '';
-    var caixa = $('vbEdCampos');
-    caixa.innerHTML = '';
-    p.render(caixa);
-  }
+  /* ---------- o editor único (assets/js/editor-matriz.js) ---------- */
+  var editor = null;
+  function redesenhar() { if (editor) editor.atualizar(); }
   function concluir() { window.location.href = '/painel-area.html'; }
+
+  // "Bom saber" do site: as respostas do dono sobre o negócio
+  function desenharBomSaberLoja(respostas) {
+    if (!window.VBPerguntas) return;
+    var e = estab();
+    var html = window.VBPerguntas.bomSaberHtml(e.segmento, e.areas || [api.servico() ? 'servicos' : 'delivery'], respostas || {});
+    var atual = $('vbBomSaber');
+    if (!html) { if (atual) atual.remove(); return; }
+    var div = document.createElement('div');
+    div.id = 'vbBomSaber';
+    div.innerHTML = html;
+    var antes = $('servicosSecao') || $('lojaCamada');
+    if (atual) atual.replaceWith(div);
+    else if (antes && antes.parentNode) antes.parentNode.insertBefore(div, antes.nextSibling);
+  }
 
   // dono visitando sem ?editar=1: vê como o cliente, com o atalho pra editar
   function atalhoDono() {
@@ -389,17 +365,19 @@
     iniciar: function (apiLoja) {
       api = apiLoja;
       if (!db || !db.auth) return;
+      if (window.VBPerguntas && estab()) window.VBPerguntas.carregar(estab().id).then(desenharBomSaberLoja);
       db.auth.getSession().then(function (r) {
         var s = r.data && r.data.session;
         var id = ident();
         if (!s || !id || s.user.id !== id.dono_user_id) return;
         var q = new URLSearchParams(location.search);
         if (q.get('editar') !== '1') { atalhoDono(); return; }
-        passos = montarPassos();
-        montarBolha();
-        var ini = 0;
-        passos.forEach(function (p, i) { if (p.id === q.get('passo')) ini = i; });
-        mostrar(ini);
+        if (!window.VBEditor) return;
+        var respostas = {};
+        var abrir = function () {
+          editor = window.VBEditor.abrir({ modo: 'editar', passos: montarPassos(respostas), inicial: q.get('passo'), aoConcluir: concluir });
+        };
+        if (window.VBPerguntas) window.VBPerguntas.carregar(estab().id).then(function (r) { respostas = r; abrir(); }); else abrir();
       });
     }
   };

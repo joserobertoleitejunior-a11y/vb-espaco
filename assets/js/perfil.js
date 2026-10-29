@@ -513,6 +513,7 @@
     var wrap = document.getElementById('tplHorarioRodape');
     if (!wrap) return;
     db.rpc('tenant_listar_horarios', { p_estabelecimento_id: estabId }).then(function (res) {
+      horariosCache = res.data || [];
       var linhas = formatarHorarios(res.data || []);
       wrap.innerHTML = linhas.length
         ? linhas.map(function (l) { return '<p>' + escapeHtml(l) + '</p>'; }).join('')
@@ -821,34 +822,34 @@
   // URL) — não reinicia do passo 1, pra não parecer uma etapa separada. ----
   var PASSOS_CRIACAO = [
     {
-      id: 'foto', titulo: 'Foto principal',
+      id: 'foto', titulo: 'Foto principal', capitulo: 'impressao', pergunta: 'Qual foto mostra melhor o seu negócio?',
       texto: 'É a primeira coisa que o cliente vê. Mande uma do celular ou toque numa pronta.',
       obrigatorio: true,
-      avisoIncompleto: 'Escolha uma foto pra continuar.',
+      aviso: 'Escolha uma foto pra continuar.',
       completo: function () { return !!fotoPrincipal(); },
       render: renderPassoTutorialFoto
     },
     {
-      id: 'servicos', titulo: 'Serviços e preços',
-      texto: 'O que o cliente pode agendar. Toque numa sugestão ou escreva o seu.',
+      id: 'servicos', titulo: 'Serviços e preços', capitulo: 'oferta', pergunta: 'O que o cliente pode agendar?',
+      texto: 'Toque numa sugestão ou escreva o seu — com preço e quanto tempo leva.',
       obrigatorio: true,
-      avisoIncompleto: 'Adicione pelo menos um serviço pra continuar.',
+      aviso: 'Adicione pelo menos um serviço pra continuar.',
       completo: function () { return servicosCache && servicosCache.length > 0; },
       render: renderPassoTutorialServicos
     },
     {
-      id: 'equipe', titulo: 'Quem atende',
+      id: 'equipe', titulo: 'Quem atende', capitulo: 'oferta', pergunta: 'Quem atende os clientes?',
       texto: 'Coloque seu nome (e o de quem trabalha com você). O cliente escolhe na hora de agendar.',
       obrigatorio: true,
-      avisoIncompleto: 'Adicione pelo menos uma pessoa pra continuar.',
+      aviso: 'Adicione pelo menos uma pessoa pra continuar.',
       completo: function () { return equipeCache && equipeCache.length > 0; },
       render: renderPassoTutorialEquipe
     },
     {
-      id: 'localizacao', titulo: 'Endereço',
-      texto: 'Onde fica o seu espaço — aparece no site e abre no mapa.',
+      id: 'localizacao', titulo: 'Endereço', capitulo: 'achar', pergunta: 'Onde fica o seu espaço?',
+      texto: 'Aparece no site e abre no mapa.',
       obrigatorio: true,
-      avisoIncompleto: 'Preencha o endereço pra continuar.',
+      aviso: 'Preencha o endereço pra continuar.',
       completo: function () { return !!(linhaAtual && linhaAtual.endereco && linhaAtual.endereco.trim()); },
       render: renderPassoTutorialLocalizacao
     }
@@ -865,86 +866,53 @@
     return q.get('editar') === '1' ? 'editar' : q.get('tutorial') === '1' ? 'criar' : null;
   }
 
+  // ---- o editor único (assets/js/editor-matriz.js): a mesma interface pra
+  // criar e pra editar, igual à de Pedir/Chamar. Os renders de cada passo
+  // continuam aqui; mostrarPassoTutorial/atualizarBotaoProximoTutorial
+  // viraram atalhos pro editor (os passos chamam eles depois de salvar). ----
+  var editorAtual = null;
+  var respostasNegocio = {};
   function iniciarTutorialSeNecessario() {
     var params = new URLSearchParams(window.location.search);
     var modo = modoPassos();
-    if (!modo || !linhaAtual) return;
+    if (!modo || !linhaAtual || !window.VBEditor) return;
     if (modo === 'criar' && linhaAtual.onboarding_concluido) return;
     editandoPorPassos = modo === 'editar';
-    passosAtivos = editandoPorPassos ? PASSOS_EDICAO : PASSOS_CRIACAO;
-    passoCriacaoAtual = 0;
-    passoCriacaoDesde = editandoPorPassos ? 0 : (parseInt(params.get('desde'), 10) || 0);
-    passoCriacaoTotal = passoCriacaoDesde + passosAtivos.length;
-    var inicial = params.get('passo');
-    passosAtivos.forEach(function (p, i) { if (p.id === inicial) passoCriacaoAtual = i; });
-    document.getElementById('adminModoBarra').classList.add('oculto');
-    document.getElementById('vbTutorialOverlay').classList.remove('oculto');
-    document.getElementById('vbTutorialOverlay').classList.toggle('vb-editando', editandoPorPassos);
-    // editar: atalhos pra pular direto pra qualquer etapa + "Sair"
-    if (editandoPorPassos) {
-      var atalhos = document.getElementById('vbTutorialAtalhos');
-      atalhos.innerHTML = passosAtivos.map(function (p, i) {
-        return '<button type="button" data-ir-passo="' + i + '">' + escapeHtml(p.titulo) + '</button>';
-      }).join('');
-      atalhos.classList.remove('oculto');
-      atalhos.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-ir-passo]');
-        if (!b) return;
-        passoCriacaoAtual = Number(b.getAttribute('data-ir-passo'));
-        mostrarPassoTutorial(passoCriacaoAtual);
+    var barra = document.getElementById('adminModoBarra');
+    if (barra) barra.classList.add('oculto');
+    var antigo = document.getElementById('vbTutorialOverlay');
+    if (antigo) antigo.classList.add('oculto');
+    var abrir = function () {
+      passosAtivos = editandoPorPassos ? montarPassosEdicao() : PASSOS_CRIACAO;
+      passoCriacaoDesde = editandoPorPassos ? 0 : (parseInt(params.get('desde'), 10) || 0);
+      passoCriacaoTotal = passoCriacaoDesde + passosAtivos.length;
+      editorAtual = window.VBEditor.abrir({
+        modo: editandoPorPassos ? 'editar' : 'criar',
+        passos: passosAtivos.map(function (p, i) {
+          return Object.assign({}, p, {
+            render: function (caixa, ctx) {
+              passoCriacaoAtual = i;
+              if (localTutorial) { localTutorial.destruir(); localTutorial = null; }
+              if (p.render) p.render(caixa, ctx);
+            }
+          });
+        }),
+        inicial: params.get('passo'),
+        contagem: editandoPorPassos ? null : { desde: passoCriacaoDesde, total: passoCriacaoTotal },
+        aoConcluir: concluirTutorial
       });
-      var sair = document.getElementById('vbTutorialSair');
-      sair.classList.remove('oculto');
-      sair.addEventListener('click', concluirTutorial);
-    }
-    document.getElementById('vbTutorialVoltar').addEventListener('click', function () {
-      if (passoCriacaoAtual > 0) { passoCriacaoAtual--; mostrarPassoTutorial(passoCriacaoAtual); }
-    });
-    document.getElementById('vbTutorialProximo').addEventListener('click', function () {
-      if (this.disabled) return;
-      if (passoCriacaoAtual >= passosAtivos.length - 1) { concluirTutorial(); return; }
-      passoCriacaoAtual++;
-      mostrarPassoTutorial(passoCriacaoAtual);
-    });
-    mostrarPassoTutorial(passoCriacaoAtual);
+    };
+    // as perguntas do tipo de negócio precisam das respostas já salvas
+    if (editandoPorPassos && window.VBPerguntas) window.VBPerguntas.carregar(estabId).then(function (r) { respostasNegocio = r; abrir(); });
+    else abrir();
   }
 
-  // atualiza o texto/estado do botão "Próximo" de acordo com o passo atual
-  // — obrigatório sem dado real trava o avanço (com o aviso do motivo).
   function atualizarBotaoProximoTutorial() {
-    var passo = passosAtivos[passoCriacaoAtual];
-    var btn = document.getElementById('vbTutorialProximo');
-    var aviso = document.getElementById('vbTutorialAviso');
-    var completo = !passo.obrigatorio || (passo.completo && passo.completo());
-    btn.disabled = !completo;
-    btn.classList.toggle('vb-btn-desabilitado', !completo);
-    if (aviso) {
-      aviso.textContent = completo ? '' : (passo.avisoIncompleto || 'Preencha essa etapa pra continuar.');
-      aviso.classList.toggle('oculto', completo);
-    }
+    if (editorAtual) editorAtual.estado();
   }
-
   function mostrarPassoTutorial(indice) {
-    var passo = passosAtivos[indice];
-    document.getElementById('vbTutorialContador').textContent = (editandoPorPassos ? 'Editando · ' : 'Passo ') + (passoCriacaoDesde + indice + 1) + ' de ' + passoCriacaoTotal;
-    document.getElementById('vbTutorialTitulo').textContent = passo.titulo;
-    document.getElementById('vbTutorialTexto').textContent = passo.texto;
-    document.getElementById('vbTutorialProximo').textContent = indice === passosAtivos.length - 1 ? (editandoPorPassos ? 'Concluir' : 'Pronto, ver meu site') : 'Próximo';
-    document.querySelectorAll('#vbTutorialAtalhos [data-ir-passo]').forEach(function (b) {
-      var ativo = Number(b.getAttribute('data-ir-passo')) === indice;
-      b.classList.toggle('ativo', ativo);
-      if (ativo && b.scrollIntoView) b.scrollIntoView({ block: 'nearest', inline: 'center' });
-    });
-    document.getElementById('vbTutorialVoltar').classList.toggle('oculto', indice === 0);
-    // barrinhas de progresso: uma por passo da criação inteira
-    var barras = '';
-    for (var b = 0; b < passoCriacaoTotal; b++) barras += '<i' + (b <= passoCriacaoDesde + indice ? ' class="feito"' : '') + '></i>';
-    document.getElementById('vbTutorialBarras').innerHTML = barras;
-    var campos = document.getElementById('vbTutorialCampos');
-    if (localTutorial) { localTutorial.destruir(); localTutorial = null; }
-    campos.innerHTML = '';
-    if (passo.render) passo.render(campos);
-    atualizarBotaoProximoTutorial();
+    if (!editorAtual) return;
+    if (indice === editorAtual.indice()) editorAtual.atualizar(); else editorAtual.ir(indice);
   }
 
   function renderPassoTutorialCores(container) {
@@ -1044,6 +1012,8 @@
         var linhas = res.data || [];
         var tattoo = linhaAtual.segmento === 'tatuador';
         var estilos = tattoo ? especialidadesSugeridasPara('tatuador') : [];
+        galeriaQtd = linhas.length;
+        atualizarBotaoProximoTutorial();
         var gradeEl = document.getElementById('vbTutGaleriaGrid');
         gradeEl.innerHTML = linhas.slice(0, tattoo ? 12 : 6).map(function (g) {
           var img = '<img src="' + escapeHtml(g.foto_url) + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px;">';
@@ -1142,17 +1112,27 @@
     });
     document.getElementById('vbEdFotoBusca').addEventListener('click', abrirEditorFotoCard);
   }
-  var PASSOS_EDICAO = [
-    { id: 'foto', titulo: 'Foto principal', texto: 'A foto grande do topo do site.', render: renderPassoTutorialFoto },
-    { id: 'textos', titulo: 'Nome e frases', texto: 'O que aparece escrito no topo do site. Muda ao vivo aqui atrás.', render: renderPassoEdicaoTextos },
-    { id: 'efeito', titulo: 'Efeito do título', texto: 'Faça a frase grande do topo se mexer, trocar de letra ou ganhar brilho. Aparece ao vivo aqui atrás.', render: renderPassoEdicaoTituloEfeito },
-    { id: 'estilo', titulo: 'Cores e estilo', texto: 'O visual do site inteiro — vale pra Agendar, Pedir e Chamar.', render: renderPassoEdicaoEstilo },
-    { id: 'servicos', titulo: 'Serviços e preços', texto: 'O que o cliente pode agendar.', render: renderPassoTutorialServicos },
-    { id: 'equipe', titulo: 'Quem atende', texto: 'As pessoas que o cliente escolhe na hora de agendar.', render: renderPassoTutorialEquipe },
-    { id: 'localizacao', titulo: 'Endereço', texto: 'Onde fica o seu espaço — aparece no site e abre no mapa.', render: renderPassoTutorialLocalizacao },
-    { id: 'redes', titulo: 'Redes sociais', texto: 'Instagram, Facebook e TikTok no rodapé do site.', render: renderPassoTutorialRedes },
-    { id: 'galeria', titulo: 'Galeria de fotos', texto: 'Fotos do espaço e dos seus trabalhos.', render: renderPassoTutorialGaleria }
-  ];
+  // editar (painel → "Editar meu site"): tudo do site, em capítulos, uma
+  // pergunta por vez; as do tipo de negócio vêm de perguntas-segmento.js
+  function montarPassosEdicao() {
+    var redes = function () { return !!(linhaAtual.instagram_url || linhaAtual.facebook_url || linhaAtual.tiktok_url); };
+    var tattoo = linhaAtual.segmento === 'tatuador';
+    var base = [
+      { id: 'foto', capitulo: 'impressao', titulo: 'Foto principal', pergunta: 'Qual foto mostra melhor o seu negócio?', ajuda: 'É a primeira coisa que o cliente vê. Mande do celular ou toque numa pronta.', completo: function () { return !!fotoPrincipal(); }, render: renderPassoTutorialFoto },
+      { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frases', pergunta: 'Como você quer se apresentar?', ajuda: 'O nome e as frases do topo. Muda ao vivo aqui atrás.', completo: function () { return !!(linhaAtual.titulo_hero || '').trim(); }, render: renderPassoEdicaoTextos },
+      { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', pergunta: 'Qual a cara do seu site?', ajuda: 'O visual inteiro — vale pra Agendar, Pedir e Chamar.', completo: function () { return !!linhaAtual.template; }, render: renderPassoEdicaoEstilo },
+      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: a frase grande se mexe, troca de letra ou ganha brilho.', render: renderPassoEdicaoTituloEfeito },
+      { id: 'servicos', capitulo: 'oferta', titulo: tattoo ? 'Sessões e preços' : 'Serviços e preços', pergunta: tattoo ? 'Que sessões o cliente pode marcar?' : 'O que o cliente pode agendar?', ajuda: 'Com preço e quanto tempo leva — a agenda reserva o tempo todo.', completo: function () { return servicosCache.length > 0; }, render: renderPassoTutorialServicos },
+      { id: 'equipe', capitulo: 'oferta', titulo: 'Quem atende', pergunta: 'Quem atende os clientes?', ajuda: 'O cliente escolhe na hora de agendar.', completo: function () { return equipeCache.length > 0; }, render: renderPassoTutorialEquipe },
+      { id: 'galeria', capitulo: 'oferta', titulo: tattoo ? 'Portfólio' : 'Galeria de fotos', pergunta: tattoo ? 'Mostre os seus trabalhos' : 'Mostre o seu espaço e os seus trabalhos', ajuda: tattoo ? 'Marque o estilo de cada foto: no site vira filtro.' : 'Fotos de verdade passam confiança.', completo: function () { return galeriaQtd > 0; }, render: renderPassoTutorialGaleria },
+      { id: 'horario', capitulo: 'funciona', titulo: 'Horário', pergunta: 'Que dias e horários você atende?', ajuda: 'A agenda só oferece horários dentro disso.', completo: function () { return horariosCache.length > 0; }, render: renderPassoEdicaoHorario },
+      { id: 'contato', capitulo: 'funciona', titulo: 'WhatsApp', pergunta: 'Em qual WhatsApp você recebe os agendamentos?', completo: function () { return !!(linhaAtual.telefone_whatsapp || '').replace(/\D/g, ''); }, render: renderPassoEdicaoContato },
+      { id: 'localizacao', capitulo: 'achar', titulo: 'Endereço', pergunta: 'Onde fica o seu espaço?', ajuda: 'Aparece no site e abre no mapa.', completo: function () { return !!(linhaAtual.endereco || '').trim(); }, render: renderPassoTutorialLocalizacao },
+      { id: 'redes', capitulo: 'achar', titulo: 'Redes sociais', pergunta: 'Onde mais te acham na internet?', ajuda: 'Instagram, Facebook e TikTok no site.', completo: redes, render: renderPassoTutorialRedes }
+    ];
+    var sobre = window.VBPerguntas ? window.VBPerguntas.passosEditor(estabId, linhaAtual.segmento, linhaAtual.areas || ['agenda'], respostasNegocio, desenharBomSaber) : [];
+    return base.concat(sobre);
+  }
 
   function concluirTutorial() {
     document.getElementById('vbTutorialOverlay').classList.add('oculto');
@@ -2048,6 +2028,77 @@
     });
   }
 
+  var horariosCache = [];
+  var galeriaQtd = 0;
+  var NOMES_DIA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+  // ---- passo "horário" (editor): cada dia com aberto/fechado e o horário;
+  // salva sozinho a cada mudança ----
+  function renderPassoEdicaoHorario(caixa, ctx) {
+    var porDia = {};
+    horariosCache.forEach(function (h) { porDia[h.dia_semana] = h; });
+    var ordem = [1, 2, 3, 4, 5, 6, 0];
+    caixa.innerHTML = '<div class="vbh-lista">' + ordem.map(function (d) {
+      var h = porDia[d] || { abre: '08:00', fecha: '18:00', fechado: d === 0 };
+      return '<div class="vbh-dia' + (h.fechado ? ' fechado' : '') + '" data-dia="' + d + '">' +
+        '<label class="vbh-chave"><input type="checkbox" data-aberto' + (h.fechado ? '' : ' checked') + '><span>' + NOMES_DIA[d] + '</span></label>' +
+        '<span class="vbh-horas"><input type="time" data-abre value="' + String(h.abre).slice(0, 5) + '"> – <input type="time" data-fecha value="' + String(h.fecha).slice(0, 5) + '"></span>' +
+        '<span class="vbh-fechado-txt">Fechado</span></div>';
+    }).join('') + '</div>' +
+      '<button type="button" class="vbh-copiar" data-copiar>Usar o horário de segunda em todos os dias abertos</button>';
+    function salvarDia(linha) {
+      var aberto = linha.querySelector('[data-aberto]').checked;
+      linha.classList.toggle('fechado', !aberto);
+      ctx.salvo('Salvando…');
+      return db.rpc('tenant_admin_salvar_horario', {
+        p_estabelecimento_id: estabId, p_dia_semana: Number(linha.getAttribute('data-dia')),
+        p_abre: linha.querySelector('[data-abre]').value || '08:00', p_fecha: linha.querySelector('[data-fecha]').value || '18:00', p_fechado: !aberto
+      }).then(function (res) {
+        if (res.error) { ctx.salvo(res.error.message, true); return; }
+        var d = Number(linha.getAttribute('data-dia'));
+        horariosCache = horariosCache.filter(function (h) { return h.dia_semana !== d; }).concat([{ dia_semana: d, abre: linha.querySelector('[data-abre]').value, fecha: linha.querySelector('[data-fecha]').value, fechado: !aberto }]);
+        ctx.salvo('Salvo');
+        carregarHorarioRodape();
+      }, function () { ctx.salvo('Sem conexão — tente de novo', true); });
+    }
+    caixa.querySelectorAll('.vbh-dia').forEach(function (linha) {
+      linha.querySelectorAll('input').forEach(function (inp) { inp.addEventListener('change', function () { salvarDia(linha); }); });
+    });
+    caixa.querySelector('[data-copiar]').addEventListener('click', function () {
+      var seg = caixa.querySelector('.vbh-dia[data-dia="1"]');
+      var a = seg.querySelector('[data-abre]').value, f = seg.querySelector('[data-fecha]').value;
+      var linhas = Array.prototype.filter.call(caixa.querySelectorAll('.vbh-dia'), function (l) { return l !== seg && l.querySelector('[data-aberto]').checked; });
+      linhas.forEach(function (l) { l.querySelector('[data-abre]').value = a; l.querySelector('[data-fecha]').value = f; });
+      linhas.reduce(function (pr, l) { return pr.then(function () { return salvarDia(l); }); }, Promise.resolve());
+    });
+  }
+
+  // ---- passo "WhatsApp" (editor) ----
+  function renderPassoEdicaoContato(caixa, ctx) {
+    caixa.innerHTML = '<input class="vbp-texto" id="vbEdTelefone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" value="' + escapeHtml(linhaAtual.telefone_whatsapp || '') + '">' +
+      '<p class="vbp-dica">Cada agendamento abre uma conversa com esse número.</p>';
+    var inp = document.getElementById('vbEdTelefone');
+    inp.addEventListener('change', function () {
+      if (inp.value.replace(/\D/g, '').length < 10) { ctx.salvo('Confira o número com DDD', true); return; }
+      ctx.salvo('Salvando…');
+      salvarTelefone(inp.value).then(function () { ctx.salvo('Salvo'); }, function (e) { ctx.salvo((e && e.message) || 'Não salvou', true); });
+    });
+  }
+
+  // ---- "Bom saber" no site: respostas das perguntas do tipo de negócio ----
+  function desenharBomSaber(respostas) {
+    if (!window.VBPerguntas || !linhaAtual) return;
+    var html = window.VBPerguntas.bomSaberHtml(linhaAtual.segmento, linhaAtual.areas || ['agenda'], respostas || {});
+    var atual = document.getElementById('vbBomSaber');
+    if (!html) { if (atual) atual.remove(); return; }
+    var div = document.createElement('div');
+    div.id = 'vbBomSaber';
+    div.innerHTML = html;
+    var antes = document.getElementById('tplGaleriaSecao');
+    if (atual) atual.replaceWith(div);
+    else if (antes && antes.parentNode) antes.parentNode.insertBefore(div, antes);
+  }
+
   function salvarTelefone(novo) {
     novo = String(novo || '').trim();
     if (!novo || novo === (linhaAtual.telefone_whatsapp || '')) return Promise.resolve();
@@ -2070,6 +2121,8 @@
   function carregarGaleria() {
     db.rpc('tenant_listar_galeria', { p_estabelecimento_id: estabId }).then(function (res) {
       var linhas = res.data || [];
+      galeriaQtd = linhas.length;
+      atualizarBotaoProximoTutorial();
       if (!linhas.length && !edicaoNoSite) return;
 
       var grid = document.getElementById('tplGrid');
@@ -2655,6 +2708,8 @@
     iniciarGenero();
     carregarServicos();
     carregarGaleria();
+    // "Bom saber": o que o dono respondeu sobre o negócio (perguntas-segmento.js)
+    if (window.VBPerguntas) window.VBPerguntas.carregar(linha.id).then(function (r) { respostasNegocio = r; desenharBomSaber(r); });
     carregarRedesSociais();
     carregarPromocoesPublicas();
     iniciarModoAdmin();

@@ -3365,3 +3365,13 @@ html, body { max-width: 100%; overflow-x: clip; }
 .anexo-botao:focus-within { outline: 2px solid var(--cor-destaque, #C9A227); outline-offset: 2px; }
 .dash-ag-fotos { display: flex; gap: 0.35rem; margin-top: 0.35rem; }
 .dash-ag-fotos img { width: 3.2rem; height: 3.2rem; object-fit: cover; border-radius: 8px; display: block; }
+
+/* ---- "Bom saber" no site (perguntas-segmento.js): respostas do dono ---- */
+.bom-saber { margin: 1.4rem auto 0; max-width: 40rem; padding: 0 1rem; }
+.bom-saber-titulo { margin: 0 0 0.6rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; }
+.bom-saber ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.bom-saber li {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.42rem 0.8rem; border-radius: 999px;
+  border: 1px solid rgba(127, 127, 127, 0.28); font-size: 0.84rem; line-height: 1.25;
+}
+.bom-saber li span { color: var(--cor-destaque, var(--accent, #C9A227)); font-weight: 800; }
