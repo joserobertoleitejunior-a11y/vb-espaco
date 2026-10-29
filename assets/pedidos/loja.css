@@ -230,3 +230,37 @@ html.mini #cartBar, html.mini .toast { display: none; }
 .loja-ui .grupo-cardapio .cardapio-categoria-titulo { text-align: center; font-size: 1rem; padding-top: 1.4rem; }
 .loja-ui .categoria-nota { text-align: center; }
 
+
+/* ---------- passo a passo do cliente (loja.js → abrirGuia) ---------- */
+.loja-ui .gpa-cabeca { padding-bottom: 0.4rem; }
+.loja-ui .gpa-titulos { flex: 1; min-width: 0; }
+.loja-ui .gpa-titulos small { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+.loja-ui .gpa-titulos .sheet-titulo { display: block; margin-top: 0.1rem; }
+.loja-ui .gpa-barra { height: 4px; margin: 0 1.1rem 0.6rem; border-radius: 999px; background: var(--surface-2); overflow: hidden; flex-shrink: 0; }
+.loja-ui .gpa-barra span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width 0.3s ease; }
+.loja-ui .gpa-ajuda { margin: 0 0 0.8rem; }
+.loja-ui .gpa-grupo { margin: 1rem 0 0.4rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.loja-ui .gpa-grupo:first-of-type { margin-top: 0.2rem; }
+.loja-ui .gpa-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.75rem; margin-bottom: 0.45rem; border-radius: var(--radius-sm); border: 1.5px solid var(--line); background: var(--surface); }
+.loja-ui .gpa-item.tem { border-color: var(--accent); }
+.loja-ui .gpa-item[data-gserv] { cursor: pointer; }
+.loja-ui .gpa-item img { width: 52px; height: 52px; flex-shrink: 0; border-radius: 10px; object-fit: cover; }
+.loja-ui .gpa-item-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.loja-ui .gpa-item-txt strong { font-size: 0.95rem; }
+.loja-ui .gpa-item-txt small { font-size: 0.78rem; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loja-ui .gpa-item-txt em { font-style: normal; font-size: 0.85rem; font-weight: 700; color: var(--ink-soft); }
+.loja-ui .gpa-qtd { display: inline-flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.loja-ui .gpa-qtd button { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent); font-size: 1.3rem; font-weight: 700; line-height: 1; }
+.loja-ui .gpa-qtd button[data-d="-1"] { background: var(--surface-2); color: var(--ink); }
+.loja-ui .gpa-qtd strong { min-width: 1.2em; text-align: center; }
+.loja-ui .gpa-marca { width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid var(--ink-faint); display: grid; place-items: center; }
+.loja-ui .gpa-marca svg { width: 14px; height: 14px; opacity: 0; color: var(--on-accent); }
+.loja-ui .gpa-marca.ativo { background: var(--accent); border-color: var(--accent); }
+.loja-ui .gpa-marca.ativo svg { opacity: 1; }
+.loja-ui .gpa-gps { margin: 0.9rem 0; }
+.loja-ui .gpa-gps-grande .gps-box { padding: 1rem; }
+.loja-ui .gpa-gps-grande .gps-box .btn { padding: 0.75rem 1.1rem; font-size: 0.95rem; }
+.loja-ui .gpa-resumo { border-radius: var(--radius-sm); background: var(--surface-2); padding: 0.4rem 0.85rem; margin-bottom: 0.7rem; }
+.loja-ui .gpa-resumo > div { display: flex; justify-content: space-between; gap: 0.8rem; padding: 0.45rem 0; font-size: 0.9rem; }
+.loja-ui .gpa-resumo > div + div { border-top: 1px solid var(--line); }
+.loja-ui .gpa-resumo > div span:last-child { text-align: right; color: var(--ink-soft); }

@@ -296,6 +296,7 @@
     } else { $('tplHeadline').textContent = tx.titulo; if ($('tplNomeHero')) $('tplNomeHero').textContent = nome; }
     $('tplSubcopy').textContent = tx.sub;
     $('tplCtaTexto').textContent = textoCta();
+    if ($('heroVerLista')) $('heroVerLista').textContent = (SERVICO ? 'ver os serviços' : 'ver o cardápio') + ' ↓';
     var foto = $('tplHeroFoto');
     var capa = fotoCapa();
     foto.style.backgroundColor = 'var(--linen-deep)';
@@ -674,6 +675,7 @@
       tipo: 'item', item_id: it.id, meio_item_id: metade ? metade.id : null, borda_id: borda ? borda.id : null,
       qtd: s.qtd, obs: (s.obs || '').trim(), descricao: desc, preco: precoItemAtual()
     });
+    if (guia && guia.voltar) { guia.voltar = false; renderGuia(); U.toast(V.adicionado); return; }
     fecharSheet();
     U.toast(s.qtd > 1 ? s.qtd + '× — ' + V.adicionado.toLowerCase() : V.adicionado);
   }
@@ -965,19 +967,23 @@
       '<button type="button" class="btn mini" data-gps>Usar GPS</button></div>';
   }
 
+  // o pedido pode estar no formulário inteiro (checkout) ou no passo a passo (guia)
+  function noPedido() { return sheetNome === 'checkout' || sheetNome === 'guia'; }
+  function redesenharPedido(foco) { if (sheetNome === 'guia') renderGuia(); else renderCheckout(foco); }
+
   function pegarLocalizacao() {
     lerCamposCheckout();
-    if (!navigator.geolocation) { checkout.gps = { status: 'erro', msg: 'Seu aparelho não liberou a localização — digite o endereço.' }; renderCheckout(); return; }
+    if (!navigator.geolocation) { checkout.gps = { status: 'erro', msg: 'Seu aparelho não liberou a localização — digite o endereço.' }; redesenharPedido(); return; }
     checkout.gps = { status: 'buscando' };
-    renderCheckout();
+    redesenharPedido();
     navigator.geolocation.getCurrentPosition(function (pos) {
-      if (sheetNome === 'checkout') lerCamposCheckout();
+      if (noPedido()) lerCamposCheckout();
       checkout.gps = { status: 'ok', lat: Number(pos.coords.latitude.toFixed(6)), lng: Number(pos.coords.longitude.toFixed(6)), precisao: Math.round(pos.coords.accuracy || 0) };
-      if (sheetNome === 'checkout') renderCheckout();
+      if (noPedido()) redesenharPedido();
     }, function (err) {
-      if (sheetNome === 'checkout') lerCamposCheckout();
+      if (noPedido()) lerCamposCheckout();
       checkout.gps = { status: 'erro', msg: err && err.code === 1 ? 'Você não permitiu a localização. Libere nas configurações do navegador ou digite o endereço.' : 'Não consegui pegar a localização agora. Digite o endereço ou tente de novo.' };
-      if (sheetNome === 'checkout') renderCheckout();
+      if (noPedido()) redesenharPedido();
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
   }
 
@@ -1037,7 +1043,7 @@
     var c = checkout;
     c.erro = null;
     c.enviando = true;
-    renderCheckout();
+    redesenharPedido();
     // fotos ainda subindo? espera elas terminarem antes de mandar
     var fotos = [];
     if (c.fotos && window.VBAnexoFotos) {
@@ -1077,7 +1083,7 @@
         c.enviando = false;
         c.erro = U.mensagemErro(resp.error, 'Não deu pra enviar agora. Tenta de novo em instantes.');
         if (/fechada/i.test(c.erro)) { estab.status_manual = 'fechado'; atualizarStatus(); }
-        renderCheckout(true);
+        redesenharPedido(true);
         return;
       }
       resultado = resp.data;
@@ -1199,6 +1205,242 @@
     if (!timerPedidos) timerPedidos = setInterval(function () { if (sheetNome === 'pedidos') abrirMeusPedidos(); else pararPollingPedidos(); }, 15000);
   }
 
+
+  /* ===================== passo a passo do cliente =====================
+     Uma pergunta por tela, sem rolar o site: o que você quer → onde →
+     seus dados → pagamento → confere e envia. Usa a mesma sacola e o mesmo
+     envio do formulário inteiro (checkout). No "Chamar agora", o passo
+     "Onde você está?" abre com o botão da localização atual em destaque. */
+  var guia = null;
+
+  function passosGuia() {
+    var p = ['itens', 'onde', 'dados'];
+    if ((estab.formas_pagamento || []).length) p.push('pagamento');
+    p.push('confirmar');
+    return p;
+  }
+  function abrirGuia() {
+    if (!checkout) abrirCheckoutEstado();
+    guia = { i: 0, voltar: false };
+    renderGuia();
+  }
+  // o estado do pedido sem desenhar o formulário (mesmo começo do abrirCheckout)
+  function abrirCheckoutEstado() {
+    var salvo = U.lerLocal(CLIENTE_KEY, {});
+    checkout = {
+      nome: salvo.nome || '', telefone: salvo.telefone ? U.formatarTelefone(salvo.telefone) : '',
+      forma: estab.aceita_entrega ? 'entrega' : 'retirada',
+      endereco: salvo.endereco || '', referencia: salvo.referencia || '',
+      pagamento: (estab.formas_pagamento || [])[0] || null, troco: '', obs: '', erro: null, enviando: false,
+      gps: null, veiculo: salvo.veiculo || null, modelo: salvo.modelo || '', quando: ''
+    };
+    if (checkout.forma === 'entrega' && !estab.aceita_entrega) checkout.forma = 'retirada';
+  }
+
+  function linhaSimples(itemId) {
+    return carrinho.find(function (l) { return l.tipo === 'item' && l.item_id === itemId && !l.meio_item_id && !l.borda_id && !l.obs; });
+  }
+  function qtdNoCarrinho(itemId) {
+    return carrinho.filter(function (l) { return l.item_id === itemId; }).reduce(function (s, l) { return s + l.qtd; }, 0);
+  }
+  function mudarItemGuia(itemId, d) {
+    var it = itemPorId(itemId);
+    if (!it) return;
+    var l = linhaSimples(itemId);
+    if (d > 0) {
+      if (l) l.qtd = Math.min(50, l.qtd + 1);
+      else carrinho.push({ tipo: 'item', item_id: it.id, meio_item_id: null, borda_id: null, qtd: 1, obs: '', descricao: it.nome, preco: Number(it.preco) });
+    } else {
+      // tira primeiro a linha simples; se só tiver com opções, a última delas
+      var alvo = l || carrinho.slice().reverse().find(function (x) { return x.item_id === itemId; });
+      if (!alvo) return;
+      alvo.qtd -= 1;
+      if (alvo.qtd <= 0) carrinho.splice(carrinho.indexOf(alvo), 1);
+    }
+    salvarCarrinho(); renderizarCarrinhoBar(); marcarItensNoCarrinho();
+  }
+
+  function tituloGuia(passo) {
+    if (passo === 'itens') return URGENTE ? 'O que aconteceu?' : SERVICO ? 'Qual serviço você precisa?' : 'O que você vai querer?';
+    if (passo === 'onde') return URGENTE ? 'Onde você está?' : SERVICO ? 'Onde vai ser o serviço?' : 'Entrega ou retirada?';
+    if (passo === 'dados') return 'Seu nome e WhatsApp';
+    if (passo === 'pagamento') return 'Como vai pagar?';
+    return URGENTE ? 'Confere e chama' : 'Confere e envia';
+  }
+  function ajudaGuia(passo) {
+    if (passo === 'itens') return URGENTE ? 'Toque no que aconteceu — no próximo passo você manda a localização.' : SERVICO ? 'Pode escolher mais de um.' : 'Toque no + pra colocar na sacola.';
+    if (passo === 'onde') return URGENTE ? 'O jeito mais rápido: mande a sua localização atual.' : '';
+    if (passo === 'dados') return 'A loja confirma pelo WhatsApp.';
+    return '';
+  }
+
+  function corpoGuia(passo) {
+    var c = checkout, html = '';
+    if (passo === 'itens') {
+      agrupar().forEach(function (g) {
+        html += '<p class="gpa-grupo">' + esc(g.nome) + '</p>';
+        g.lista.forEach(function (it) {
+          var q = qtdNoCarrinho(it.id);
+          var dir;
+          if (SERVICO) dir = '<span class="gpa-marca' + (q ? ' ativo' : '') + '">' + U.ICONES.check + '</span>';
+          else if (temOpcoes(it)) dir = '<button type="button" class="btn mini" data-gescolher="' + it.id + '">' + (q ? q + ' · mais' : 'Escolher') + '</button>';
+          else dir = '<span class="gpa-qtd">' + (q ? '<button type="button" data-gq="' + it.id + '" data-d="-1" aria-label="Tirar um">−</button><strong>' + q + '</strong>' : '') +
+            '<button type="button" data-gq="' + it.id + '" data-d="1" aria-label="Pôr mais um">+</button></span>';
+          html += '<div class="gpa-item' + (q ? ' tem' : '') + '"' + (SERVICO ? ' data-gserv="' + it.id + '" role="button" tabindex="0"' : '') + '>' +
+            (it.foto_url ? '<img src="' + esc(it.foto_url) + '" alt="" loading="lazy">' : '') +
+            '<span class="gpa-item-txt"><strong>' + esc(it.nome) + '</strong>' + (it.descricao ? '<small>' + esc(it.descricao) + '</small>' : '') +
+            '<em>' + U.precoOuCombinar(it.preco) + '</em></span>' + dir + '</div>';
+        });
+      });
+      return html;
+    }
+    if (passo === 'onde') {
+      if (estab.aceita_entrega && estab.aceita_retirada) {
+        html += '<div class="seg"><button type="button" data-gforma="entrega" class="' + (c.forma === 'entrega' ? 'ativo' : '') + '">' + V.entrega + '</button>' +
+          '<button type="button" data-gforma="retirada" class="' + (c.forma === 'retirada' ? 'ativo' : '') + '">' + V.retirada + '</button></div>';
+      }
+      if (c.forma === 'entrega') {
+        html += '<div class="gpa-gps' + (URGENTE ? ' gpa-gps-grande' : '') + '">' + blocoGps() + '</div>' +
+          campo('ckEnd', c.gps && c.gps.status === 'ok' ? 'Endereço ou ponto de referência (opcional)' : V.enderecoRotulo,
+            '<input id="ckEnd" autocomplete="street-address" maxlength="200" value="' + esc(c.endereco) + '" placeholder="' + (SERVICO ? 'Rua, número, bairro — ou um ponto de referência' : 'Rua, número, bairro') + '">') +
+          campo('ckRef', URGENTE ? 'Como te achar?' : 'Complemento / referência', '<input id="ckRef" maxlength="140" value="' + esc(c.referencia) + '" placeholder="' + (URGENTE ? 'Ex.: carro prata no posto, em frente ao mercado' : 'Apto, bloco, perto de…') + '">');
+      } else {
+        html += '<p class="sheet-desc" style="margin-top:.9rem">' + V.retiradaEm + ': <strong>' + esc(estab.endereco || 'combine pelo WhatsApp') + '</strong></p>';
+      }
+      if (SERVICO && !URGENTE) html += campo('ckQuando', 'Quando fica bom pra você? (opcional)', '<input id="ckQuando" maxlength="60" value="' + esc(c.quando) + '" placeholder="Ex.: sábado de manhã, depois das 18h">');
+      return html;
+    }
+    if (passo === 'dados') {
+      return campo('ckNome', 'Seu nome', '<input id="ckNome" autocomplete="name" maxlength="80" value="' + esc(c.nome) + '" placeholder="Como te chamamos?">') +
+        campo('ckTel', 'WhatsApp', '<input id="ckTel" type="tel" inputmode="numeric" autocomplete="tel-national" value="' + esc(c.telefone) + '" placeholder="(15) 99999-9999">') +
+        '<p class="nota-privacidade">Seus dados vão só pra ' + esc(estab.nome) + ', pra fazer o seu pedido. <a href="/privacidade.html" target="_blank" rel="noopener">Privacidade</a></p>';
+    }
+    if (passo === 'pagamento') {
+      html += '<div class="opcoes">' + (estab.formas_pagamento || []).map(function (f) {
+        return '<button type="button" class="opcao' + (c.pagamento === f ? ' ativo' : '') + '" data-gpag="' + f + '"><span class="marca">' + U.ICONES.check + '</span><span class="opcao-nome">' + esc(U.PAGAMENTOS[f] || f) + '</span></button>';
+      }).join('') + '</div>';
+      if (c.pagamento === 'dinheiro') html += '<div style="margin-top:.7rem">' + campo('ckTroco', 'Troco para quanto?', '<input id="ckTroco" type="number" inputmode="decimal" min="0" step="0.01" value="' + esc(c.troco) + '" placeholder="Deixe vazio se não precisar">') + '</div>';
+      if (c.pagamento === 'pix' && estab.chave_pix) html += '<div class="pix-box">Chave Pix da loja:<code>' + esc(estab.chave_pix) + '</code><button type="button" class="link-acao" data-gpix>Copiar chave</button></div>';
+      return html;
+    }
+    // confirmar
+    var sub = subtotal(), taxa = c.forma === 'entrega' ? Number(estab.taxa_entrega || 0) : 0;
+    if (c.erro) html += '<div class="aviso-loja" style="margin:0 0 1rem">' + esc(c.erro) + '</div>';
+    html += '<div class="gpa-resumo">' + carrinho.map(function (l) {
+      return '<div><span>' + l.qtd + '× ' + esc(l.descricao) + '</span><span>' + U.precoOuCombinar(l.preco * l.qtd) + '</span></div>';
+    }).join('') + '</div>';
+    html += '<div class="gpa-resumo gpa-resumo-dados">' +
+      '<div><span>' + (c.forma === 'entrega' ? V.entrega : V.retirada) + '</span><span>' + esc(c.forma === 'entrega' ? (c.endereco || (c.gps && c.gps.status === 'ok' ? 'Pela localização' : '')) : (estab.endereco || '')) + '</span></div>' +
+      '<div><span>' + esc(c.nome) + '</span><span>' + esc(c.telefone) + '</span></div>' +
+      (c.pagamento ? '<div><span>Pagamento</span><span>' + esc(U.PAGAMENTOS[c.pagamento] || c.pagamento) + '</span></div>' : '') + '</div>';
+    if (VEICULO) {
+      html += '<div class="grupo"><div class="grupo-titulo">Seu veículo</div><div class="chips-escolha">' +
+        ['Carro', 'Moto', 'Caminhonete', 'Caminhão', 'Outro'].map(function (v) { return '<button type="button" data-gveic="' + v + '" class="' + (c.veiculo === v ? 'ativo' : '') + '">' + v + '</button>'; }).join('') + '</div>' +
+        campo('ckModelo', 'Modelo e cor (ajuda a te achar)', '<input id="ckModelo" maxlength="60" value="' + esc(c.modelo) + '" placeholder="Ex.: Gol prata, CG 160 vermelha">') + '</div>';
+    }
+    if (SERVICO && window.VBAnexoFotos && !MODO_DEMO) {
+      c.fotos = c.fotos || [];
+      html += '<div class="grupo"><div class="grupo-titulo">Fotos <em>Opcional</em></div>' + window.VBAnexoFotos.bloco(c.fotos, { ajuda: URGENTE ? 'Uma foto do problema ajuda o profissional a já vir preparado.' : 'Fotos deixam o orçamento mais certo.' }) + '</div>';
+    }
+    html += '<div class="grupo"><div class="grupo-titulo">Observação <em>Opcional</em></div><div class="campo"><textarea id="ckObs" maxlength="280" rows="2">' + esc(c.obs) + '</textarea></div></div>';
+    if (sub + taxa > 0) html += '<div class="totais">' + (taxa ? '<div><span>' + V.taxa + '</span><span>' + U.preco(taxa) + '</span></div>' : '') + '<div class="total"><span>Total</span><span>' + U.preco(sub + taxa) + '</span></div></div>';
+    return html;
+  }
+
+  function renderGuia() {
+    var passos = passosGuia();
+    if (guia.i >= passos.length) guia.i = passos.length - 1;
+    var passo = passos[guia.i], c = checkout;
+    var ajuda = ajudaGuia(passo);
+    var podeSeguir = passo !== 'itens' || carrinho.length > 0;
+    var ultimo = passo === 'confirmar';
+    var sub = subtotal();
+    var rotulo = ultimo ? (c.enviando ? '<span class="spin"></span>Enviando…' : !aberta ? 'Loja fechada agora' : V.enviar) :
+      'Continuar' + (passo === 'itens' && sub > 0 ? '<span class="valor">' + U.preco(sub) + '</span>' : '');
+    var cabeca = '<div class="sheet-cabeca gpa-cabeca">' +
+      '<button type="button" class="sheet-voltar" data-gvoltar aria-label="Voltar">' + U.ICONES.voltar + '</button>' +
+      '<div class="gpa-titulos"><small>Passo ' + (guia.i + 1) + ' de ' + passos.length + '</small><h2 class="sheet-titulo" id="sheetTitulo">' + tituloGuia(passo) + '</h2></div>' +
+      '<button type="button" class="sheet-x" data-fechar-sheet aria-label="Fechar">' + U.ICONES.x + '</button></div>' +
+      '<div class="gpa-barra"><span style="width:' + Math.round((guia.i + 1) / passos.length * 100) + '%"></span></div>';
+    var corpoAtual = $('sheetConteudo').querySelector('.sheet-corpo');
+    var mesmo = sheetNome === 'guia' && guia.ultimoPasso === passo;
+    var scroll = mesmo && corpoAtual ? corpoAtual.scrollTop : 0;
+    abrirSheet('guia', cabeca + '<div class="sheet-corpo">' + (ajuda ? '<p class="sheet-desc gpa-ajuda">' + ajuda + '</p>' : '') + corpoGuia(passo) + '</div>' +
+      '<div class="sheet-rodape"><button type="button" class="btn cheio" id="guiaSeguirBtn" ' + (!podeSeguir || c.enviando || (ultimo && !aberta) ? 'disabled' : '') + '>' + rotulo + '</button></div>');
+    guia.ultimoPasso = passo;
+    var novo = $('sheetConteudo').querySelector('.sheet-corpo');
+    if (novo) novo.scrollTop = scroll;
+    if ($('ckTel')) U.mascaraTelefone($('ckTel'));
+    if (passo === 'confirmar' && c.fotos && window.VBAnexoFotos) {
+      window.VBAnexoFotos.ligar($('sheetConteudo').querySelector('[data-anexo-fotos]'), c.fotos, estab.id, function () {
+        if (sheetNome === 'guia') { lerCamposCheckout(); renderGuia(); }
+      });
+    }
+  }
+
+  // confere o passo antes de seguir; marca o campo que falta
+  function passoOk(passo) {
+    var c = checkout;
+    document.querySelectorAll('.campo.erro').forEach(function (el) { el.classList.remove('erro'); var m = el.querySelector('.msg-erro'); if (m) m.remove(); });
+    if (passo === 'onde' && c.forma === 'entrega' && c.endereco.trim().length < 5 && !(c.gps && c.gps.status === 'ok')) {
+      marcarErro('ckEnd', SERVICO ? 'Toque em "Usar GPS" ou digite onde você está' : 'Informe rua, número e bairro'); return false;
+    }
+    if (passo === 'dados') {
+      var ok = true;
+      if (c.nome.trim().length < 2) { marcarErro('ckNome', 'Digite seu nome'); ok = false; }
+      var tel = U.soDigitos(c.telefone);
+      if (tel.length < 10 || tel.length > 11) { marcarErro('ckTel', 'WhatsApp com DDD, ex.: (15) 99999-9999'); ok = false; }
+      return ok;
+    }
+    if (passo === 'pagamento' && c.pagamento === 'dinheiro' && c.troco && Number(c.troco) < subtotal() + (c.forma === 'entrega' ? Number(estab.taxa_entrega || 0) : 0)) {
+      marcarErro('ckTroco', 'O troco precisa ser maior que o total'); return false;
+    }
+    return true;
+  }
+
+  function cliqueGuia(e) {
+    var passos = passosGuia(), passo = passos[guia.i];
+    lerCamposCheckout();
+    if (e.target.closest('[data-gvoltar]')) {
+      if (guia.i === 0) fecharSheet(); else { guia.i--; renderGuia(); }
+      return;
+    }
+    var gq = e.target.closest('[data-gq]');
+    if (gq) { mudarItemGuia(gq.getAttribute('data-gq'), Number(gq.getAttribute('data-d'))); renderGuia(); return; }
+    var ge = e.target.closest('[data-gescolher]');
+    if (ge) { guia.voltar = true; abrirItem(ge.getAttribute('data-gescolher')); return; }
+    var gs = e.target.closest('[data-gserv]');
+    if (gs) {
+      var id = gs.getAttribute('data-gserv');
+      var tinha = qtdNoCarrinho(id) > 0;
+      if (URGENTE) {
+        // chamado: um problema só, e já segue pra localização
+        carrinho = carrinho.filter(function (l) { return l.item_id === id; });
+        if (!tinha) mudarItemGuia(id, 1); else { salvarCarrinho(); renderizarCarrinhoBar(); marcarItensNoCarrinho(); }
+        guia.i++; renderGuia();
+        return;
+      }
+      if (tinha) { carrinho = carrinho.filter(function (l) { return l.item_id !== id; }); salvarCarrinho(); renderizarCarrinhoBar(); marcarItensNoCarrinho(); }
+      else mudarItemGuia(id, 1);
+      renderGuia();
+      return;
+    }
+    var gf = e.target.closest('[data-gforma]');
+    if (gf) { checkout.forma = gf.getAttribute('data-gforma'); renderGuia(); return; }
+    var gp = e.target.closest('[data-gpag]');
+    if (gp) { checkout.pagamento = gp.getAttribute('data-gpag'); renderGuia(); return; }
+    var gv = e.target.closest('[data-gveic]');
+    if (gv) { checkout.veiculo = gv.getAttribute('data-gveic'); renderGuia(); return; }
+    if (e.target.closest('[data-gpix]')) { if (navigator.clipboard) navigator.clipboard.writeText(estab.chave_pix).then(function () { U.toast('Chave Pix copiada'); }); return; }
+    if (e.target.closest('[data-gps]')) { pegarLocalizacao(); return; }
+    if (e.target.closest('#guiaSeguirBtn')) {
+      if (!passoOk(passo)) return;
+      if (passo === 'confirmar') { enviarPedido(); return; }
+      guia.i++;
+      renderGuia();
+    }
+  }
+
   /* ===================== socorro rápido (atendimento no local) ===================== */
   function abrirSocorro() {
     var corpo = '<p class="sheet-desc">' + (URGENTE ? 'Escolha o que aconteceu — no próximo passo você manda a localização.' : 'Escolha o serviço — no próximo passo você diz onde e quando fica bom.') + '</p><div class="opcoes" style="margin-top:.8rem">' +
@@ -1249,9 +1491,9 @@
     var m = $('siteMenu');
     if (m && m.classList.contains('open')) $('menuCloseBtn').click();
   }
-  // botão principal do hero: chamado/orçamento abre direto; pedido rola até o cardápio
+  // botão principal do hero: o passo a passo (sem precisar rolar a página)
   function acaoPrincipal() {
-    if (SERVICO && cardapio.itens.length) { abrirSocorro(); return; }
+    if (cardapio.itens.length) { abrirGuia(); return; }
     rolarPara('servicosSecao');
   }
   function rolarPara(id) {
@@ -1380,6 +1622,7 @@
         if (lq) { mudarQtdLinha(Number(lq.getAttribute('data-linha-qtd')), Number(lq.getAttribute('data-d'))); return; }
         if (e.target.closest('#irCheckoutBtn')) { abrirCheckout(); return; }
       }
+      if (sheetNome === 'guia') { cliqueGuia(e); return; }
       if (sheetNome === 'checkout') {
         var fm = e.target.closest('[data-forma]');
         if (fm && !fm.disabled) { lerCamposCheckout(); checkout.forma = fm.getAttribute('data-forma'); renderCheckout(); return; }

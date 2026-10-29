@@ -60,3 +60,7 @@
   .hero-split .hero-split-copy #tplSubcopy { font-size: 0.95rem; }
   .hero-split .hero-cta { margin-top: 1.2rem; }
 }
+
+/* "Passo a passo, sem precisar rolar" embaixo do botão principal */
+.hero-split .hero-guia { margin: 0.8rem 0 0; font-size: 0.82rem; color: var(--ink-soft); }
+.hero-split .hero-guia a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
