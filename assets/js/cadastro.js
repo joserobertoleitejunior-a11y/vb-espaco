@@ -215,6 +215,50 @@
     });
   }
 
+  // entrar com a digital do celular (passkey): a chave pública fica no banco,
+  // a digital nunca sai do aparelho. Depois do primeiro login por e-mail e
+  // senha o app oferece ativar; vale pro dono e pra todos os negócios dele.
+  var digitalBtn = document.getElementById('digitalBtn');
+  var ativarDigitalBtn = document.getElementById('ativarDigitalBtn');
+  var podeDigital = !!(window.VBConta && window.VBConta.temRosto());
+  if (podeDigital && digitalBtn) {
+    digitalBtn.classList.remove('oculto');
+    digitalBtn.addEventListener('click', function () {
+      authMsg.className = 'msg'; authMsg.textContent = 'Toque o sensor de digital…';
+      digitalBtn.disabled = true;
+      window.VBConta.entrarDonoDigital().then(function () {
+        authMsg.textContent = '';
+      }, function (err) {
+        digitalBtn.disabled = false;
+        authMsg.className = 'msg msg-erro';
+        authMsg.textContent = err && err.name === 'NotAllowedError'
+          ? 'Nenhuma digital salva neste celular. Entre com e-mail e senha e ative a digital no menu.'
+          : ((err && err.message) || 'Não deu agora. Entre com e-mail e senha.');
+      });
+    });
+  }
+  function ativarDigital() {
+    return window.VBConta.ativarDonoDigital().then(function () {
+      if (ativarDigitalBtn) ativarDigitalBtn.classList.add('oculto');
+      window.VBDialogo.alert('Pronto! Da próxima vez é só tocar em "Entrar com digital".');
+    }, function (err) {
+      window.VBDialogo.alert(err && err.name === 'NotAllowedError' ? 'Tudo bem — dá pra ativar depois, no menu da conta.' : ((err && err.message) || 'Não deu agora.'));
+    });
+  }
+  if (ativarDigitalBtn) ativarDigitalBtn.addEventListener('click', ativarDigital);
+  // logado: mostra "Ativar" no menu e oferece uma vez
+  function oferecerDigital() {
+    if (!podeDigital) return;
+    var ja = false; try { ja = localStorage.getItem('vbDonoDigital') === '1'; } catch (e) {}
+    if (!ja && ativarDigitalBtn) ativarDigitalBtn.classList.remove('oculto');
+    var perguntou = false; try { perguntou = localStorage.getItem('vbDonoDigitalPerguntou') === '1'; } catch (e) {}
+    if (ja || perguntou) return;
+    try { localStorage.setItem('vbDonoDigitalPerguntou', '1'); } catch (e) {}
+    setTimeout(function () {
+      window.VBDialogo.confirm('Quer entrar só com a digital da próxima vez, neste celular?').then(function (ok) { if (ok) ativarDigital(); });
+    }, 1200);
+  }
+
   // LGPD: o dono apaga a conta e tudo do negócio (privacidade.html → ?excluir=1)
   var pedirExclusao = new URLSearchParams(location.search).get('excluir') === '1';
   if (pedirExclusao) {
@@ -1580,6 +1624,7 @@
     // cada volta pra aba recarregava a lista do zero (some e aparece):
     // já com o painel na tela, não tem o que fazer de novo aqui.
     if (!painelBox.classList.contains('oculto')) return;
+    oferecerDigital();
     var espera = document.getElementById('painelEspera');
     if (espera) espera.remove();
     authBox.classList.add('oculto');

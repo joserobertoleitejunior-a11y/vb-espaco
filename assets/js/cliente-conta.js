@@ -59,7 +59,7 @@
         rp: { id: op.rpId, name: 'Matriz' },
         user: { id: deB64(op.userId), name: op.nome, displayName: op.apelido },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required', requireResidentKey: true },
         excludeCredentials: (op.excluir || []).map(function (id) { return { type: 'public-key', id: deB64(id) }; }),
         timeout: 60000, attestation: 'none'
       } }).then(function (cred) {
@@ -69,11 +69,12 @@
       });
     }).then(function () { try { localStorage.setItem(ROSTO + d.telefone, '1'); } catch (e) {} return true; });
   }
+  // telefone vazio = "Entrar com digital" direto: o celular mostra as contas salvas
   function entrarComRosto(telefone) {
-    return funcao({ acao: 'opcoes-entrar', telefone: telefone }).then(function (op) {
+    return funcao({ acao: 'opcoes-entrar', telefone: telefone || '' }).then(function (op) {
       return navigator.credentials.get({ publicKey: {
         challenge: deB64(op.challenge), rpId: op.rpId, userVerification: 'required', timeout: 60000,
-        allowCredentials: op.permitir.map(function (id) { return { type: 'public-key', id: deB64(id) }; })
+        allowCredentials: (op.permitir || []).map(function (id) { return { type: 'public-key', id: deB64(id) }; })
       } }).then(function (cred) {
         var r = cred.response;
         return funcao({ acao: 'entrar', desafio_id: op.desafio_id, id: cred.id, clientDataJSON: b64(r.clientDataJSON), authenticatorData: b64(r.authenticatorData), signature: b64(r.signature) });
@@ -149,6 +150,7 @@
       '<label class="vbc-rotulo" for="vbcTel">WhatsApp com DDD</label>' +
       '<input class="vbc-campo" id="vbcTel" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="(15) 99999-9999" value="' + esc(formatar(estado.telefone || '')) + '">' +
       '<p class="vbc-msg"></p><button type="button" class="vbc-btn" id="vbcSeguir">Continuar</button>' +
+      (temPasskey ? '<div class="vbc-ou"><span>ou</span></div><button type="button" class="vbc-btn vbc-btn-rosto" id="vbcDigital">' + ICONE_DIGITAL + 'Entrar com digital</button>' : '') +
       '<p class="vbc-letra">Seus dados ficam só com você e com os negócios onde você agenda ou pede. <a href="/privacidade.html" target="_blank" rel="noopener">Privacidade</a></p>');
     var inp = corpo.querySelector('#vbcTel'), btn = corpo.querySelector('#vbcSeguir');
     inp.addEventListener('input', function () { var c = inp.selectionStart === inp.value.length; inp.value = formatar(inp.value); if (c) inp.selectionStart = inp.selectionEnd = inp.value.length; });
@@ -164,6 +166,15 @@
     }
     btn.addEventListener('click', seguir);
     inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') seguir(); });
+    var bd = corpo.querySelector('#vbcDigital');
+    if (bd) bd.addEventListener('click', function () {
+      ocupado(bd, true, 'Toque o sensor…');
+      aviso(corpo, '');
+      entrarComRosto('').then(function (s) { concluir({ telefone: s.telefone, nome: s.nome }); }, function (e) {
+        ocupado(bd, false);
+        aviso(corpo, e && e.name === 'NotAllowedError' ? 'Nenhuma digital salva aqui — entre com o WhatsApp e ative a digital depois.' : msgErro(e));
+      });
+    });
   }
 
   // 2a) já tem senha
@@ -172,7 +183,7 @@
     var corpo = tela(cab('Digite sua senha', 'WhatsApp ' + esc(formatar(estado.telefone)) + ' · <button type="button" class="vbc-link" id="vbcTrocarTel">trocar</button>') +
       campoSenha('vbcPin', 'Senha de 6 números') +
       '<p class="vbc-msg"></p>' +
-      (rosto ? '<button type="button" class="vbc-btn vbc-btn-rosto" id="vbcRosto">' + ICONE_ROSTO + 'Entrar com rosto ou digital</button>' : '') +
+      (rosto ? '<button type="button" class="vbc-btn vbc-btn-rosto" id="vbcRosto">' + ICONE_ROSTO + 'Entrar com digital</button>' : '') +
       '<button type="button" class="vbc-link vbc-esqueci" id="vbcEsqueci">Esqueci a senha</button>', rosto && rostoAtivoAqui(estado.telefone) ? '#vbcRosto' : 'input');
     corpo.querySelector('#vbcTrocarTel').addEventListener('click', passoTelefone);
     corpo.querySelector('#vbcEsqueci').addEventListener('click', passoEsqueci);
@@ -275,8 +286,8 @@
     var cliente = { telefone: s.telefone, nome: s.nome };
     // oferece rosto/digital uma vez por aparelho, logo depois de entrar
     if (temPasskey && !rostoAtivoAqui(s.telefone)) {
-      var corpo = tela(cab(novo ? 'Conta criada!' : 'Pronto, ' + esc((s.nome || '').split(' ')[0]) + '!', 'Quer entrar só com o rosto ou a digital, da próxima vez, neste celular?') +
-        '<button type="button" class="vbc-btn vbc-btn-rosto" id="vbcAtivar">' + ICONE_ROSTO + 'Ativar rosto ou digital</button>' +
+      var corpo = tela(cab(novo ? 'Conta criada!' : 'Pronto, ' + esc((s.nome || '').split(' ')[0]) + '!', 'Quer entrar só com a digital (ou o rosto), da próxima vez, neste celular?') +
+        '<button type="button" class="vbc-btn vbc-btn-rosto" id="vbcAtivar">' + ICONE_ROSTO + 'Ativar entrada com digital</button>' +
         '<button type="button" class="vbc-link" id="vbcDepois">Agora não</button><p class="vbc-msg"></p>', '#vbcAtivar');
       corpo.querySelector('#vbcDepois').addEventListener('click', function () { concluir(cliente); });
       var b = corpo.querySelector('#vbcAtivar');
@@ -292,6 +303,7 @@
     concluir(cliente);
   }
 
+  var ICONE_DIGITAL = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11v3.5c0 2-.5 3.8-1.5 5.5M8.5 9.2A4 4 0 0116 11v1.5M5 12a7 7 0 0111.2-5.6M5.2 15.5C5.1 14.4 5 13.2 5 12M19 12.2c0 3-.5 5.3-1.6 7.5M15.4 20.2c.6-1.6.9-3.2 1-4.7"/></svg>';
   var ICONE_ROSTO = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 012-2h2M16 4h2a2 2 0 012 2v2M20 16v2a2 2 0 01-2 2h-2M8 20H6a2 2 0 01-2-2v-2"/><path d="M9 10v1M15 10v1M12 10v3h-1M9.5 15.5a3.5 3.5 0 005 0"/></svg>';
   var ICONE_WHATS = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c4.97 0 9-3.8 9-8.5S16.97 4 12 4s-9 3.8-9 8.5c0 1.7.5 3.2 1.4 4.5L3 21l4.3-1.3c1.3.8 2.9 1.3 4.7 1.3z"/></svg>';
 
@@ -327,5 +339,45 @@
     return new Promise(function (ok) { resolver = ok; passoNovaSenha(); });
   }
 
-  global.VBConta = { entrar: entrar, atual: atual, token: token, sair: sair, conferir: conferir, trocarSenha: trocarSenha, ativarRosto: ativarRosto, temRosto: function () { return temPasskey; }, formatar: formatar };
+  /* ---------- dono do negócio (conta do Supabase) ---------- */
+  function ativarDonoDigital() {
+    if (!temPasskey) return Promise.reject(new Error('Este aparelho não tem digital pro navegador.'));
+    return global.db.auth.getSession().then(function (r) {
+      var sess = r.data && r.data.session;
+      if (!sess) throw new Error('Entre com e-mail e senha primeiro.');
+      return funcao({ acao: 'dono-opcoes-registro', jwt: sess.access_token });
+    }).then(function (op) {
+      return navigator.credentials.create({ publicKey: {
+        challenge: deB64(op.challenge),
+        rp: { id: op.rpId, name: 'Matriz' },
+        user: { id: deB64(op.userId), name: op.nome, displayName: op.apelido },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required', requireResidentKey: true },
+        excludeCredentials: (op.excluir || []).map(function (id) { return { type: 'public-key', id: deB64(id) }; }),
+        timeout: 60000, attestation: 'none'
+      } }).then(function (cred) {
+        var r = cred.response;
+        if (!r.getPublicKey) throw new Error('Navegador antigo: atualize pra usar a digital.');
+        return funcao({ acao: 'dono-registrar', desafio_id: op.desafio_id, id: cred.id, clientDataJSON: b64(r.clientDataJSON), spki: b64(r.getPublicKey()), alg: r.getPublicKeyAlgorithm() });
+      });
+    }).then(function () { try { localStorage.setItem('vbDonoDigital', '1'); } catch (e) {} return true; });
+  }
+  function entrarDonoDigital() {
+    return funcao({ acao: 'dono-opcoes-entrar' }).then(function (op) {
+      return navigator.credentials.get({ publicKey: { challenge: deB64(op.challenge), rpId: op.rpId, userVerification: 'required', timeout: 60000, allowCredentials: [] } }).then(function (cred) {
+        var r = cred.response;
+        return funcao({ acao: 'dono-entrar', desafio_id: op.desafio_id, id: cred.id, clientDataJSON: b64(r.clientDataJSON), authenticatorData: b64(r.authenticatorData), signature: b64(r.signature) });
+      });
+    }).then(function (s) {
+      // o tipo mudou de nome entre versões do Supabase: tenta os dois
+      return global.db.auth.verifyOtp({ token_hash: s.token_hash, type: 'magiclink' }).then(function (r) {
+        if (!r.error) return r.data;
+        return global.db.auth.verifyOtp({ token_hash: s.token_hash, type: 'email' }).then(function (r2) { if (r2.error) throw r.error; return r2.data; });
+      });
+    });
+  }
+
+  global.VBConta = {
+    ativarDonoDigital: ativarDonoDigital, entrarDonoDigital: entrarDonoDigital,
+    entrarComDigital: function () { return entrarComRosto('').then(function (s) { return { telefone: s.telefone, nome: s.nome }; }); }, entrar: entrar, atual: atual, token: token, sair: sair, conferir: conferir, trocarSenha: trocarSenha, ativarRosto: ativarRosto, temRosto: function () { return temPasskey; }, formatar: formatar };
 })(window);

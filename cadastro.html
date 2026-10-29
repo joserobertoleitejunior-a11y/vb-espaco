@@ -83,6 +83,7 @@
             <a href="explorar.html"><svg class="icone-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg> Explorar</a>
             <a href="cadastro.html" class="is-atual"><svg class="icone-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg> Seus estabelecimentos</a>
           </nav>
+          <button class="btn btn-ghost oculto" id="ativarDigitalBtn" type="button" style="width:100%; margin-top:0.6rem;">Ativar entrada com digital</button>
           <button class="btn btn-ghost" id="sairBtn" type="button" style="width:100%; margin-top:0.6rem;">Sair</button>
           <p class="topbar-menu-legal"><a href="/privacidade.html">Privacidade</a> · <a href="/termos.html">Termos</a> · <button type="button" id="excluirContaBtn">Excluir conta</button></p>
         </div>
@@ -119,6 +120,9 @@
           <button class="auth-link" id="esqueciBtn" type="button">Esqueci minha senha</button>
           <p class="auth-legal" id="authLegal" hidden>Ao criar a conta, você confirma que tem 18 anos ou mais e concorda com os <a href="/termos.html" target="_blank">termos de uso</a> e a <a href="/privacidade.html" target="_blank">política de privacidade</a>.</p>
         </form>
+        <button class="btn btn-ghost auth-digital oculto" id="digitalBtn" type="button" style="width:100%; margin-top:0.7rem;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px; margin-right:0.35rem;"><path d="M12 11v3.5c0 2-.5 3.8-1.5 5.5M8.5 9.2A4 4 0 0116 11v1.5M5 12a7 7 0 0111.2-5.6M5.2 15.5C5.1 14.4 5 13.2 5 12M19 12.2c0 3-.5 5.3-1.6 7.5M15.4 20.2c.6-1.6.9-3.2 1-4.7"/></svg>Entrar com digital
+        </button>
         <p class="msg" id="authMsg" role="status"></p>
         <div class="divisor" id="authDivisor">ainda não tem conta?</div>
         <button class="btn btn-ghost" id="trocarModoBtn" type="button" style="width:100%;">Criar conta com e-mail</button>
@@ -212,7 +216,8 @@
   <script src="assets/js/aviso-gratis.js?v=2"></script>
   <script src="assets/js/perguntas-segmento.js?v=1"></script>
   <script src="assets/js/meu-site.js?v=2"></script>
-  <script src="assets/js/cadastro.js?v=57"></script>
+  <script src="assets/js/cliente-conta.js?v=3"></script>
+  <script src="assets/js/cadastro.js?v=58"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {

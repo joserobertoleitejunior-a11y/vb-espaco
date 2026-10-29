@@ -57,3 +57,7 @@ html.vbc-travado { overflow: hidden; }
 .vbc-opcao small { display: block; margin-top: 0.15rem; font-size: 0.8rem; line-height: 1.35; color: #6b6d75; }
 .vbc-opcao-info { cursor: default; background: #fafafb; }
 @media (prefers-reduced-motion: reduce) { .vbc-fundo, .vbc-painel, .vbc-pin.vbc-treme { animation: none; } }
+
+.vbc-ou { display: flex; align-items: center; gap: 0.7rem; margin: 0.9rem 0 0; font-size: 0.78rem; color: #8a8c94; }
+.vbc-ou::before, .vbc-ou::after { content: ''; flex: 1; height: 1px; background: #e8e8ec; }
+.vbc-ou + .vbc-btn { margin-top: 0.7rem; }
