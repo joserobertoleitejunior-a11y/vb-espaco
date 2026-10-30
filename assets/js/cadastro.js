@@ -873,7 +873,7 @@
         (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashAgendaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar PDF</button>' : '') +
         '</div>' +
         '<div id="dashAgendaLista">' + (linhas.length ? linhas.map(function (a) {
-          return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(a.cliente_nome) + '</span><br>' +
+          return '<div class="painel-lista-item"><span class="ag-quem">' + (window.VBAvatar ? window.VBAvatar.html(a.cliente_nome, a.cliente_telefone, 'm') : '') + '<span class="ag-txt"><span class="principal">' + escapeHtml(a.cliente_nome) + '</span><br>' +
             '<span class="secundario">' + escapeHtml(a.servico || '') + (a.staff_nome ? ' · ' + escapeHtml(a.staff_nome) : '') + ' · ' + escapeHtml(a.dia_label || a.dia) + ' ' + escapeHtml(a.horario) +
             (Number(a.duracao_min) > 30 ? ' (' + (a.duracao_min >= 60 ? Math.floor(a.duracao_min / 60) + 'h' + (a.duracao_min % 60 ? a.duracao_min % 60 : '') : a.duracao_min + 'min') + ')' : '') + '</span>' +
             // tatuagem: a ideia que o cliente contou no agendamento
@@ -883,7 +883,7 @@
               (a.detalhes.referencia ? '<span class="dash-ag-fotos">' + String(a.detalhes.referencia).split(/\s+/).filter(function (u) { return /^https:\/\//.test(u); }).map(function (u) {
                 return '<a href="' + escapeHtml(u) + '" target="_blank" rel="noopener"><img src="' + escapeHtml(u) + '" alt="Referência" loading="lazy"></a>';
               }).join('') + '</span>' : '') : '') +
-            '</span>' +
+            '</span></span>' +
             '<span class="dash-agenda-acoes">' +
             '<span class="painel-status-badge ' + a.status + '">' + (STATUS_LABEL[a.status] || a.status) + '</span>' +
             (a.status === 'pendente' ? '<button type="button" class="btn btn-ghost" data-status-agendamento-id="' + a.id + '" data-status-novo="confirmado" style="padding:0.2rem 0.5rem; font-size:0.72rem;">Confirmar</button>' : '') +
@@ -955,6 +955,7 @@
         });
       });
 
+      if (window.VBAvatar) window.VBAvatar.hidratar(estabId, document.getElementById('dashAgendaLista'));
       document.getElementById('dashAgendaLista').addEventListener('click', function (e) {
         var btn = e.target.closest('[data-status-agendamento-id]');
         if (!btn) return;

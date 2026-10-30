@@ -16,13 +16,21 @@
     var btn = document.getElementById('clienteGlobalBtn');
     var saudacao = document.getElementById('clienteSaudacao');
     if (cliente) {
-      if (btn) btn.textContent = 'Olá, ' + primeiroNome(cliente.nome);
+      if (btn) {
+        var eu = window.VBConta && window.VBConta.atual();
+        var foto = eu && eu.telefone === cliente.telefone ? eu.foto : null;
+        if (window.VBAvatar) btn.innerHTML = window.VBAvatar.html(cliente.nome, cliente.telefone, 'p', foto) + '<span></span>';
+        else btn.textContent = '';
+        var tx = btn.querySelector('span:last-child') || btn;
+        tx.textContent = 'Olá, ' + primeiroNome(cliente.nome);
+        btn.classList.add('com-foto');
+      }
       if (saudacao) {
         saudacao.textContent = 'Bem-vindo, ' + cliente.nome;
         saudacao.classList.remove('oculto');
       }
     } else {
-      if (btn) btn.textContent = 'Entrar';
+      if (btn) { btn.textContent = 'Entrar'; btn.classList.remove('com-foto'); }
       if (saudacao) saudacao.classList.add('oculto');
     }
   }

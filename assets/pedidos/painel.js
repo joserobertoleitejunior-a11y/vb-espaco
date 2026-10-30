@@ -397,7 +397,7 @@
       return '<article class="pa-card status-' + p.status + ((recemIds || []).indexOf(p.id) !== -1 ? ' recem' : '') + '" data-pedido="' + p.id + '">' +
         '<div class="pa-topo"><div><strong>#' + (p.numero || '—') + '</strong><span class="pa-tempo">' + tempoAtras(p.criado_em) + '</span></div>' +
         '<span class="pa-status">' + rotuloStatusAdmin(p) + '</span></div>' +
-        '<div class="pa-cliente"><strong>' + esc(p.cliente_nome) + '</strong> · ' + esc(U.formatarTelefone(p.cliente_telefone)) + '</div>' +
+        '<div class="pa-cliente">' + (window.VBAvatar ? window.VBAvatar.html(p.cliente_nome, p.cliente_telefone, 'p') : '') + '<strong>' + esc(p.cliente_nome) + '</strong> · ' + esc(U.formatarTelefone(p.cliente_telefone)) + '</div>' +
         '<div class="pa-tags">' + tags.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' +
         (entrega && (p.endereco_entrega || p.referencia) ? '<div class="pa-end">' + esc(p.endereco_entrega || '') + (p.referencia ? (p.endereco_entrega ? ' — ' : '') + esc(p.referencia) : '') + '</div>' : '') +
         (entrega && p.localizacao_lat != null ? '<div class="pa-mapa">' +
@@ -416,6 +416,7 @@
           (passo ? '<button type="button" class="btn mini" data-avancar="' + p.id + '" data-para="' + passo.status + '">' + passo.rotulo + '</button>' : '') +
         '</div></div></article>';
     }).join('');
+    if (window.VBAvatar && loja) window.VBAvatar.hidratar(loja.id, $('listaPedidos'));
   }
 
   function linkWhatsCliente(p) {

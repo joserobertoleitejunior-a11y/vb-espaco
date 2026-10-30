@@ -254,14 +254,22 @@
     var saudacao = document.getElementById('clienteSaudacao');
     var menuLoginTexto = document.getElementById('menuClienteLoginTexto');
     if (cliente) {
-      if (btn) btn.textContent = 'Olá, ' + primeiroNome(cliente.nome);
+      if (btn) {
+        var eu = window.VBConta && window.VBConta.atual();
+        var foto = eu && eu.telefone === cliente.telefone ? eu.foto : null;
+        if (window.VBAvatar) btn.innerHTML = window.VBAvatar.html(cliente.nome, cliente.telefone, 'p', foto) + '<span></span>';
+        else btn.textContent = '';
+        var tx = btn.querySelector('span:last-child') || btn;
+        tx.textContent = 'Olá, ' + primeiroNome(cliente.nome);
+        btn.classList.add('com-foto');
+      }
       if (saudacao) {
         saudacao.textContent = 'Bem-vindo, ' + cliente.nome;
         saudacao.classList.remove('oculto');
       }
       if (menuLoginTexto) menuLoginTexto.textContent = 'Sair (' + primeiroNome(cliente.nome) + ')';
     } else {
-      if (btn) btn.textContent = 'Entrar';
+      if (btn) { btn.textContent = 'Entrar'; btn.classList.remove('com-foto'); }
       if (saudacao) saudacao.classList.add('oculto');
       if (menuLoginTexto) menuLoginTexto.textContent = 'Entrar';
     }
@@ -422,20 +430,11 @@
       if (window.RafaelMenu) window.RafaelMenu.close();
       var cliente = window.VBClienteGlobal.obter();
       if (!cliente) { abrirLoginCliente(); return; }
-      window.VBDialogo.prompt('Seu nome:', cliente.nome).then(function (novoNome) {
-        if (novoNome === null) return;
-        novoNome = novoNome.trim() || cliente.nome;
-        var depois = function () {
-          window.VBDialogo.confirm('Quer trocar sua senha de 6 números também?').then(function (sim) { if (sim && window.VBConta) window.VBConta.trocarSenha(); });
-        };
-        if (novoNome === cliente.nome) { depois(); return; }
-        db.rpc('cliente_trocar_nome', { p_token: window.VBClienteGlobal.token(), p_nome: novoNome }).then(function (r) {
-          if (r.error) { window.VBDialogo.alert(r.error.message); return; }
-          window.VBClienteGlobal.salvar(cliente.telefone, novoNome);
-          aplicarClienteGlobalNaTela({ telefone: cliente.telefone, nome: novoNome });
-          registrarVisitaCliente({ telefone: cliente.telefone, nome: novoNome });
-          depois();
-        });
+      window.VBConta.perfil().then(function (c) {
+        if (!c) return;
+        window.VBClienteGlobal.salvar(c.telefone, c.nome);
+        aplicarClienteGlobalNaTela({ telefone: c.telefone, nome: c.nome });
+        registrarVisitaCliente({ telefone: c.telefone, nome: c.nome });
       });
     });
   }

@@ -167,3 +167,5 @@ html.dash-aberto, html.dash-aberto body { overflow: hidden; overscroll-behavior:
 .ca-atalho strong { font-size: 0.98rem; }
 @media (prefers-reduced-motion: reduce) { .ca-aba svg, .ca-atalho { transition: none; } }
 .ca-num b { white-space: nowrap; font-size: clamp(1.05rem, 5.4vw, 1.45rem); }
+.ag-quem { display: flex; align-items: center; min-width: 0; }
+.ag-txt { min-width: 0; }

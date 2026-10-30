@@ -19,7 +19,7 @@
   function ler() { try { var d = JSON.parse(localStorage.getItem(CHAVE) || 'null'); return d && d.token && d.telefone ? d : null; } catch (e) { return null; } }
   function gravar(d) { try { localStorage.setItem(CHAVE, JSON.stringify(d)); } catch (e) {} }
   function apagar() { try { localStorage.removeItem(CHAVE); localStorage.removeItem('vbClienteGlobal'); } catch (e) {} }
-  function atual() { var d = ler(); return d ? { telefone: d.telefone, nome: d.nome } : null; }
+  function atual() { var d = ler(); return d ? { telefone: d.telefone, nome: d.nome, foto: d.foto || null } : null; }
   function token() { var d = ler(); return d ? d.token : null; }
   function soDigitos(v) { return String(v || '').replace(/\D/g, ''); }
   function formatar(t) { t = soDigitos(t); return t.length === 11 ? '(' + t.slice(0, 2) + ') ' + t.slice(2, 7) + '-' + t.slice(7) : t.length === 10 ? '(' + t.slice(0, 2) + ') ' + t.slice(2, 6) + '-' + t.slice(6) : t; }
@@ -277,6 +277,83 @@
 
   function entrou(s, novo) {
     gravar({ token: s.token, telefone: s.telefone, nome: s.nome });
+    // conta nova: convida pra pôr a foto (dá pra pular); quem já tinha foto só entra
+    if (novo) { passoFoto({ telefone: s.telefone, nome: s.nome }, function () { depoisDeEntrar(s, novo); }); return; }
+    conferir().then(function () {});
+    depoisDeEntrar(s, novo);
+  }
+
+  /* ---------- foto de perfil ---------- */
+  function guardarFoto(dataUrl) {
+    return rpc('cliente_trocar_foto', { p_token: token(), p_foto: dataUrl || null }).then(function () {
+      var d = ler(); if (d) { d.foto = dataUrl || null; gravar(d); }
+      if (global.VBAvatar && d) global.VBAvatar.guardar(d.telefone, dataUrl);
+      return dataUrl || null;
+    });
+  }
+  function escolherFoto(corpo, avatarEl, aoSalvar) {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    return function (selfie) {
+      if (selfie) inp.setAttribute('capture', 'user'); else inp.removeAttribute('capture');
+      inp.onchange = function () {
+        var f = inp.files && inp.files[0]; inp.value = '';
+        if (!f) return;
+        aviso(corpo, 'Salvando sua foto…', true);
+        global.VBAvatar.reduzir(f).then(guardarFoto).then(function (url) {
+          avatarEl.innerHTML = url ? '<img src="' + esc(url) + '" alt="">' : '<b>' + esc(global.VBAvatar.iniciais((atual() || {}).nome)) + '</b>';
+          aviso(corpo, 'Foto salva!', true);
+          if (aoSalvar) aoSalvar(url);
+        }, function (e) { aviso(corpo, msgErro(e, 'Não deu pra salvar a foto.')); });
+      };
+      inp.click();
+    };
+  }
+  function blocoFoto(nome, foto) {
+    return '<div class="vbc-foto"><span class="vb-av vb-av-gg" id="vbcAv" style="--av:' + (global.VBAvatar ? global.VBAvatar.cor(nome) : '#0f6b5c') + '">' +
+      (foto ? '<img src="' + esc(foto) + '" alt="">' : '<b>' + esc(global.VBAvatar ? global.VBAvatar.iniciais(nome) : '?') + '</b>') + '</span></div>';
+  }
+  function passoFoto(cliente, seguir) {
+    if (!global.VBAvatar) { seguir(); return; }
+    var corpo = tela(cab('Coloque sua foto', 'Assim quem te atende reconhece você. Fica ao lado do seu nome, igual nas redes sociais.') + blocoFoto(cliente.nome, null) +
+      '<button type="button" class="vbc-btn" id="vbcSelfie">Tirar uma selfie</button>' +
+      '<button type="button" class="vbc-btn vbc-btn-suave" id="vbcGaleria">Escolher da galeria</button>' +
+      '<button type="button" class="vbc-link" id="vbcDepoisFoto">Agora não</button><p class="vbc-msg"></p>', '#vbcSelfie');
+    var av = corpo.querySelector('#vbcAv'), pegar = escolherFoto(corpo, av, function () { setTimeout(seguir, 700); });
+    corpo.querySelector('#vbcSelfie').addEventListener('click', function () { pegar(true); });
+    corpo.querySelector('#vbcGaleria').addEventListener('click', function () { pegar(false); });
+    corpo.querySelector('#vbcDepoisFoto').addEventListener('click', seguir);
+  }
+  // "Meus dados": foto, nome e senha numa tela só
+  function perfil() {
+    var c = atual();
+    if (!c) return Promise.resolve(null);
+    return new Promise(function (ok) {
+      resolver = ok;
+      var corpo = tela(cab('Seu perfil', formatar(c.telefone)) + blocoFoto(c.nome, c.foto) +
+        '<div class="vbc-foto-acoes"><button type="button" class="vbc-mini" id="vbcSelfie">Tirar selfie</button><button type="button" class="vbc-mini" id="vbcGaleria">Galeria</button>' +
+        (c.foto ? '<button type="button" class="vbc-mini" id="vbcSemFoto">Remover</button>' : '') + '</div>' +
+        '<label class="vbc-rotulo" for="vbcNome">Seu nome</label><input class="vbc-campo" id="vbcNome" maxlength="80" value="' + esc(c.nome) + '" autocomplete="name">' +
+        '<p class="vbc-msg"></p><button type="button" class="vbc-btn" id="vbcSalvarPerfil">Salvar</button>' +
+        '<button type="button" class="vbc-link" id="vbcSenha">Trocar minha senha</button>', '#vbcNome');
+      var av = corpo.querySelector('#vbcAv'), pegar = escolherFoto(corpo, av);
+      corpo.querySelector('#vbcSelfie').addEventListener('click', function () { pegar(true); });
+      corpo.querySelector('#vbcGaleria').addEventListener('click', function () { pegar(false); });
+      var sem = corpo.querySelector('#vbcSemFoto');
+      if (sem) sem.addEventListener('click', function () { guardarFoto(null).then(function () { perfil(); }, function (e) { aviso(corpo, msgErro(e)); }); });
+      corpo.querySelector('#vbcSenha').addEventListener('click', function () { passoNovaSenha(); });
+      var btn = corpo.querySelector('#vbcSalvarPerfil');
+      btn.addEventListener('click', function () {
+        var nome = corpo.querySelector('#vbcNome').value.trim();
+        if (nome.length < 2) return aviso(corpo, 'Digite seu nome.');
+        ocupado(btn, true, 'Salvando…');
+        var depois = function () { var d = ler(); if (d) { d.nome = nome; gravar(d); } concluir(atual()); };
+        if (nome === c.nome) { depois(); return; }
+        rpc('cliente_trocar_nome', { p_token: token(), p_nome: nome }).then(depois, function (e) { ocupado(btn, false); aviso(corpo, msgErro(e)); });
+      });
+    });
+  }
+
+  function depoisDeEntrar(s, novo) {
     var cliente = { telefone: s.telefone, nome: s.nome };
     // oferece rosto/digital uma vez por aparelho, logo depois de entrar
     if (temPasskey && !rostoAtivoAqui(s.telefone)) {
@@ -324,7 +401,7 @@
     return global.db.rpc('cliente_sessao', { p_token: t }).then(function (r) {
       if (r.error) return atual(); // sem conexão: não desloga
       if (!r.data) { apagar(); return null; }
-      var d = ler(); if (d && r.data.nome && d.nome !== r.data.nome) { d.nome = r.data.nome; gravar(d); }
+      var d = ler(); if (d && ((r.data.nome && d.nome !== r.data.nome) || (r.data.foto || null) !== (d.foto || null))) { if (r.data.nome) d.nome = r.data.nome; d.foto = r.data.foto || null; gravar(d); }
       return atual();
     }, function () { return atual(); });
   }
@@ -373,5 +450,5 @@
 
   global.VBConta = {
     ativarDonoDigital: ativarDonoDigital, entrarDonoDigital: entrarDonoDigital,
-    entrarComDigital: function () { return entrarComRosto('').then(function (s) { return { telefone: s.telefone, nome: s.nome }; }); }, entrar: entrar, atual: atual, token: token, sair: sair, conferir: conferir, trocarSenha: trocarSenha, ativarRosto: ativarRosto, temRosto: function () { return temPasskey; }, formatar: formatar };
+    entrarComDigital: function () { return entrarComRosto('').then(function (s) { return { telefone: s.telefone, nome: s.nome }; }); }, entrar: entrar, atual: atual, token: token, sair: sair, conferir: conferir, trocarSenha: trocarSenha, perfil: perfil, ativarRosto: ativarRosto, temRosto: function () { return temPasskey; }, formatar: formatar };
 })(window);

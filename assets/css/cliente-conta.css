@@ -61,3 +61,10 @@ html.vbc-travado { overflow: hidden; }
 .vbc-ou { display: flex; align-items: center; gap: 0.7rem; margin: 0.9rem 0 0; font-size: 0.78rem; color: #8a8c94; }
 .vbc-ou::before, .vbc-ou::after { content: ''; flex: 1; height: 1px; background: #e8e8ec; }
 .vbc-ou + .vbc-btn { margin-top: 0.7rem; }
+
+/* foto de perfil */
+.vbc-foto { display: flex; justify-content: center; margin: 0.6rem 0 1rem; }
+.vbc-foto .vb-av { margin-right: 0; }
+.vbc-btn-suave { background: #fff; color: #1f2024; border: 1.5px solid #e1e1e6; margin-top: 0.6rem; }
+.vbc-foto-acoes { display: flex; justify-content: center; gap: 0.5rem; margin: -0.2rem 0 0.8rem; flex-wrap: wrap; }
+.vbc-mini { padding: 0.5rem 0.9rem; border-radius: 999px; border: 1.5px solid #e1e1e6; background: #fff; font: inherit; font-size: 0.85rem; font-weight: 700; color: #1f2024; cursor: pointer; }

@@ -402,3 +402,4 @@ html.embutido .p-topo-app, html.embutido .p-abas, html.embutido .p-menu, html.em
 html.embutido body, html.embutido .painel { background: transparent; padding-top: 0; }
 html.embutido #app { padding-top: 0; }
 html.embutido .barra-salvar { bottom: 0; }
+.pa-cliente { display: flex; align-items: center; flex-wrap: wrap; gap: 0 0.3rem; }
