@@ -177,3 +177,8 @@ body.vbe-aberto { padding-bottom: 60vh !important; }
 @media (max-width: 380px) { .vbh-dia { flex-wrap: wrap; } }
 .vbe-pilula { left: auto; right: 1rem; transform: none; }
 .vbe-anel-num { display: flex; align-items: center; justify-content: center; white-space: nowrap; }
+
+/* a folha rola macia e mostra que tem mais coisa embaixo */
+.vbe-dock { max-height: min(72dvh, 36rem); }
+.vbe-campos { -webkit-overflow-scrolling: touch; touch-action: pan-y; padding-bottom: 1.4rem; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); }
+body.vbe-aberto { padding-bottom: 72dvh !important; }

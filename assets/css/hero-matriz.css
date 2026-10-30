@@ -64,3 +64,15 @@
 /* "Passo a passo, sem precisar rolar" embaixo do botão principal */
 .hero-split .hero-guia { margin: 0.8rem 0 0; font-size: 0.82rem; color: var(--ink-soft); }
 .hero-split .hero-guia a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* o nome do negócio nunca some, seja qual for a foto ou a cor do estilo: um contorno branco
+   finíssimo (quase imperceptível) em todas as letras do título e do cabeçalho */
+.site-topbar .brand,
+.site-topbar .brand #tplNomeTopo,
+.site-topbar .cliente-global-btn,
+.hero-split .hero-nome {
+  -webkit-text-stroke: 0.55px rgba(255, 255, 255, 0.92);
+  paint-order: stroke fill;
+}
+.site-topbar .hamburger span { box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.9); }
+.site-topbar .cliente-global-btn { box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.6); }
