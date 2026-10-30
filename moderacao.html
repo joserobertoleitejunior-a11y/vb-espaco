@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script src="/assets/js/sem-zoom.js?v=3"></script>
+<title>Moderação — Matriz</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="assets/css/styles.css?v=97">
+<style>
+  body { background: #f4f4f6; color: #1f2024; }
+  .mod { max-width: 760px; margin: 0 auto; padding: 1.2rem 1rem 4rem; }
+  .mod h1 { margin: 0 0 0.3rem; font-size: 1.5rem; letter-spacing: -0.02em; }
+  .mod .sub { margin: 0 0 1.2rem; color: #5c5e66; font-size: 0.92rem; line-height: 1.5; }
+  .mod-busca { width: 100%; box-sizing: border-box; padding: 0.85rem 1rem; border-radius: 14px; border: 1.5px solid #e1e1e6; background: #fff; font: inherit; font-size: 1rem; }
+  .mod-item { margin-top: 0.6rem; padding: 0.9rem 1rem; border-radius: 16px; background: #fff; border: 1px solid #e6e6ea; display: flex; gap: 0.8rem; align-items: center; justify-content: space-between; }
+  .mod-item strong { display: block; font-size: 1rem; }
+  .mod-item small { display: block; margin-top: 0.15rem; color: #6b6d75; font-size: 0.8rem; line-height: 1.4; overflow-wrap: anywhere; }
+  .mod-item a { color: inherit; }
+  .mod-btn { flex: 0 0 auto; padding: 0.65rem 1rem; border-radius: 999px; border: 0; background: #b3261e; color: #fff; font: inherit; font-weight: 800; font-size: 0.88rem; cursor: pointer; }
+  .mod-btn.suave { background: #fff; color: #1f2024; border: 1.5px solid #e1e1e6; }
+  .mod h2 { margin: 2rem 0 0.2rem; font-size: 1.05rem; }
+  .mod-log { margin-top: 0.5rem; padding: 0.7rem 0.9rem; border-radius: 12px; background: #fff; border: 1px solid #e6e6ea; font-size: 0.82rem; line-height: 1.45; color: #3b3d44; }
+  .mod-vazio, .mod-msg { padding: 1rem; text-align: center; color: #6b6d75; font-size: 0.9rem; }
+  .mod-msg.erro { color: #b3261e; }
+  .mod-fundo { position: fixed; inset: 0; z-index: 100; background: rgba(20, 20, 24, 0.55); display: flex; align-items: flex-end; justify-content: center; }
+  .mod-fundo[hidden] { display: none; }
+  .mod-caixa { width: 100%; max-width: 480px; box-sizing: border-box; max-height: 92vh; overflow-y: auto; background: #fff; border-radius: 22px 22px 0 0; padding: 1.2rem; }
+  @media (min-width: 640px) { .mod-fundo { align-items: center; } .mod-caixa { border-radius: 22px; } }
+  .mod-caixa h3 { margin: 0 0 0.3rem; font-size: 1.15rem; }
+  .mod-caixa p { margin: 0 0 0.8rem; font-size: 0.88rem; line-height: 1.5; color: #5c5e66; }
+  .mod-caixa label { display: block; margin: 0.8rem 0 0.3rem; font-size: 0.82rem; font-weight: 700; }
+  .mod-caixa select, .mod-caixa textarea, .mod-caixa input[type=text] { width: 100%; box-sizing: border-box; padding: 0.75rem 0.85rem; border-radius: 12px; border: 1.5px solid #e1e1e6; font: inherit; font-size: 1rem; background: #fff; }
+  .mod-caixa .check { display: flex; gap: 0.5rem; align-items: flex-start; margin-top: 0.8rem; font-size: 0.85rem; font-weight: 500; }
+  .mod-caixa .check input { margin-top: 0.2rem; }
+  .mod-acoes { display: flex; gap: 0.5rem; margin-top: 1.1rem; }
+  .mod-acoes .mod-btn { flex: 1; padding: 0.85rem; }
+  .mod-btn:disabled { opacity: 0.45; }
+</style>
+</head>
+<body>
+  <main class="mod">
+    <p style="margin:0 0 0.6rem"><a href="/cadastro.html" style="color:#5c5e66;font-size:0.85rem">‹ Voltar ao painel</a></p>
+    <h1>Moderação</h1>
+    <p class="sub">Aqui você remove uma conta que saiu dos <a href="/termos.html" target="_blank">termos de uso</a> ou recebeu denúncia. Procure pelo nome, link ou e-mail do dono, confira e toque em <b>Apagar conta</b>. Cada remoção fica registrada embaixo, com o motivo.</p>
+    <div id="mod-estado" class="mod-msg">Carregando…</div>
+    <div id="mod-app" hidden>
+      <input class="mod-busca" id="mod-busca" type="search" placeholder="Procurar por nome, link ou e-mail do dono" autocomplete="off">
+      <div id="mod-lista"></div>
+      <h2>Contas já removidas</h2>
+      <div id="mod-log"></div>
+    </div>
+  </main>
+
+  <div class="mod-fundo" id="mod-fundo" hidden>
+    <div class="mod-caixa" role="dialog" aria-modal="true" aria-labelledby="mod-t">
+      <h3 id="mod-t">Apagar conta</h3>
+      <p id="mod-resumo"></p>
+      <label for="mod-motivo">Motivo</label>
+      <select id="mod-motivo">
+        <option value="Denúncia">Denúncia de usuário</option>
+        <option value="Violou os termos de uso">Violou os termos de uso</option>
+        <option value="Golpe ou fraude">Golpe ou fraude</option>
+        <option value="Conteúdo proibido">Conteúdo proibido</option>
+        <option value="Pedido do próprio dono">Pedido do próprio dono</option>
+        <option value="Outro">Outro</option>
+      </select>
+      <label for="mod-detalhe">O que aconteceu (fica no registro)</label>
+      <textarea id="mod-detalhe" rows="3" placeholder="Ex.: denúncia recebida em 30/10 por foto imprópria"></textarea>
+      <label class="check"><input type="checkbox" id="mod-login"> <span>Apagar também o login do dono (ele não consegue entrar de novo com esse e-mail). Só vale se ele não tiver outro negócio.</span></label>
+      <label for="mod-confirma">Pra confirmar, digite <b id="mod-nome-conf"></b></label>
+      <input type="text" id="mod-confirma" autocomplete="off" autocapitalize="off">
+      <p id="mod-erro" class="mod-msg erro" hidden></p>
+      <div class="mod-acoes">
+        <button type="button" class="mod-btn suave" id="mod-cancelar">Cancelar</button>
+        <button type="button" class="mod-btn" id="mod-apagar" disabled>Apagar de vez</button>
+      </div>
+      <p style="margin:0.8rem 0 0;font-size:0.78rem">Não tem como desfazer: o site, a agenda, os clientes e o caixa desse negócio somem.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-client.js?v=1"></script>
+  <script src="assets/js/moderacao.js?v=1"></script>
+</body>
+</html>
