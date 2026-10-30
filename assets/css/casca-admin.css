@@ -23,7 +23,7 @@
 .ca-topo {
   position: sticky; top: 0; z-index: 60; order: 0;
   display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 1rem;
-  background: rgba(255, 255, 255, 0.82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  background: #fff;
   border-bottom: 1px solid var(--borda, #e6e6ea);
 }
 .ca-topo .vt { margin-right: 0; flex: 0 0 auto; }
@@ -123,3 +123,47 @@
 .dash-como summary { cursor: pointer; font-weight: 700; list-style: none; }
 .dash-como summary::-webkit-details-marker { display: none; }
 .dash-como ol { margin-top: 0.5rem; }
+
+/* ---------- rolagem sem travar ---------- */
+html.dash-aberto, html.dash-aberto body { overflow: hidden; overscroll-behavior: none; }
+#dashboardOverlay.admin-painel-overlay { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scroll-behavior: auto; }
+#dashboardCorpo, .ca-casca { contain: layout style; }
+/* Pedidos: o painel de dentro rola sozinho e ocupa a tela certinho (uma rolagem só, sem briga) */
+#dashboardOverlay.ca-modo-pedidos { overflow: hidden; }
+#dashboardOverlay.ca-modo-pedidos .ca-casca { height: 100%; min-height: 0; }
+#dashboardOverlay.ca-modo-pedidos .ca-titulo { display: none; }
+#dashboardOverlay.ca-modo-pedidos .ca-pedidos { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin-bottom: 0.7rem; }
+#dashboardOverlay.ca-modo-pedidos .ca-frame { flex: 1 1 auto; height: auto; min-height: 0; }
+
+/* ---------- visual do ambiente de trabalho ---------- */
+.ca-topo { box-shadow: 0 1px 0 rgba(20, 20, 30, 0.04), 0 6px 18px rgba(20, 20, 30, 0.04); }
+.ca-marca strong { font-size: 1.02rem; letter-spacing: -0.01em; }
+.ca-corpo { border-radius: 22px; border-color: rgba(20, 20, 30, 0.06); box-shadow: 0 1px 2px rgba(20, 20, 30, 0.04), 0 14px 34px rgba(20, 20, 30, 0.06); }
+.ca-abas { box-shadow: 0 -6px 20px rgba(20, 20, 30, 0.06); }
+.ca-aba { gap: 0.15rem; font-size: 0.68rem; }
+.ca-aba svg { width: 23px; height: 23px; transition: transform 0.2s ease; }
+.ca-aba.is-ativa { background: rgba(var(--area-rgb, 15, 107, 92), 0.1); }
+.ca-aba.is-ativa svg { transform: translateY(-1px) scale(1.06); }
+@media (min-width: 900px) { .ca-abas { box-shadow: none; } }
+
+/* título simples de cada tela: o que é, em uma frase */
+.ca-titulo { order: 2; box-sizing: border-box; width: calc(100% - 2rem); max-width: 880px; margin: 1.1rem auto 0; padding: 0 0.3rem; }
+.ca-titulo:empty { display: none; }
+.ca-titulo h2 { margin: 0; font-size: 1.35rem; line-height: 1.2; letter-spacing: -0.02em; color: #1f2024; }
+.ca-titulo p { margin: 0.3rem 0 0; font-size: 0.92rem; line-height: 1.45; color: #5c5e66; max-width: 40rem; }
+.ca-titulo + .ca-corpo { margin-top: 0.8rem; }
+
+/* "Hoje": três números grandes, em palavras simples */
+.ca-ola { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0 0 1rem; }
+.ca-ola.dois { grid-template-columns: repeat(2, 1fr); }
+.ca-num { padding: 0.8rem 0.5rem; border-radius: 16px; text-align: center; background: linear-gradient(180deg, rgba(var(--area-rgb, 15, 107, 92), 0.1), rgba(var(--area-rgb, 15, 107, 92), 0.04)); }
+.ca-num b { display: block; font-size: 1.45rem; line-height: 1.1; letter-spacing: -0.02em; color: #1f2024; }
+.ca-num span { display: block; margin-top: 0.2rem; font-size: 0.74rem; font-weight: 600; color: #5c5e66; }
+.ca-num.alerta { background: rgba(196, 85, 58, 0.12); }
+
+/* atalhos maiores, mais fáceis de acertar com o dedo */
+.ca-atalho { min-height: 64px; justify-content: center; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 1px 2px rgba(20, 20, 30, 0.04); }
+.ca-atalho:active { transform: scale(0.98); }
+.ca-atalho strong { font-size: 0.98rem; }
+@media (prefers-reduced-motion: reduce) { .ca-aba svg, .ca-atalho { transition: none; } }
+.ca-num b { white-space: nowrap; font-size: clamp(1.05rem, 5.4vw, 1.45rem); }

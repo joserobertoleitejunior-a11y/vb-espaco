@@ -8,7 +8,7 @@
    Não é clicável de propósito: só reage a arrastar o dedo (touch). */
 (function () {
   var alvo = document.getElementById('pullRefreshCubo');
-  if (!alvo || !window.requestAnimationFrame) return;
+  if (!alvo || !window.requestAnimationFrame || /[?&]embed=1/.test(location.search)) return;
   var temToque = 'ontouchstart' in window; // o cubo aparece sempre; o gesto de puxar só em touch
 
   var reduzMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

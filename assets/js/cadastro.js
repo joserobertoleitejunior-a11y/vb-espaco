@@ -719,6 +719,7 @@
     fecharMenuDash();
     dashboardOverlay.scrollTop = 0;
     dashboardOverlay.classList.remove('oculto');
+    document.documentElement.classList.add('dash-aberto');
     var iniciar = function () {
       if (dashEstabId !== estabId) return;
       aplicarAbas(estabId);
@@ -739,8 +740,11 @@
     fecharMenuDash();
     if (pedidosHost) { pedidosHost.remove(); pedidosHost = null; }
     dashboardOverlay.classList.add('oculto');
+    document.documentElement.classList.remove('dash-aberto');
+    dashboardOverlay.classList.remove('ca-modo-pedidos');
     dashEstabId = null;
   }
+  var timerCarregando = null;
   function mostrarAbaDashboard(aba, sub) {
     dashAbaAtual = aba;
     var vb = document.getElementById('dashVoltar'); if (vb) { vb.classList.toggle('oculto', aba !== 'caixa' && aba !== 'comunidade'); vb.setAttribute('data-ir-aba', aba === 'caixa' ? 'resumo' : 'perfil'); }
@@ -752,6 +756,9 @@
     });
     if (pedidosHost) pedidosHost.classList.toggle('oculto', !noPedidos);
     dashboardCorpo.classList.toggle('oculto', noPedidos);
+    dashboardOverlay.classList.toggle('ca-modo-pedidos', noPedidos);
+    var tt = document.getElementById('dashTitulo'), tx = TITULOS_ABA[aba];
+    if (tt) tt.innerHTML = tx ? '<h2>' + tx[0] + '</h2><p>' + tx[1] + '</p>' : '';
     if (noPedidos) {
       if (aba === 'perfil') irPedidosSub('loja', true); else irPedidosSub(sub || 'pedidos');
       dashboardOverlay.scrollTop = 0;
@@ -759,6 +766,9 @@
     }
     dashboardCorpo.classList.add('dash-carregando');
     dashboardOverlay.scrollTop = 0;
+    // se a internet falhar e a resposta nunca chegar, a tela não fica travada esmaecida
+    clearTimeout(timerCarregando);
+    timerCarregando = setTimeout(function () { dashboardCorpo.classList.remove('dash-carregando'); }, 7000);
     if (aba === 'resumo') renderizarDashResumo();
     else if (aba === 'agenda') renderizarDashAgenda();
     else if (aba === 'clientes') renderizarDashClientes();
@@ -766,6 +776,14 @@
     else if (aba === 'comunidade') renderizarDashComunidade();
     else if (aba === 'perfil') renderizarDashPerfil();
   }
+  var TITULOS_ABA = {
+    agenda: ['Sua agenda', 'Aqui ficam os horários que seus clientes marcaram. Toque em <b>Confirmar</b> quando aceitar e em <b>Concluir</b> quando terminar o serviço.'],
+    clientes: ['Seus clientes', 'Todo mundo que agendou, pediu ou só visitou seu site fica salvo aqui. Toque num nome pra ver tudo.'],
+    resumo: ['Quanto você ganhou', 'O dinheiro que entrou, quantos clientes vieram e o que mais vende.'],
+    caixa: ['Caixa', 'Vendeu algo? Toque no serviço, escolha como foi pago e pronto: o valor vai pra aba Ganhos.'],
+    comunidade: ['Promoções e recados', 'Mostre uma promoção ou um recado do dia pra quem visita o seu site.'],
+    perfil: ['Seu site', 'Deixe seu site bonito em poucos toques. Siga a lista: cada item ganha um visto quando estiver pronto.']
+  };
   // atalhos das telas (Caixa, Promoções, Pedidos…) sem trocar de painel
   function irPara(aba, sub) { if (dashEstabId) mostrarAbaDashboard(aba, sub); }
 
@@ -829,15 +847,24 @@
     Promise.all([
       db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }),
       db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }),
-      db.rpc('tenant_admin_listar_agenda', { p_estabelecimento_id: estabId })
+      db.rpc('tenant_admin_listar_agenda', { p_estabelecimento_id: estabId }),
+      db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: 1 }).then(function (r) { return r; }, function () { return {}; })
     ]).then(function (resultados) {
       if (dashEstabId !== estabId) return;
+      var ganhosHoje = (resultados[3] && resultados[3].data && resultados[3].data.total_hoje) || 0;
       var servicos = resultados[0].data || [];
       var equipe = resultados[1].data || [];
       var linhas = resultados[2].data || [];
       var semCadastroBase = !servicos.length || !equipe.length;
       dashboardCorpo.classList.remove('dash-carregando');
+      var hojeStr = (function (d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })(new Date());
+      var horariosHoje = linhas.filter(function (a) { return String(a.dia).slice(0, 10) === hojeStr && a.status !== 'cancelado'; }).length;
       dashboardCorpo.innerHTML =
+        '<div class="ca-ola' + (temPedidosNeg() ? '' : ' dois') + '">' +
+        '<div class="ca-num"><b>' + horariosHoje + '</b><span>horários hoje</span></div>' +
+        (temPedidosNeg() ? '<div class="ca-num' + (pedidosNovos ? ' alerta' : '') + '"><b>' + pedidosNovos + '</b><span>pedidos novos</span></div>' : '') +
+        '<div class="ca-num"><b>' + formatarPreco(ganhosHoje) + '</b><span>ganhos hoje</span></div>' +
+        '</div>' +
         '<div class="ca-atalhos">' +
         (temPedidosNeg() && pedidosNovos ? '<button type="button" class="ca-atalho destaque" data-ir-aba="pedidos"><strong>' + pedidosNovos + ' pedido(s) novo(s)</strong><small>Toque pra ver</small></button>' : '') +
         '<button type="button" class="ca-atalho" data-ir-aba="caixa"><strong>Lançar venda</strong><small>Caixa: quanto entrou</small></button>' +
@@ -1617,6 +1644,11 @@
   document.getElementById('dashMenuSair').addEventListener('click', function () { fecharMenuDash(); sairBtn.click(); });
   document.getElementById('dashMenuExcluir').addEventListener('click', function () { fecharMenuDash(); excluirConta(); });
   document.getElementById('dashMenuDigital').addEventListener('click', function () { fecharMenuDash(); ativarDigital(); });
+  var ajudaBtn = document.getElementById('dashAjuda');
+  if (ajudaBtn) ajudaBtn.addEventListener('click', function () {
+    fecharMenuDash();
+    window.VBDialogo.alert('Como usar, em 5 passos:\n\n1. Agenda: veja quem marcou horário. Toque em Confirmar e depois em Concluir.\n2. Pedidos: quando alguém pedir, toca um aviso. Toque em Aceitar e siga os botões.\n3. Clientes: todo mundo que veio fica salvo, com o histórico.\n4. Ganhos: veja quanto dinheiro entrou. Vendeu algo? Toque em Lançar venda.\n5. Meu site: deixe seu site bonito e copie o link pra divulgar.');
+  });
   document.getElementById('dashboardOverlay').addEventListener('click', function (e) {
     var at = e.target.closest('[data-ir-aba]');
     if (at && dashEstabId) irPara(at.getAttribute('data-ir-aba'), at.getAttribute('data-ir-sub'));

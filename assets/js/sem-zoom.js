@@ -21,9 +21,18 @@
   // toque: quem toca uma opção e logo outra (ou "Continuar") ainda escolhe
   // certo, porque o clique é disparado na mão no lugar tocado
   document.documentElement.style.touchAction = 'manipulation';
-  var ultimo = 0;
+  var ultimo = 0, x0 = 0, y0 = 0, t0 = 0;
+  document.addEventListener('touchstart', function (e) {
+    var t = e.touches && e.touches[0];
+    if (t) { x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); }
+  }, { passive: true });
   document.addEventListener('touchend', function (e) {
     var agora = Date.now();
+    var c = e.changedTouches && e.changedTouches[0];
+    // arrastar/rolar NÃO é toque: nunca mexe nisso (antes, rolar rápido duas vezes
+    // travava a rolagem e podia clicar num botão sem querer)
+    var foiToque = c && Math.abs(c.clientX - x0) < 10 && Math.abs(c.clientY - y0) < 10 && agora - t0 < 350;
+    if (!foiToque) { ultimo = 0; return; }
     var rapido = agora - ultimo < 320;
     ultimo = agora;
     if (!rapido || (e.touches && e.touches.length) || (e.changedTouches && e.changedTouches.length > 1)) return;

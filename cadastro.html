@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<script src="/assets/js/sem-zoom.js?v=2"></script>
+<script src="/assets/js/sem-zoom.js?v=3"></script>
 <script src="/assets/js/vb-sessao-cedo.js?v=1"></script>
 <style>
   /* sessão salva neste aparelho: nada de piscar o login antes do painel */
@@ -42,7 +42,7 @@
 <link rel="stylesheet" href="/assets/css/vb-local.css?v=1">
 <link rel="stylesheet" href="/assets/css/meu-site.css?v=1">
 <link rel="stylesheet" href="/assets/css/clientes-painel.css?v=2">
-<link rel="stylesheet" href="/assets/css/casca-admin.css?v=7">
+<link rel="stylesheet" href="/assets/css/casca-admin.css?v=9">
 <style>
   .auth-legal { margin: 0.7rem 0 0; font-size: 0.78rem; line-height: 1.45; color: var(--tinta-suave); text-align: center; }
   .auth-legal a, .topbar-menu-legal a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
@@ -165,6 +165,7 @@
         <button type="button" class="ca-icone" id="dashMenuBtn" aria-label="Menu" aria-expanded="false" title="Menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h12M4 17h8"/></svg></button>
       </header>
       <div class="ca-menu" id="dashMenu" role="menu">
+        <button type="button" class="ca-menu-item" id="dashAjuda">Como usar o painel</button>
         <button type="button" class="ca-menu-item" id="dashFechar">Meus estabelecimentos</button>
         <a class="ca-menu-item" id="dashMenuSite" target="_blank" rel="noopener">Ver meu site</a>
         <a class="ca-menu-item" id="dashMenuEditar">Editar meu site</a>
@@ -175,12 +176,13 @@
         <button type="button" class="ca-menu-item ca-perigo" id="dashMenuExcluir">Excluir minha conta</button>
       </div>
       <button type="button" class="ca-voltar oculto" id="dashVoltar">‹ Voltar</button>
+      <div class="ca-titulo" id="dashTitulo"></div>
       <main class="admin-painel-corpo ca-corpo" id="dashboardCorpo"></main>
       <nav class="ca-abas" id="dashboardAbas" aria-label="Seções do painel">
       <button type="button" class="ca-aba oculto" data-dash-aba="agenda"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg><span>Agenda</span></button>
       <button type="button" class="ca-aba oculto" data-dash-aba="pedidos"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2l-2 4v14a1 1 0 001 1h14a1 1 0 001-1V6l-2-4z"/><path d="M4 6h16"/><path d="M16 10a4 4 0 01-8 0"/></svg><span id="dashRotuloPedidos">Pedidos</span><i class="ca-selo oculto" id="dashSeloPedidos"></i></button>
       <button type="button" class="ca-aba" data-dash-aba="clientes"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6"/><circle cx="17.5" cy="9" r="2.2"/><path d="M15 20c.2-2.6 1.7-4.6 4-5.2"/></svg><span>Clientes</span></button>
-      <button type="button" class="ca-aba" data-dash-aba="resumo"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="22" y1="20" x2="22" y2="9"/></svg><span>Resumo</span></button>
+      <button type="button" class="ca-aba" data-dash-aba="resumo"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="22" y1="20" x2="22" y2="9"/></svg><span>Ganhos</span></button>
       <button type="button" class="ca-aba" data-dash-aba="perfil"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 9v10h14V9"/><path d="M9 19v-6h6v6"/></svg><span>Meu site</span></button>
       </nav>
     </div>
@@ -210,7 +212,7 @@
   <script src="assets/js/meu-site.js?v=2"></script>
   <script src="assets/js/clientes-painel.js?v=3"></script>
   <script src="assets/js/cliente-conta.js?v=4"></script>
-  <script src="assets/js/cadastro.js?v=63"></script>
+  <script src="assets/js/cadastro.js?v=64"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
