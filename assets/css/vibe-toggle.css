@@ -162,7 +162,8 @@ body:has(.sheet.aberto, .wizard-overlay.open, .catalog-overlay.open, .site-menu.
 }
 [data-vibe-marca-logo="hero"] { display: inline-flex; justify-content: center; }
 @media (max-width: 380px) {
-  .faixa-marca .faixa-nome { display: none; }
+  /* o nome fica sempre ao lado da torre; só encolhe um pouco em tela estreita */
+  .faixa-marca { font-size: 0.72rem; gap: 0.28rem; }
   .vt-op { padding: 0.36rem 0.6rem; }
 }
 
@@ -363,3 +364,23 @@ html.pt-motion-fim [data-vibe-marca-logo="hero"] .mz-ponto { transition: opacity
 .ag-cartao .ag-corpo .ag-titulo { min-height: 1.3em; }
 .ag-cartao .ag-corpo .ag-cursor { margin-left: 1px; animation: agCursor 0.8s steps(1) infinite; }
 @media (prefers-reduced-motion: reduce) { .ag-cartao .ag-cab .ag-ponto, .ag-cartao .ag-corpo .ag-cursor { animation: none; } }
+
+/* ---- o nome na faixa ganha a varredura dourada do index, em looping ----
+   É o mesmo gesto do motion da splash (a linha dourada passando por cima das
+   letras), aqui em CSS puro: um gradiente que anda, sem canvas e sem script.
+   A cor da letra vai numa variável — dentro do gradiente, currentColor viraria
+   o próprio "transparent" do recorte e o nome sumia. */
+@media (prefers-reduced-motion: no-preference) {
+  html.pt-marca-pronta .faixa-marca .pt-word,
+  html.pt-marca-pronta .brand .pt-word {
+    --pt-letra: #1f2024;
+    background-image: linear-gradient(100deg, var(--pt-letra) 0 40%, #C9A227 48%, #F0D27A 52%, var(--pt-letra) 60%);
+    background-size: 320% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: ptVarre 7s ease-in-out 1.6s infinite;
+  }
+  html.pt-marca-pronta .faixa-vibe .pt-word { --pt-letra: #f4f4f6; }
+  @keyframes ptVarre { 0%, 62% { background-position: 100% 0; } 92%, 100% { background-position: 0 0; } }
+}

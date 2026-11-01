@@ -1205,120 +1205,128 @@
   // ---- passo "foto principal": mesmo upload/estoque do editor rápido do
   // admin, só que sempre visível dentro da própria caixa da criação — sem
   // precisar adivinhar onde clicar na foto por trás dela. ----
-  function renderPassoTutorialFoto(container) {
-    var fotoAtual = fotoPrincipal();
+  function renderPassoTutorialFoto(container, ctx) {
     var estoque = window.estoqueFotosPara ? window.estoqueFotosPara(linhaAtual.segmento) : ESTOQUE_FOTOS_ADMIN;
+    var avatares = window.avataresParaSegmento ? window.avataresParaSegmento(linhaAtual.segmento) : [];
+    var CHECK = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg>';
+    var MOLDURAS = [
+      { chave: 'simples', nome: 'Simples' }, { chave: 'dupla', nome: 'Dupla' }, { chave: 'grossa', nome: 'Grossa' },
+      { chave: 'pontilhada', nome: 'Pontilhada' }, { chave: 'metalica', nome: 'Metálica' },
+      { chave: 'giratoria', nome: 'Giratória ✨' }, { chave: 'aura', nome: 'Aura' }
+    ];
+    function grade(tipo, fotos, atual, cols, contain) {
+      return '<div class="vbfc-grade' + (cols === 3 ? ' tres' : '') + '">' + fotos.map(function (f) {
+        var on = f.url === atual;
+        return '<button type="button" class="vbfc-thumb' + (on ? ' on' : '') + (contain ? ' contem' : '') + '" data-foto="' + tipo + '" data-url="' + f.url + '" title="' + f.legenda + '" aria-pressed="' + on + '">' +
+          '<img src="' + f.url + '" alt="' + f.legenda + '" loading="lazy"><i>' + CHECK + '</i></button>';
+      }).join('') + '</div>';
+    }
+    function cabeca(n, tipo, titulo, ajuda) {
+      return '<div class="vbfc-sec-topo"><b>' + n + '</b><span><strong>' + titulo + '</strong><small>' + ajuda + '</small></span>' +
+        '<em class="vbfc-selo" data-selo="' + tipo + '"></em></div>';
+    }
+    function avatarHtml() {
+      var fotoPerfil = linhaAtual.foto_perfil_url || fotoPrincipal();
+      return '<span class="catalogo-avatar-anel moldura-' + (linhaAtual.moldura_foto || 'simples') + '" style="position:relative; left:auto; bottom:auto; --avatar-cor:' + (linhaAtual.cor_destaque || '#C9A227') + '; width:64px; height:64px; flex-shrink:0;">' +
+        '<span class="catalogo-avatar" style="background:' + (linhaAtual.cor_destaque || '#C9A227') + ';">' +
+        (fotoPerfil ? '<span class="catalogo-avatar-foto" style="background-image:url(\'' + fotoPerfil + '\');"></span>' : escapeHtml((linhaAtual.nome || '?')[0].toUpperCase())) +
+        '</span></span>';
+    }
+
     container.innerHTML =
-      (fotoAtual ? '<div id="vbTutFoco" style="margin-bottom:0.7rem;"></div>' : '') +
-      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.7rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto do celular<input type="file" id="vbTutFotoUpload" accept="image/*"></label>' +
-      '<p class="vb-servico-novo-legenda">ou toque numa foto pronta:</p>' +
-      '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem;">' +
-      estoque.map(function (f) {
-        var sel = f.url === fotoAtual;
-        return '<img src="' + f.url + '" data-estoque-url="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; cursor:pointer; border:2px solid ' + (sel ? 'var(--terracotta, var(--dourado,#C9A227))' : 'transparent') + ';">';
-      }).join('') +
-      '</div>' +
-      '<p class="msg" id="vbTutFotoMsg" style="margin-top:0.5rem;"></p>' +
-      renderBlocoFotoPerfil();
+      cabeca('1', 'hero', 'Foto principal', 'A foto grande do topo do seu site.') +
+      (fotoPrincipal() ? '<div id="vbTutFoco" style="margin-bottom:0.7rem;"></div>' : '') +
+      '<label class="vb-btn-upload vbfc-enviar"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Enviar do meu celular<input type="file" id="vbTutFotoUpload" accept="image/*"></label>' +
+      '<p class="vbfc-ou">ou toque numa foto pronta — ela já entra salva</p>' +
+      grade('hero', estoque, fotoPrincipal(), 3) +
+      '<div class="vbfc-sec">' +
+        cabeca('2', 'perfil', 'Foto de perfil', 'A bolinha redonda: aparece na busca e no seu painel.') +
+        '<div class="vbf-avatar-linha" id="vbTutAvatar">' + avatarHtml() +
+          '<label class="vb-btn-upload vbfc-enviar"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Enviar do meu celular<input type="file" id="vbTutPerfilUpload" accept="image/*"></label>' +
+        '</div>' +
+        (avatares.length ? '<p class="vbfc-ou">ou escolha um desenho pronto</p>' + grade('perfil', avatares, linhaAtual.foto_perfil_url || fotoPrincipal(), 4, true) : '') +
+        '<p class="vbfc-ou">Borda da foto</p>' +
+        '<div class="vbf-molduras">' + MOLDURAS.map(function (m) {
+          return '<button type="button" class="vb-servico-chip' + (m.chave === (linhaAtual.moldura_foto || 'simples') ? ' on' : '') + '" data-moldura="' + m.chave + '">' + m.nome + '</button>';
+        }).join('') + '</div>' +
+      '</div>';
     montarFocoFoto(document.getElementById('vbTutFoco'));
 
-    function renderBlocoFotoPerfil() {
-      var fotoPerfil = linhaAtual.foto_perfil_url || fotoAtual;
-      var molduraAtual = linhaAtual.moldura_foto || 'simples';
-      var MOLDURAS = [
-        { chave: 'simples', nome: 'Simples' },
-        { chave: 'dupla', nome: 'Dupla' },
-        { chave: 'grossa', nome: 'Grossa' },
-        { chave: 'pontilhada', nome: 'Pontilhada' },
-        { chave: 'metalica', nome: 'Metálica' },
-        { chave: 'giratoria', nome: 'Giratória ✨' },
-        { chave: 'aura', nome: 'Aura' }
-      ];
-      var avatarConteudo = fotoPerfil
-        ? '<span class="catalogo-avatar-foto" style="background-image:url(\'' + fotoPerfil + '\');"></span>'
-        : escapeHtml((linhaAtual.nome || '?')[0].toUpperCase());
-      return '<hr style="border:none; border-top:1px solid var(--borda-suave,#e7e2d8); margin:1.2rem 0;">' +
-        '<p style="font-size:0.85rem; font-weight:700; margin:0 0 0.5rem;">Foto de perfil <span style="font-weight:400; color:var(--ink-soft,#7a7368);">— aparece no catálogo e no seu painel</span></p>' +
-        '<div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.8rem;">' +
-        '<span class="catalogo-avatar-anel moldura-' + molduraAtual + '" id="vbTutPerfilAnel" style="position:relative; left:auto; bottom:auto; --avatar-cor:' + (linhaAtual.cor_destaque || '#C9A227') + '; width:64px; height:64px; flex-shrink:0;">' +
-        '<span class="catalogo-avatar" style="background:' + (linhaAtual.cor_destaque || '#C9A227') + ';">' + avatarConteudo + '</span>' +
-        '</span>' +
-        '<label class="vb-btn-upload" style="justify-content:center; box-sizing:border-box; flex:1;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto<input type="file" id="vbTutPerfilUpload" accept="image/*"></label>' +
-        '</div>' +
-        '<p class="vb-servico-novo-legenda">ou escolha um avatar pronto:</p>' +
-        '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.5rem; margin-bottom:0.8rem;">' +
-        (window.avataresParaSegmento ? window.avataresParaSegmento(linhaAtual.segmento) : []).map(function (f) {
-          var sel = f.url === fotoPerfil;
-          return '<img src="' + f.url + '" data-estoque-avatar-url="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:contain; background:var(--linho,#f2ede2); border-radius:10px; cursor:pointer; border:2px solid ' + (sel ? 'var(--terracotta, var(--dourado,#C9A227))' : 'transparent') + ';">';
-        }).join('') +
-        '</div>' +
-        '<p class="vb-servico-novo-legenda">Borda da foto:</p>' +
-        '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.4rem;">' +
-        MOLDURAS.map(function (m) {
-          return '<button type="button" class="vb-servico-chip" data-moldura="' + m.chave + '" style="' + (m.chave === molduraAtual ? 'background:var(--terracotta,var(--dourado,#C9A227)); color:#fff; border-color:transparent;' : '') + '">' + m.nome + '</button>';
-        }).join('') +
-        '</div>' +
-        '<p class="msg" id="vbTutPerfilMsg"></p>';
+    function dizer(tipo, texto, erro) {
+      var el = container.querySelector('[data-selo="' + tipo + '"]');
+      if (!el) return;
+      el.textContent = texto || '';
+      el.className = 'vbfc-selo' + (texto ? ' on' : '') + (erro ? ' erro' : '');
+      if (texto && !erro && /Salv/.test(texto)) setTimeout(function () { if (el.textContent === texto) el.className = 'vbfc-selo'; }, 2600);
+      if (ctx && ctx.estado) ctx.estado();
     }
-
-    function salvarPerfil(campo, valor) {
-      var msg = document.getElementById('vbTutPerfilMsg');
-      msg.textContent = 'Salvando…';
-      var payload = { p_estabelecimento_id: estabId, p_foto_perfil_url: null, p_foto_capa_url: null, p_moldura_foto: null };
-      payload[campo] = valor;
-      db.rpc('tenant_admin_atualizar_perfil_capa', payload).then(function (res) {
-        if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
-        if (campo === 'p_foto_perfil_url') linhaAtual.foto_perfil_url = valor;
-        if (campo === 'p_moldura_foto') linhaAtual.moldura_foto = valor;
-        mostrarPassoTutorial(passoCriacaoAtual);
+    function marcar(tipo, url) {
+      container.querySelectorAll('[data-foto="' + tipo + '"]').forEach(function (b) {
+        var on = b.getAttribute('data-url') === url;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
       });
     }
-    var uploadPerfilEl = document.getElementById('vbTutPerfilUpload');
-    if (uploadPerfilEl) {
-      uploadPerfilEl.addEventListener('change', function (e) {
-        var file = e.target.files[0];
-        if (!file || !window.VBUpload) return;
-        document.getElementById('vbTutPerfilMsg').textContent = 'Enviando…';
-        window.VBUpload.uploadFoto(file, estabId, 'perfil').then(function (url) { salvarPerfil('p_foto_perfil_url', url); }, function (err) {
-          var msg = document.getElementById('vbTutPerfilMsg');
-          msg.className = 'msg msg-erro';
-          msg.textContent = err.message || 'Falha ao enviar.';
-        });
-      });
-    }
-    container.querySelectorAll('[data-estoque-avatar-url]').forEach(function (img) {
-      img.addEventListener('click', function () { salvarPerfil('p_foto_perfil_url', img.getAttribute('data-estoque-avatar-url')); });
-    });
-    container.querySelectorAll('[data-moldura]').forEach(function (btn) {
-      btn.addEventListener('click', function () { salvarPerfil('p_moldura_foto', btn.getAttribute('data-moldura')); });
-    });
-
-    function salvar(url) {
-      var msg = document.getElementById('vbTutFotoMsg');
-      msg.textContent = 'Salvando…';
+    // salva sem redesenhar o passo inteiro (antes a tela pulava pro topo a cada toque)
+    function salvarHero(url) {
+      dizer('hero', 'Salvando…');
       var chave = (generoAtual === 'feminino') ? 'p_foto_hero_feminino_url' : 'p_foto_hero_url';
       var payload = { p_estabelecimento_id: estabId, p_foto_hero_url: null, p_foto_hero_feminino_url: null };
       payload[chave] = url;
       db.rpc('tenant_admin_atualizar_hero', payload).then(function (res) {
-        if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
+        if (res.error) { dizer('hero', res.error.message || 'Não salvou', true); return; }
         if (generoAtual === 'feminino') linhaAtual.foto_hero_feminino_url = url; else linhaAtual.foto_hero_url = url;
         aplicarGenero(generoAtual);
         if (linhaAtual.seguir_cor_imagem) seguirCorDaImagem(url);
-        mostrarPassoTutorial(passoCriacaoAtual);
+        marcar('hero', url);
+        var foco = document.getElementById('vbTutFoco');
+        if (foco) montarFocoFoto(foco);
+        else renderPassoTutorialFoto(container, ctx);
+        atualizarAvatar();
+        dizer('hero', 'Salvo ✓');
+      }, function () { dizer('hero', 'Sem conexão — tente de novo', true); });
+    }
+    function atualizarAvatar() {
+      var linha = document.getElementById('vbTutAvatar');
+      if (linha) linha.firstElementChild.outerHTML = avatarHtml();
+    }
+    function salvarPerfil(campo, valor) {
+      dizer('perfil', 'Salvando…');
+      var payload = { p_estabelecimento_id: estabId, p_foto_perfil_url: null, p_foto_capa_url: null, p_moldura_foto: null };
+      payload[campo] = valor;
+      db.rpc('tenant_admin_atualizar_perfil_capa', payload).then(function (res) {
+        if (res.error) { dizer('perfil', res.error.message || 'Não salvou', true); return; }
+        if (campo === 'p_foto_perfil_url') { linhaAtual.foto_perfil_url = valor; marcar('perfil', valor); }
+        if (campo === 'p_moldura_foto') {
+          linhaAtual.moldura_foto = valor;
+          container.querySelectorAll('[data-moldura]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-moldura') === valor); });
+        }
+        atualizarAvatar();
+        dizer('perfil', 'Salvo ✓');
+      }, function () { dizer('perfil', 'Sem conexão — tente de novo', true); });
+    }
+
+    container.querySelectorAll('[data-foto]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var url = b.getAttribute('data-url');
+        if (b.getAttribute('data-foto') === 'hero') salvarHero(url); else salvarPerfil('p_foto_perfil_url', url);
+      });
+    });
+    container.querySelectorAll('[data-moldura]').forEach(function (b) {
+      b.addEventListener('click', function () { salvarPerfil('p_moldura_foto', b.getAttribute('data-moldura')); });
+    });
+    function ligarUpload(id, pasta, aoPronto, tipo) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file || !window.VBUpload) return;
+        dizer(tipo, 'Enviando a foto…');
+        window.VBUpload.uploadFoto(file, estabId, pasta).then(aoPronto, function (err) { dizer(tipo, (err && err.message) || 'Não deu pra enviar essa foto', true); });
       });
     }
-    container.querySelectorAll('[data-estoque-url]').forEach(function (img) {
-      img.addEventListener('click', function () { salvar(img.getAttribute('data-estoque-url')); });
-    });
-    document.getElementById('vbTutFotoUpload').addEventListener('change', function (e) {
-      var file = e.target.files[0];
-      if (!file || !window.VBUpload) return;
-      document.getElementById('vbTutFotoMsg').textContent = 'Enviando…';
-      window.VBUpload.uploadFoto(file, estabId, 'hero').then(salvar, function (err) {
-        document.getElementById('vbTutFotoMsg').className = 'msg msg-erro';
-        document.getElementById('vbTutFotoMsg').textContent = err.message || 'Falha ao enviar.';
-      });
-    });
+    ligarUpload('vbTutFotoUpload', 'hero', salvarHero, 'hero');
+    ligarUpload('vbTutPerfilUpload', 'perfil', function (url) { salvarPerfil('p_foto_perfil_url', url); }, 'perfil');
   }
 
   // ---- passo "cores da marca": os mesmos dois seletores de cor da barra

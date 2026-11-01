@@ -241,3 +241,14 @@ html.vbfc-travado, html.vbfc-travado body { overflow: hidden; }
 .vbfc-box .vb-btn-upload { background: #fff; border: 1.5px dashed #c9c9d0; color: #1f2024; font-weight: 700; }
 .vbfc-box .vb-btn-upload:active { background: #f4f4f6; }
 .vbfc-pronto.btn.btn-primario { background: #1f2024; border-color: #1f2024; color: #fff; font-weight: 800; }
+
+/* passo "Foto principal" dentro do editor: mesma cara da tela Foto do card */
+.vbfc-grade.tres { grid-template-columns: repeat(3, 1fr); }
+.vbfc-thumb.contem { background: var(--linho, #f2ede2); }
+.vbfc-thumb.contem img { object-fit: contain; padding: 6px; }
+.vbe-campos .vbfc-sec-topo { margin: 0 0 0.7rem; }
+.vbe-campos .vbfc-sec { margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid #f0f0f3; }
+.vbf-avatar-linha { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.2rem; }
+.vbf-avatar-linha .vb-btn-upload { flex: 1; }
+.vbf-molduras { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.vb-servico-chip.on { background: var(--vbe-tinta, #1d1e22); border-color: transparent; color: #fff; }
