@@ -747,10 +747,10 @@
   var timerCarregando = null;
   function mostrarAbaDashboard(aba, sub) {
     dashAbaAtual = aba;
-    var vb = document.getElementById('dashVoltar'); if (vb) { vb.classList.toggle('oculto', aba !== 'caixa' && aba !== 'comunidade'); vb.setAttribute('data-ir-aba', aba === 'caixa' ? 'resumo' : 'perfil'); }
+    var vb = document.getElementById('dashVoltar'); if (vb) { vb.classList.toggle('oculto', aba !== 'comunidade'); vb.setAttribute('data-ir-aba', 'perfil'); }
     // Meu site de quem só tem pedidos = a aba "Loja" do painel de pedidos
     var noPedidos = aba === 'pedidos' || (aba === 'perfil' && !temAgendaNeg() && temPedidosNeg());
-    var marcada = aba === 'caixa' ? 'resumo' : aba === 'comunidade' ? 'perfil' : aba;
+    var marcada = aba === 'comunidade' ? 'perfil' : aba;
     document.querySelectorAll('#dashboardAbas [data-dash-aba]').forEach(function (b) {
       b.classList.toggle('is-ativa', b.getAttribute('data-dash-aba') === marcada);
     });
@@ -801,11 +801,10 @@
       dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
         '<p class="dash-secao-intro">Visão geral dos últimos 14 dias: quanto entrou, quantos agendamentos e quantos clientes já passaram por aqui.</p>' +
-        '<div class="ca-atalhos"><button type="button" class="ca-atalho" data-ir-aba="caixa"><strong>Lançar venda</strong><small>Caixa: venda avulsa</small></button></div>' +
         '<details class="dash-como"><summary>Como o dinheiro chega aqui?</summary><ol>' +
         '<li>Na <b>Agenda</b>, toque em <b>Concluir</b> quando o serviço for feito e informe o valor.</li>' +
         (temPedidosNeg() ? '<li>Pedido <b>Concluído</b> na aba de Pedidos entra sozinho.</li>' : '') +
-        '<li>Ou toque em <b>Lançar venda</b> aqui embaixo (vendas avulsas, produtos).</li>' +
+        '<li>Ou lance direto na aba <b>Caixa</b> (vendas avulsas, produtos).</li>' +
         '<li>Pronto: o valor aparece nos cartões e no gráfico.</li></ol></details>' +
         '<div class="dash-resumo-cards">' +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(r.total_hoje || 0) + '</span><span class="dash-resumo-label">Faturado hoje</span></div>' +
@@ -867,7 +866,6 @@
         '</div>' +
         '<div class="ca-atalhos">' +
         (temPedidosNeg() && pedidosNovos ? '<button type="button" class="ca-atalho destaque" data-ir-aba="pedidos"><strong>' + pedidosNovos + ' pedido(s) novo(s)</strong><small>Toque pra ver</small></button>' : '') +
-        '<button type="button" class="ca-atalho" data-ir-aba="caixa"><strong>Lançar venda</strong><small>Caixa: quanto entrou</small></button>' +
         '</div>' +
         '<div class="dash-lista-cabecalho"><p class="dash-resumo-subtitulo" style="margin:0;">Próximos horários</p>' +
         (linhas.length ? '<button type="button" class="btn btn-ghost" id="dashAgendaExportar" style="padding:0.3rem 0.7rem; font-size:0.78rem;">Exportar PDF</button>' : '') +
@@ -1648,7 +1646,7 @@
   var ajudaBtn = document.getElementById('dashAjuda');
   if (ajudaBtn) ajudaBtn.addEventListener('click', function () {
     fecharMenuDash();
-    window.VBDialogo.alert('Como usar, em 5 passos:\n\n1. Agenda: veja quem marcou horário. Toque em Confirmar e depois em Concluir.\n2. Pedidos: quando alguém pedir, toca um aviso. Toque em Aceitar e siga os botões.\n3. Clientes: todo mundo que veio fica salvo, com o histórico.\n4. Ganhos: veja quanto dinheiro entrou. Vendeu algo? Toque em Lançar venda.\n5. Meu site: deixe seu site bonito e copie o link pra divulgar.');
+    window.VBDialogo.alert('Como usar, em 6 passos:\n\n1. Agenda: veja quem marcou horário. Toque em Confirmar e depois em Concluir.\n2. Pedidos: quando alguém pedir, toca um aviso. Toque em Aceitar e siga os botões.\n3. Clientes: todo mundo que veio fica salvo, com o histórico.\n4. Caixa: vendeu algo? Toque no serviço e lance a venda.\n5. Ganhos: veja quanto dinheiro entrou.\n6. Meu site: deixe seu site bonito e copie o link pra divulgar.');
   });
   document.getElementById('dashboardOverlay').addEventListener('click', function (e) {
     var at = e.target.closest('[data-ir-aba]');
