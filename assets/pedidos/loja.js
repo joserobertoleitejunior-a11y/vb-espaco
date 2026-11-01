@@ -1143,6 +1143,7 @@
         return;
       }
       resultado = resp.data;
+      if (window.VBAnuncioOrigem) window.VBAnuncioOrigem.converter('pedido', resultado);
     }
 
     U.gravarLocal(CLIENTE_KEY, { nome: c.nome.trim(), telefone: U.soDigitos(c.telefone), endereco: c.endereco.trim(), referencia: c.referencia.trim(), veiculo: c.veiculo, modelo: (c.modelo || '').trim() });

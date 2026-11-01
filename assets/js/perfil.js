@@ -2677,6 +2677,7 @@
           atualizarHorarios();
           return;
         }
+        if (window.VBAnuncioOrigem) window.VBAnuncioOrigem.converter('agendamento', res.data);
         var tel = (linhaAtual.telefone_whatsapp || '').replace(/\D/g, '');
         var msg = (ehTattoo() ? 'Olá! Quero agendar uma sessão de tatuagem:%0A' : 'Olá! Quero agendar um horário:%0A') +
           '• Nome: ' + encodeURIComponent(choices.nome || '') + '%0A' +

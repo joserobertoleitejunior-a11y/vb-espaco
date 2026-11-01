@@ -452,7 +452,7 @@
   }
   function anuncioHtml(a) {
     var base = '/' + encodeURIComponent(a.slug) + '/' + encodeURIComponent(a.cidade) + (st.area === 'agenda' ? '' : '/pedir');
-    return '<a class="guia-anuncio" href="' + base + '" data-anuncio="' + esc(a.id) + '" style="--cor:' + esc(a.cor_destaque || '#0F6B5C') + ';">' +
+    return '<a class="guia-anuncio" href="' + base + '?an=' + encodeURIComponent(a.id) + '" data-anuncio="' + esc(a.id) + '" style="--cor:' + esc(a.cor_destaque || '#0F6B5C') + ';">' +
       '<span class="guia-anuncio-rotulo">Patrocinado</span>' +
       '<span class="guia-anuncio-capa"' + (a.foto_url ? ' style="background-image:url(\'' + esc(a.foto_url) + '\')"' : '') + '></span>' +
       '<span class="guia-anuncio-nome">' + esc(a.titulo) + '</span>' +

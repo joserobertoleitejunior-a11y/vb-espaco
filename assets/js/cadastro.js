@@ -787,9 +787,38 @@
   // atalhos das telas (Caixa, Promoções, Pedidos…) sem trocar de painel
   function irPara(aba, sub) { if (dashEstabId) mostrarAbaDashboard(aba, sub); }
 
+  // "Seu anúncio": quantos viram, quantos vieram e quantos agendaram/pediram por ele
+  function blocoAnuncio(lista) {
+    if (!lista.length) {
+      return '<p class="dash-resumo-subtitulo">Seu anúncio</p><div class="ca-anuncio vazio"><strong>Você ainda não anunciou</strong>' +
+        '<span>Anuncie de graça e veja aqui quantas pessoas vieram e quantas agendaram por ele.</span>' +
+        '<a class="btn btn-ghost" href="/anunciar.html">Fazer meu anúncio</a></div>';
+    }
+    var soma = function (k) { return lista.reduce(function (t, a) { return t + (Number(a[k]) || 0); }, 0); };
+    var hoje = new Date().toISOString().slice(0, 10);
+    var no_ar = lista.filter(function (a) { return a.ativo && String(a.fim) >= hoje; })[0];
+    var vistos = soma('vistos'), cliques = soma('cliques'), ag = soma('agendamentos'), ped = soma('pedidos');
+    var conv = ag + ped;
+    var taxa = cliques ? Math.round(conv / cliques * 100) : 0;
+    return '<p class="dash-resumo-subtitulo">Seu anúncio</p><div class="ca-anuncio">' +
+      '<span class="ca-anuncio-estado ' + (no_ar ? 'on' : '') + '">' + (no_ar ? 'No ar agora: ' + escapeHtml(no_ar.titulo) : 'Sem anúncio no ar') + '</span>' +
+      '<div class="ca-ola ' + (temAgendaNeg() && temPedidosNeg() ? 'dois' : '') + '" style="margin:0.7rem 0 0">' +
+      '<div class="ca-num"><b>' + vistos + '</b><span>viram o anúncio</span></div>' +
+      '<div class="ca-num"><b>' + cliques + '</b><span>vieram pelo anúncio</span></div>' +
+      (temAgendaNeg() ? '<div class="ca-num alerta"><b>' + ag + '</b><span>agendaram pelo anúncio</span></div>' : '') +
+      (temPedidosNeg() ? '<div class="ca-num alerta"><b>' + ped + '</b><span>pediram pelo anúncio</span></div>' : '') +
+      '</div>' +
+      '<p class="ca-anuncio-dica">' + (cliques ? (conv ? 'De cada 100 pessoas que vieram, ' + taxa + ' fecharam com você.' : 'Já vieram ' + cliques + ' pessoa(s), mas ninguém fechou ainda. Capriche na foto e no texto do site.') : 'Quando alguém tocar no anúncio, aparece aqui.') + '</p>' +
+      '<p class="ca-anuncio-dica" style="margin-top:0.2rem">Só conta quem chegou tocando no anúncio e fechou no mesmo aparelho em até 1 dia.</p>' +
+      (no_ar ? '' : '<a class="btn btn-ghost" href="/anunciar.html" style="margin-top:0.6rem">Anunciar de novo</a>') + '</div>';
+  }
+
   function renderizarDashResumo() {
     var estabId = dashEstabId;
+    var anunciosP = db.rpc('tenant_admin_meus_anuncios', { p_estabelecimento_id: estabId }).then(function (r) { return (r && r.data) || []; }, function () { return []; });
     db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: 14 }).then(function (res) {
+      return anunciosP.then(function (an) { res.anuncios = an; return res; });
+    }).then(function (res) {
       if (dashEstabId !== estabId) return;
       if (res.error) { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">' + escapeHtml(res.error.message) + '</p>'; return; }
       var r = res.data || {};
@@ -813,6 +842,7 @@
         (temPedidosNeg() ? '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.pedidos_periodo || 0) + '</span><span class="dash-resumo-label">Pedidos (14 dias)</span></div>' : '') +
         '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.total_clientes || 0) + '</span><span class="dash-resumo-label">Clientes no total</span></div>' +
         '</div>' +
+        blocoAnuncio(res.anuncios || []) +
         '<p class="dash-resumo-subtitulo">Faturamento por dia</p>' +
         (maiorValor > 0
           ? '<div class="dash-grafico-barras">' +
