@@ -10,12 +10,13 @@
    → { valor(), destruir() }
 
    Serviços gratuitos e sem chave: Photon (busca e endereço do ponto),
-   ViaCEP (CEP) e mapa da CARTO sobre o OpenStreetMap. */
+   ViaCEP (CEP) e mapa do OpenStreetMap. */
 (function (global) {
   'use strict';
 
   var LEAFLET = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/';
-  var TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  // mapa do OpenStreetMap (a CARTO passou a exigir chave: aparecia "API KEY REQUIRED")
+  var TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   var PHOTON = 'https://photon.komoot.io/';
   var BRASIL = '&bbox=-74.1,-33.8,-34.7,5.3';
   var PADRAO = { lat: -23.5917, lng: -48.0531 }; // Itapetininga, só até ter algo melhor
@@ -183,7 +184,7 @@
         scrollWheelZoom: 'center', touchZoom: 'center', doubleClickZoom: 'center'
       }).setView([pos.lat, pos.lng], marcado ? 17 : 14);
       mapa.attributionControl.setPrefix(false);
-      L.tileLayer(TILES, { subdomains: 'abcd', maxZoom: 20, attribution: '© OpenStreetMap · © CARTO' }).addTo(mapa);
+      L.tileLayer(TILES, { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(mapa);
       L.control.zoom({ position: 'bottomright', zoomInTitle: 'Aproximar', zoomOutTitle: 'Afastar' }).addTo(mapa);
       // só o arrasto do dono marca o ponto; o que o código move, não
       var soltou = false;

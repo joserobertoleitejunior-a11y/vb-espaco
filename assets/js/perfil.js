@@ -1433,10 +1433,21 @@
   // vira o link do mapa) — geocodifica em segundo plano, sem travar o
   // avanço caso o serviço de mapa demore ou falhe. ----
   var localTutorial = null;
-  function renderPassoTutorialLocalizacao(container) {
+  function renderPassoTutorialLocalizacao(container, ctx) {
     if (localTutorial) localTutorial.destruir();
     if (!window.VBLocal) return;
-    var salvarPendente = null;
+    var salvarPendente = null, seqSalvar = 0;
+    function dizer(texto, erro) { if (ctx && ctx.salvo) ctx.salvo(texto, erro); }
+    // salva o endereço e AVISA na tela se deu certo (antes falhava calado)
+    function salvarEndereco(v) {
+      var meu = ++seqSalvar;
+      dizer('Salvando o endereço…');
+      return db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: v.endereco || '', p_lat: v.lat, p_lng: v.lng }).then(function (res) {
+        if (meu !== seqSalvar) return;
+        if (res.error) dizer(res.error.message || 'Não deu pra salvar o endereço.', true);
+        else dizer('Endereço salvo');
+      }, function () { if (meu === seqSalvar) dizer('Sem conexão — o endereço não foi salvo. Tente de novo.', true); });
+    }
     localTutorial = window.VBLocal.montar(container, {
       endereco: linhaAtual.endereco || '',
       lat: linhaAtual.endereco_lat, lng: linhaAtual.endereco_lng,
@@ -1449,9 +1460,7 @@
         document.getElementById('tplEnderecoRodape').textContent = v.endereco || 'Endereço não informado';
         atualizarBotaoProximoTutorial();
         clearTimeout(salvarPendente);
-        salvarPendente = setTimeout(function () {
-          db.rpc('tenant_admin_atualizar_endereco', { p_estabelecimento_id: estabId, p_endereco: v.endereco, p_lat: v.lat, p_lng: v.lng });
-        }, 400);
+        salvarPendente = setTimeout(function () { salvarEndereco(v); }, 250);
       }
     });
   }
