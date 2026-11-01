@@ -1273,7 +1273,7 @@
 
       dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
-        '<p class="dash-secao-intro" style="margin-top:0;">Toque nos serviços vendidos — pode adicionar quantos precisar. Ajuste o carrinho e a forma de pagamento antes de registrar.</p>' +
+        '<div class="cx-passo"><b>1</b><span><strong>O que foi vendido?</strong><small>Toque no serviço. Toque de novo pra somar mais um.</small></span></div>' +
         '<div class="dash-caixa-servicos" id="caixaServicos">' +
         servicos.map(function (s) {
           return '<button type="button" class="dash-caixa-servico-btn" data-caixa-servico-id="' + s.id + '" data-preco="' + s.preco + '" data-nome="' + escapeHtml(s.nome) + '">' +
@@ -1283,29 +1283,31 @@
             '</button>';
         }).join('') +
         '<button type="button" class="dash-caixa-servico-btn is-avulso" data-caixa-avulso>' +
-        '<span class="dash-caixa-servico-nome">Item avulso</span><span class="dash-caixa-servico-preco">outro valor</span>' +
+        '<span class="dash-caixa-servico-nome">Outro item</span><span class="dash-caixa-servico-preco">digitar o valor</span>' +
         '</button>' +
         '</div>' +
         '<div class="vb-servico-novo-painel oculto" id="caixaAvulsoPainel">' +
-        '<p class="vb-servico-novo-legenda">Descrição e valor do item:</p>' +
+        '<p class="vb-servico-novo-legenda">Escreva o que vendeu e quanto custou:</p>' +
         '<div class="vb-servico-manual">' +
-        '<input type="text" id="caixaAvulsoDescricao" placeholder="Ex: Produto avulso">' +
-        '<input type="number" id="caixaAvulsoValor" min="0" step="0.01" placeholder="Valor (R$)">' +
-        '<button type="button" class="btn btn-primario" id="caixaAvulsoAdicionar">Adicionar ao carrinho</button>' +
+        '<input type="text" id="caixaAvulsoDescricao" placeholder="O que foi vendido? Ex: Shampoo">' +
+        '<input type="number" id="caixaAvulsoValor" min="0" step="0.01" placeholder="Quanto custou? (R$)">' +
+        '<button type="button" class="btn btn-primario" id="caixaAvulsoAdicionar">Pronto, colocar no carrinho</button>' +
         '</div></div>' +
-        (equipe.length ? '<p class="dash-resumo-subtitulo" style="margin-top:0;">Quem atendeu</p><div class="dash-forma-pagamento" id="caixaProfissionalBotoes" style="margin-bottom:1rem;">' +
-          '<button type="button" class="dash-forma-btn is-selecionada" data-staff-id="" data-staff-nome="">Sem informar</button>' +
+        (equipe.length ? '<div class="cx-passo"><b>2</b><span><strong>Quem atendeu?</strong><small>Se não quiser dizer, deixe em "Pular".</small></span></div><div class="dash-forma-pagamento" id="caixaProfissionalBotoes" style="margin-bottom:1rem;">' +
+          '<button type="button" class="dash-forma-btn is-selecionada" data-staff-id="" data-staff-nome="">Pular</button>' +
           equipe.map(function (p) { return '<button type="button" class="dash-forma-btn" data-staff-id="' + p.id + '" data-staff-nome="' + escapeHtml(p.nome) + '">' + escapeHtml(p.nome) + '</button>'; }).join('') +
           '</div>' : '') +
-        '<p class="dash-resumo-subtitulo" style="margin-top:0;">Carrinho</p>' +
+        '<div class="cx-passo"><b>3</b><span><strong>Confira o carrinho</strong><small>Veja o que vai cobrar. Use − e + pra mudar a quantidade.</small></span></div>' +
         '<div class="dash-caixa-carrinho" id="caixaCarrinhoLista"></div>' +
-        '<div class="caixa-total"><span>Total do carrinho</span><span id="caixaCarrinhoTotalValor">' + formatarPreco(0) + '</span></div>' +
+        '<div class="caixa-total"><span>Total a cobrar</span><span id="caixaCarrinhoTotalValor">' + formatarPreco(0) + '</span></div>' +
+        '<div class="cx-passo"><b>4</b><span><strong>Quem comprou?</strong><small>Opcional. Com o telefone, o cliente fica salvo na aba Clientes.</small></span></div>' +
         '<div class="dash-campos-grid" style="margin-top:0.8rem;">' +
-        '<div class="field"><label for="caixaClienteNome">Nome do cliente (opcional)</label><input type="text" id="caixaClienteNome" placeholder="Ex: Maria Silva"></div>' +
-        '<div class="field"><label for="caixaClienteTelefone">Telefone do cliente (opcional)</label><input type="text" id="caixaClienteTelefone" placeholder="Ex: 15999998888"></div>' +
+        '<div class="field"><label for="caixaClienteNome">Nome do cliente</label><input type="text" id="caixaClienteNome" placeholder="Ex: Maria Silva"></div>' +
+        '<div class="field"><label for="caixaClienteTelefone">Telefone do cliente</label><input type="text" id="caixaClienteTelefone" placeholder="Ex: 15999998888"></div>' +
         '</div>' +
         '<div id="caixaPagamentoBox"></div>' +
-        '<button class="btn btn-primario" type="button" id="caixaRegistrarBtn" style="width:100%; margin-top:0.8rem;" disabled>Registrar venda</button>' +
+        '<div class="cx-passo"><b>6</b><span><strong>Salvar a venda</strong><small>O valor entra na aba Ganhos.</small></span></div>' +
+        '<button class="btn btn-primario" type="button" id="caixaRegistrarBtn" style="width:100%; margin-top:0.8rem;" disabled>Registrar a venda</button>' +
         '<p class="msg" id="caixaMsg"></p>' +
         '<p class="dash-resumo-subtitulo">Recebido hoje por forma de pagamento</p>' +
         '<div class="dash-resumo-cards">' +
@@ -1367,7 +1369,7 @@
               '<button type="button" class="vb-remover-x" data-carrinho-remover="' + item.key + '">×</button>' +
               '</div>';
           }).join('')
-          : '<p class="dash-caixa-carrinho-vazio">Nenhum item ainda — toque em um serviço acima ou adicione um item avulso.</p>';
+          : '<p class="dash-caixa-carrinho-vazio">Carrinho vazio. Faça o passo 1: toque num serviço lá em cima.</p>';
         carrinhoTotalEl.textContent = formatarPreco(totalCarrinho());
         atualizarBadgesServico();
         atualizarPagamentoResumo();
@@ -1431,12 +1433,12 @@
       // fracionado entre várias formas (split), como um PDV de verdade. ----
       function renderizarPagamentoUnico() {
         pagamentoBox.innerHTML =
-          '<div class="field"><label>Forma de pagamento</label><div class="dash-forma-pagamento" id="caixaFormaBotoes">' +
+          '<div class="cx-passo"><b>5</b><span><strong>Como o cliente pagou?</strong><small>Toque na forma de pagamento.</small></span></div><div class="field"><div class="dash-forma-pagamento" id="caixaFormaBotoes">' +
           FORMAS_PAGAMENTO.map(function (f, i) { return '<button type="button" class="dash-forma-btn' + (i === 0 ? ' is-selecionada' : '') + '" data-forma="' + f.chave + '">' + f.nome + '</button>'; }).join('') +
           '</div></div>' +
-          '<div class="field oculto" id="caixaTrocoWrap"><label for="caixaValorRecebido">Valor recebido em dinheiro (opcional)</label><input type="number" id="caixaValorRecebido" min="0" step="0.01" placeholder="0,00"></div>' +
+          '<div class="field oculto" id="caixaTrocoWrap"><label for="caixaValorRecebido">Quanto ele deu em dinheiro? (pra calcular o troco)</label><input type="number" id="caixaValorRecebido" min="0" step="0.01" placeholder="0,00"></div>' +
           '<p class="dash-caixa-troco oculto" id="caixaTrocoResultado"></p>' +
-          '<button type="button" class="btn btn-ghost" id="caixaAtivarSplit" style="width:100%; margin-top:0.4rem;">Dividir entre mais de uma forma de pagamento</button>';
+          '<button type="button" class="btn btn-ghost" id="caixaAtivarSplit" style="width:100%; margin-top:0.4rem;">Pagou de mais de um jeito? Toque aqui pra dividir</button>';
         document.getElementById('caixaFormaBotoes').addEventListener('click', function (e) {
           var btn = e.target.closest('.dash-forma-btn');
           if (!btn) return;
@@ -1465,9 +1467,9 @@
         pagamentoBox.innerHTML =
           '<p class="dash-resumo-subtitulo" style="margin-top:0;">Pagamento dividido</p>' +
           '<div id="caixaSplitLinhas">' + linhaSplitHtml('pix') + linhaSplitHtml('dinheiro') + '</div>' +
-          '<button type="button" class="btn btn-ghost" id="caixaSplitAdicionarLinha" style="width:100%; margin:0.5rem 0;">+ Adicionar forma de pagamento</button>' +
+          '<button type="button" class="btn btn-ghost" id="caixaSplitAdicionarLinha" style="width:100%; margin:0.5rem 0;">+ Mais uma forma de pagamento</button>' +
           '<p class="dash-caixa-troco" id="caixaSplitResumo"></p>' +
-          '<button type="button" class="btn btn-ghost" id="caixaDesativarSplit" style="width:100%;">Voltar pra uma forma só</button>';
+          '<button type="button" class="btn btn-ghost" id="caixaDesativarSplit" style="width:100%;">Voltar: pagou de um jeito só</button>';
         document.getElementById('caixaSplitLinhas').addEventListener('click', function (e) {
           var formaBtn = e.target.closest('[data-split-forma]');
           if (formaBtn) {
@@ -1552,7 +1554,7 @@
 
       registrarBtn.addEventListener('click', function () {
         var msg = document.getElementById('caixaMsg');
-        if (!carrinho.length) { msg.className = 'msg msg-erro'; msg.textContent = 'Adicione ao menos um item ao carrinho.'; return; }
+        if (!carrinho.length) { msg.className = 'msg msg-erro'; msg.textContent = 'Passo 1: toque num serviço pra colocar no carrinho.'; return; }
         var staffBtn = profissionalBotoes ? profissionalBotoes.querySelector('.dash-forma-btn.is-selecionada') : null;
         var dadosComuns = {
           p_estabelecimento_id: estabId,
@@ -1579,7 +1581,7 @@
           var alocado = tenders.reduce(function (soma, t) { return soma + t.valor; }, 0);
           if (Math.abs(alocado - totalCarrinho()) >= 0.01) {
             msg.className = 'msg msg-erro';
-            msg.textContent = 'A soma das formas de pagamento precisa bater com o total do carrinho.';
+            msg.textContent = 'Passo 5: a soma das formas de pagamento precisa dar o total a cobrar.';
             return;
           }
           var descricaoConjunta = carrinho.map(function (item) { return item.qtd > 1 ? (item.qtd + 'x ' + item.nome) : item.nome; }).join(', ');
@@ -1594,7 +1596,7 @@
           });
         }
         msg.className = 'msg';
-        msg.textContent = 'Registrando…';
+        msg.textContent = 'Salvando a venda…';
         registrarBtn.disabled = true;
         var algumOffline = false;
         chamadas.reduce(function (promessa, chamar) {
