@@ -1402,6 +1402,10 @@
 
     container.innerHTML =
       '<div class="vbs-passo"><b>1</b><span><strong>Toque no que você faz</strong><small>Entra na hora. Aí você escreve o preço — ninguém põe valor no seu lugar.</small></span></div>' +
+      '<button type="button" class="vbs-foto" id="vbsFotoBtn">' +
+        '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.6"/></svg>' +
+        '<span><strong>Tenho a tabela numa foto</strong><small>Mande a foto ou o print da sua tabela de preços: a gente lê pra você</small></span>' +
+        '<input type="file" accept="image/*" id="vbsFotoInput" hidden></button>' +
       (sugestoes.length
         ? '<div class="vbs-sug">' + sugestoes.map(function (s) {
             return '<button type="button" class="vbs-sug-btn" data-sug="' + escapeHtml(s.nome) + '" data-sug-dur="' + (s.duracao || 30) + '">' +
@@ -1487,6 +1491,77 @@
             carregarServicos(); dizer('Salvo ✓'); }, function () { dizer('Sem conexão', true); });
       });
     });
+    // foto da tabela de preços: a leitura (edge function ler-cardapio) abre pra conferir
+    var fotoBtn = document.getElementById('vbsFotoBtn'), fotoInput = document.getElementById('vbsFotoInput');
+    if (fotoBtn) fotoBtn.addEventListener('click', function (e) { if (e.target !== fotoInput) fotoInput.click(); });
+    if (fotoInput) fotoInput.addEventListener('change', function () {
+      var arq = fotoInput.files && fotoInput.files[0];
+      fotoInput.value = '';
+      if (!arq || !window.VBAvatar) return;
+      dizer('Lendo a foto…');
+      lerFoto(arq).then(function (d) { dizer(''); conferirFoto(d); }, function (e) { dizer((e && e.message) || 'Não consegui ler essa foto', true); });
+    });
+    function lerFoto(arquivo) {
+      return new Promise(function (ok, falha) {
+        var url = URL.createObjectURL(arquivo), img = new Image();
+        img.onload = function () {
+          var lado = Math.min(1, 1600 / Math.max(img.width, img.height));
+          var c = document.createElement('canvas');
+          c.width = Math.round(img.width * lado); c.height = Math.round(img.height * lado);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          ok(c.toDataURL('image/jpeg', 0.84));
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); falha(new Error('Não consegui abrir essa foto.')); };
+        img.src = url;
+      }).then(function (dataUrl) {
+        return db.functions.invoke('ler-cardapio', { body: { imagem: dataUrl, tipo: 'servicos' } });
+      }).then(function (r) {
+        if (!r.error) return r.data;
+        var ctx = r.error.context;
+        if (ctx && ctx.json) return ctx.json().then(function (j) { throw new Error((j && j.erro) || 'Não consegui ler a foto agora.'); }, function () { throw new Error('Não consegui ler a foto agora.'); });
+        throw new Error('Não consegui ler a foto agora.');
+      });
+    }
+    function conferirFoto(d) {
+      var lista = [];
+      (d.categorias || []).forEach(function (c) { (c.itens || []).forEach(function (i) { lista.push(i); }); });
+      if (!lista.length) { window.VBDialogo.alert(d.aviso || 'Não achei nada nessa foto.'); return; }
+      var caixa = document.createElement('div');
+      caixa.className = 'vbf-conf';
+      caixa.innerHTML = '<div class="vbf-conf-fundo" data-fechar></div><div class="vbf-conf-box" role="dialog" aria-modal="true">' +
+        '<h3>Confira o que eu li</h3><p>Li ' + lista.length + ' ' + (lista.length === 1 ? 'serviço' : 'serviços') + '. ' + esc(d.aviso || '') + '</p>' +
+        '<div class="vbf-conf-lista">' + lista.map(function (i, n) {
+          return '<div class="vbf-conf-item" data-n="' + n + '"><label><input type="checkbox" data-usar checked aria-label="Usar"></label>' +
+            '<input type="text" data-nome value="' + esc(i.nome) + '" maxlength="80" aria-label="Nome">' +
+            '<div class="vbs-moeda">R$<input type="text" inputmode="decimal" data-preco value="' + (i.preco ? String(i.preco.toFixed(2)).replace('.', ',') : '') + '" placeholder="0,00" aria-label="Preço"></div></div>';
+        }).join('') + '</div>' +
+        '<div class="vbf-conf-acoes"><button type="button" class="btn btn-ghost" data-fechar>Cancelar</button>' +
+        '<button type="button" class="btn btn-primario" data-por>Pôr na minha lista</button></div></div>';
+      document.body.appendChild(caixa);
+      function fechar() { caixa.remove(); }
+      caixa.addEventListener('click', function (e) {
+        if (e.target.closest('[data-fechar]') || e.target === caixa.firstChild) { fechar(); return; }
+        var b = e.target.closest('[data-por]');
+        if (!b) return;
+        var escolhidos = [];
+        caixa.querySelectorAll('.vbf-conf-item').forEach(function (el) {
+          if (!el.querySelector('[data-usar]').checked) return;
+          var nome = el.querySelector('[data-nome]').value.trim();
+          if (nome) escolhidos.push({ nome: nome, preco: moeda(el.querySelector('[data-preco]').value) });
+        });
+        if (!escolhidos.length) return;
+        b.disabled = true;
+        var i = 0;
+        (function proximo() {
+          if (i >= escolhidos.length) { fechar(); recarregar(escolhidos.length + ' entraram ✓'); return; }
+          b.textContent = 'Pondo ' + (i + 1) + ' de ' + escolhidos.length + '…';
+          var e2 = escolhidos[i++];
+          salvarServicoComDuracao(e2.nome, e2.preco, 30).then(proximo, function () { fechar(); recarregar('Parei no meio — confira a lista'); });
+        })();
+      });
+    }
+
     var btnManual = document.getElementById('vbTutServicoSalvar');
     if (btnManual) btnManual.addEventListener('click', function () {
       var nome = document.getElementById('vbTutServicoNome').value.trim();

@@ -306,3 +306,24 @@ html.vbfc-travado, html.vbfc-travado body { overflow: hidden; }
 .vbs-item.sem-preco { border-color: rgba(201, 162, 39, 0.65); background: rgba(201, 162, 39, 0.05); }
 .vbs-item.sem-preco .vbs-campo > span { color: #8a6d10; }
 .vbs-item.sem-preco .vbs-moeda { border-color: rgba(201, 162, 39, 0.65); }
+
+/* "tenho a tabela numa foto" (passo dos serviços) */
+.vbs-foto { display: flex; align-items: center; gap: 0.7rem; width: 100%; margin: 0 0 1rem; padding: 0.85rem 0.9rem; text-align: left; border: 1.5px dashed rgba(201, 162, 39, 0.75); border-radius: 16px; background: rgba(201, 162, 39, 0.07); font: inherit; color: #1f2024; cursor: pointer; }
+.vbs-foto svg { flex: 0 0 auto; color: #8a6d10; }
+.vbs-foto span { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.vbs-foto strong { font-size: 0.95rem; }
+.vbs-foto small { font-size: 0.8rem; line-height: 1.35; color: #6b6d76; }
+.vbf-conf { position: fixed; inset: 0; z-index: 2147483260; display: flex; align-items: flex-end; justify-content: center; }
+@media (min-width: 640px) { .vbf-conf { align-items: center; padding: 1rem; } }
+.vbf-conf-fundo { position: absolute; inset: 0; background: rgba(10, 10, 14, 0.5); }
+.vbf-conf-box { position: relative; display: flex; flex-direction: column; width: 100%; max-width: 460px; max-height: 90dvh; padding: 1.1rem 1rem calc(1rem + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; background: #fff; color: #1f2024; box-shadow: 0 -16px 48px rgba(10, 10, 20, 0.3); }
+@media (min-width: 640px) { .vbf-conf-box { border-radius: 22px; } }
+.vbf-conf-box h3 { margin: 0 0 0.3rem; font-family: 'Fraunces', Georgia, serif; font-size: 1.3rem; }
+.vbf-conf-box > p { margin: 0 0 0.8rem; font-size: 0.85rem; line-height: 1.45; color: #5c5e66; }
+.vbf-conf-lista { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.vbf-conf-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0; border-bottom: 1px solid #f0f0f3; }
+.vbf-conf-item input[type=checkbox] { width: 1.25rem; height: 1.25rem; accent-color: #1f2024; }
+.vbf-conf-item [data-nome] { flex: 1; min-width: 0; padding: 0.6rem 0.7rem; border: 1.5px solid #e6e6ea; border-radius: 10px; font: inherit; font-size: 0.95rem; }
+.vbf-conf-item .vbs-moeda { flex: 0 0 7rem; }
+.vbf-conf-acoes { display: flex; gap: 0.5rem; margin-top: 0.9rem; }
+.vbf-conf-acoes .btn { flex: 1; }

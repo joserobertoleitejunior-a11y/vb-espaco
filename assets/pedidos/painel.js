@@ -664,6 +664,10 @@
     return '<div class="pc">' +
       '<div class="pc-passo"><b>1</b><span><strong>' + oQue + '?</strong><small>Toque num nome: ele entra na hora, já na categoria certa. O preço é você quem põe.</small>' +
         '<em class="pc-selo" id="pcSelo"></em></span></div>' +
+      '<button type="button" class="pc-foto" id="pcFotoBtn">' +
+        '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.6"/></svg>' +
+        '<span><strong>Tenho o cardápio numa foto</strong><small>Mande a foto ou o print: a gente lê os nomes e os preços pra você</small></span>' +
+        '<input type="file" accept="image/*" id="pcFotoInput" hidden></button>' +
       (gs.length
         ? gs.map(function (g) {
             return '<p class="pc-cat">' + esc(g.cat) + '</p><div class="pc-chips">' + g.lista.map(function (nome) {
@@ -674,6 +678,88 @@
       '<div class="pc-passo"><b>2</b><span><strong>Agora ponha o preço</strong><small>' +
         (semPreco ? semPreco + ' ' + (semPreco === 1 ? 'item está' : 'itens estão') + ' sem preço — toque em cada um pra escrever o valor.' : 'Toque num item da lista pra mudar nome, foto e preço.') +
       '</small></span></div></div>';
+  }
+
+  /* ---- foto do cardápio: o Gemini lê (edge function ler-cardapio) e o dono confere ----
+     Nada entra no site sem ele olhar: a leitura abre numa lista, com preço de cada item
+     num campo, e só vai pro cardápio quando ele toca em salvar. */
+  var lidoDaFoto = null;
+  async function lerFotoCardapio(arquivo) {
+    var blob = await comprimir(arquivo, 1600, false);
+    var dataUrl = await new Promise(function (ok, falha) {
+      var fr = new FileReader();
+      fr.onload = function () { ok(fr.result); };
+      fr.onerror = function () { falha(new Error('Não consegui abrir essa foto.')); };
+      fr.readAsDataURL(blob);
+    });
+    var r = await db.functions.invoke('ler-cardapio', { body: { imagem: dataUrl, tipo: SERVICO ? 'servicos' : 'cardapio' } });
+    if (r.error) {
+      var ctx = r.error.context;
+      if (ctx && ctx.json) { var j = await ctx.json().catch(function () { return null; }); if (j && j.erro) throw new Error(j.erro); }
+      throw new Error('Não consegui ler a foto agora.');
+    }
+    return r.data;
+  }
+  function sheetFotoCardapio(dados) {
+    lidoDaFoto = dados;
+    var total = (dados.categorias || []).reduce(function (t, c) { return t + c.itens.length; }, 0);
+    if (!total) { abrirSheet('Foto do ' + (SERVICO ? 'catálogo' : 'cardápio'), '<p class="p-ajuda">' + esc(dados.aviso || '') + '</p>', '<button type="button" class="btn cheio" data-fechar-sheet>Fechar</button>'); return; }
+    var corpo = '<p class="p-ajuda">Li <strong>' + total + '</strong> ' + (total === 1 ? 'item' : 'itens') + '. ' + esc(dados.aviso || '') + ' Tire o que não for seu e corrija o que precisar.</p>' +
+      dados.categorias.map(function (c, ci) {
+        return '<p class="pc-cat">' + esc(c.nome) + '</p>' + c.itens.map(function (i, ii) {
+          return '<div class="pcf-item" data-pcf="' + ci + '-' + ii + '">' +
+            '<label class="pcf-usar"><input type="checkbox" data-usar checked aria-label="Usar ' + esc(i.nome) + '"></label>' +
+            '<div class="pcf-campos">' +
+              '<input type="text" data-nome value="' + esc(i.nome) + '" maxlength="80" aria-label="Nome">' +
+              '<div class="pcf-moeda">R$<input type="text" inputmode="decimal" data-preco value="' + (i.preco ? String(i.preco.toFixed(2)).replace('.', ',') : '') + '" placeholder="0,00" aria-label="Preço"></div>' +
+            '</div></div>';
+        }).join('');
+      }).join('');
+    abrirSheet('Confira o que eu li', corpo,
+      '<button type="button" class="btn sec" data-fechar-sheet>Cancelar</button><button type="button" class="btn" id="pcfSalvar">Pôr no ' + (SERVICO ? 'catálogo' : 'cardápio') + '</button>');
+  }
+  async function salvarLidoDaFoto(btn) {
+    var caixa = $('sheetConteudo');
+    var escolhidos = [];
+    caixa.querySelectorAll('[data-pcf]').forEach(function (el) {
+      if (!el.querySelector('[data-usar]').checked) return;
+      var pos = el.getAttribute('data-pcf').split('-');
+      var nome = el.querySelector('[data-nome]').value.trim();
+      if (!nome) return;
+      escolhidos.push({
+        cat: lidoDaFoto.categorias[Number(pos[0])].nome,
+        nome: nome,
+        descricao: lidoDaFoto.categorias[Number(pos[0])].itens[Number(pos[1])].descricao || null,
+        preco: parseFloat(el.querySelector('[data-preco]').value.replace(/\./g, '').replace(',', '.')) || 0
+      });
+    });
+    if (!escolhidos.length) { U.toast('Marque pelo menos um item'); return; }
+    btn.disabled = true;
+    var feitos = 0;
+    try {
+      for (var i = 0; i < escolhidos.length; i++) {
+        var e = escolhidos[i];
+        btn.textContent = 'Pondo ' + (i + 1) + ' de ' + escolhidos.length + '…';
+        var cat = categorias.filter(function (c) { return c.nome.toLowerCase() === e.cat.toLowerCase(); })[0];
+        if (!cat) {
+          cat = await rpc('delivery_admin_salvar_categoria', { p_id: null, p_estabelecimento_id: loja.id, p_nome: e.cat, p_ordem: categorias.length });
+          categorias = categorias.concat([cat]);
+        }
+        await rpc('delivery_admin_salvar_item', {
+          p_id: null, p_estabelecimento_id: loja.id, p_categoria_id: cat.id, p_nome: e.nome, p_descricao: e.descricao,
+          p_preco: e.preco, p_foto_url: null, p_permite_meio_a_meio: false, p_ativo: true, p_ordem: itens.length + i, p_aceita_borda: false
+        });
+        feitos++;
+      }
+      fecharSheet();
+      await carregarCardapio();
+      U.toast(feitos + (feitos === 1 ? ' item entrou' : ' itens entraram') + ' — confira os preços', 3600);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Tentar de novo';
+      U.toast(U.mensagemErro(err, 'Parei em ' + feitos + ' itens'), 3600);
+      await carregarCardapio();
+    }
   }
 
   function renderizarCardapio() {
@@ -772,6 +858,29 @@
       if (imp) importarModelo(imp);
     });
     $('novoItemBtn').addEventListener('click', function () { abrirFormItem(null); });
+    // foto do cardápio: escolhe a imagem, lê e abre pra conferir
+    $('listaItens').addEventListener('click', function (e) {
+      if (e.target.closest('#pcFotoBtn') && !e.target.closest('#pcFotoInput')) $('pcFotoInput').click();
+    });
+    $('listaItens').addEventListener('change', async function (e) {
+      var inp = e.target.closest('#pcFotoInput');
+      if (!inp || !inp.files[0]) return;
+      var arquivo = inp.files[0];
+      inp.value = '';
+      var selo = $('pcSelo');
+      if (selo) { selo.textContent = 'Lendo a foto…'; selo.className = 'pc-selo on'; }
+      try {
+        sheetFotoCardapio(await lerFotoCardapio(arquivo));
+        if ($('pcSelo')) $('pcSelo').className = 'pc-selo';
+      } catch (err) {
+        if ($('pcSelo')) $('pcSelo').className = 'pc-selo';
+        U.toast(U.mensagemErro(err, 'Não consegui ler essa foto'), 4000);
+      }
+    });
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('#pcfSalvar');
+      if (b) salvarLidoDaFoto(b);
+    });
     // passo 1: um toque cria a categoria (se faltar) e o item, sem preço
     $('listaItens').addEventListener('click', async function (e) {
       var b = e.target.closest('[data-sug-item]');

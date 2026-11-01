@@ -440,3 +440,23 @@ html.embutido .barra-salvar { bottom: 0; }
 .ca-item.sem-preco { box-shadow: inset 0 0 0 1.5px rgba(201, 162, 39, 0.6); background: rgba(201, 162, 39, 0.05); }
 .ca-item.sem-preco .ca-info small { color: #8a6d10; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .pc-chip { transition: none; } }
+
+/* "tenho o cardápio numa foto" */
+.pc-foto {
+  display: flex; align-items: center; gap: 0.7rem; width: 100%; margin: 0 0 1rem; padding: 0.85rem 0.9rem; text-align: left;
+  border: 1.5px dashed rgba(201, 162, 39, 0.75); border-radius: 16px; background: rgba(201, 162, 39, 0.07);
+  font: inherit; color: var(--ink); cursor: pointer;
+}
+.pc-foto svg { flex: 0 0 auto; color: #8a6d10; }
+.pc-foto span { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.pc-foto strong { font-size: 0.95rem; }
+.pc-foto small { font-size: 0.8rem; line-height: 1.35; color: var(--ink-soft); }
+.pc-foto:active { transform: scale(0.99); }
+/* conferência do que foi lido da foto */
+.pcf-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; border-bottom: 1px solid var(--borda); }
+.pcf-usar input { width: 1.25rem; height: 1.25rem; accent-color: var(--ink); }
+.pcf-campos { flex: 1; display: flex; gap: 0.5rem; min-width: 0; }
+.pcf-campos > input { flex: 1; min-width: 0; padding: 0.6rem 0.7rem; border: 1.5px solid var(--borda); border-radius: 10px; font: inherit; font-size: 0.95rem; background: var(--branco, #fff); color: var(--ink); }
+.pcf-moeda { flex: 0 0 7.5rem; display: flex; align-items: center; gap: 0.25rem; padding: 0 0.6rem; border: 1.5px solid var(--borda); border-radius: 10px; background: var(--branco, #fff); font-size: 0.82rem; font-weight: 700; color: var(--ink-soft); }
+.pcf-moeda input { flex: 1; min-width: 0; width: 100%; border: 0; padding: 0.6rem 0; background: none; font: inherit; font-size: 0.95rem; font-weight: 700; color: var(--ink); }
+.pcf-moeda input:focus { outline: none; }
