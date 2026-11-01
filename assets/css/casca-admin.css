@@ -189,3 +189,56 @@ html.dash-aberto, html.dash-aberto body { overflow: hidden; overscroll-behavior:
 .ca-anuncio-estado.on { background: rgba(30, 122, 60, 0.14); color: #1e7a3c; }
 .ca-anuncio-dica { margin: 0.7rem 0 0; font-size: 0.84rem; line-height: 1.4; color: #3b3d44; }
 .ca-anuncio .ca-num span { font-size: 0.7rem; }
+
+/* ===================== desenho do ambiente de trabalho =====================
+   A letra do painel é a mesma da marca: título em Fraunces, etiqueta e números
+   em mono dourado. Cursor de digitação em ::after (vb-digita.js), sem mexer no DOM. */
+/* cabeçalho de cada tela: etiqueta dourada, título serifado e a frase de apoio */
+.ca-titulo { margin-top: 1.3rem; }
+.ca-etiqueta {
+  margin: 0 0 0.25rem; font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #8a6d10;
+}
+.ca-titulo h2 {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif; font-weight: 700;
+  font-size: clamp(1.55rem, 6.2vw, 2.1rem); line-height: 1.1; letter-spacing: -0.015em; min-height: 1.1em;
+}
+.ca-titulo p { margin-top: 0.45rem; font-size: 0.95rem; color: #55575f; }
+.ca-titulo p b, .ca-titulo p strong { font-weight: 700; color: #1f2024; }
+.ca-entra { animation: ca-sobe 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes ca-sobe { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ca-entra { animation: none; } }
+
+/* o cartão branco respira mais e o conteúdo entra junto com o título */
+.ca-corpo { padding: 1.25rem 1.15rem 1.4rem; }
+@media (min-width: 720px) { .ca-corpo { padding: 1.7rem 1.8rem 1.9rem; } }
+
+/* títulos de seção dentro do cartão: etiqueta curtinha, não frase solta */
+.ca-corpo .dash-resumo-subtitulo {
+  margin: 1.6rem 0 0.7rem; font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8a6d10;
+}
+.ca-corpo .dash-lista-cabecalho .dash-resumo-subtitulo { margin-top: 0; }
+.ca-corpo .dash-secao-intro { font-size: 0.88rem; line-height: 1.5; color: #55575f; }
+
+/* números: mono, alinhados em coluna (tabular) — cara de painel, não de texto */
+.ca-num b, .ca-corpo .dash-resumo-numero, .ca-corpo .caixa-total span:last-child {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -0.02em;
+}
+.ca-num { border: 1px solid rgba(var(--area-rgb, 15, 107, 92), 0.14); }
+.ca-num span { letter-spacing: 0.01em; }
+.ca-corpo .dash-resumo-card {
+  background: #fbfbfc; border: 1px solid var(--borda, #e7e7ea); border-radius: 14px; padding: 0.8rem 0.85rem;
+}
+.ca-corpo .dash-resumo-numero { font-size: 1.15rem; }
+.ca-corpo .dash-resumo-label { font-size: 0.74rem; color: #6b6d76; }
+
+/* listas: cada linha com mais ar e separador leve */
+.ca-corpo .painel-lista-item { padding: 0.8rem 0; gap: 0.8rem; border-bottom-color: #f0f0f3; }
+.ca-corpo .painel-lista-item .principal { font-size: 0.97rem; letter-spacing: -0.01em; }
+.ca-corpo .painel-lista-item .secundario { font-size: 0.82rem; line-height: 1.45; }
+.ca-corpo .dash-vazio { padding: 2.2rem 1rem; }
+.ca-corpo .dash-vazio-titulo { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 1.1rem; }
+.ca-corpo .dash-vazio-texto { font-size: 0.86rem; }
+@media (min-width: 900px) { .ca-aba { gap: 0.5rem; font-size: 0.85rem; } }

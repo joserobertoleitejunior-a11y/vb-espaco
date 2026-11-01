@@ -183,26 +183,6 @@
     Object.keys(ROTULOS_BRIEFING).forEach(function (k) { var v = b[k]; if (v === true) v = 'Sim'; if (v === false) v = 'Não'; if (v != null && v !== '') add(ROTULOS_BRIEFING[k], v); });
     return l.slice(0, 9);
   }
-  var reduz = global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function digitar(alvos, textos, aoFim) {
-    var parar = false, li = 0;
-    var cur = document.createElement('i'); cur.className = 'clc-cur';
-    function proxima() {
-      if (parar || li >= alvos.length) { if (cur.parentNode) cur.remove(); if (aoFim && !parar) aoFim(); return; }
-      var el = alvos[li], txt = textos[li], k = 0; li++;
-      el.parentNode.classList.add('on'); el.appendChild(cur);
-      (function passo() {
-        if (parar) return;
-        if (k >= txt.length) { setTimeout(proxima, 90); return; }
-        el.insertBefore(document.createTextNode(txt.charAt(k++)), cur);
-        setTimeout(passo, 16 + Math.random() * 14);
-      })();
-    }
-    function tudoJa() { parar = true; if (cur.parentNode) cur.remove(); alvos.forEach(function (el, i) { el.parentNode.classList.add('on'); el.textContent = textos[i]; }); }
-    if (reduz) tudoJa(); else proxima();
-    return tudoJa;
-  }
-
   function cartao(c, estabId) {
     var antigo = document.getElementById('clCartao'); if (antigo) antigo.remove();
     var t = tipo(c), sk = skills(c), info = linhasInfo(c);
@@ -231,7 +211,8 @@
 
     var alvos = [box.querySelector('.clc-nome [data-t]')].concat([].slice.call(box.querySelectorAll('.clc-info [data-t]')));
     var textos = [c.nome].concat(info.map(function (x) { return x[1]; }));
-    var pular = digitar(alvos, textos);
+    var pular = global.VBDigita ? global.VBDigita.fila(alvos.map(function (el, i) { return [el, textos[i], i ? 90 : 42]; }))
+      : (alvos.forEach(function (el, i) { el.textContent = textos[i]; el.parentNode.classList.add('on'); }), function () {});
 
     function fechar() {
       pular(); box.classList.remove('aberto');

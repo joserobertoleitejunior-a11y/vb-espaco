@@ -757,14 +757,16 @@
     if (pedidosHost) pedidosHost.classList.toggle('oculto', !noPedidos);
     dashboardCorpo.classList.toggle('oculto', noPedidos);
     dashboardOverlay.classList.toggle('ca-modo-pedidos', noPedidos);
-    var tt = document.getElementById('dashTitulo'), tx = TITULOS_ABA[aba];
-    if (tt) tt.innerHTML = tx ? '<h2>' + tx[0] + '</h2><p>' + tx[1] + '</p>' : '';
+    escreverTitulo(aba);
     if (noPedidos) {
       if (aba === 'perfil') irPedidosSub('loja', true); else irPedidosSub(sub || 'pedidos');
       dashboardOverlay.scrollTop = 0;
       return;
     }
     dashboardCorpo.classList.add('dash-carregando');
+    dashboardCorpo.classList.remove('ca-entra');
+    void dashboardCorpo.offsetWidth;
+    dashboardCorpo.classList.add('ca-entra');
     dashboardOverlay.scrollTop = 0;
     // se a internet falhar e a resposta nunca chegar, a tela não fica travada esmaecida
     clearTimeout(timerCarregando);
@@ -776,6 +778,20 @@
     else if (aba === 'comunidade') renderizarDashComunidade();
     else if (aba === 'perfil') renderizarDashPerfil();
   }
+  // cabeçalho de cada tela: dia de hoje (etiqueta), título que vai sendo digitado
+  // e a frase de apoio. Um rAF só, pelo vb-digita.js — nada de timer por letra.
+  var pararDigitacao = null;
+  function escreverTitulo(aba) {
+    var tt = document.getElementById('dashTitulo'), tx = TITULOS_ABA[aba];
+    if (!tt) return;
+    if (pararDigitacao) { pararDigitacao(); pararDigitacao = null; }
+    if (!tx) { tt.innerHTML = ''; return; }
+    var hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+    tt.innerHTML = '<p class="ca-etiqueta">' + escapeHtml(hoje) + '</p><h2></h2><p class="ca-entra">' + tx[1] + '</p>';
+    if (window.VBDigita) pararDigitacao = window.VBDigita.em(tt.querySelector('h2'), tx[0], { vel: 42 });
+    else tt.querySelector('h2').textContent = tx[0];
+  }
+
   var TITULOS_ABA = {
     agenda: ['Sua agenda', 'Aqui ficam os horários que seus clientes marcaram. Toque em <b>Confirmar</b> quando aceitar e em <b>Concluir</b> quando terminar o serviço.'],
     clientes: ['Seus clientes', 'Todo mundo que agendou, pediu ou só visitou seu site fica salvo aqui. Toque num nome pra ver tudo.'],
