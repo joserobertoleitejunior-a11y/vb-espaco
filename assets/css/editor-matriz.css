@@ -182,3 +182,10 @@ body.vbe-aberto { padding-bottom: 60vh !important; }
 .vbe-dock { max-height: min(72dvh, 36rem); }
 .vbe-campos { -webkit-overflow-scrolling: touch; touch-action: pan-y; padding-bottom: 1.4rem; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); }
 body.vbe-aberto { padding-bottom: 72dvh !important; }
+
+/* o editor fica por cima do site, mas por BAIXO de tudo que ele mesmo abre (galeria de estilos,
+   diálogos, folhas de foto, avisos): antes essas telas abriam escondidas atrás da folha do editor
+   e o botão parecia "não fazer nada" */
+body:has(.vb-estilos, .vb-dialogo-overlay, .passo-folha, .vb-tutorial-overlay, .vb-salvo-overlay, .vb-foto-zoom-overlay:not(.oculto), .vb-status-overlay:not(.oculto), .admin-pin-overlay:not(.oculto), .wizard-overlay.open, .catalog-overlay.open, .sheet.aberto, .site-menu.open, .gender-gate.open, .staff-gallery-overlay.open, .vbc.aberta) .vbe { z-index: 90; }
+.vb-estilos { z-index: 2147483200; }
+.vb-dialogo-overlay { z-index: 2147483300; }
