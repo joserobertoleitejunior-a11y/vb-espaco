@@ -614,65 +614,107 @@
   }
 
 
-  // ---- foto de perfil/capa do card no catálogo (fora do site em si) ----
+  // ---- foto de perfil/capa do card do catálogo (como o negócio aparece na busca) ----
   function abrirEditorFotoCard() {
     var existente = document.getElementById('vbFotoCardEditor');
     if (existente) { existente.remove(); return; }
     var estoque = window.estoqueFotosPara ? window.estoqueFotosPara(linhaAtual.segmento) : ESTOQUE_FOTOS_ADMIN;
-    function gradeEstoque(dataAttr) {
-      return '<p style="margin:0.5rem 0 0.4rem; font-size:0.78rem; color:var(--ink-soft,#7a7368);">ou toque numa foto pronta:</p>' +
-        '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.4rem; margin-bottom:1rem;">' +
-        estoque.map(function (f) {
-          return '<img src="' + f.url + '" data-' + dataAttr + '="' + f.url + '" title="' + f.legenda + '" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; cursor:pointer;">';
-        }).join('') +
-        '</div>';
+    var CHECK = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4.5 4.5L19 7"/></svg>';
+
+    function grade(tipo, atual) {
+      return '<div class="vbfc-grade">' + estoque.map(function (f) {
+        var on = atual === f.url;
+        return '<button type="button" class="vbfc-thumb' + (on ? ' on' : '') + '" data-tipo="' + tipo + '" data-url="' + f.url + '" title="' + f.legenda + '" aria-pressed="' + on + '">' +
+          '<img src="' + f.url + '" alt="' + f.legenda + '" loading="lazy"><i>' + CHECK + '</i></button>';
+      }).join('') + '</div>';
     }
+    function secao(n, tipo, titulo, ajuda) {
+      return '<section class="vbfc-sec" data-sec="' + tipo + '">' +
+        '<div class="vbfc-sec-topo"><b>' + n + '</b><span><strong>' + titulo + '</strong><small>' + ajuda + '</small></span>' +
+        '<em class="vbfc-selo" data-selo="' + tipo + '"></em></div>' +
+        '<label class="vb-btn-upload vbfc-enviar"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Enviar do meu celular' +
+        '<input type="file" accept="image/*" data-up="' + tipo + '"></label>' +
+        '<p class="vbfc-ou">ou toque numa foto pronta — ela já entra salva</p>' +
+        grade(tipo, tipo === 'capa' ? linhaAtual.foto_capa_url : linhaAtual.foto_perfil_url) +
+        '</section>';
+    }
+
     var caixa = document.createElement('div');
     caixa.id = 'vbFotoCardEditor';
-    caixa.className = 'admin-pin-overlay';
+    caixa.className = 'admin-pin-overlay vbfc';
     caixa.innerHTML =
-      '<div class="admin-pin-box" style="max-width:360px; text-align:left;">' +
-      '<p class="eyebrow">Como aparece no catálogo</p>' +
-      '<h2 style="margin:0.3rem 0 1rem; font-size:1.1rem;">Foto do card</h2>' +
-      '<p style="font-size:0.85rem; font-weight:700; margin:0 0 0.4rem;">Foto de perfil</p>' +
-      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.3rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto<input type="file" id="vbFotoCardPerfilUpload" accept="image/*"></label>' +
-      gradeEstoque('estoque-perfil') +
-      '<p style="font-size:0.85rem; font-weight:700; margin:0 0 0.4rem;">Foto de capa</p>' +
-      '<label class="vb-btn-upload" style="width:100%; justify-content:center; margin-bottom:0.3rem; box-sizing:border-box;"><span class="vb-btn-upload-icone">' + ICONE_CAMERA + '</span> Escolher foto<input type="file" id="vbFotoCardCapaUpload" accept="image/*"></label>' +
-      gradeEstoque('estoque-capa') +
-      '<p class="msg" id="vbFotoCardMsg"></p>' +
-      '<button type="button" class="btn btn-ghost" id="vbFotoCardFechar" style="width:100%;">Fechar</button>' +
+      '<div class="vbfc-box" role="dialog" aria-modal="true" aria-label="Foto do card">' +
+      '<header class="vbfc-topo">' +
+        '<div><p class="vbfc-eyebrow">Como você aparece na busca</p><h2 class="vbfc-titulo">Foto do card</h2></div>' +
+        '<button type="button" class="vbfc-x" id="vbFotoCardFechar" aria-label="Fechar">✕</button>' +
+      '</header>' +
+      '<div class="vbfc-rolar">' +
+        '<div class="vbfc-previa" id="vbfcPrevia"></div>' +
+        secao('1', 'capa', 'Foto de capa', 'A foto grande, atrás do nome.') +
+        secao('2', 'perfil', 'Foto de perfil', 'A bolinha redonda, em cima da capa.') +
+      '</div>' +
+      '<button type="button" class="btn btn-primario vbfc-pronto" id="vbFotoCardPronto">Pronto</button>' +
       '</div>';
     document.body.appendChild(caixa);
-    document.getElementById('vbFotoCardFechar').addEventListener('click', function () { caixa.remove(); });
-    function salvar(campo, url) {
-      var msg = document.getElementById('vbFotoCardMsg');
-      msg.textContent = 'Salvando…';
-      var payload = { p_estabelecimento_id: estabId, p_foto_perfil_url: null, p_foto_capa_url: null };
-      payload[campo] = url;
-      db.rpc('tenant_admin_atualizar_perfil_capa', payload).then(function (res) {
-        if (res.error) { msg.className = 'msg msg-erro'; msg.textContent = res.error.message; return; }
-        msg.className = 'msg msg-ok';
-        msg.textContent = 'Salvo!';
+    document.documentElement.classList.add('vbfc-travado');
+
+    function fechar() { caixa.remove(); document.documentElement.classList.remove('vbfc-travado'); }
+    document.getElementById('vbFotoCardFechar').addEventListener('click', fechar);
+    document.getElementById('vbFotoCardPronto').addEventListener('click', fechar);
+    caixa.addEventListener('click', function (e) { if (e.target === caixa) fechar(); });
+
+    // a prévia mostra o cartão do jeito que o cliente vê na busca
+    function previa() {
+      var capa = linhaAtual.foto_capa_url || linhaAtual.foto_hero_url || '';
+      var perfil = linhaAtual.foto_perfil_url || '';
+      document.getElementById('vbfcPrevia').innerHTML =
+        '<div class="vbfc-card">' +
+        '<span class="vbfc-card-capa"' + (capa ? ' style="background-image:url(\'' + capa + '\')"' : '') + '>' + (capa ? '' : 'sem foto de capa') + '</span>' +
+        '<span class="vbfc-card-perfil"' + (perfil ? ' style="background-image:url(\'' + perfil + '\')"' : '') + '>' + (perfil ? '' : (linhaAtual.nome || '?').charAt(0).toUpperCase()) + '</span>' +
+        '<span class="vbfc-card-nome">' + escapeHtml(linhaAtual.nome || 'Seu negócio') + '</span>' +
+        '<span class="vbfc-card-cidade">' + escapeHtml(linhaAtual.cidade || '') + '</span>' +
+        '</div>';
+    }
+    previa();
+
+    function dizer(tipo, texto, erro) {
+      var el = caixa.querySelector('[data-selo="' + tipo + '"]');
+      if (!el) return;
+      el.textContent = texto || '';
+      el.className = 'vbfc-selo' + (texto ? ' on' : '') + (erro ? ' erro' : '');
+      if (texto && !erro && /Salv/.test(texto)) setTimeout(function () { if (el.textContent === texto) el.className = 'vbfc-selo'; }, 2600);
+    }
+    function marcar(tipo, url) {
+      caixa.querySelectorAll('[data-tipo="' + tipo + '"]').forEach(function (b) {
+        var on = b.getAttribute('data-url') === url;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
       });
     }
-    document.getElementById('vbFotoCardPerfilUpload').addEventListener('change', function (e) {
-      var file = e.target.files[0];
-      if (!file || !window.VBUpload) return;
-      document.getElementById('vbFotoCardMsg').textContent = 'Enviando…';
-      window.VBUpload.uploadFoto(file, estabId, 'perfil').then(function (url) { salvar('p_foto_perfil_url', url); });
+    function salvar(tipo, url) {
+      dizer(tipo, 'Salvando…');
+      var payload = { p_estabelecimento_id: estabId, p_foto_perfil_url: null, p_foto_capa_url: null };
+      payload[tipo === 'capa' ? 'p_foto_capa_url' : 'p_foto_perfil_url'] = url;
+      db.rpc('tenant_admin_atualizar_perfil_capa', payload).then(function (res) {
+        if (res.error) { dizer(tipo, res.error.message || 'Não salvou', true); return; }
+        if (tipo === 'capa') linhaAtual.foto_capa_url = url; else linhaAtual.foto_perfil_url = url;
+        marcar(tipo, url);
+        previa();
+        dizer(tipo, 'Salvo ✓');
+      }, function () { dizer(tipo, 'Sem conexão — tente de novo', true); });
+    }
+
+    caixa.querySelectorAll('[data-up]').forEach(function (inp) {
+      inp.addEventListener('change', function (e) {
+        var file = e.target.files[0], tipo = inp.getAttribute('data-up');
+        if (!file || !window.VBUpload) return;
+        dizer(tipo, 'Enviando a foto…');
+        window.VBUpload.uploadFoto(file, estabId, tipo).then(function (url) { salvar(tipo, url); },
+          function () { dizer(tipo, 'Não deu pra enviar essa foto', true); });
+      });
     });
-    document.getElementById('vbFotoCardCapaUpload').addEventListener('change', function (e) {
-      var file = e.target.files[0];
-      if (!file || !window.VBUpload) return;
-      document.getElementById('vbFotoCardMsg').textContent = 'Enviando…';
-      window.VBUpload.uploadFoto(file, estabId, 'capa').then(function (url) { salvar('p_foto_capa_url', url); });
-    });
-    caixa.querySelectorAll('[data-estoque-perfil]').forEach(function (img) {
-      img.addEventListener('click', function () { salvar('p_foto_perfil_url', img.getAttribute('data-estoque-perfil')); });
-    });
-    caixa.querySelectorAll('[data-estoque-capa]').forEach(function (img) {
-      img.addEventListener('click', function () { salvar('p_foto_capa_url', img.getAttribute('data-estoque-capa')); });
+    caixa.querySelectorAll('.vbfc-thumb').forEach(function (b) {
+      b.addEventListener('click', function () { salvar(b.getAttribute('data-tipo'), b.getAttribute('data-url')); });
     });
   }
 
