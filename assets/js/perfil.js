@@ -1388,11 +1388,11 @@
     var LIXO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
 
     function cartaoServico(s) {
-      return '<li class="vbs-item" data-id="' + s.id + '">' +
+      return '<li class="vbs-item' + (Number(s.preco) ? '' : ' sem-preco') + '" data-id="' + s.id + '">' +
         '<div class="vbs-item-nome"><strong>' + escapeHtml(s.nome) + '</strong>' +
           '<button type="button" class="vbs-lixo" data-remover="' + s.id + '" aria-label="Tirar ' + escapeHtml(s.nome) + '">' + LIXO + '</button></div>' +
         '<div class="vbs-item-campos">' +
-          '<label class="vbs-campo"><span>Preço</span><div class="vbs-moeda">R$<input type="text" inputmode="decimal" data-preco-id="' + s.id + '" value="' + (Number(s.preco) ? String(Number(s.preco).toFixed(2)).replace('.', ',') : '') + '" placeholder="0,00"></div></label>' +
+          '<label class="vbs-campo"><span>' + (Number(s.preco) ? 'Preço' : 'Falta o preço') + '</span><div class="vbs-moeda">R$<input type="text" inputmode="decimal" data-preco-id="' + s.id + '" value="' + (Number(s.preco) ? String(Number(s.preco).toFixed(2)).replace('.', ',') : '') + '" placeholder="0,00"></div></label>' +
           '<label class="vbs-campo"><span>Demora</span>' +
             '<select data-duracao="' + s.id + '">' + DURACOES.map(function (d) {
               return '<option value="' + d + '"' + (Number(s.duracao_min || 30) === d ? ' selected' : '') + '>' + rotuloDuracao(d) + '</option>';
@@ -1401,11 +1401,11 @@
     }
 
     container.innerHTML =
-      '<div class="vbs-passo"><b>1</b><span><strong>Toque no que você faz</strong><small>Entra na hora, com um preço de exemplo. Depois é só acertar o valor.</small></span></div>' +
+      '<div class="vbs-passo"><b>1</b><span><strong>Toque no que você faz</strong><small>Entra na hora. Aí você escreve o preço — ninguém põe valor no seu lugar.</small></span></div>' +
       (sugestoes.length
         ? '<div class="vbs-sug">' + sugestoes.map(function (s) {
-            return '<button type="button" class="vbs-sug-btn" data-sug="' + escapeHtml(s.nome) + '" data-sug-preco="' + (s.preco || 0) + '" data-sug-dur="' + (s.duracao || 30) + '">' +
-              '<i>' + MAIS + '</i><span><strong>' + escapeHtml(s.nome) + '</strong><small>' + (s.preco ? formatarPreco(s.preco) : 'a combinar') + (s.duracao ? ' · ' + rotuloDuracao(s.duracao) : '') + '</small></span></button>';
+            return '<button type="button" class="vbs-sug-btn" data-sug="' + escapeHtml(s.nome) + '" data-sug-dur="' + (s.duracao || 30) + '">' +
+              '<i>' + MAIS + '</i><span><strong>' + escapeHtml(s.nome) + '</strong><small>você põe o preço</small></span></button>';
           }).join('') + '</div>'
         : '<p class="vbs-vazio-sug">Escreva os seus logo abaixo.</p>') +
       '<details class="vbs-manual"' + (sugestoes.length ? '' : ' open') + '>' +
@@ -1419,7 +1419,7 @@
           '<button type="button" class="btn btn-primario" id="vbTutServicoSalvar">Adicionar esse</button>' +
         '</div>' +
       '</details>' +
-      '<div class="vbs-passo"><b>2</b><span><strong>Confira o preço e o tempo</strong><small>' +
+      '<div class="vbs-passo"><b>2</b><span><strong>Escreva o preço e o tempo</strong><small>' +
         (tattoo ? 'O tempo é o que a agenda reserva pra sessão.' : 'O tempo é quanto a agenda reserva pra cada cliente.') +
         '</small></span><em class="vbfc-selo" data-selo="svc"></em></div>' +
       (servicosCache.length
@@ -1433,13 +1433,17 @@
       el.className = 'vbfc-selo' + (texto ? ' on' : '') + (erro ? ' erro' : '');
       if (texto && !erro && /Salv|Pronto/.test(texto)) setTimeout(function () { if (el.textContent === texto) el.className = 'vbfc-selo'; }, 2400);
     }
-    function recarregar(aviso) {
+    function recarregar(aviso, focarNome) {
       return db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }).then(function (res) {
         servicosCache = res.data || [];
         carregarServicos();
         renderPassoTutorialServicos(container, ctx);
         if (ctx && ctx.estado) ctx.estado();
         if (aviso) dizer(aviso);
+        // leva o dono direto pro campo de preço do que ele acabou de pôr
+        var novo = focarNome && servicosCache.filter(function (x) { return x.nome === focarNome; })[0];
+        var campo = novo && container.querySelector('[data-preco-id="' + novo.id + '"]');
+        if (campo) { campo.closest('.vbs-item').scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(function () { campo.focus(); }, 320); }
       });
     }
     function moeda(v) { return parseFloat(String(v || '').replace(/\./g, '').replace(',', '.')) || 0; }
@@ -1449,8 +1453,9 @@
       b.addEventListener('click', function () {
         b.disabled = true;
         b.classList.add('indo');
-        salvarServicoComDuracao(b.getAttribute('data-sug'), Number(b.getAttribute('data-sug-preco')), b.getAttribute('data-sug-dur'))
-          .then(function () { recarregar('Pronto ✓'); }, function () { b.disabled = false; b.classList.remove('indo'); dizer('Não deu pra adicionar', true); });
+        // entra sem preço: quem põe o valor é o dono, no passo 2
+        salvarServicoComDuracao(b.getAttribute('data-sug'), 0, b.getAttribute('data-sug-dur'))
+          .then(function () { recarregar('Agora põe o preço', b.getAttribute('data-sug')); }, function () { b.disabled = false; b.classList.remove('indo'); dizer('Não deu pra adicionar', true); });
       });
     });
     container.querySelectorAll('[data-remover]').forEach(function (b) {
@@ -2003,7 +2008,7 @@
           if (!abrindo) { painel.classList.add('oculto'); return; }
           var sugestoes = window.servicosSugeridosPara ? window.servicosSugeridosPara(linhaAtual.segmento) : [];
           painel.innerHTML =
-            (sugestoes.length ? '<p class="vb-servico-novo-legenda">Sugestões pro seu tipo de negócio (toque pra usar o nome, o preço você define agora):</p><div class="vb-servico-chips">' +
+            (sugestoes.length ? '<p class="vb-servico-novo-legenda">Toque num nome pra usar (o preço é você quem põe):</p><div class="vb-servico-chips">' +
               sugestoes.map(function (s) {
                 return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
               }).join('') + '</div>' : '') +

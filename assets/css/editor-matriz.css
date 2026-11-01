@@ -302,3 +302,7 @@ html.vbfc-travado, html.vbfc-travado body { overflow: hidden; }
 .vbs-campo select { width: 100%; padding: 0.7rem 0.6rem; border: 1.5px solid var(--vbe-borda, rgba(29, 30, 34, 0.12)); border-radius: 12px; font: inherit; font-size: 1rem; background: #fff; color: #1f2024; }
 .vbs-nada { margin: 0; padding: 1rem; border-radius: 14px; background: #f7f7f9; font-size: 0.86rem; line-height: 1.45; color: #5c5e66; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .vbs-sug-btn { transition: none; } }
+/* serviço sem preço: fica pedindo o valor até o dono escrever */
+.vbs-item.sem-preco { border-color: rgba(201, 162, 39, 0.65); background: rgba(201, 162, 39, 0.05); }
+.vbs-item.sem-preco .vbs-campo > span { color: #8a6d10; }
+.vbs-item.sem-preco .vbs-moeda { border-color: rgba(201, 162, 39, 0.65); }
