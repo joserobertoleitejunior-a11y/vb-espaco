@@ -1378,58 +1378,117 @@
   // ---- passo "serviços": mesma sugestão por nicho + campo manual do
   // painel "+Novo serviço" de sempre, só que já aberto aqui dentro —
   // precisa ter pelo menos 1 cadastrado pra continuar. ----
-  function renderPassoTutorialServicos(container) {
+  function renderPassoTutorialServicos(container, ctx) {
     var sugestoes = (window.servicosSugeridosPara ? window.servicosSugeridosPara(linhaAtual.segmento) : []).filter(function (s) {
       return !servicosCache.some(function (existente) { return existente.nome === s.nome; });
     });
-    container.innerHTML =
-      (servicosCache.length ? '<ul class="vb-tutorial-lista">' + servicosCache.map(function (s) {
-        return '<li>' + escapeHtml(s.nome) + ' · ' + formatarPreco(s.preco) + (s.duracao_min ? ' · ' + rotuloDuracao(s.duracao_min) : '') +
-          '<button type="button" class="vb-remover-x" data-remover-servico-tut="' + s.id + '" style="position:static; margin-left:0.5rem; display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;">×</button></li>';
-      }).join('') + '</ul>' : '') +
-      (sugestoes.length ? '<p class="vb-servico-novo-legenda">Sugestões pro seu tipo de negócio (toque pra usar o nome, o preço você define agora):</p><div class="vb-servico-chips">' +
-        sugestoes.map(function (s) {
-          return '<button type="button" class="vb-servico-chip" data-chip-nome="' + escapeHtml(s.nome) + '">' + escapeHtml(s.nome) + '</button>';
-        }).join('') + '</div>' : '') +
-      '<p class="vb-servico-novo-legenda">Nome, preço e quanto tempo leva:</p>' +
-      '<div class="vb-servico-manual">' +
-      '<input type="text" id="vbTutServicoNome" placeholder="Nome do serviço">' +
-      '<input type="text" inputmode="decimal" id="vbTutServicoPreco" placeholder="Preço">' +
-      selectDuracaoHtml('vbTutServicoDuracao') +
-      '<button type="button" class="btn btn-primario" id="vbTutServicoSalvar">Adicionar</button>' +
-      '</div>';
+    var tattoo = linhaAtual.segmento === 'tatuador';
+    var palavra = tattoo ? 'sessão' : 'serviço', palavraP = tattoo ? 'sessões' : 'serviços';
+    var MAIS = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    var LIXO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
 
-    function atualizarERenderizar() {
-      db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }).then(function (res) {
+    function cartaoServico(s) {
+      return '<li class="vbs-item" data-id="' + s.id + '">' +
+        '<div class="vbs-item-nome"><strong>' + escapeHtml(s.nome) + '</strong>' +
+          '<button type="button" class="vbs-lixo" data-remover="' + s.id + '" aria-label="Tirar ' + escapeHtml(s.nome) + '">' + LIXO + '</button></div>' +
+        '<div class="vbs-item-campos">' +
+          '<label class="vbs-campo"><span>Preço</span><div class="vbs-moeda">R$<input type="text" inputmode="decimal" data-preco-id="' + s.id + '" value="' + (Number(s.preco) ? String(Number(s.preco).toFixed(2)).replace('.', ',') : '') + '" placeholder="0,00"></div></label>' +
+          '<label class="vbs-campo"><span>Demora</span>' +
+            '<select data-duracao="' + s.id + '">' + DURACOES.map(function (d) {
+              return '<option value="' + d + '"' + (Number(s.duracao_min || 30) === d ? ' selected' : '') + '>' + rotuloDuracao(d) + '</option>';
+            }).join('') + '</select></label>' +
+        '</div></li>';
+    }
+
+    container.innerHTML =
+      '<div class="vbs-passo"><b>1</b><span><strong>Toque no que você faz</strong><small>Entra na hora, com um preço de exemplo. Depois é só acertar o valor.</small></span></div>' +
+      (sugestoes.length
+        ? '<div class="vbs-sug">' + sugestoes.map(function (s) {
+            return '<button type="button" class="vbs-sug-btn" data-sug="' + escapeHtml(s.nome) + '" data-sug-preco="' + (s.preco || 0) + '" data-sug-dur="' + (s.duracao || 30) + '">' +
+              '<i>' + MAIS + '</i><span><strong>' + escapeHtml(s.nome) + '</strong><small>' + (s.preco ? formatarPreco(s.preco) : 'a combinar') + (s.duracao ? ' · ' + rotuloDuracao(s.duracao) : '') + '</small></span></button>';
+          }).join('') + '</div>'
+        : '<p class="vbs-vazio-sug">Escreva os seus logo abaixo.</p>') +
+      '<details class="vbs-manual"' + (sugestoes.length ? '' : ' open') + '>' +
+        '<summary>Não está na lista? Escrever o meu</summary>' +
+        '<div class="vbs-manual-campos">' +
+          '<input type="text" id="vbTutServicoNome" placeholder="Nome (ex.: ' + (tattoo ? 'Sessão de 2 horas' : 'Corte infantil') + ')">' +
+          '<div class="vbs-linha2">' +
+            '<div class="vbs-moeda">R$<input type="text" inputmode="decimal" id="vbTutServicoPreco" placeholder="0,00"></div>' +
+            selectDuracaoHtml('vbTutServicoDuracao') +
+          '</div>' +
+          '<button type="button" class="btn btn-primario" id="vbTutServicoSalvar">Adicionar esse</button>' +
+        '</div>' +
+      '</details>' +
+      '<div class="vbs-passo"><b>2</b><span><strong>Confira o preço e o tempo</strong><small>' +
+        (tattoo ? 'O tempo é o que a agenda reserva pra sessão.' : 'O tempo é quanto a agenda reserva pra cada cliente.') +
+        '</small></span><em class="vbfc-selo" data-selo="svc"></em></div>' +
+      (servicosCache.length
+        ? '<ul class="vbs-lista">' + servicosCache.map(cartaoServico).join('') + '</ul>'
+        : '<p class="vbs-nada">Nenhum ' + palavra + ' ainda. Toque num de cima pra começar — dá pra mudar tudo depois.</p>');
+
+    function dizer(texto, erro) {
+      var el = container.querySelector('[data-selo="svc"]');
+      if (!el) return;
+      el.textContent = texto || '';
+      el.className = 'vbfc-selo' + (texto ? ' on' : '') + (erro ? ' erro' : '');
+      if (texto && !erro && /Salv|Pronto/.test(texto)) setTimeout(function () { if (el.textContent === texto) el.className = 'vbfc-selo'; }, 2400);
+    }
+    function recarregar(aviso) {
+      return db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }).then(function (res) {
         servicosCache = res.data || [];
         carregarServicos();
-        mostrarPassoTutorial(passoCriacaoAtual);
+        renderPassoTutorialServicos(container, ctx);
+        if (ctx && ctx.estado) ctx.estado();
+        if (aviso) dizer(aviso);
       });
     }
-    function salvar(nome, preco, duracao) {
-      if (!nome || !nome.trim()) return;
-      salvarServicoComDuracao(nome, preco, duracao).then(atualizarERenderizar);
-    }
-    // a sugestão só preenche o NOME — o preço é sempre digitado na hora
-    // pelo dono (nenhum valor "chutado" entra sem ele decidir).
-    container.querySelectorAll('[data-chip-nome]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        var nomeInput = document.getElementById('vbTutServicoNome');
-        var precoInput = document.getElementById('vbTutServicoPreco');
-        nomeInput.value = chip.getAttribute('data-chip-nome');
-        document.getElementById('vbTutServicoDuracao').value = String(duracaoSugerida(nomeInput.value));
-        precoInput.focus();
+    function moeda(v) { return parseFloat(String(v || '').replace(/\./g, '').replace(',', '.')) || 0; }
+
+    // sugestão entra com um toque só (preço de exemplo, ajustável na lista abaixo)
+    container.querySelectorAll('[data-sug]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        b.disabled = true;
+        b.classList.add('indo');
+        salvarServicoComDuracao(b.getAttribute('data-sug'), Number(b.getAttribute('data-sug-preco')), b.getAttribute('data-sug-dur'))
+          .then(function () { recarregar('Pronto ✓'); }, function () { b.disabled = false; b.classList.remove('indo'); dizer('Não deu pra adicionar', true); });
       });
     });
-    container.querySelectorAll('[data-remover-servico-tut]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        db.rpc('tenant_admin_remover_servico', { p_estabelecimento_id: estabId, p_id: btn.getAttribute('data-remover-servico-tut') }).then(atualizarERenderizar);
+    container.querySelectorAll('[data-remover]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        b.disabled = true;
+        db.rpc('tenant_admin_remover_servico', { p_estabelecimento_id: estabId, p_id: b.getAttribute('data-remover') }).then(function () { recarregar('Tirado'); });
       });
     });
-    document.getElementById('vbTutServicoSalvar').addEventListener('click', function () {
-      var nome = document.getElementById('vbTutServicoNome').value;
-      var preco = parseFloat(document.getElementById('vbTutServicoPreco').value.replace(',', '.')) || 0;
-      salvar(nome, preco, document.getElementById('vbTutServicoDuracao').value);
+    // preço e tempo salvam sozinhos ao sair do campo
+    container.querySelectorAll('[data-preco-id]').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        var id = inp.getAttribute('data-preco-id');
+        var s = servicosCache.filter(function (x) { return x.id === id; })[0];
+        if (!s) return;
+        var novoPreco = moeda(inp.value);
+        if (novoPreco === Number(s.preco)) return;
+        dizer('Salvando…');
+        db.rpc('tenant_admin_salvar_servico', { p_estabelecimento_id: estabId, p_id: id, p_nome: s.nome, p_preco: novoPreco, p_categoria: s.categoria || 'unissex' })
+          .then(function (r) { if (r.error) { dizer(r.error.message, true); return; } s.preco = novoPreco; carregarServicos(); dizer('Salvo ✓'); }, function () { dizer('Sem conexão', true); });
+      });
+    });
+    container.querySelectorAll('[data-duracao]').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        var id = sel.getAttribute('data-duracao');
+        dizer('Salvando…');
+        db.rpc('tenant_admin_duracao_servico', { p_estabelecimento_id: estabId, p_id: id, p_duracao_min: Number(sel.value) })
+          .then(function (r) { if (r && r.error) { dizer(r.error.message, true); return; }
+            var s = servicosCache.filter(function (x) { return x.id === id; })[0]; if (s) s.duracao_min = Number(sel.value);
+            carregarServicos(); dizer('Salvo ✓'); }, function () { dizer('Sem conexão', true); });
+      });
+    });
+    var btnManual = document.getElementById('vbTutServicoSalvar');
+    if (btnManual) btnManual.addEventListener('click', function () {
+      var nome = document.getElementById('vbTutServicoNome').value.trim();
+      if (!nome) { document.getElementById('vbTutServicoNome').focus(); dizer('Escreva o nome do ' + palavra, true); return; }
+      btnManual.disabled = true;
+      salvarServicoComDuracao(nome, moeda(document.getElementById('vbTutServicoPreco').value), document.getElementById('vbTutServicoDuracao').value)
+        .then(function () { recarregar('Pronto ✓'); }, function () { btnManual.disabled = false; dizer('Não deu pra adicionar', true); });
     });
   }
 

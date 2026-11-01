@@ -252,3 +252,53 @@ html.vbfc-travado, html.vbfc-travado body { overflow: hidden; }
 .vbf-avatar-linha .vb-btn-upload { flex: 1; }
 .vbf-molduras { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .vb-servico-chip.on { background: var(--vbe-tinta, #1d1e22); border-color: transparent; color: #fff; }
+
+/* ===== passo "serviços": toque pra adicionar, confira o preço ===== */
+.vbs-passo { display: flex; align-items: flex-start; gap: 0.65rem; margin: 0 0 0.7rem; }
+.vbs-passo + * { margin-top: 0; }
+.vbs-passo b { flex: 0 0 auto; width: 1.7rem; height: 1.7rem; display: grid; place-items: center; border-radius: 50%; background: #1f2024; color: #fff; font: 800 0.85rem/1 system-ui, sans-serif; }
+.vbs-passo span { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; }
+.vbs-passo strong { font-size: 1rem; letter-spacing: -0.01em; color: #1f2024; }
+.vbs-passo small { font-size: 0.82rem; line-height: 1.35; color: #5c5e66; }
+
+.vbs-sug { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+@media (max-width: 400px) { .vbs-sug { grid-template-columns: 1fr; } }
+.vbs-sug-btn {
+  display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.7rem 0.8rem; text-align: left;
+  border: 1.5px solid var(--vbe-borda, rgba(29, 30, 34, 0.1)); border-radius: 14px; background: #fff;
+  font: inherit; color: #1f2024; cursor: pointer; transition: transform 0.14s, border-color 0.14s, background 0.14s;
+}
+.vbs-sug-btn i { flex: 0 0 auto; display: grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: rgba(201, 162, 39, 0.16); color: #8a6d10; }
+.vbs-sug-btn span { display: flex; flex-direction: column; min-width: 0; }
+.vbs-sug-btn strong { font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vbs-sug-btn small { font-size: 0.76rem; color: #6b6d76; }
+.vbs-sug-btn:active { transform: scale(0.97); }
+.vbs-sug-btn.indo { opacity: 0.45; }
+.vbs-vazio-sug { margin: 0 0 0.8rem; font-size: 0.84rem; color: #6b6d76; }
+
+.vbs-manual { margin-bottom: 1.4rem; border: 1.5px dashed #ceced6; border-radius: 14px; background: #fcfcfd; }
+.vbs-manual summary { padding: 0.8rem 0.9rem; font-size: 0.9rem; font-weight: 700; cursor: pointer; list-style: none; color: #1f2024; }
+.vbs-manual summary::-webkit-details-marker { display: none; }
+.vbs-manual summary::before { content: '+ '; color: #8a6d10; font-weight: 800; }
+.vbs-manual[open] summary::before { content: '− '; }
+.vbs-manual-campos { display: flex; flex-direction: column; gap: 0.5rem; padding: 0 0.9rem 0.9rem; }
+.vbs-manual-campos input, .vbs-manual-campos select { width: 100%; box-sizing: border-box; padding: 0.7rem 0.8rem; border: 1.5px solid var(--vbe-borda, rgba(29, 30, 34, 0.12)); border-radius: 12px; font: inherit; font-size: 1rem; background: #fff; color: #1f2024; }
+.vbs-linha2 { display: flex; gap: 0.5rem; }
+.vbs-linha2 > * { flex: 1; }
+
+.vbs-moeda { display: flex; align-items: center; gap: 0.3rem; padding: 0 0.7rem; border: 1.5px solid var(--vbe-borda, rgba(29, 30, 34, 0.12)); border-radius: 12px; background: #fff; font-size: 0.86rem; font-weight: 700; color: #6b6d76; }
+.vbs-moeda input { flex: 1; min-width: 0; width: 100%; border: 0 !important; padding: 0.7rem 0 !important; background: none !important; font: inherit; font-size: 1rem; font-weight: 700; color: #1f2024; }
+.vbs-moeda input:focus { outline: none; }
+
+.vbs-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.vbs-item { padding: 0.75rem 0.85rem; border: 1.5px solid var(--vbe-borda, rgba(29, 30, 34, 0.1)); border-radius: 14px; background: #fff; }
+.vbs-item-nome { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.5rem; }
+.vbs-item-nome strong { font-size: 0.95rem; }
+.vbs-lixo { flex: 0 0 auto; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 10px; background: none; color: #b3261e; cursor: pointer; }
+.vbs-lixo:active { background: rgba(179, 38, 30, 0.1); }
+.vbs-item-campos { display: flex; gap: 0.5rem; }
+.vbs-campo { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.vbs-campo > span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8a8c95; }
+.vbs-campo select { width: 100%; padding: 0.7rem 0.6rem; border: 1.5px solid var(--vbe-borda, rgba(29, 30, 34, 0.12)); border-radius: 12px; font: inherit; font-size: 1rem; background: #fff; color: #1f2024; }
+.vbs-nada { margin: 0; padding: 1rem; border-radius: 14px; background: #f7f7f9; font-size: 0.86rem; line-height: 1.45; color: #5c5e66; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .vbs-sug-btn { transition: none; } }
