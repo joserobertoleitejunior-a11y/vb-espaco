@@ -403,3 +403,16 @@ html.embutido body, html.embutido .painel { background: transparent; padding-top
 html.embutido #app { padding-top: 0; }
 html.embutido .barra-salvar { bottom: 0; }
 .pa-cliente { display: flex; align-items: center; flex-wrap: wrap; gap: 0 0.3rem; }
+
+/* passo a passo do pedido */
+.pa-trilha { list-style: none; display: flex; gap: 4px; margin: 0.6rem 0 0.2rem; padding: 0; }
+.pa-trilha li { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.pa-trilha i { display: block; height: 4px; border-radius: 4px; background: rgba(29, 30, 34, 0.12); }
+.pa-trilha span { font-size: 0.66rem; font-weight: 700; color: var(--ink-faint, #8a8c95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pa-trilha .feito i { background: #1e7a3c; }
+.pa-trilha .feito span { color: #1e7a3c; }
+.pa-trilha .agora i { background: var(--ink, #1d1e22); }
+.pa-trilha .agora span { color: var(--ink, #1d1e22); }
+.pa-acoes .btn.mini { white-space: nowrap; }
+.pa-rodape { flex-wrap: wrap; row-gap: 0.5rem; }
+.pa-acoes { flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }

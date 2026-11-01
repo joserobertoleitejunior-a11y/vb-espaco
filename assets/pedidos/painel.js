@@ -371,11 +371,26 @@
     return lista;
   }
 
+  // cada botão diz o número do passo e o que acontece: 1. aceitar → 2. avisar → 3. concluir
   function proximoPasso(p) {
-    if (p.status === 'novo') return { status: 'preparando', rotulo: 'Aceitar' };
-    if (p.status === 'preparando') return { status: 'saiu_entrega', rotulo: p.forma_entrega === 'retirada' ? (SERVICO ? 'Pode vir' : 'Pronto p/ retirar') : (SERVICO ? 'Estou a caminho' : 'Saiu p/ entrega') };
-    if (p.status === 'saiu_entrega') return { status: 'concluido', rotulo: 'Concluir' };
+    var qual = (V.pedido || 'Pedido').toLowerCase(), retirada = p.forma_entrega === 'retirada';
+    if (p.status === 'novo') return { status: 'preparando', rotulo: '1. Aceitar o ' + qual };
+    if (p.status === 'preparando') return { status: 'saiu_entrega', rotulo: retirada
+      ? (SERVICO ? '2. Avisar: pode vir' : '2. Avisar: pronto pra retirar')
+      : (SERVICO ? '2. Avisar: estou a caminho' : '2. Avisar: saiu pra entrega') };
+    if (p.status === 'saiu_entrega') return { status: 'concluido', rotulo: retirada
+      ? (SERVICO ? '3. Concluir: já atendi' : '3. Concluir: já retirou')
+      : (SERVICO ? '3. Concluir: serviço feito' : '3. Concluir: já entregue') };
     return null;
+  }
+  // fitinha dos 4 estados do pedido, pra ver em que passo ele está
+  function trilha(p) {
+    if (p.status === 'cancelado' || ORDEM_STATUS[p.status] == null) return '';
+    var idx = ORDEM_STATUS[p.status], retirada = p.forma_entrega === 'retirada';
+    var nomes = ['Novo', 'Aceito', retirada ? (SERVICO ? 'Pode vir' : 'Pronto') : (SERVICO ? 'A caminho' : 'Saiu'), 'Concluído'];
+    return '<ol class="pa-trilha" aria-label="Passo do ' + esc((V.pedido || 'pedido').toLowerCase()) + '">' + nomes.map(function (n, i) {
+      return '<li class="' + (i < idx ? 'feito' : i === idx ? 'agora' : '') + '"><i></i><span>' + n + '</span></li>';
+    }).join('') + '</ol>';
   }
 
   function renderizarPedidos(recemIds) {
@@ -397,6 +412,7 @@
       return '<article class="pa-card status-' + p.status + ((recemIds || []).indexOf(p.id) !== -1 ? ' recem' : '') + '" data-pedido="' + p.id + '">' +
         '<div class="pa-topo"><div><strong>#' + (p.numero || '—') + '</strong><span class="pa-tempo">' + tempoAtras(p.criado_em) + '</span></div>' +
         '<span class="pa-status">' + rotuloStatusAdmin(p) + '</span></div>' +
+        trilha(p) +
         '<div class="pa-cliente">' + (window.VBAvatar ? window.VBAvatar.html(p.cliente_nome, p.cliente_telefone, 'p') : '') + '<strong>' + esc(p.cliente_nome) + '</strong> · ' + esc(U.formatarTelefone(p.cliente_telefone)) + '</div>' +
         '<div class="pa-tags">' + tags.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' +
         (entrega && (p.endereco_entrega || p.referencia) ? '<div class="pa-end">' + esc(p.endereco_entrega || '') + (p.referencia ? (p.endereco_entrega ? ' — ' : '') + esc(p.referencia) : '') + '</div>' : '') +
