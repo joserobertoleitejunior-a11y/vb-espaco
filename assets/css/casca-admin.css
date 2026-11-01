@@ -127,7 +127,6 @@
 /* ---------- rolagem sem travar ---------- */
 html.dash-aberto, html.dash-aberto body { overflow: hidden; overscroll-behavior: none; }
 #dashboardOverlay.admin-painel-overlay { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scroll-behavior: auto; }
-#dashboardCorpo, .ca-casca { contain: layout style; }
 /* Pedidos: o painel de dentro rola sozinho e ocupa a tela certinho (uma rolagem só, sem briga) */
 #dashboardOverlay.ca-modo-pedidos { overflow: hidden; }
 #dashboardOverlay.ca-modo-pedidos .ca-casca { height: 100%; min-height: 0; }
@@ -169,3 +168,7 @@ html.dash-aberto, html.dash-aberto body { overflow: hidden; overscroll-behavior:
 .ca-num b { white-space: nowrap; font-size: clamp(1.05rem, 5.4vw, 1.45rem); }
 .ag-quem { display: flex; align-items: center; min-width: 0; }
 .ag-txt { min-width: 0; }
+
+/* a barra de abas fica sempre travada na tela (nada acima dela pode criar um 'quadro' novo pro position: fixed) */
+.ca-abas { position: fixed; bottom: 0; left: 0; right: 0; transform: none; }
+@media (min-width: 900px) { .ca-abas { position: sticky; top: 61px; bottom: auto; left: auto; right: auto; } }
