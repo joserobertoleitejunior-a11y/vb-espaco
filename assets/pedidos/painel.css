@@ -416,3 +416,27 @@ html.embutido .barra-salvar { bottom: 0; }
 .pa-acoes .btn.mini { white-space: nowrap; }
 .pa-rodape { flex-wrap: wrap; row-gap: 0.5rem; }
 .pa-acoes { flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+
+/* passo a passo do cardápio (painel.js → passoCardapioHtml) */
+.pc { margin-bottom: 1.2rem; }
+.pc-passo { display: flex; align-items: flex-start; gap: 0.65rem; margin: 0 0 0.7rem; }
+.pc-passo + .pc-cat { margin-top: 0; }
+.pc-passo b { flex: 0 0 auto; width: 1.7rem; height: 1.7rem; display: grid; place-items: center; border-radius: 50%; background: var(--ink, #1d1e22); color: #fff; font: 800 0.85rem/1 system-ui, sans-serif; }
+.pc-passo span { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; }
+.pc-passo strong { font-size: 1rem; letter-spacing: -0.01em; }
+.pc-passo small { font-size: 0.82rem; line-height: 1.35; color: var(--ink-soft); }
+.pc-selo { font-style: normal; font-size: 0.78rem; font-weight: 800; color: #1e7a3c; opacity: 0; transition: opacity 0.2s; line-height: 1.3; margin-top: 0.25rem; }
+.pc-selo.on { opacity: 1; }
+.pc-cat { margin: 0.9rem 0 0.35rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint, #8a8c95); }
+.pc-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.2rem; }
+.pc-chip {
+  padding: 0.5rem 0.8rem; border-radius: 999px; border: 1.5px solid var(--borda); background: var(--branco, #fff);
+  font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--ink); cursor: pointer; transition: transform 0.14s, background 0.14s;
+}
+.pc-chip:active { transform: scale(0.96); }
+.pc-chip.indo { opacity: 0.45; }
+.pc-ok { margin: 0 0 1rem; font-size: 0.84rem; color: var(--ink-soft); }
+/* item ainda sem preço: fica pedindo o valor */
+.ca-item.sem-preco { box-shadow: inset 0 0 0 1.5px rgba(201, 162, 39, 0.6); background: rgba(201, 162, 39, 0.05); }
+.ca-item.sem-preco .ca-info small { color: #8a6d10; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .pc-chip { transition: none; } }

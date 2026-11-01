@@ -646,20 +646,50 @@
       : '<span class="ca-thumb">' + esc(it.nome.charAt(0).toUpperCase()) + '</span>';
   }
 
+  // ---- passo a passo do cardápio: toque no que vende, depois ponha o preço ----
+  // Os nomes vêm de itens-sugeridos.js (sem preço nenhum: quem põe valor é o dono).
+  // Tocar num nome cria a categoria, se faltar, e o item — um toque por item.
+  function sugestoesCardapio() {
+    if (!window.VBItensSugeridos) return [];
+    return window.VBItensSugeridos.para(loja.segmento).map(function (g) {
+      return { cat: g[0], lista: g[1].filter(function (nome) {
+        return !itens.some(function (i) { return i.nome.toLowerCase() === nome.toLowerCase(); });
+      }) };
+    }).filter(function (g) { return g.lista.length; });
+  }
+  function passoCardapioHtml() {
+    var gs = sugestoesCardapio();
+    var semPreco = itens.filter(function (i) { return !Number(i.preco); }).length;
+    var oQue = SERVICO ? 'O que você faz' : 'O que você vende';
+    return '<div class="pc">' +
+      '<div class="pc-passo"><b>1</b><span><strong>' + oQue + '?</strong><small>Toque num nome: ele entra na hora, já na categoria certa. O preço é você quem põe.</small>' +
+        '<em class="pc-selo" id="pcSelo"></em></span></div>' +
+      (gs.length
+        ? gs.map(function (g) {
+            return '<p class="pc-cat">' + esc(g.cat) + '</p><div class="pc-chips">' + g.lista.map(function (nome) {
+              return '<button type="button" class="pc-chip" data-sug-item="' + esc(nome) + '" data-sug-cat="' + esc(g.cat) + '">+ ' + esc(nome) + '</button>';
+            }).join('') + '</div>';
+          }).join('')
+        : '<p class="pc-ok">' + (itens.length ? 'Você já pôs tudo o que a gente sugere. Pra incluir mais, use o botão lá em cima.' : 'Use o botão lá em cima pra escrever o seu primeiro item.') + '</p>') +
+      '<div class="pc-passo"><b>2</b><span><strong>Agora ponha o preço</strong><small>' +
+        (semPreco ? semPreco + ' ' + (semPreco === 1 ? 'item está' : 'itens estão') + ' sem preço — toque em cada um pra escrever o valor.' : 'Toque num item da lista pra mudar nome, foto e preço.') +
+      '</small></span></div></div>';
+  }
+
   function renderizarCardapio() {
     var grupos = categorias.map(function (c) { return { nome: c.nome, lista: itens.filter(function (i) { return i.categoria_id === c.id; }) }; });
     var sem = itens.filter(function (i) { return !categorias.some(function (c) { return c.id === i.categoria_id; }); });
     if (sem.length) grupos.push({ nome: 'Sem categoria', lista: sem });
-    $('listaItens').innerHTML = itens.length ? grupos.filter(function (g) { return g.lista.length; }).map(function (g) {
+    $('listaItens').innerHTML = passoCardapioHtml() + (itens.length ? grupos.filter(function (g) { return g.lista.length; }).map(function (g) {
       return '<p class="ca-grupo-titulo">' + esc(g.nome) + '</p>' + g.lista.map(function (i) {
         var flags = [];
         if (i.permite_meio_a_meio) flags.push('meio a meio');
         if (i.aceita_borda) flags.push('borda');
-        return '<div class="ca-item' + (i.ativo ? '' : ' inativo') + '" data-editar-item="' + i.id + '">' + thumb(i) +
+        return '<div class="ca-item' + (i.ativo ? '' : ' inativo') + (Number(i.preco) ? '' : ' sem-preco') + '" data-editar-item="' + i.id + '">' + thumb(i) +
           '<div class="ca-info"><strong>' + esc(i.nome) + '</strong><small>' + U.precoOuCombinar(i.preco) + (flags.length ? ' · ' + flags.join(' · ') : '') + (i.ativo ? '' : (SERVICO ? ' · indisponível' : ' · esgotado')) + '</small></div>' +
           '<label class="switch" data-parar title="' + (i.ativo ? 'Disponível' : 'Esgotado') + '"><input type="checkbox" data-alternar="' + i.id + '" ' + (i.ativo ? 'checked' : '') + ' aria-label="Disponível"><span class="trilho"></span></label></div>';
       }).join('');
-    }).join('') : modeloProntoHtml();
+    }).join('') : (sugestoesCardapio().length ? '' : modeloProntoHtml()));
 
     $('listaCategorias').innerHTML = categorias.length ? categorias.map(function (c, idx) {
       var n = itens.filter(function (i) { return i.categoria_id === c.id; }).length;
@@ -682,7 +712,7 @@
   }
 
   // cardápio vazio: oferece o modelo pronto da categoria (o mesmo da prévia
-  // dos estilos), com preços de referência que o dono ajusta depois
+  // dos estilos), sempre sem preço — quem põe valor é o dono
   function modeloDaLoja() {
     if (!window.VBDemo || window.VBDemo.segmentos.indexOf(loja.segmento) === -1) return null;
     return window.VBDemo.montar(loja.segmento).cardapio;
@@ -695,8 +725,8 @@
     return '<div class="ca-modelo">' +
       '<p class="ca-modelo-rotulo">Passo a passo</p>' +
       '<p class="ca-modelo-titulo">Comece com o ' + (SERVICO ? 'catálogo' : 'cardápio') + ' pronto de ' + esc(nomeSeg.toLowerCase()) + '</p>' +
-      '<p class="ca-modelo-txt">' + m.categorias.length + ' categorias e ' + m.itens.length + ' ' + (SERVICO ? 'serviços' : 'itens') + ' com preços de referência: ' +
-      esc(m.itens.slice(0, 3).map(function (i) { return i.nome; }).join(', ')) + '… Depois é só ajustar nome, foto e preço.</p>' +
+      '<p class="ca-modelo-txt">' + m.categorias.length + ' categorias e ' + m.itens.length + ' ' + (SERVICO ? 'serviços' : 'itens') + ' pra você só pôr o preço: ' +
+      esc(m.itens.slice(0, 3).map(function (i) { return i.nome; }).join(', ')) + '… Entram sem preço: você escreve o seu valor em cada um.</p>' +
       '<button type="button" class="btn" id="importarModeloBtn">Usar o modelo pronto →</button>' +
       '<p class="ca-modelo-ou">ou toque em "' + esc($('novoItemBtn').textContent.trim()) + '" e monte do zero</p></div>';
   }
@@ -715,20 +745,20 @@
         var it = m.itens[j];
         var novo = await rpc('delivery_admin_salvar_item', {
           p_id: null, p_estabelecimento_id: loja.id, p_categoria_id: mapaCat[it.categoria_id] || null,
-          p_nome: it.nome, p_descricao: it.descricao || null, p_preco: Number(it.preco) || 0, p_foto_url: null,
+          p_nome: it.nome, p_descricao: it.descricao || null, p_preco: 0, p_foto_url: null,
           p_permite_meio_a_meio: !!it.permite_meio_a_meio, p_ativo: true, p_ordem: j, p_aceita_borda: !!it.aceita_borda
         });
         mapaItem[it.id] = novo && novo.id;
       }
       for (var b = 0; b < (m.bordas || []).length; b++) {
-        await rpc('delivery_admin_salvar_borda', { p_id: null, p_estabelecimento_id: loja.id, p_nome: m.bordas[b].nome, p_preco: m.bordas[b].preco, p_ativo: true, p_ordem: b });
+        await rpc('delivery_admin_salvar_borda', { p_id: null, p_estabelecimento_id: loja.id, p_nome: m.bordas[b].nome, p_preco: 0, p_ativo: true, p_ordem: b });
       }
       for (var k = 0; k < (m.combos || []).length; k++) {
         var cb = m.combos[k];
         var permitidos = (cb.itens_permitidos || []).map(function (id) { return mapaItem[id]; }).filter(Boolean);
-        if (permitidos.length) await rpc('delivery_admin_salvar_combo', { p_id: null, p_estabelecimento_id: loja.id, p_nome: cb.nome, p_preco: cb.preco, p_itens_permitidos: permitidos, p_qtd_sabores: cb.qtd_sabores || 2, p_ativo: true, p_ordem: k });
+        if (permitidos.length) await rpc('delivery_admin_salvar_combo', { p_id: null, p_estabelecimento_id: loja.id, p_nome: cb.nome, p_preco: 0, p_itens_permitidos: permitidos, p_qtd_sabores: cb.qtd_sabores || 2, p_ativo: true, p_ordem: k });
       }
-      U.toast((SERVICO ? 'Catálogo' : 'Cardápio') + ' pronto! Agora ajuste os preços do seu jeito.', 3600);
+      U.toast((SERVICO ? 'Catálogo' : 'Cardápio') + ' montado! Agora toque em cada item e ponha o seu preço.', 3600);
     } catch (e) {
       btn.disabled = false;
       btn.textContent = 'Tentar de novo →';
@@ -742,6 +772,31 @@
       if (imp) importarModelo(imp);
     });
     $('novoItemBtn').addEventListener('click', function () { abrirFormItem(null); });
+    // passo 1: um toque cria a categoria (se faltar) e o item, sem preço
+    $('listaItens').addEventListener('click', async function (e) {
+      var b = e.target.closest('[data-sug-item]');
+      if (!b) return;
+      var nome = b.getAttribute('data-sug-item'), nomeCat = b.getAttribute('data-sug-cat');
+      var selo = $('pcSelo');
+      b.disabled = true; b.classList.add('indo');
+      if (selo) { selo.textContent = 'Pondo no cardápio…'; selo.className = 'pc-selo on'; }
+      try {
+        var cat = categorias.filter(function (c) { return c.nome.toLowerCase() === nomeCat.toLowerCase(); })[0];
+        if (!cat) {
+          cat = await rpc('delivery_admin_salvar_categoria', { p_id: null, p_estabelecimento_id: loja.id, p_nome: nomeCat, p_ordem: categorias.length });
+        }
+        await rpc('delivery_admin_salvar_item', {
+          p_id: null, p_estabelecimento_id: loja.id, p_categoria_id: cat.id, p_nome: nome, p_descricao: null,
+          p_preco: 0, p_foto_url: null, p_permite_meio_a_meio: false, p_ativo: true, p_ordem: itens.length, p_aceita_borda: false
+        });
+        await carregarCardapio();
+        var novoSelo = $('pcSelo');
+        if (novoSelo) { novoSelo.textContent = nome + ' entrou — falta o preço'; novoSelo.className = 'pc-selo on'; }
+      } catch (err) {
+        b.disabled = false; b.classList.remove('indo');
+        U.toast(U.mensagemErro(err, 'Não deu pra pôr esse item'), 3000);
+      }
+    });
     $('novoComboBtn').addEventListener('click', function () {
       if (!itens.length) { U.toast('Cadastre os itens primeiro'); return; }
       abrirFormCombo(null);
