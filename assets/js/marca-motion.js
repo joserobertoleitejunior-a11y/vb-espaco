@@ -1,27 +1,22 @@
-/* Motion do nome na splash: "Matriz" nasce de uma matriz de pontos. Uma
-   grade fina de pontos acende dentro da pastilha de vidro, do centro pra
-   fora; uma linha dourada varre da esquerda pra direita e, por onde ela
-   passa, os pontos que caem dentro das letras crescem, brilham dourados e
-   esfriam na cor da letra — os outros apagam. Quando a linha termina, a
-   letra nítida do DOM entra no lugar dos pontos e o pingo do "i" (o losango
-   dourado) cai por último. Tocar no nome refaz.
+/* Motion do nome: "Matriz" nasce de uma matriz de pontos. Uma grade fina de
+   pontos acende dentro da pastilha de vidro, do centro pra fora; uma linha
+   dourada varre da esquerda pra direita e, por onde ela passa, os pontos que
+   caem dentro das letras crescem, brilham dourados e esfriam na cor da letra —
+   os outros apagam. No fim, a letra nítida do DOM entra no lugar dos pontos e
+   o pingo do "i" (o losango dourado) cai por último. Tocar no nome refaz.
 
-   Desenhado em canvas 2D puro, com as mesmas contas do efeito antigo em
-   three.js (que baixava ≈1 MB e ligava um motor 3D só pra isso). Só roda no
-   logotipo grande ([data-vibe-marca-logo="hero"]); depois que termina, o
-   laço de desenho para. Com "reduzir movimento", fica o aparecer devagar
-   do CSS. */
-(function () {
-  var el = document.querySelector('[data-vibe-marca-logo="hero"]');
-  if (!el || !window.requestAnimationFrame) return;
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+   Roda no logotipo grande da splash (uma vez, na entrada) e, em qualquer
+   página, nos logotipos pequenos do topo e da faixa — ali em looping. Entre
+   um ciclo e outro o laço de desenho para; fora da tela ou com a aba no fundo,
+   nem começa. Com "reduzir movimento", não roda.
+
+   Canvas 2D puro, com as mesmas contas do efeito antigo em three.js (que
+   baixava ≈1 MB e ligava um motor 3D só pra isso). */
+(function (global) {
+  if (!global.requestAnimationFrame) return;
+  if (global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   var raiz = document.documentElement;
-  raiz.classList.add('pt-motion');
-  // rede de segurança: se algo travar, o nome nunca fica escondido
-  var seguranca = setTimeout(revelar, 5000);
-  function revelar() { raiz.classList.remove('pt-motion'); raiz.classList.add('pt-motion-fim'); }
-
   var fontePronta = new Promise(function (ok) {
     if (raiz.classList.contains('pt-marca-pronta')) return ok();
     var obs = new MutationObserver(function () {
@@ -29,14 +24,12 @@
     });
     obs.observe(raiz, { attributes: true, attributeFilter: ['class'] });
   });
-  // espera a splash terminar de subir (spSobe) pra medir no lugar final
-  fontePronta.then(function () { setTimeout(iniciar, 200); });
 
   var PASSO = 2.3;                    // distância entre pontos da grade (px)
   var T_VARRE = 0.55, D_VARRE = 1.35; // a linha dourada: quando começa e quanto dura
 
   // máscara das letras: cada letra desenhada no lugar exato em que o DOM a pôs
-  function mascara(palavra, larg, alt) {
+  function mascara(el, palavra, larg, alt) {
     var escala = 2;
     var c = document.createElement('canvas');
     c.width = larg * escala; c.height = alt * escala;
@@ -69,13 +62,20 @@
 
   function suave(a, b, x) { var t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); }
 
-  function iniciar() {
+  function motion(el, op) {
+    op = op || {};
+    var hero = !!op.hero;
+    var seguranca = 0;
+    el.classList.add('pt-mt-el');
+    function esconder() { el.classList.add('pt-mt'); if (hero) { raiz.classList.remove('pt-motion-fim'); raiz.classList.add('pt-motion'); seguranca = setTimeout(revelar, 5000); } }
+    function revelar() { el.classList.remove('pt-mt'); if (hero) { raiz.classList.remove('pt-motion'); raiz.classList.add('pt-motion-fim'); } }
+    esconder();
     var palavra = el.querySelector('.pt-word');
     if (!palavra) return revelar();
     var caixa = el.getBoundingClientRect();
     if (!caixa.width) return revelar();
     var larg = Math.ceil(caixa.width), alt = Math.ceil(caixa.height);
-    var cobre = mascara(palavra, larg, alt);
+    var cobre = mascara(el, palavra, larg, alt);
 
     // grade dentro da pastilha (cápsula: some nos cantos arredondados)
     var raio = alt / 2, P = [];
@@ -111,7 +111,7 @@
       // a letra nítida entra por baixo enquanto os pontos somem
       var troca = Math.min(Math.max((t - FIM + 0.1) / 0.7, 0), 1);
       var some = 1 - troca;
-      if (troca > 0 && raiz.classList.contains('pt-motion')) { clearTimeout(seguranca); revelar(); }
+      if (troca > 0 && el.classList.contains('pt-mt')) { clearTimeout(seguranca); revelar(); }
 
       g.clearRect(0, 0, larg, alt);
       for (var i = 0; i < P.length; i++) {
@@ -144,22 +144,44 @@
       }
       g.globalAlpha = 1;
       if (troca < 1) quadro = requestAnimationFrame(desenhar);
-      else { rodando = false; canvas.style.visibility = 'hidden'; }
+      else {
+        rodando = false;
+        canvas.style.visibility = 'hidden';
+        if (op.loop) relogio = setTimeout(quandoDerPraRodar, op.loop);
+      }
     }
+    var relogio = 0, naTela = true;
     function tocar() {
+      if (rodando) return;
       cancelAnimationFrame(quadro);
+      clearTimeout(relogio);
+      esconder();
       t0 = 0; rodando = true;
       canvas.style.visibility = '';
       quadro = requestAnimationFrame(desenhar);
     }
-    tocar();
-
-    el.addEventListener('click', function () {
-      if (rodando) return;
-      raiz.classList.remove('pt-motion-fim');
-      raiz.classList.add('pt-motion');
-      seguranca = setTimeout(revelar, 5000);
+    // só gasta quadro quando dá: na tela, com a aba na frente
+    function quandoDerPraRodar() {
+      if (!naTela || document.hidden) { relogio = setTimeout(quandoDerPraRodar, 1500); return; }
       tocar();
-    });
+    }
+    if (global.IntersectionObserver) {
+      new IntersectionObserver(function (es) { naTela = es[0].isIntersecting; }).observe(el);
+    }
+    tocar();
+    el.addEventListener('click', tocar);
   }
-})();
+
+  function ligar() {
+    var alvos = [];
+    var h = document.querySelector('[data-vibe-marca-logo="hero"]');
+    if (h) alvos.push([h, { hero: true }]);
+    // logotipos pequenos (topo e faixa): o mesmo efeito, repetindo
+    document.querySelectorAll('.faixa-marca [data-vibe-marca-logo], .brand [data-vibe-marca-logo]').forEach(function (el) {
+      alvos.push([el, { loop: 9000 }]);
+    });
+    alvos.forEach(function (a) { motion(a[0], a[1]); });
+  }
+  // espera a letra de código chegar e a splash subir, pra medir no lugar certo
+  fontePronta.then(function () { setTimeout(ligar, 250); });
+})(window);

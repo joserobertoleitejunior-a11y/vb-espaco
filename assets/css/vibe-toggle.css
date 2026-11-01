@@ -132,16 +132,18 @@ body:has(.sheet.aberto, .wizard-overlay.open, .catalog-overlay.open, .site-menu.
   height: var(--faixa-h);
   display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
   padding: 0 0.7rem 0 0.8rem;
-  background: rgba(22, 22, 26, 0.88);
+  /* a mesma faixa clara do início do app (e ela some ao descer a página) */
+  background: rgba(255, 255, 255, 0.92);
   -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
-  color: #fff;
+  border-bottom: 1px solid rgba(20, 20, 30, 0.07);
+  color: #1f2024;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   view-transition-name: faixa-vibe;
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .faixa-vibe.escondida { transform: translateY(-100%); }
-.faixa-marca { display: inline-flex; align-items: center; gap: 0.35rem; color: rgba(255, 255, 255, 0.82); text-decoration: none; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
-.faixa-marca:hover { color: #fff; }
+.faixa-marca { display: inline-flex; align-items: center; gap: 0.4rem; color: #1f2024; text-decoration: none; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
+.faixa-marca:hover { color: #000; }
 .faixa-marca .vt-cubo { width: 18px; height: 18px; }
 .faixa-marca .vt-cubo-3d { --lado: 10px; margin: 4px; }
 .faixa-vibe .vt { margin-left: auto; }
@@ -223,11 +225,8 @@ html.vt-entrando.vt-entrou body > *:not(.faixa-vibe) { transform: none; opacity:
 html.pt-marca-pronta .pt-word { animation-play-state: running; }
 @keyframes ptAparece { from { opacity: 0; filter: blur(6px); letter-spacing: 0.08em; } to { opacity: 1; filter: none; letter-spacing: -0.04em; } }
 .topbar [data-vibe-marca-logo] { padding: 0.24em 0.62em; }
-/* fundo escuro (faixa do site do negócio): vidro escuro, letra clara */
-.faixa-vibe [data-vibe-marca-logo] {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
-  border-color: rgba(255, 255, 255, 0.22); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
+/* faixa do site do negócio: a mesma pastilha branca do início do app */
+.faixa-vibe [data-vibe-marca-logo] { color: #1f2024; }
 [data-vibe-marca-logo="hero"] { padding: 0.32em 0.85em; gap: 0; }
 @media (prefers-reduced-motion: reduce) {
   .pt-word { animation: none; }
@@ -239,10 +238,17 @@ html.pt-marca-pronta .pt-word { animation-play-state: running; }
    entra no lugar ---- */
 [data-vibe-marca-logo="hero"] { position: relative; }
 .pt-motion-tela { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; pointer-events: none; z-index: 1; }
+/* enquanto os pontos desenham o nome, a letra do DOM fica escondida (.pt-mt,
+   posta pelo marca-motion.js no próprio logotipo) e volta no fim */
+/* o canvas dos pontos é posto por cima do próprio logotipo; onde o motion roda,
+   quem manda na letra é ele (nada do aparecer-devagar do CSS por baixo) */
+[data-vibe-marca-logo] { position: relative; }
+[data-vibe-marca-logo].pt-mt-el .pt-word { animation: none !important; opacity: 1; transition: opacity 0.7s ease-out; }
+[data-vibe-marca-logo].pt-mt-el.pt-mt .pt-word { opacity: 0; }
+[data-vibe-marca-logo].pt-mt-el .mz-ponto { transition: opacity 0.3s 0.35s, transform 0.6s cubic-bezier(0.34, 1.6, 0.64, 1) 0.35s; }
+[data-vibe-marca-logo].pt-mt-el.pt-mt .mz-ponto { opacity: 0; transform: rotate(45deg) scale(0); }
 html.pt-motion [data-vibe-marca-logo="hero"] .pt-word { animation: none; opacity: 0; }
-html.pt-motion-fim [data-vibe-marca-logo="hero"] .pt-word { animation: none; opacity: 1; transition: opacity 0.7s ease-out; }
-html.pt-motion [data-vibe-marca-logo="hero"] .mz-ponto { opacity: 0; transform: rotate(45deg) scale(0); }
-html.pt-motion-fim [data-vibe-marca-logo="hero"] .mz-ponto { transition: opacity 0.3s 0.35s, transform 0.6s cubic-bezier(0.34, 1.6, 0.64, 1) 0.35s; }
+html.pt-motion-fim [data-vibe-marca-logo="hero"] .pt-word { animation: none; opacity: 1; }
 
 /* ---- símbolo: a torre da Matriz em preto, com o cubo no relógio
    (montado pelo marca.js em volta de cada cubo do logotipo) ---- */
@@ -253,12 +259,7 @@ html.pt-motion-fim [data-vibe-marca-logo="hero"] .mz-ponto { transition: opacity
   color: #111214;
 }
 .mz-simbolo.mz-escuro { color: #111214; }
-/* fundo escuro (faixa dos negócios): a torre continua preta, com um
-   contorno claro fino por fora e em volta dos arcos e janelas */
-.mz-escuro .mz-torre path {
-  stroke: rgba(244, 244, 246, 0.85); stroke-width: 2px; stroke-linejoin: round;
-  vector-effect: non-scaling-stroke; paint-order: stroke fill;
-}
+
 .mz-torre { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
 .mz-relogio { position: absolute; left: 30%; top: 41.79%; width: 40%; height: 29.2%; display: block; }
 .mz-relogio > #cube3d, .mz-relogio > #pullRefreshCubo { display: block; width: 100%; height: 100%; }
@@ -280,7 +281,6 @@ html.pt-motion-fim [data-vibe-marca-logo="hero"] .mz-ponto { transition: opacity
   background: #C9A227; border-radius: 0.02em;
   transform: rotate(45deg);
 }
-.faixa-vibe .mz-ponto { background: #e2bf4f; }
 
 /* pastilhas pequenas: um reflexo de luz atravessa o vidro de vez em quando */
 [data-vibe-marca-logo]:not([data-vibe-marca-logo="hero"]) {
@@ -290,11 +290,7 @@ html.pt-motion-fim [data-vibe-marca-logo="hero"] .mz-ponto { transition: opacity
   background-size: 260% 100%, 100% 100%; background-repeat: no-repeat;
   background-position: 130% 0, 0 0;
 }
-.faixa-vibe [data-vibe-marca-logo] {
-  background-image:
-    linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.28) 50%, transparent 60%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
-}
+
 @media (prefers-reduced-motion: no-preference) {
   html.pt-marca-pronta [data-vibe-marca-logo]:not([data-vibe-marca-logo="hero"]) { animation: ptReflexo 9s ease-in-out 2.2s infinite; }
 }
@@ -365,22 +361,3 @@ html.pt-motion-fim [data-vibe-marca-logo="hero"] .mz-ponto { transition: opacity
 .ag-cartao .ag-corpo .ag-cursor { margin-left: 1px; animation: agCursor 0.8s steps(1) infinite; }
 @media (prefers-reduced-motion: reduce) { .ag-cartao .ag-cab .ag-ponto, .ag-cartao .ag-corpo .ag-cursor { animation: none; } }
 
-/* ---- o nome na faixa ganha a varredura dourada do index, em looping ----
-   É o mesmo gesto do motion da splash (a linha dourada passando por cima das
-   letras), aqui em CSS puro: um gradiente que anda, sem canvas e sem script.
-   A cor da letra vai numa variável — dentro do gradiente, currentColor viraria
-   o próprio "transparent" do recorte e o nome sumia. */
-@media (prefers-reduced-motion: no-preference) {
-  html.pt-marca-pronta .faixa-marca .pt-word,
-  html.pt-marca-pronta .brand .pt-word {
-    --pt-letra: #1f2024;
-    background-image: linear-gradient(100deg, var(--pt-letra) 0 40%, #C9A227 48%, #F0D27A 52%, var(--pt-letra) 60%);
-    background-size: 320% 100%;
-    background-position: 100% 0;
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: ptVarre 7s ease-in-out 1.6s infinite;
-  }
-  html.pt-marca-pronta .faixa-vibe .pt-word { --pt-letra: #f4f4f6; }
-  @keyframes ptVarre { 0%, 62% { background-position: 100% 0; } 92%, 100% { background-position: 0 0; } }
-}

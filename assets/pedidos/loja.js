@@ -211,7 +211,7 @@
     if (areas.indexOf('agenda') === -1 || MODO_DEMO || !window.VibeToggle) return;
     var base = '/' + encodeURIComponent(estab.slug) + '/' + encodeURIComponent(estab.cidade);
     window.VibeToggle.montar($('faixaAreas'), {
-      tema: 'escuro', atual: AREA, swipe: true, semCubo: true, rotulo: 'O que você quer fazer',
+      tema: 'claro', atual: AREA, swipe: true, semCubo: true, rotulo: 'O que você quer fazer',
       opcoes: [
         { chave: 'agenda', rotulo: 'Agendar', href: base },
         { chave: AREA, rotulo: SERVICO ? (URGENTE ? 'Chamar' : 'Orçamento') : 'Pedir', href: base + '/pedir' }

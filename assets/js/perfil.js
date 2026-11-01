@@ -2959,7 +2959,7 @@
     var urgente = SEG_URGENTE.indexOf(linha.segmento) !== -1;
     aquecerOutraArea(linha);
     window.VibeToggle.montar(document.getElementById('faixaAreas'), {
-      tema: 'escuro', atual: 'agenda', swipe: true, semCubo: true, rotulo: 'O que você quer fazer',
+      tema: 'claro', atual: 'agenda', swipe: true, semCubo: true, rotulo: 'O que você quer fazer',
       opcoes: [
         { chave: 'agenda', rotulo: 'Agendar', href: base },
         temPedido ? { chave: 'delivery', rotulo: 'Pedir', href: base + '/pedir' }
