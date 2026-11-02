@@ -32,7 +32,7 @@ export default {
     if (partes.length === 2) {
       return servirComo(request, env, '/perfil.html');
     }
-    const resposta = await env.ASSETS.fetch(request);
+    const resposta = comMolduraPropria(await env.ASSETS.fetch(request));
     // endereço que não existe: página "não achei" da Matriz em vez da tela crua
     if (resposta.status === 404 && (request.headers.get('accept') || '').includes('text/html')) {
       const pagina = await servirComo(request, env, '/404.html');
@@ -46,5 +46,18 @@ async function servirComo(request, env, caminho) {
   const url = new URL(request.url);
   const urlDoArquivo = new URL(caminho, url.origin);
   const pedidoDoArquivo = new Request(urlDoArquivo.toString(), request);
-  return env.ASSETS.fetch(pedidoDoArquivo);
+  return comMolduraPropria(await env.ASSETS.fetch(pedidoDoArquivo));
+}
+
+// O painel de pedidos abre dentro do painel de gestão, e a prévia do editor abre
+// dentro da página de edição — as duas são janelinhas do próprio site. Com
+// X-Frame-Options: DENY o navegador recusava a conexão e a área ficava em branco.
+// frame-ancestors 'self' libera só o próprio site e continua barrando os outros.
+function comMolduraPropria(resposta) {
+  const h = new Headers(resposta.headers);
+  h.set('X-Frame-Options', 'SAMEORIGIN');
+  const csp = h.get('Content-Security-Policy');
+  if (!csp) h.set('Content-Security-Policy', "frame-ancestors 'self'");
+  else if (!/frame-ancestors/i.test(csp)) h.set('Content-Security-Policy', csp + "; frame-ancestors 'self'");
+  return new Response(resposta.body, { status: resposta.status, statusText: resposta.statusText, headers: h });
 }
