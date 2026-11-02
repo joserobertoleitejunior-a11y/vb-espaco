@@ -3516,8 +3516,15 @@ html, body { max-width: 100%; overflow-x: clip; }
   animation: ia-varre 6.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 .sp-ia-dentro { position: relative; z-index: 2; flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sp-ia-topo { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+/* enquanto está em teste é de graça; o selo já avisa que um dia será pago */
+.sp-ia-preco {
+  padding: 0.18rem 0.5rem; border-radius: 999px; background: rgba(255, 255, 255, 0.92); color: #0d0d0f;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
 .sp-ia-tag {
-  display: inline-flex; align-items: center; gap: 0.35rem; align-self: flex-start; margin-bottom: 0.35rem;
+  display: inline-flex; align-items: center; gap: 0.35rem;
   padding: 0.18rem 0.55rem; border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.26); background: rgba(255, 255, 255, 0.06);
   font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.58rem; font-weight: 600;
@@ -3526,32 +3533,30 @@ html, body { max-width: 100%; overflow-x: clip; }
 .sp-ia-tag .ia-ponto { width: 5px; height: 5px; }
 .sp-ia-tit { font-size: 0.98rem; font-weight: 800; line-height: 1.25; color: #fff; }
 
-/* o rolo: a lista sobe de um em um, parando em cada nome. Seis itens, e o
-   último repete o primeiro pra volta ao topo não dar solavanco. */
-.sp-ia-rolo {
-  display: block; margin-top: 0.2rem; overflow: hidden;
-  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.78rem; height: 1.3em;
+/* a linha que digita: cursor e ritmo iguais aos do título do topo. O ">" na
+   frente é só o enfeite de terminal — quem escreve é o VBDigita. */
+.sp-ia-linha {
+  display: flex; align-items: baseline; gap: 0.38rem; margin-top: 0.3rem;
+  min-height: 1.35em; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.8rem;
 }
-.sp-ia-rolo i {
-  display: block; height: 1.3em; line-height: 1.3em; font-style: normal; font-weight: 600;
-  color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.sp-ia-maior { color: rgba(255, 255, 255, 0.4); font-weight: 700; }
+.sp-ia-digita { min-width: 0; font-weight: 600; color: #fff; white-space: nowrap; }
+.sp-ia-digita.vbd-on::after { background: #fff !important; height: 0.95em; }
+
+.sp-ia-pe { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.7rem; margin-top: 0.45rem; }
+.sp-ia-sub { flex: 1; min-width: 0; font-size: 0.74rem; line-height: 1.4; color: rgba(244, 244, 246, 0.55); }
+/* o cartão inteiro é link, mas a pílula diz isso de longe */
+.sp-ia-cta {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.4rem 0.8rem; border-radius: 999px; background: #fff; color: #0d0d0f;
+  font-size: 0.78rem; font-weight: 800; white-space: nowrap;
 }
-.sp-ia-rolo i { animation: spIaRolo 14s cubic-bezier(0.7, 0, 0.3, 1) infinite; }
-@keyframes spIaRolo {
-  0%, 13%    { transform: translateY(0); }
-  20%, 33%   { transform: translateY(-1.3em); }
-  40%, 53%   { transform: translateY(-2.6em); }
-  60%, 73%   { transform: translateY(-3.9em); }
-  80%, 93%   { transform: translateY(-5.2em); }
-  100%       { transform: translateY(-6.5em); }
-}
-.sp-ia-sub { margin-top: 0.3rem; font-size: 0.78rem; line-height: 1.4; color: rgba(244, 244, 246, 0.6); }
-.sp-ia-seta { position: relative; z-index: 2; flex: 0 0 auto; color: rgba(255, 255, 255, 0.5); }
-.sp-ia-seta svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sp-ia-cta i { font-style: normal; transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.sp-ia:hover .sp-ia-cta i { transform: translateX(3px); }
+.sp-ia:active { transform: scale(0.985); }
+.sp-ia:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .sp-ia-grade, .sp-ia-rolo i { animation: none; }
+  .sp-ia-grade { animation: none; }
   .sp-ia-feixe { display: none; }
-  /* sem movimento: fica só o primeiro nome, parado */
-  .sp-ia-rolo i:not(:first-child) { display: none; }
 }

@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&display=optional" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=100">
+<link rel="stylesheet" href="/assets/css/styles.css?v=101">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=25">
 <link rel="stylesheet" href="/assets/css/splash.css?v=11">
 <link rel="stylesheet" href="/assets/css/guia.css?v=1">
@@ -118,26 +118,27 @@
       </a>
     </nav>
 
-    <!-- Banner da IA na primeira tela: enxuto, preto, só o aperitivo. Os nomes
-         das funções passam sozinhos (CSS puro) e o toque leva pra sessão
-         completa lá embaixo (#ia), que lista tudo o que a IA faz. -->
-    <a class="sp-ia" href="/explorar.html#ia" style="--i:4">
+    <!-- Banner da IA na primeira tela: preto, com a mesma digitação do título
+         lá de cima (VBDigita) — só que em laço: digita a função, segura,
+         apaga e passa pra próxima. O cartão inteiro é o link pra sessão #ia. -->
+    <a class="sp-ia" href="/explorar.html#ia" style="--i:4" aria-label="Ver tudo o que a inteligência artificial faz pelo seu negócio">
       <span class="sp-ia-grade" aria-hidden="true"></span>
       <span class="sp-ia-feixe" aria-hidden="true"></span>
       <span class="sp-ia-dentro">
-        <span class="sp-ia-tag"><i class="ia-ponto" aria-hidden="true"></i>IA já no ar</span>
-        <strong class="sp-ia-tit">Seu negócio com inteligência artificial</strong>
-        <span class="sp-ia-rolo" aria-hidden="true">
-          <i>Foto vira cardápio</i>
-          <i>Funcionário que obedece</i>
-          <i>Lança venda por voz</i>
-          <i>Confirma horário sozinho</i>
-          <i>Responde quanto entrou hoje</i>
-          <i>Foto vira cardápio</i>
+        <span class="sp-ia-topo">
+          <span class="sp-ia-tag"><i class="ia-ponto" aria-hidden="true"></i>IA já no ar</span>
+          <span class="sp-ia-preco">grátis no teste</span>
         </span>
-        <span class="sp-ia-sub">Grátis pra todo estabelecimento. Veja tudo o que ela faz</span>
+        <strong class="sp-ia-tit">Seu negócio com inteligência artificial</strong>
+        <span class="sp-ia-linha">
+          <span class="sp-ia-maior" aria-hidden="true">&gt;</span>
+          <span class="sp-ia-digita" id="spIaDigita">Foto vira cardápio</span>
+        </span>
+        <span class="sp-ia-pe">
+          <span class="sp-ia-sub">Depois vira opcional pago. Enquanto está em teste, é de graça.</span>
+          <span class="sp-ia-cta">Ver tudo <i aria-hidden="true">&#8594;</i></span>
+        </span>
       </span>
-      <span class="sp-ia-seta" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
     </a>
 
     <button type="button" class="sp-meus" id="spMeusAgendamentos" style="--i:5">
@@ -323,7 +324,24 @@
   <script src="/assets/js/vb-dialogo.js?v=1"></script>
   <script src="/assets/js/meus-agendamentos.js?v=3"></script>
   <script src="/assets/js/vb-cliente-global-index.js?v=5"></script>
-  <script src="/assets/js/vb-digita.js?v=2"></script>
+  <script src="/assets/js/vb-digita.js?v=3"></script>
+  <script>
+    // o banner da IA: as funções passam digitando, uma de cada vez, com o
+    // mesmo cursor do título do topo. Se o módulo não carregar, fica a
+    // primeira frase escrita no HTML e ninguém vê tela vazia.
+    (function () {
+      var el = document.getElementById('spIaDigita');
+      if (!el || !window.VBDigita || !window.VBDigita.laco) return;
+      window.VBDigita.laco(el, [
+        'Foto vira cardápio',
+        'Funcionário que obedece',
+        'Lança venda por voz',
+        'Confirma horário sozinho',
+        'Responde quanto entrou hoje',
+        'Monta o site no lugar do dono'
+      ], { vel: 26, apaga: 28, pausa: 1700 });
+    })();
+  </script>
   <script src="/assets/js/marca.js?v=10"></script>
   <script src="/assets/js/aviso-gratis.js?v=3"></script>
   <script type="module" src="/assets/js/marca-motion.js?v=5"></script>
