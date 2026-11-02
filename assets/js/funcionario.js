@@ -1,6 +1,12 @@
-/* O funcionário digital do estabelecimento: um botão com o cubo da marca girando;
-   o dono fala (ou escreve) e ele faz — confirma horário, avança pedido, lança venda,
-   abre a tela certa, responde os números do dia.
+/* O funcionário digital do estabelecimento: um botão com o cubo da marca (o
+   MESMO do logotipo — .vt-cubo de vibe-toggle.css, só as arestas douradas,
+   flutuando de leve; ele só gira quando o funcionário está pensando ou
+   ouvindo). O dono fala (ou escreve) e ele faz — confirma horário, avança
+   pedido, lança venda, abre a tela certa, responde os números do dia.
+
+   O NOME é do dono: na primeira vez o funcionário não tem nome nenhum e a
+   primeira tela é só pra batizar. O nome fica no banco (assistente_nome /
+   assistente_definir_nome), então segue o dono em qualquer aparelho.
 
    Quem entende o pedido é a função "assistente" (Gemini, no servidor). Quem executa
    é sempre esta página, com as mesmas RPCs que o dono já usa nos botões — nada de
@@ -11,34 +17,63 @@
 (function (global) {
   'use strict';
   var CHAVE_NOME = 'vbFuncionarioNome_';
-  var st = { estabId: null, nome: 'Vitó', cfg: null, caixa: null, hist: [], ouvindo: null, pendente: null };
+  // sem nome = o dono ainda não batizou. Nunca inventamos um nome por ele.
+  var st = { estabId: null, nome: '', cfg: null, caixa: null, hist: [], ouvindo: null, pendente: null };
 
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function lerNome(id) { try { return localStorage.getItem(CHAVE_NOME + id) || 'Vitó'; } catch (e) { return 'Vitó'; } }
-  function gravarNome(id, n) { try { localStorage.setItem(CHAVE_NOME + id, n); } catch (e) {} }
+  // o banco é a verdade; o aparelho só guarda uma cópia pra pintar na hora
+  function lerCache(id) { try { return localStorage.getItem(CHAVE_NOME + id) || ''; } catch (e) { return ''; } }
+  function gravarCache(id, n) { try { if (n) localStorage.setItem(CHAVE_NOME + id, n); else localStorage.removeItem(CHAVE_NOME + id); } catch (e) {} }
+  function carregarNome(id) {
+    if (!global.db || !global.db.rpc) return Promise.resolve(lerCache(id));
+    return global.db.rpc('assistente_nome', { p_estabelecimento_id: id })
+      .then(function (r) { return (!r.error && r.data) ? String(r.data) : lerCache(id); }, function () { return lerCache(id); });
+  }
+  function gravarNome(id, n) {
+    gravarCache(id, n);
+    if (!global.db || !global.db.rpc) return Promise.resolve(n);
+    return global.db.rpc('assistente_definir_nome', { p_estabelecimento_id: id, p_nome: n })
+      .then(function (r) { return (!r.error && r.data) ? String(r.data) : n; }, function () { return n; });
+  }
+  var SEM_NOME = 'Funcionário';
+  function comoChamar() { return st.nome || SEM_NOME; }
 
-  var CUBO = '<span class="fn-cubo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>';
+  // o cubo do logotipo, igualzinho: .vt-cubo + as 6 faces f1..f6 de
+  // vibe-toggle.css. Nada de animação própria aqui.
+  var CUBO = '<span class="vt-cubo fn-cubo" aria-hidden="true"><span class="vt-cubo-3d">' +
+    '<i class="f1"></i><i class="f2"></i><i class="f3"></i><i class="f4"></i><i class="f5"></i><i class="f6"></i>' +
+    '</span></span>';
 
   function montar(cfg) {
     st.cfg = cfg;
     st.estabId = cfg.estabId;
-    st.nome = lerNome(cfg.estabId);
+    st.nome = lerCache(cfg.estabId); // pinta já, confere com o banco em seguida
+    carregarNome(cfg.estabId).then(function (n) {
+      st.nome = n || '';
+      gravarCache(cfg.estabId, st.nome);
+      atualizarBotao();
+      var t2 = document.getElementById('fnNome'); if (t2) t2.textContent = comoChamar();
+    });
     if (document.getElementById('fnBtn')) { atualizarBotao(); return; }
     var b = document.createElement('button');
     b.id = 'fnBtn';
     b.type = 'button';
     b.className = 'fn-btn';
-    b.setAttribute('aria-label', 'Falar com ' + st.nome);
-    b.innerHTML = CUBO + '<span class="fn-btn-txt">' + esc(st.nome) + '</span>';
+    b.innerHTML = CUBO + '<span class="fn-btn-txt"></span>';
     b.addEventListener('click', abrir);
     document.body.appendChild(b);
+    atualizarBotao();
     requestAnimationFrame(function () { b.classList.add('on'); });
   }
   function atualizarBotao() {
     var b = document.getElementById('fnBtn');
     if (!b) return;
-    b.setAttribute('aria-label', 'Falar com ' + st.nome);
-    b.querySelector('.fn-btn-txt').textContent = st.nome;
+    b.setAttribute('aria-label', st.nome ? 'Falar com ' + st.nome : 'Criar o seu funcionário');
+    b.querySelector('.fn-btn-txt').textContent = comoChamar();
+  }
+  // o cubo só gira enquanto ele trabalha — parado, flutua como no logotipo
+  function girar(sim) {
+    (document.querySelectorAll('.fn-cubo') || []).forEach(function (c) { c.classList.toggle('fn-girando', !!sim); });
   }
 
   function abrir() {
@@ -51,7 +86,7 @@
       '<div class="fn-fundo" data-fn-fechar></div>' +
       '<div class="fn-folha">' +
         '<header class="fn-topo">' + CUBO +
-          '<div class="fn-quem"><strong id="fnNome">' + esc(st.nome) + '</strong><small>seu funcionário · é só pedir</small></div>' +
+          '<div class="fn-quem"><strong id="fnNome">' + esc(comoChamar()) + '</strong><small>seu funcionário · é só pedir</small></div>' +
           '<button type="button" class="fn-x" data-fn-fechar aria-label="Fechar">✕</button>' +
         '</header>' +
         '<div class="fn-conversa" id="fnConversa"></div>' +
@@ -79,11 +114,51 @@
     });
     ligarMicrofone();
     atalhos();
-    if (!st.hist.length) dizer('ele', 'Oi! Sou ' + st.nome + '. Me peça o que precisar: confirmar um horário, lançar uma venda, ver quanto entrou hoje…');
+    if (!st.nome) batizar();
+    else if (!st.hist.length) dizer('ele', 'Oi! Sou ' + st.nome + '. Me peça o que precisar: confirmar um horário, lançar uma venda, ver quanto entrou hoje…');
     requestAnimationFrame(function () { c.classList.add('aberta'); focar(); });
   }
   function fechar() { if (st.caixa) st.caixa.classList.remove('aberta'); document.documentElement.classList.remove('fn-travado'); pararMic(); }
   function focar() { var i = document.getElementById('fnTexto'); if (i && !('ontouchstart' in window)) i.focus(); }
+
+  /* ---------- batizar: a PRIMEIRA coisa que o dono faz é dar o nome ---------- */
+  function batizar() {
+    var c = document.getElementById('fnConversa');
+    if (!c) return;
+    c.innerHTML = '';
+    var cx = document.createElement('div');
+    cx.className = 'fn-batismo';
+    cx.innerHTML =
+      '<p class="fn-bat-tit">Dê um nome ao seu funcionário</p>' +
+      '<p class="fn-bat-sub">Ele é seu: escolha o nome que quiser. É assim que você vai chamar ele no dia a dia.</p>' +
+      '<form class="fn-bat-form" id="fnBatForm">' +
+        '<input id="fnBatNome" type="text" maxlength="20" autocomplete="off" placeholder="Digite o nome" aria-label="Nome do seu funcionário">' +
+        '<button type="submit" class="fn-bat-ok">Pronto</button>' +
+      '</form>' +
+      '<p class="fn-bat-aviso" id="fnBatAviso"></p>' +
+      '<p class="fn-bat-nota">Depois você troca quando quiser: só pedir "troca o seu nome pra…".</p>';
+    c.appendChild(cx);
+    document.getElementById('fnAtalhos').innerHTML = '';
+    var form = document.getElementById('fnBatForm');
+    var inp = document.getElementById('fnBatNome');
+    setTimeout(function () { try { inp.focus(); } catch (e) {} }, 220);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var n = inp.value.trim().slice(0, 20);
+      var av = document.getElementById('fnBatAviso');
+      if (n.length < 2) { av.textContent = 'Escreva um nome com pelo menos 2 letras.'; return; }
+      av.textContent = 'Guardando…';
+      gravarNome(st.estabId, n).then(function (salvo) {
+        st.nome = salvo || n;
+        atualizarBotao();
+        var t2 = document.getElementById('fnNome'); if (t2) t2.textContent = st.nome;
+        st.hist = [];
+        c.innerHTML = '';
+        atalhos();
+        dizer('ele', 'Prazer, patrão! Sou ' + st.nome + '. Me peça o que precisar: confirmar um horário, lançar uma venda, ver quanto entrou hoje…');
+      });
+    });
+  }
 
   function atalhos() {
     var alvo = document.getElementById('fnAtalhos');
@@ -108,6 +183,7 @@
     return el;
   }
   function pensando(sim) {
+    girar(sim);
     var c = document.getElementById('fnConversa');
     if (!c) return;
     var velho = c.querySelector('.fn-pensando');
@@ -141,12 +217,14 @@
       r.onend = function () { pararMic(); };
       st.ouvindo = r;
       b.classList.add('ouvindo');
+      girar(true);
       try { r.start(); } catch (e) { pararMic(); }
     });
   }
   function pararMic() {
     var b = document.getElementById('fnMic');
     if (b) b.classList.remove('ouvindo');
+    girar(false);
     if (st.ouvindo) { try { st.ouvindo.stop(); } catch (e) {} st.ouvindo = null; }
   }
 
@@ -179,7 +257,7 @@
   }
 
   function contexto() {
-    var c = { nome_assistente: st.nome, negocio: st.cfg.negocio, areas: st.cfg.areas || [] };
+    var c = { nome_assistente: st.nome || null, negocio: st.cfg.negocio, areas: st.cfg.areas || [] };
     if (st.cfg.resumo) { try { c.resumo = st.cfg.resumo(); } catch (e) {} }
     return c;
   }
@@ -189,10 +267,12 @@
   function executar(nome, args, jaConfirmou) {
     if (nome === 'mudar_nome_funcionario') {
       var novo = String(args.nome || '').trim().slice(0, 20);
-      if (!novo) return;
-      st.nome = novo; gravarNome(st.estabId, novo);
-      atualizarBotao();
-      var n = document.getElementById('fnNome'); if (n) n.textContent = novo;
+      if (novo.length < 2) { batizar(); return; }
+      gravarNome(st.estabId, novo).then(function (salvo) {
+        st.nome = salvo || novo;
+        atualizarBotao();
+        var n = document.getElementById('fnNome'); if (n) n.textContent = st.nome;
+      });
       return;
     }
     var fn = (st.cfg.acoes || {})[nome];
