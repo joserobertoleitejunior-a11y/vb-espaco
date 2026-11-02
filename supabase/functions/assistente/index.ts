@@ -16,8 +16,45 @@ const CORS = {
 };
 const resp = (c: unknown, s = 200) => new Response(JSON.stringify(c), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 const erro = (m: string, s = 400) => resp({ erro: m }, s);
-// o apelido "latest" do Google: não quebra quando uma versão do modelo é aposentada
-const MODELO = Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest";
+
+// Congestionamento no Google (503/429) é passageiro: em vez de desistir na
+// primeira, esperamos um pouco e repetimos; se o modelo preferido continuar
+// lotado, tentamos o irmão mais leve. Erro que não é congestionamento (chave
+// errada, pedido inválido) não melhora repetindo, então volta na hora.
+// Os nomes "latest" são apelidos do Google: não quebram quando uma versão
+// do modelo é aposentada.
+const MODELOS = [Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest", "gemini-flash-lite-latest"];
+const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+
+async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number }> {
+  let status = 0;
+  for (const modelo of MODELOS) {
+    for (let n = 0; n < 2; n++) {
+      let r: Response;
+      try {
+        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
+          body: JSON.stringify(corpo),
+        });
+      } catch (e) {
+        // o motivo fica no log do projeto (sem a chave), pra não virar adivinhação
+        console.error("fetch gemini falhou", modelo, String(e));
+        status = 0;
+        continue;
+      }
+      if (r.ok) {
+        const d = await r.json().catch(() => null);
+        return { texto: d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "" };
+      }
+      status = r.status;
+      console.error("gemini", modelo, r.status, (await r.text().catch(() => "")).slice(0, 300));
+      if (status !== 429 && status !== 503 && status < 500) return { erroStatus: status };
+      await espera(800 * (n + 1));
+    }
+  }
+  return { erroStatus: status };
+}
 
 // O que o funcionário pode fazer. O app conhece cada uma destas ações.
 const ACOES = `
@@ -59,9 +96,9 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return erro("Método inválido.", 405);
 
   // A chave vem de um campo que aceita várias linhas: um Enter ou um espaço
-  // sem querer no fim entrava no endereço e a chamada estourava antes de sair
-  // ("Não consegui falar..."). Tiramos tudo o que não é a chave, e ela vai no
-  // cabeçalho x-goog-api-key em vez da URL — assim ela não aparece em log nenhum.
+  // sem querer no fim entrava no endereço e a chamada estourava antes de sair.
+  // Tiramos tudo o que não é a chave, e ela vai no cabeçalho x-goog-api-key em
+  // vez da URL — assim ela não aparece em log nenhum.
   const chave = (Deno.env.get("GEMINI_API_KEY") || "").replace(/\s+/g, "");
   if (!chave) return erro("O funcionário ainda não foi ligado neste app.", 503);
 
@@ -83,33 +120,23 @@ Deno.serve(async (req) => {
     parts: [{ text: String(m.texto || "").slice(0, 500) }],
   }));
 
-  let r: Response;
-  try {
-    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: instrucao(corpo.contexto || {}) }] },
-        // a variável é "texto": escrever só { text } procurava uma variável "text"
-        // que não existe, e a chamada morria aqui antes de sair
-        contents: [...conversa, { role: "user", parts: [{ text: texto }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 700, responseMimeType: "application/json" },
-      }),
-    });
-  } catch (e) {
-    // o motivo fica no log do projeto (sem a chave), pra não virar adivinhação
-    console.error("fetch gemini falhou", MODELO, String(e));
+  const resposta = await pedirAoGemini(chave, {
+    systemInstruction: { parts: [{ text: instrucao(corpo.contexto || {}) }] },
+    // a variável é "texto": escrever só { text } procurava uma variável "text"
+    // que não existe, e a chamada morria antes de sair
+    contents: [...conversa, { role: "user", parts: [{ text: texto }] }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: 700, responseMimeType: "application/json" },
+  });
+  if ("erroStatus" in resposta) {
+    const s = resposta.erroStatus;
+    // dizemos a verdade: a fila é do Google, não é defeito do app nem do dono
+    if (s === 429 || s === 503) return erro("A IA está congestionada neste momento. Espere uns segundos e peça de novo.", 503);
+    if (s === 400 || s === 401 || s === 403) return erro("O funcionário não está ligado direito neste app.", 503);
     return erro("Não consegui falar com o funcionário agora.", 502);
   }
-  if (!r.ok) {
-    console.error("gemini", r.status, (await r.text().catch(() => "")).slice(0, 300));
-    return erro(r.status === 429 ? "Muita coisa de uma vez. Espere um minutinho." : "O funcionário não respondeu agora.", 502);
-  }
 
-  const d = await r.json().catch(() => null);
-  const bruto = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
   let saida: { fala?: string; acao?: { nome?: string; args?: Record<string, unknown> } | null };
-  try { saida = JSON.parse(bruto.replace(/^```(?:json)?|```$/g, "").trim()); } catch {
+  try { saida = JSON.parse(resposta.texto.replace(/^```(?:json)?|```$/g, "").trim()); } catch {
     return resp({ fala: "Não entendi direito. Pode falar de outro jeito?", acao: null });
   }
   const nome = saida.acao?.nome && /^[a-z_]{3,30}$/.test(saida.acao.nome) ? saida.acao.nome : null;

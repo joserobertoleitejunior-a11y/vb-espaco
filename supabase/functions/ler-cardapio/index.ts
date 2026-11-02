@@ -18,9 +18,43 @@ const resp = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const erro = (msg: string, status = 400) => resp({ erro: msg }, status);
 
-// o apelido "latest" do Google: não quebra quando uma versão do modelo é aposentada
-const MODELO = Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest";
+// Congestionamento no Google (503/429) é passageiro: esperamos um pouco e
+// repetimos; se o modelo preferido continuar lotado, tentamos o irmão mais
+// leve. Erro que não é congestionamento não melhora repetindo, então volta
+// na hora. Os nomes "latest" são apelidos do Google e não quebram quando
+// uma versão do modelo é aposentada.
+const MODELOS = [Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest", "gemini-flash-lite-latest"];
+const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 const LIMITE_BYTES = 6 * 1024 * 1024; // ~6 MB de imagem já é foto grande demais
+
+async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number }> {
+  let status = 0;
+  for (const modelo of MODELOS) {
+    for (let n = 0; n < 2; n++) {
+      let r: Response;
+      try {
+        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
+          body: JSON.stringify(corpo),
+        });
+      } catch (e) {
+        console.error("fetch gemini falhou", modelo, String(e));
+        status = 0;
+        continue;
+      }
+      if (r.ok) {
+        const d = await r.json().catch(() => null);
+        return { texto: d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "" };
+      }
+      status = r.status;
+      console.error("gemini", modelo, r.status, (await r.text().catch(() => "")).slice(0, 300));
+      if (status !== 429 && status !== 503 && status < 500) return { erroStatus: status };
+      await espera(800 * (n + 1));
+    }
+  }
+  return { erroStatus: status };
+}
 
 function instrucao(tipo: string) {
   const oQue = tipo === "servicos" ? "serviços" : "itens do cardápio";
@@ -42,9 +76,9 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return erro("Método inválido.", 405);
 
   // A chave vem de um campo que aceita várias linhas: um Enter ou um espaço
-  // sem querer no fim entrava no endereço e a chamada estourava antes de sair
-  // ("Não consegui falar..."). Tiramos tudo o que não é a chave, e ela vai no
-  // cabeçalho x-goog-api-key em vez da URL — assim ela não aparece em log nenhum.
+  // sem querer no fim entrava no endereço e a chamada estourava antes de sair.
+  // Tiramos tudo o que não é a chave, e ela vai no cabeçalho x-goog-api-key em
+  // vez da URL — assim ela não aparece em log nenhum.
   const chave = (Deno.env.get("GEMINI_API_KEY") || "").replace(/\s+/g, "");
   if (!chave) return erro("A leitura por foto ainda não foi ligada neste app.", 503);
 
@@ -64,30 +98,19 @@ Deno.serve(async (req) => {
   if (!m) return erro("Mande uma foto (JPG, PNG ou WebP).");
   if (m[2].length * 0.75 > LIMITE_BYTES) return erro("Foto muito pesada — tire de mais perto ou mande em partes.");
 
-  let r: Response;
-  try {
-    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: instrucao(corpo.tipo || "cardapio") }, { inline_data: { mime_type: m[1], data: m[2] } }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 4096, responseMimeType: "application/json" },
-      }),
-    });
-  } catch (e) {
-    console.error("fetch gemini falhou", MODELO, String(e));
+  const resposta = await pedirAoGemini(chave, {
+    contents: [{ parts: [{ text: instrucao(corpo.tipo || "cardapio") }, { inline_data: { mime_type: m[1], data: m[2] } }] }],
+    generationConfig: { temperature: 0, maxOutputTokens: 4096, responseMimeType: "application/json" },
+  });
+  if ("erroStatus" in resposta) {
+    const s = resposta.erroStatus;
+    if (s === 429 || s === 503) return erro("A IA está congestionada neste momento. Espere uns segundos e mande a foto de novo.", 503);
+    if (s === 400 || s === 401 || s === 403) return erro("A leitura por foto não está ligada direito neste app.", 503);
     return erro("Não consegui falar com o leitor de fotos agora.", 502);
   }
-  if (!r.ok) {
-    const txt = await r.text().catch(() => "");
-    console.error("gemini", r.status, txt.slice(0, 400));
-    return erro(r.status === 429 ? "Muitas fotos de uma vez. Espere um minuto e tente de novo." : "O leitor de fotos não respondeu agora.", 502);
-  }
 
-  const d = await r.json().catch(() => null);
-  const texto = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
   let lido: { categorias?: { nome?: string; itens?: { nome?: string; descricao?: string; preco?: unknown }[] }[] };
-  try { lido = JSON.parse(texto.replace(/^```(?:json)?|```$/g, "").trim()); } catch { return erro("Não consegui ler essa foto. Tente uma mais nítida."); }
+  try { lido = JSON.parse(resposta.texto.replace(/^```(?:json)?|```$/g, "").trim()); } catch { return erro("Não consegui ler essa foto. Tente uma mais nítida."); }
 
   // limpa o que veio: nada de nome vazio, preço estranho ou lista gigante
   const categorias = (lido.categorias || []).slice(0, 12).map((c) => ({
