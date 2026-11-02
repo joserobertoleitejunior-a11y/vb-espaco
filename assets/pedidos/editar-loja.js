@@ -364,17 +364,17 @@
     var S = api.servico(), U2 = api.urgente();
     var e = function () { return estab(); };
     var base = [
-      { id: 'foto', capitulo: 'impressao', titulo: 'Foto principal', pergunta: 'Qual foto mostra melhor o seu negócio?', ajuda: 'A foto grande do topo do site.', completo: function () { return !!(ident().foto_hero_url || e().foto_capa_url); }, render: passoFoto },
-      { id: 'logo', capitulo: 'impressao', titulo: 'Logo', pergunta: 'Tem uma logo?', ajuda: 'Aparece redondinha ao lado do nome. Sem logo, fica a inicial.', completo: function () { return !!e().foto_perfil_url; }, render: passoLogo },
-      { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frases', pergunta: 'Como você quer se apresentar?', ajuda: 'Salva quando você sai do campo.', completo: function () { return !!(e().descricao || '').trim(); }, render: passoTextos },
-      { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', pergunta: 'Qual a cara do seu site?', ajuda: 'O visual inteiro — muda ao vivo aqui atrás.', completo: function () { return !!ident().template; }, render: passoEstilo },
-      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: o nome (ou a frase) se mexe — entrando, na horizontal, na vertical ou junto com a rolagem.', render: passoEfeito },
-      { id: 'itens', capitulo: 'oferta', titulo: S ? 'Serviços e preços' : 'Cardápio', pergunta: S ? 'Que serviços você faz?' : 'O que tem no cardápio?', ajuda: S ? 'Com preço — ou "a combinar" pra quem prefere orçar.' : 'Pelo menos um item pra começar a receber pedidos.', completo: function () { var c = api.cardapio(); return !!(c && c.itens && c.itens.length); }, render: passoItens },
-      { id: 'galeria', capitulo: 'oferta', titulo: 'Galeria de fotos', pergunta: 'Mostre o seu trabalho', ajuda: 'Fotos de verdade passam confiança. Aparecem nos dois sites (Agendar e ' + (S ? 'Chamar' : 'Pedir') + ').', completo: function () { return galeriaQtd > 0; }, render: passoGaleria },
-      { id: 'atendimento', capitulo: 'funciona', titulo: S ? 'Atendimento' : 'Entrega e retirada', pergunta: S ? (U2 ? 'Como você chega até o cliente?' : 'Onde você atende?') : 'Como o pedido chega no cliente?', ajuda: S ? 'Onde você atende, taxa e prazo.' : 'Entrega, retirada, taxa e tempo.', completo: function () { return !!(e().aceita_entrega || e().aceita_retirada); }, render: passoAtendimento },
-      { id: 'pagamento', capitulo: 'funciona', titulo: 'Pagamento', pergunta: 'Como o cliente pode pagar?', completo: function () { return !!(e().formas_pagamento && e().formas_pagamento.length); }, render: passoPagamento },
-      { id: 'horario', capitulo: 'funciona', titulo: 'Horário', pergunta: 'Que dias e horários você atende?', ajuda: 'Fora do horário o site mostra "Fechado".', completo: function () { var h = e().horarios; return !!(h && Object.keys(h).length); }, render: passoHorario },
-      { id: 'endereco', capitulo: 'achar', titulo: 'Endereço e Instagram', pergunta: 'Onde te acham?', ajuda: 'Endereço e Instagram aparecem no site.', completo: function () { return !!(e().endereco || '').trim(); }, render: passoEndereco }
+      { id: 'foto', capitulo: 'impressao', obrigatorio: true, aviso: 'Escolha uma foto pra continuar — é a primeira coisa que o cliente vê.', titulo: 'Foto principal', pergunta: 'Qual foto mostra melhor o seu negócio?', ajuda: 'A foto grande do topo do site.', completo: function () { return !!(ident().foto_hero_url || e().foto_capa_url); }, render: passoFoto },
+      { id: 'logo', capitulo: 'impressao', obrigatorio: false, titulo: 'Logo', pergunta: 'Tem uma logo?', ajuda: 'Aparece redondinha ao lado do nome. Sem logo, fica a inicial.', completo: function () { return !!e().foto_perfil_url; }, render: passoLogo },
+      { id: 'textos', capitulo: 'impressao', obrigatorio: true, aviso: 'Escreva o nome e a frase do seu negócio pra continuar.', titulo: 'Nome e frases', pergunta: 'Como você quer se apresentar?', ajuda: 'Salva quando você sai do campo.', completo: function () { return !!(e().descricao || '').trim(); }, render: passoTextos },
+      { id: 'estilo', capitulo: 'impressao', obrigatorio: false, titulo: 'Cores e estilo', pergunta: 'Qual a cara do seu site?', ajuda: 'O visual inteiro — muda ao vivo aqui atrás.', completo: function () { return !!ident().template; }, render: passoEstilo },
+      { id: 'efeito', capitulo: 'impressao', obrigatorio: false, titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: o nome (ou a frase) se mexe — entrando, na horizontal, na vertical ou junto com a rolagem.', render: passoEfeito },
+      { id: 'itens', capitulo: 'oferta', obrigatorio: true, aviso: 'Cadastre pelo menos um item — sem isso o cliente não tem o que pedir.', titulo: S ? 'Serviços e preços' : 'Cardápio', pergunta: S ? 'Que serviços você faz?' : 'O que tem no cardápio?', ajuda: S ? 'Com preço — ou "a combinar" pra quem prefere orçar.' : 'Pelo menos um item pra começar a receber pedidos.', completo: function () { var c = api.cardapio(); return !!(c && c.itens && c.itens.length); }, render: passoItens },
+      { id: 'galeria', capitulo: 'oferta', obrigatorio: false, titulo: 'Galeria de fotos', pergunta: 'Mostre o seu trabalho', ajuda: 'Fotos de verdade passam confiança. Aparecem nos dois sites (Agendar e ' + (S ? 'Chamar' : 'Pedir') + ').', completo: function () { return galeriaQtd > 0; }, render: passoGaleria },
+      { id: 'atendimento', capitulo: 'funciona', obrigatorio: true, aviso: 'Diga como o cliente recebe pra continuar.', titulo: S ? 'Atendimento' : 'Entrega e retirada', pergunta: S ? (U2 ? 'Como você chega até o cliente?' : 'Onde você atende?') : 'Como o pedido chega no cliente?', ajuda: S ? 'Onde você atende, taxa e prazo.' : 'Entrega, retirada, taxa e tempo.', completo: function () { return !!(e().aceita_entrega || e().aceita_retirada); }, render: passoAtendimento },
+      { id: 'pagamento', capitulo: 'funciona', obrigatorio: true, aviso: 'Marque pelo menos uma forma de pagamento.', titulo: 'Pagamento', pergunta: 'Como o cliente pode pagar?', completo: function () { return !!(e().formas_pagamento && e().formas_pagamento.length); }, render: passoPagamento },
+      { id: 'horario', capitulo: 'funciona', obrigatorio: true, aviso: 'Marque os dias e horários pra continuar.', titulo: 'Horário', pergunta: 'Que dias e horários você atende?', ajuda: 'Fora do horário o site mostra "Fechado".', completo: function () { var h = e().horarios; return !!(h && Object.keys(h).length); }, render: passoHorario },
+      { id: 'endereco', capitulo: 'achar', obrigatorio: true, aviso: 'Escreva o endereço pra continuar.', titulo: 'Endereço e Instagram', pergunta: 'Onde te acham?', ajuda: 'Endereço e Instagram aparecem no site.', completo: function () { return !!(e().endereco || '').trim(); }, render: passoEndereco }
     ];
     var sobre = window.VBPerguntas ? window.VBPerguntas.passosEditor(e().id, e().segmento, e().areas || [S ? 'servicos' : 'delivery'], respostas, function (r) { desenharBomSaberLoja(r); }) : [];
     return base.concat(sobre);
@@ -384,6 +384,8 @@
   var editor = null;
   function redesenhar() { if (editor) editor.atualizar(); }
   function concluir() { window.location.href = '/cadastro.html?aba=pedidos'; }
+  // acabou de criar o negócio: mostra o site pronto, que é a recompensa
+  function concluirCriacao() { window.location.href = location.pathname; }
 
   // "Bom saber" do site: as respostas do dono sobre o negócio
   function desenharBomSaberLoja(respostas) {
@@ -420,11 +422,22 @@
         var id = ident();
         if (!s || !id || s.user.id !== id.dono_user_id) return;
         var q = new URLSearchParams(location.search);
-        if (q.get('editar') !== '1') { atalhoDono(); return; }
+        // ?tutorial=1 = acabou de criar o negócio em criar.html e a criação
+        // continua aqui, no site de verdade, com a contagem seguindo de lá
+        var criando = q.get('tutorial') === '1';
+        if (q.get('editar') !== '1' && !criando) { atalhoDono(); return; }
         if (!window.VBEditor) return;
         var respostas = {};
         var abrir = function () {
-          editor = window.VBEditor.abrir({ modo: 'editar', passos: montarPassos(respostas), inicial: q.get('passo'), aoConcluir: concluir });
+          var passos = montarPassos(respostas);
+          var desde = criando ? (parseInt(q.get('desde'), 10) || 0) : 0;
+          editor = window.VBEditor.abrir({
+            modo: criando ? 'criar' : 'editar',
+            passos: passos,
+            inicial: criando ? null : q.get('passo'),
+            contagem: criando ? { desde: desde, total: desde + passos.length } : null,
+            aoConcluir: criando ? concluirCriacao : concluir
+          });
         };
         if (window.VBPerguntas) window.VBPerguntas.carregar(estab().id).then(function (r) { respostas = r; abrir(); }); else abrir();
       });

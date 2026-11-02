@@ -403,17 +403,22 @@
     return p;
   }
   var passoAtual = 0;
-  var PASSOS_NO_SITE = 4; // perfil.js: PASSOS_CRIACAO
+  // quantos passos OBRIGATÓRIOS faltam depois daqui, já no site de verdade:
+  // Agenda = perfil.js PASSOS_CRIACAO; Pedir/Chamar = os obrigatorio:true de
+  // editar-loja.js (foto, textos, cardápio, atendimento, pagamento, horário,
+  // endereço). Serve só pra contagem do topo bater com a do editor.
+  var PASSOS_NO_SITE = 4;
+  var PASSOS_NO_SITE_LOJA = 7;
 
   function atualizarCabecalho() {
     var passos = obterPassos();
     var passo = passos[passoAtual];
     // a criação continua no próprio site (foto, serviços, equipe, endereço)
-    var total = passos.length + (tem('agenda') ? PASSOS_NO_SITE : 0);
+    var total = passos.length + (tem('agenda') ? PASSOS_NO_SITE : PASSOS_NO_SITE_LOJA);
     document.getElementById('criarPassoLabel').textContent = (passoAtual + 1) + ' de ' + total;
     document.getElementById('criarProgressoFill').style.width = (((passoAtual + 1) / passos.length) * 100) + '%';
     document.getElementById('criarProximoBtn').textContent = passoAtual === passos.length - 1
-      ? (tem('agenda') ? 'Criar meu site' : 'Criar e abrir meu painel') : 'Próximo';
+      ? 'Criar meu site' : 'Próximo';
   }
   function mostrarPasso(indice, direcao) {
     passoAtual = indice;
@@ -466,8 +471,12 @@
       if (passoAtual < passos.length - 1) { mostrarPasso(passoAtual + 1); return; }
       if (window.VibeToggle) window.VibeToggle.marcarDirecao('avanca');
       var base = '/' + encodeURIComponent(estado.slug) + '/' + encodeURIComponent(cidadeDoLink());
-      // Agenda: a criação continua no site real (tutorial guiado; a numeração segue)
-      window.location.href = tem('agenda') ? base + '?tutorial=1&desde=' + passos.length : '/cadastro.html?aba=pedidos';
+      // A criação NUNCA termina aqui: continua no site de verdade, passo a
+      // passo, com a numeração seguindo de onde parou. Agenda continua em
+      // /slug/cidade; Pedir e Chamar continuam em /slug/cidade/pedir — antes
+      // Pedir/Chamar caía no painel de pedidos e o site ficava vazio.
+      window.location.href = base + (tem('agenda') ? '' : '/pedir') +
+        '?tutorial=1&desde=' + passos.length;
     }
     function falhou(err) {
       btn.disabled = false;

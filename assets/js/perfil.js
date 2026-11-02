@@ -1176,17 +1176,17 @@
     var redes = function () { return !!(linhaAtual.instagram_url || linhaAtual.facebook_url || linhaAtual.tiktok_url); };
     var tattoo = linhaAtual.segmento === 'tatuador';
     var base = [
-      { id: 'foto', capitulo: 'impressao', titulo: 'Foto principal', pergunta: 'Qual foto mostra melhor o seu negócio?', ajuda: 'É a primeira coisa que o cliente vê. Mande do celular ou toque numa pronta.', completo: function () { return !!fotoPrincipal(); }, render: renderPassoTutorialFoto },
-      { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frases', pergunta: 'Como você quer se apresentar?', ajuda: 'O nome e as frases do topo. Muda ao vivo aqui atrás.', completo: function () { return !!(linhaAtual.titulo_hero || '').trim(); }, render: renderPassoEdicaoTextos },
-      { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', pergunta: 'Qual a cara do seu site?', ajuda: 'O visual inteiro — vale pra Agendar, Pedir e Chamar.', completo: function () { return !!linhaAtual.template; }, render: renderPassoEdicaoEstilo },
-      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: o nome (ou a frase) se mexe — entrando, na horizontal, na vertical ou junto com a rolagem.', render: renderPassoEdicaoTituloEfeito },
-      { id: 'servicos', capitulo: 'oferta', titulo: tattoo ? 'Sessões e preços' : 'Serviços e preços', pergunta: tattoo ? 'Que sessões o cliente pode marcar?' : 'O que o cliente pode agendar?', ajuda: 'Com preço e quanto tempo leva — a agenda reserva o tempo todo.', completo: function () { return servicosCache.length > 0; }, render: renderPassoTutorialServicos },
-      { id: 'equipe', capitulo: 'oferta', titulo: 'Quem atende', pergunta: 'Quem atende os clientes?', ajuda: 'O cliente escolhe na hora de agendar.', completo: function () { return equipeCache.length > 0; }, render: renderPassoTutorialEquipe },
-      { id: 'galeria', capitulo: 'oferta', titulo: tattoo ? 'Portfólio' : 'Galeria de fotos', pergunta: tattoo ? 'Mostre os seus trabalhos' : 'Mostre o seu espaço e os seus trabalhos', ajuda: tattoo ? 'Marque o estilo de cada foto: no site vira filtro.' : 'Fotos de verdade passam confiança.', completo: function () { return galeriaQtd > 0; }, render: renderPassoTutorialGaleria },
-      { id: 'horario', capitulo: 'funciona', titulo: 'Horário', pergunta: 'Que dias e horários você atende?', ajuda: 'A agenda só oferece horários dentro disso.', completo: function () { return horariosCache.length > 0; }, render: renderPassoEdicaoHorario },
-      { id: 'contato', capitulo: 'funciona', titulo: 'WhatsApp', pergunta: 'Em qual WhatsApp você recebe os agendamentos?', completo: function () { return !!(linhaAtual.telefone_whatsapp || '').replace(/\D/g, ''); }, render: renderPassoEdicaoContato },
-      { id: 'localizacao', capitulo: 'achar', titulo: 'Endereço', pergunta: 'Onde fica o seu espaço?', ajuda: 'Aparece no site e abre no mapa.', completo: function () { return !!(linhaAtual.endereco || '').trim(); }, render: renderPassoTutorialLocalizacao },
-      { id: 'redes', capitulo: 'achar', titulo: 'Redes sociais', pergunta: 'Onde mais te acham na internet?', ajuda: 'Instagram, Facebook e TikTok no site.', completo: redes, render: renderPassoTutorialRedes }
+      { id: 'foto', capitulo: 'impressao', obrigatorio: true, aviso: 'Escolha uma foto pra continuar — é a primeira coisa que o cliente vê.', titulo: 'Foto principal', pergunta: 'Qual foto mostra melhor o seu negócio?', ajuda: 'É a primeira coisa que o cliente vê. Mande do celular ou toque numa pronta.', completo: function () { return !!fotoPrincipal(); }, render: renderPassoTutorialFoto },
+      { id: 'textos', capitulo: 'impressao', obrigatorio: true, aviso: 'Escreva o nome e a frase do seu negócio pra continuar.', titulo: 'Nome e frases', pergunta: 'Como você quer se apresentar?', ajuda: 'O nome e as frases do topo. Muda ao vivo aqui atrás.', completo: function () { return !!(linhaAtual.titulo_hero || '').trim(); }, render: renderPassoEdicaoTextos },
+      { id: 'estilo', capitulo: 'impressao', obrigatorio: false, titulo: 'Cores e estilo', pergunta: 'Qual a cara do seu site?', ajuda: 'O visual inteiro — vale pra Agendar, Pedir e Chamar.', completo: function () { return !!linhaAtual.template; }, render: renderPassoEdicaoEstilo },
+      { id: 'efeito', capitulo: 'impressao', obrigatorio: false, titulo: 'Efeito do título', pergunta: 'Quer dar movimento ao título?', ajuda: 'Opcional: o nome (ou a frase) se mexe — entrando, na horizontal, na vertical ou junto com a rolagem.', render: renderPassoEdicaoTituloEfeito },
+      { id: 'servicos', capitulo: 'oferta', obrigatorio: true, aviso: 'Cadastre pelo menos um serviço — sem isso o cliente não tem o que agendar.', titulo: tattoo ? 'Sessões e preços' : 'Serviços e preços', pergunta: tattoo ? 'Que sessões o cliente pode marcar?' : 'O que o cliente pode agendar?', ajuda: 'Com preço e quanto tempo leva — a agenda reserva o tempo todo.', completo: function () { return servicosCache.length > 0; }, render: renderPassoTutorialServicos },
+      { id: 'equipe', capitulo: 'oferta', obrigatorio: false, titulo: 'Quem atende', pergunta: 'Quem atende os clientes?', ajuda: 'O cliente escolhe na hora de agendar.', completo: function () { return equipeCache.length > 0; }, render: renderPassoTutorialEquipe },
+      { id: 'galeria', capitulo: 'oferta', obrigatorio: false, titulo: tattoo ? 'Portfólio' : 'Galeria de fotos', pergunta: tattoo ? 'Mostre os seus trabalhos' : 'Mostre o seu espaço e os seus trabalhos', ajuda: tattoo ? 'Marque o estilo de cada foto: no site vira filtro.' : 'Fotos de verdade passam confiança.', completo: function () { return galeriaQtd > 0; }, render: renderPassoTutorialGaleria },
+      { id: 'horario', capitulo: 'funciona', obrigatorio: true, aviso: 'Marque os dias e horários pra continuar.', titulo: 'Horário', pergunta: 'Que dias e horários você atende?', ajuda: 'A agenda só oferece horários dentro disso.', completo: function () { return horariosCache.length > 0; }, render: renderPassoEdicaoHorario },
+      { id: 'contato', capitulo: 'funciona', obrigatorio: true, aviso: 'Coloque o WhatsApp pra receber os agendamentos.', titulo: 'WhatsApp', pergunta: 'Em qual WhatsApp você recebe os agendamentos?', completo: function () { return !!(linhaAtual.telefone_whatsapp || '').replace(/\D/g, ''); }, render: renderPassoEdicaoContato },
+      { id: 'localizacao', capitulo: 'achar', obrigatorio: true, aviso: 'Escreva o endereço pra continuar.', titulo: 'Endereço', pergunta: 'Onde fica o seu espaço?', ajuda: 'Aparece no site e abre no mapa.', completo: function () { return !!(linhaAtual.endereco || '').trim(); }, render: renderPassoTutorialLocalizacao },
+      { id: 'redes', capitulo: 'achar', obrigatorio: false, titulo: 'Redes sociais', pergunta: 'Onde mais te acham na internet?', ajuda: 'Instagram, Facebook e TikTok no site.', completo: redes, render: renderPassoTutorialRedes }
     ];
     var sobre = window.VBPerguntas ? window.VBPerguntas.passosEditor(estabId, linhaAtual.segmento, linhaAtual.areas || ['agenda'], respostasNegocio, desenharBomSaber) : [];
     return base.concat(sobre);
@@ -3079,8 +3079,10 @@
     if (window.VBCache) window.VBCache.salvar(chaveCachePerfil, linha);
     // estabelecimento só de Delivery/Serviços (sem agenda): o site é a loja/chamado
     var areasLinha = linha.areas || ['agenda'];
-    if (areasLinha.indexOf('agenda') === -1 && !/[?&]tutorial=1/.test(location.search)) {
-      location.replace('/' + encodeURIComponent(slug) + '/' + encodeURIComponent(cidade) + '/pedir');
+    // sem agenda, o site é a loja/chamado: manda pra lá levando o que veio
+    // na URL (?tutorial=1, ?editar=1, ?passo=…) pra criação não se perder
+    if (areasLinha.indexOf('agenda') === -1) {
+      location.replace('/' + encodeURIComponent(slug) + '/' + encodeURIComponent(cidade) + '/pedir' + location.search);
       return;
     }
     renderizar(linha);

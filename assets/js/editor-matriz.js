@@ -63,10 +63,24 @@
     var passos = (cfg.passos || []).filter(Boolean);
     if (!passos.length) return null;
     var criar = cfg.modo === 'criar';
+    // criando o site: primeiro tudo o que é obrigatório, depois o enfeite.
+    // Assim a pessoa chega num site publicável sem precisar entender a ordem.
+    if (criar) {
+      passos = passos.map(function (p, i) { return { p: p, i: i }; })
+        .sort(function (a, b) { return (b.p.obrigatorio ? 1 : 0) - (a.p.obrigatorio ? 1 : 0) || a.i - b.i; })
+        .map(function (x) { return x.p; });
+    }
     var idx = 0;
     passos.forEach(function (p, i) { if (p.id === cfg.inicial) idx = i; });
     var desde = (cfg.contagem && cfg.contagem.desde) || 0;
-    var total = (cfg.contagem && cfg.contagem.total) || (desde + passos.length);
+    // Criando: a contagem ("3 de 9") conta SÓ os passos obrigatórios, pra
+    // pessoa ver um fim perto. Os opcionais vêm depois do último obrigatório
+    // e aparecem como "Extra", sem número — ninguém desanima com 20 passos.
+    var obrigatorios = criar ? passos.filter(function (p) { return p.obrigatorio; }).length : 0;
+    var total = criar && obrigatorios
+      ? desde + obrigatorios
+      : ((cfg.contagem && cfg.contagem.total) || (desde + passos.length));
+    var naFase2 = function () { return criar && obrigatorios > 0 && idx >= obrigatorios; };
     var seloTimer = null;
 
     var raiz = document.createElement('div');
@@ -87,6 +101,7 @@
         '</div>' +
         '<div class="vbe-barras" data-vbe-barras></div>' +
         '<div class="vbe-palco" data-vbe-palco>' +
+          '<p class="vbe-tag" data-vbe-tag></p>' +
           '<h3 class="vbe-pergunta" data-vbe-pergunta></h3>' +
           '<p class="vbe-ajuda" data-vbe-ajuda></p>' +
           '<div class="vbe-campos" data-vbe-campos></div>' +
@@ -110,28 +125,45 @@
     var $ = function (sel) { return raiz.querySelector(sel); };
 
     function completo(p) { try { return !!(p.completo && p.completo()); } catch (e) { return false; } }
+    // A porcentagem conta só o OBRIGATÓRIO: 100% quer dizer "o site já pode
+    // ir pro ar", não "respondi todas as perguntas do mundo".
     function porcentagem() {
-      var contam = passos.filter(function (p) { return p.completo; });
-      if (!contam.length) return 0;
+      var contam = passos.filter(function (p) { return p.obrigatorio && p.completo; });
+      if (!contam.length) contam = passos.filter(function (p) { return p.completo; });
+      if (!contam.length) return 100;
       return Math.round(contam.filter(completo).length / contam.length * 100);
     }
 
     function estado() {
       var p = passos[idx];
-      var ok = !p.obrigatorio || completo(p);
+      // criando: o obrigatório tranca o Próximo. Editando um site que já
+      // existe: o aviso aparece, mas ninguém fica preso num passo.
+      var falta = !!p.obrigatorio && !completo(p);
       var btn = $('[data-vbe-proximo]');
-      btn.disabled = !ok;
+      btn.disabled = criar && falta;
       var aviso = $('[data-vbe-aviso]');
-      aviso.textContent = ok ? '' : (p.aviso || 'Responda essa pra continuar.');
-      aviso.classList.toggle('oculto', ok);
+      aviso.textContent = !falta ? '' : (p.aviso || 'Responda essa pra continuar.');
+      aviso.classList.toggle('oculto', !falta);
+      $('[data-vbe-proximo-txt]').textContent = rotuloProximo(p);
       var pct = porcentagem();
       $('[data-vbe-pct]').textContent = pct;
       $('.vbe-anel-valor').style.strokeDashoffset = String(97.4 - 97.4 * pct / 100);
       raiz.querySelectorAll('[data-vbe-barras] i').forEach(function (b, i) {
         var p2 = passos[i - desde];
-        b.classList.toggle('feito', i < desde || (p2 && completo(p2)));
+        b.classList.toggle('feito', i < desde || naFase2() || (p2 && completo(p2)));
       });
       if (!$('[data-vbe-mapa-tela]').classList.contains('oculto')) desenharMapa();
+    }
+
+    // No passo opcional ainda vazio o botão diz "Pular por agora" — assim
+    // ninguém fica travado achando que tem que responder tudo.
+    function rotuloProximo(p) {
+      var ultimo = idx === passos.length - 1;
+      if (ultimo) return cfg.rotuloConcluir || (criar ? 'Pronto, ver meu site' : 'Concluir');
+      // acabou o obrigatório: o site já pode ir pro ar daqui
+      if (criar && obrigatorios > 0 && idx === obrigatorios - 1) return 'Pronto, ver meu site';
+      if (!p.obrigatorio && p.completo && !completo(p)) return 'Pular por agora';
+      return 'Próximo';
     }
 
     function desenhar(direcao) {
@@ -141,15 +173,22 @@
       void palco.offsetWidth;
       if (direcao) palco.classList.add(direcao > 0 ? 'vbe-entra-dir' : 'vbe-entra-esq');
       $('[data-vbe-capitulo]').textContent = CAPITULOS[p.capitulo] || p.capitulo || (criar ? 'Criando seu site' : 'Editando');
-      $('[data-vbe-contador]').textContent = (desde + idx + 1) + ' de ' + total;
+      $('[data-vbe-contador]').textContent = naFase2()
+        ? 'Extra ' + (idx - obrigatorios + 1)
+        : (desde + idx + 1) + ' de ' + total;
       $('[data-vbe-pergunta]').textContent = p.pergunta || p.titulo || '';
+      // quem olha a tela precisa saber na hora se isso trava o site ou não
+      var tag = $('[data-vbe-tag]');
+      tag.textContent = p.obrigatorio ? 'Precisa preencher' : 'Opcional — pode pular';
+      tag.className = 'vbe-tag ' + (p.obrigatorio ? 'vbe-tag-precisa' : 'vbe-tag-opcional');
       var ajuda = $('[data-vbe-ajuda]');
       ajuda.textContent = p.ajuda || p.texto || '';
       ajuda.classList.toggle('oculto', !(p.ajuda || p.texto));
       $('[data-vbe-voltar]').classList.toggle('vbe-invisivel', idx === 0);
-      $('[data-vbe-proximo-txt]').textContent = idx === passos.length - 1 ? (cfg.rotuloConcluir || (criar ? 'Pronto, ver meu site' : 'Concluir')) : 'Próximo';
+      $('[data-vbe-proximo-txt]').textContent = rotuloProximo(p);
       var barras = '';
-      for (var b = 0; b < total; b++) barras += '<i' + (b === desde + idx ? ' class="agora"' : '') + '></i>';
+      var aqui = naFase2() ? -1 : desde + idx;
+      for (var b = 0; b < total; b++) barras += '<i' + (b === aqui ? ' class="agora"' : '') + '></i>';
       $('[data-vbe-barras]').innerHTML = barras;
       var campos = $('[data-vbe-campos]');
       campos.innerHTML = '';
@@ -180,7 +219,10 @@
 
     /* ---------- mapa ---------- */
     function desenharMapa() {
-      $('[data-vbe-mapa-titulo]').textContent = porcentagem() + '% completo';
+      var faltam = passos.filter(function (p) { return p.obrigatorio && p.completo && !completo(p); }).length;
+      $('[data-vbe-mapa-titulo]').textContent = faltam
+        ? faltam + (faltam === 1 ? ' passo obrigatório pra terminar' : ' passos obrigatórios pra terminar')
+        : 'Obrigatórios prontos — o resto é se quiser';
       var porCap = [], vistos = {};
       passos.forEach(function (p, i) {
         var c = p.capitulo || 'outros';
@@ -193,7 +235,9 @@
             var ok = completo(it.p);
             return '<button type="button" class="vbe-mapa-item' + (it.i === idx ? ' agora' : '') + (ok ? ' feito' : '') + '" data-vbe-ir="' + it.i + '">' +
               '<span class="vbe-mapa-marca">' + (ok ? ICONES.check : '') + '</span>' +
-              '<span class="vbe-mapa-txt">' + esc(it.p.titulo || it.p.pergunta) + '</span>' +
+              '<span class="vbe-mapa-txt">' + esc(it.p.titulo || it.p.pergunta) +
+                (ok ? '' : '<small class="vbe-mapa-sel' + (it.p.obrigatorio ? ' precisa' : '') + '">' + (it.p.obrigatorio ? 'precisa' : 'se quiser') + '</small>') +
+              '</span>' +
               '<span class="vbe-mapa-acao">' + (ok ? 'Mudar' : it.p.completo ? 'Responder' : 'Abrir') + '</span></button>';
           }).join('') + '</section>';
       }).join('');
@@ -216,6 +260,7 @@
         var b = $('[data-vbe-proximo]');
         if (b.disabled) return;
         if (idx >= passos.length - 1) { concluir(); return; }
+        if (criar && obrigatorios > 0 && idx === obrigatorios - 1) { concluir(); return; }
         ir(idx + 1, 1);
       }
     });
