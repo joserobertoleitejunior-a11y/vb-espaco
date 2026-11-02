@@ -18,7 +18,8 @@ const resp = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const erro = (msg: string, status = 400) => resp({ erro: msg }, status);
 
-const MODELO = "gemini-2.0-flash";
+// o apelido "latest" do Google: não quebra quando uma versão do modelo é aposentada
+const MODELO = Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest";
 const LIMITE_BYTES = 6 * 1024 * 1024; // ~6 MB de imagem já é foto grande demais
 
 function instrucao(tipo: string) {
@@ -40,7 +41,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return erro("Método inválido.", 405);
 
-  const chave = Deno.env.get("GEMINI_API_KEY");
+  // A chave vem de um campo que aceita várias linhas: um Enter ou um espaço
+  // sem querer no fim entrava no endereço e a chamada estourava antes de sair
+  // ("Não consegui falar..."). Tiramos tudo o que não é a chave, e ela vai no
+  // cabeçalho x-goog-api-key em vez da URL — assim ela não aparece em log nenhum.
+  const chave = (Deno.env.get("GEMINI_API_KEY") || "").replace(/\s+/g, "");
   if (!chave) return erro("A leitura por foto ainda não foi ligada neste app.", 503);
 
   // só dono logado usa (a chamada gasta cota)
@@ -61,15 +66,16 @@ Deno.serve(async (req) => {
 
   let r: Response;
   try {
-    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${chave}`, {
+    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
       body: JSON.stringify({
         contents: [{ parts: [{ text: instrucao(corpo.tipo || "cardapio") }, { inline_data: { mime_type: m[1], data: m[2] } }] }],
         generationConfig: { temperature: 0, maxOutputTokens: 4096, responseMimeType: "application/json" },
       }),
     });
-  } catch {
+  } catch (e) {
+    console.error("fetch gemini falhou", MODELO, String(e));
     return erro("Não consegui falar com o leitor de fotos agora.", 502);
   }
   if (!r.ok) {

@@ -16,7 +16,8 @@ const CORS = {
 };
 const resp = (c: unknown, s = 200) => new Response(JSON.stringify(c), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 const erro = (m: string, s = 400) => resp({ erro: m }, s);
-const MODELO = "gemini-2.0-flash";
+// o apelido "latest" do Google: não quebra quando uma versão do modelo é aposentada
+const MODELO = Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest";
 
 // O que o funcionário pode fazer. O app conhece cada uma destas ações.
 const ACOES = `
@@ -57,7 +58,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return erro("Método inválido.", 405);
 
-  const chave = Deno.env.get("GEMINI_API_KEY");
+  // A chave vem de um campo que aceita várias linhas: um Enter ou um espaço
+  // sem querer no fim entrava no endereço e a chamada estourava antes de sair
+  // ("Não consegui falar..."). Tiramos tudo o que não é a chave, e ela vai no
+  // cabeçalho x-goog-api-key em vez da URL — assim ela não aparece em log nenhum.
+  const chave = (Deno.env.get("GEMINI_API_KEY") || "").replace(/\s+/g, "");
   if (!chave) return erro("O funcionário ainda não foi ligado neste app.", 503);
 
   const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
@@ -80,16 +85,20 @@ Deno.serve(async (req) => {
 
   let r: Response;
   try {
-    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${chave}`, {
+    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: instrucao(corpo.contexto || {}) }] },
         contents: [...conversa, { role: "user", parts: [{ text }] }],
         generationConfig: { temperature: 0.2, maxOutputTokens: 700, responseMimeType: "application/json" },
       }),
     });
-  } catch { return erro("Não consegui falar com o funcionário agora.", 502); }
+  } catch (e) {
+    // o motivo fica no log do projeto (sem a chave), pra não virar adivinhação
+    console.error("fetch gemini falhou", MODELO, String(e));
+    return erro("Não consegui falar com o funcionário agora.", 502);
+  }
   if (!r.ok) {
     console.error("gemini", r.status, (await r.text().catch(() => "")).slice(0, 300));
     return erro(r.status === 429 ? "Muita coisa de uma vez. Espere um minutinho." : "O funcionário não respondeu agora.", 502);
