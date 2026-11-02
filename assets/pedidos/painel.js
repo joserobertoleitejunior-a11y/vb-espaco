@@ -1541,9 +1541,45 @@
   }
 
   window.addEventListener('message', function (e) {
-    if (e.origin !== location.origin || !e.data || !e.data.vbAba || !loja) return;
-    trocarAba(e.data.vbAba, true);
+    if (e.origin !== location.origin || !e.data || !loja) return;
+    if (e.data.vbAba) { trocarAba(e.data.vbAba, true); return; }
+    if (e.data.vbAcao) atenderFuncionario(e.data);
   });
+
+  // o funcionário digital pede daqui de fora (o botão dele mora no painel de cima);
+  // quem mexe no pedido continua sendo este arquivo, com as RPCs de sempre
+  function achaPedido(args) {
+    var abertos = pedidos.filter(function (p) { return ORDEM_STATUS[p.status] < 3; });
+    if (args && args.numero) return pedidos.filter(function (p) { return Number(p.numero) === Number(args.numero); })[0];
+    return abertos.length === 1 ? abertos[0] : null;
+  }
+  function responder(id, texto) { avisarPai({ vbResposta: id, texto: texto }); }
+  async function atenderFuncionario(msg) {
+    var args = msg.args || {}, id = msg.id;
+    if (msg.vbAcao === 'resumo') {
+      var novos = pedidos.filter(function (p) { return p.status === 'novo'; });
+      var andando = pedidos.filter(function (p) { return ORDEM_STATUS[p.status] > 0 && ORDEM_STATUS[p.status] < 3; });
+      return responder(id, JSON.stringify({
+        novos: novos.map(function (p) { return '#' + p.numero + ' ' + p.cliente_nome + ' · ' + U.preco(p.total); }),
+        em_andamento: andando.map(function (p) { return '#' + p.numero + ' ' + rotuloStatusAdmin(p); }),
+        itens_sem_preco: itens.filter(function (i) { return !Number(i.preco); }).length
+      }));
+    }
+    var p = achaPedido(args);
+    if (!p) return responder(id, 'ERRO:Me diga o número do pedido.');
+    if (msg.vbAcao === 'cancelar_pedido') {
+      try { await mudarStatus(p.id, 'cancelado'); return responder(id, 'Cancelei o pedido #' + p.numero + '.'); }
+      catch (e) { return responder(id, 'ERRO:Não consegui cancelar agora.'); }
+    }
+    if (msg.vbAcao === 'avancar_pedido') {
+      var passo = proximoPasso(p);
+      if (!passo) return responder(id, 'O pedido #' + p.numero + ' já está fechado.');
+      var frase = { preparando: 'Aceitei', saiu_entrega: p.forma_entrega === 'retirada' ? 'Avisei que está pronto pra retirar' : 'Avisei que saiu pra entrega', concluido: 'Fechei' }[passo.status] || 'Mudei';
+      try { await mudarStatus(p.id, passo.status); return responder(id, frase + ' o pedido #' + p.numero + '.'); }
+      catch (e) { return responder(id, 'ERRO:Não consegui mexer no pedido agora.'); }
+    }
+    responder(id, 'ERRO:Não sei fazer isso por aqui.');
+  }
 
   async function iniciar() {
     preencherIcones();

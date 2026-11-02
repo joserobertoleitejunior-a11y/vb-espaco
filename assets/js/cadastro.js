@@ -698,14 +698,40 @@
     if (e.data.pronto) {
       pedidosPronto = true;
       if (pedidosSubPendente && pedidosHost) { var f = pedidosHost.querySelector('iframe'); if (f && f.contentWindow) f.contentWindow.postMessage({ vbAba: pedidosSubPendente }, location.origin); pedidosSubPendente = null; }
+      atualizarResumoPedidos();
+    }
+    if (e.data.vbResposta && respostasPedido[e.data.vbResposta]) {
+      respostasPedido[e.data.vbResposta](e.data.texto);
+      delete respostasPedido[e.data.vbResposta];
     }
     if (typeof e.data.novos === 'number') {
       var selo = document.getElementById('dashSeloPedidos');
       if (selo) { selo.textContent = e.data.novos; selo.classList.toggle('oculto', !e.data.novos); }
       pedidosNovos = e.data.novos;
+      atualizarResumoPedidos();
     }
   });
   var pedidosNovos = 0;
+  // conversa com o painel de pedidos de dentro (iframe): pede e espera a resposta
+  var respostasPedido = {}, seqPedido = 0, ultimoResumoPedidos = null;
+  function atualizarResumoPedidos() {
+    if (!pedidosPronto) return;
+    pedirAoPainelPedidos('resumo').then(function (t) { try { ultimoResumoPedidos = JSON.parse(t); } catch (e) {} }, function () {});
+  }
+  function pedirAoPainelPedidos(acao, args) {
+    return new Promise(function (ok, falha) {
+      var f = pedidosHost && pedidosHost.querySelector('iframe');
+      if (!f || !f.contentWindow || !pedidosPronto) { falha(new Error('Abra a aba de pedidos primeiro.')); return; }
+      var id = 'p' + (++seqPedido);
+      var relogio = setTimeout(function () { delete respostasPedido[id]; falha(new Error('O painel de pedidos não respondeu.')); }, 8000);
+      respostasPedido[id] = function (texto) {
+        clearTimeout(relogio);
+        if (String(texto).indexOf('ERRO:') === 0) falha(new Error(String(texto).slice(5)));
+        else ok(texto);
+      };
+      f.contentWindow.postMessage({ vbAcao: acao, args: args || {}, id: id }, location.origin);
+    });
+  }
 
   function abrirDashboard(estabId, nome, abaInicial) {
     dashEstabId = estabId;
@@ -768,6 +794,7 @@
           pendentes: agendaCache.filter(function (a) { return a.status === 'pendente'; }).map(function (a) { return a.cliente_nome + ' · ' + (a.dia_label || a.dia) + ' ' + a.horario + ' · ' + a.servico; }).slice(0, 8),
           confirmados: agendaCache.filter(function (a) { return a.status === 'confirmado'; }).map(function (a) { return a.cliente_nome; }).slice(0, 8),
           pedidos_novos: pedidosNovos,
+          pedidos: ultimoResumoPedidos,
           ganhos_hoje: formatarPreco(ganhosHojeCache)
         };
       },
@@ -781,8 +808,14 @@
         confirmar_agendamento: function (a) { return mudarStatus(a, 'confirmado', ['pendente'], 'Confirmei'); },
         concluir_agendamento: function (a) { return mudarStatus(a, 'concluido', ['confirmado', 'pendente'], 'Concluí'); },
         cancelar_agendamento: function (a) { return mudarStatus(a, 'cancelado', ['pendente', 'confirmado'], 'Cancelei'); },
-        avancar_pedido: function () { mostrarAbaDashboard('pedidos'); return 'Abri os pedidos pra você tocar no próximo passo.'; },
-        cancelar_pedido: function () { mostrarAbaDashboard('pedidos'); return 'Abri os pedidos: toque no ✕ do pedido que quer cancelar.'; },
+        avancar_pedido: function (a) {
+          return pedirAoPainelPedidos('avancar_pedido', a).then(function (t) { mostrarAbaDashboard('pedidos'); return t; },
+            function (e) { mostrarAbaDashboard('pedidos'); return (e.message || '') + ' Abri a tela de pedidos pra você.'; });
+        },
+        cancelar_pedido: function (a) {
+          return pedirAoPainelPedidos('cancelar_pedido', a).then(function (t) { mostrarAbaDashboard('pedidos'); return t; },
+            function (e) { mostrarAbaDashboard('pedidos'); return (e.message || '') + ' Abri a tela de pedidos pra você.'; });
+        },
         lancar_venda: function (a) {
           var valor = Number(a.valor) || 0;
           if (!a.descricao || !valor) return 'Me diga o que foi vendido e por quanto.';
