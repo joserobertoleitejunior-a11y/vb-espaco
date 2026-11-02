@@ -616,6 +616,7 @@
   var dashboardCorpo = document.getElementById('dashboardCorpo');
   var dashboardTitulo = document.getElementById('dashboardTitulo');
   var dashEstabId = null;
+  var agendaCache = [], ganhosHojeCache = 0;
   var meusEstabs = {};
   var dashAbaAtual = 'resumo';
   var STATUS_LABEL = { pendente: 'Pendente', confirmado: 'Confirmado', cancelado: 'Cancelado', concluido: 'Concluído' };
@@ -730,6 +731,90 @@
       mostrarAbaDashboard(aba);
     };
     if (meuNegocio) iniciar(); else carregarMeuNegocio().then(iniciar);
+    ligarFuncionario(estabId, nome);
+  }
+
+  /* ---------- o funcionário digital (assets/js/funcionario.js) ----------
+     Ele só pede; quem faz é este arquivo, com as mesmas RPCs dos botões. */
+  function ligarFuncionario(estabId, nome) {
+    if (!window.VBFuncionario) return;
+    var e = meusEstabs[estabId] || {};
+    var site = '/' + encodeURIComponent(e.slug || '') + '/' + encodeURIComponent(e.cidade || '');
+    function acharAgendamento(args, status) {
+      var alvo = String(args.cliente || '').toLowerCase().trim();
+      var lista = agendaCache.filter(function (a) { return status ? status.indexOf(a.status) !== -1 : a.status !== 'cancelado'; });
+      if (args.id) return lista.filter(function (a) { return a.id === args.id; })[0];
+      if (alvo) return lista.filter(function (a) { return String(a.cliente_nome || '').toLowerCase().indexOf(alvo) !== -1; })[0];
+      return lista.length === 1 ? lista[0] : null;
+    }
+    function mudarStatus(args, novo, status, verbo) {
+      var a = acharAgendamento(args, status);
+      if (!a) return Promise.resolve('Não achei esse horário. Diga o nome do cliente.');
+      return db.rpc('tenant_admin_atualizar_agendamento', { p_estabelecimento_id: estabId, p_id: a.id, p_status: novo }).then(function (r) {
+        if (r.error) throw new Error(r.error.message);
+        mostrarAbaDashboard('agenda');
+        return verbo + ' o horário de ' + a.cliente_nome + '.';
+      });
+    }
+    window.VBFuncionario.montar({
+      estabId: estabId,
+      negocio: nome,
+      areas: areasDe(estabId),
+      resumo: function () {
+        var hoje = new Date().toISOString().slice(0, 10);
+        return {
+          aba_aberta: dashAbaAtual,
+          horarios_hoje: agendaCache.filter(function (a) { return String(a.dia).slice(0, 10) === hoje && a.status !== 'cancelado'; }).length,
+          pendentes: agendaCache.filter(function (a) { return a.status === 'pendente'; }).map(function (a) { return a.cliente_nome + ' · ' + (a.dia_label || a.dia) + ' ' + a.horario + ' · ' + a.servico; }).slice(0, 8),
+          confirmados: agendaCache.filter(function (a) { return a.status === 'confirmado'; }).map(function (a) { return a.cliente_nome; }).slice(0, 8),
+          pedidos_novos: pedidosNovos,
+          ganhos_hoje: formatarPreco(ganhosHojeCache)
+        };
+      },
+      acoes: {
+        abrir_aba: function (a) {
+          var mapa = { agenda: 'agenda', pedidos: 'pedidos', caixa: 'caixa', clientes: 'clientes', ganhos: 'resumo', site: 'perfil' };
+          var aba = mapa[String(a.aba || '').toLowerCase()] || 'agenda';
+          mostrarAbaDashboard(aba);
+          return null;
+        },
+        confirmar_agendamento: function (a) { return mudarStatus(a, 'confirmado', ['pendente'], 'Confirmei'); },
+        concluir_agendamento: function (a) { return mudarStatus(a, 'concluido', ['confirmado', 'pendente'], 'Concluí'); },
+        cancelar_agendamento: function (a) { return mudarStatus(a, 'cancelado', ['pendente', 'confirmado'], 'Cancelei'); },
+        avancar_pedido: function () { mostrarAbaDashboard('pedidos'); return 'Abri os pedidos pra você tocar no próximo passo.'; },
+        cancelar_pedido: function () { mostrarAbaDashboard('pedidos'); return 'Abri os pedidos: toque no ✕ do pedido que quer cancelar.'; },
+        lancar_venda: function (a) {
+          var valor = Number(a.valor) || 0;
+          if (!a.descricao || !valor) return 'Me diga o que foi vendido e por quanto.';
+          return chamarVendaComFila({
+            p_estabelecimento_id: estabId, p_staff_id: null, p_staff_nome: null,
+            p_cliente_nome: a.cliente || null, p_cliente_telefone: null,
+            p_descricao: String(a.descricao).slice(0, 80), p_valor: Math.round(valor * 100) / 100,
+            p_forma_pagamento: ['pix', 'dinheiro', 'cartao'].indexOf(a.forma) !== -1 ? a.forma : 'pix', p_servico_id: null
+          }).then(function (res) {
+            if (res.res && res.res.error) throw new Error(res.res.error.message);
+            mostrarAbaDashboard('resumo');
+            return 'Lancei ' + a.descricao + ' por ' + formatarPreco(valor) + '.';
+          });
+        },
+        consultar: function (a) {
+          var q = String(a.oQue || 'hoje');
+          return db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: 14 }).then(function (r) {
+            var d = (r && r.data) || {};
+            if (q === 'agenda') return agendaCache.filter(function (x) { return x.status === 'pendente'; }).length + ' horário(s) esperando confirmação, ' + agendaCache.filter(function (x) { return x.status === 'confirmado'; }).length + ' confirmado(s).';
+            if (q === 'clientes') return 'Você tem ' + (d.total_clientes || 0) + ' cliente(s) salvos.';
+            if (q === 'pedidos') return pedidosNovos + ' pedido(s) novo(s) agora.';
+            if (q === 'vendas') return 'Nos últimos 14 dias entraram ' + formatarPreco(d.total_periodo || 0) + '.';
+            return 'Hoje entraram ' + formatarPreco(d.total_hoje || 0) + '. Nos últimos 14 dias, ' + formatarPreco(d.total_periodo || 0) + '.';
+          });
+        },
+        abrir_editor: function (a) {
+          var passo = String(a.parte || '').replace(/[^a-z]/g, '');
+          window.location.href = site + '?editar=1' + (passo ? '&passo=' + passo : '');
+          return null;
+        }
+      }
+    });
   }
   function fecharMenuDash() {
     var m = document.getElementById('dashMenu'), b = document.getElementById('dashMenuBtn');
@@ -897,6 +982,8 @@
     ]).then(function (resultados) {
       if (dashEstabId !== estabId) return;
       var ganhosHoje = (resultados[3] && resultados[3].data && resultados[3].data.total_hoje) || 0;
+      agendaCache = resultados[2].data || [];
+      ganhosHojeCache = ganhosHoje;
       var servicos = resultados[0].data || [];
       var equipe = resultados[1].data || [];
       var linhas = resultados[2].data || [];

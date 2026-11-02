@@ -1,0 +1,80 @@
+/* O funcionário digital: botão com o cubo da marca girando e a folha de conversa.
+   Preto e branco, como a área da IA. Todo o movimento é transform/opacity. */
+.fn-btn {
+  position: fixed; right: max(0.9rem, env(safe-area-inset-right)); bottom: calc(5.2rem + env(safe-area-inset-bottom)); z-index: 400;
+  display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem 0.6rem 0.65rem;
+  border: 0; border-radius: 999px; background: #0d0d0f; color: #fff; cursor: pointer;
+  font: inherit; font-size: 0.88rem; font-weight: 800; letter-spacing: -0.01em;
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  opacity: 0; transform: translateY(14px) scale(0.96);
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fn-btn.on { opacity: 1; transform: none; }
+.fn-btn:active { transform: scale(0.96); }
+@media (min-width: 900px) { .fn-btn { bottom: max(1.2rem, env(safe-area-inset-bottom)); } }
+
+/* o cubo: as 6 faces em CSS 3D, girando sozinho (o mesmo gesto do logotipo) */
+.fn-cubo { position: relative; flex: 0 0 auto; width: 26px; height: 26px; perspective: 90px; }
+.fn-cubo i {
+  position: absolute; inset: 4px; border: 1.4px solid currentColor; border-radius: 2px;
+  transform-style: preserve-3d; animation: fn-gira 7s linear infinite;
+}
+.fn-cubo i:nth-child(1) { transform: rotateY(0deg) translateZ(9px); }
+.fn-cubo i:nth-child(2) { transform: rotateY(90deg) translateZ(9px); }
+.fn-cubo i:nth-child(3) { transform: rotateY(180deg) translateZ(9px); }
+.fn-cubo i:nth-child(4) { transform: rotateY(270deg) translateZ(9px); }
+.fn-cubo i:nth-child(5) { transform: rotateX(90deg) translateZ(9px); }
+.fn-cubo i:nth-child(6) { transform: rotateX(-90deg) translateZ(9px); }
+.fn-cubo { transform-style: preserve-3d; animation: fn-gira 7s linear infinite; }
+.fn-cubo i { animation: none; }
+@keyframes fn-gira { from { transform: rotateX(-22deg) rotateY(0deg); } to { transform: rotateX(-22deg) rotateY(360deg); } }
+
+/* folha de conversa */
+.fn { position: fixed; inset: 0; z-index: 2147483100; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.22s ease; }
+.fn.aberta { opacity: 1; pointer-events: auto; }
+.fn-fundo { position: absolute; inset: 0; background: rgba(8, 8, 10, 0.6); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.fn-folha {
+  position: relative; display: flex; flex-direction: column; width: 100%; max-width: 520px; height: min(82dvh, 640px);
+  background: #0d0d0f; color: #f4f4f6; border-radius: 26px 26px 0 0; overflow: hidden;
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.5);
+  transform: translateY(18px); transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fn.aberta .fn-folha { transform: none; }
+@media (min-width: 640px) { .fn { align-items: center; padding: 1rem; } .fn-folha { border-radius: 26px; } }
+.fn-topo { display: flex; align-items: center; gap: 0.7rem; padding: 0.9rem 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.fn-topo .fn-cubo { width: 30px; height: 30px; }
+.fn-quem { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.fn-quem strong { font-size: 1rem; }
+.fn-quem small { font-size: 0.74rem; color: rgba(244, 244, 246, 0.55); }
+.fn-x { width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 0.9rem; cursor: pointer; }
+
+.fn-conversa { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.fn-msg { max-width: 85%; }
+.fn-msg p { margin: 0; padding: 0.7rem 0.9rem; border-radius: 16px; font-size: 0.93rem; line-height: 1.45; }
+.fn-eu { align-self: flex-end; }
+.fn-eu p { background: #fff; color: #0d0d0f; border-bottom-right-radius: 5px; font-weight: 600; }
+.fn-ele p { background: rgba(255, 255, 255, 0.08); color: #f4f4f6; border-bottom-left-radius: 5px; min-height: 1.45em; }
+.fn-ele p.vbd-on::after { background: #fff !important; }
+.fn-pensando p { display: inline-flex; gap: 4px; align-items: center; }
+.fn-pensando i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.6); animation: fn-pula 1.1s ease-in-out infinite; }
+.fn-pensando i:nth-child(2) { animation-delay: 0.15s; }
+.fn-pensando i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes fn-pula { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+.fn-atalhos { display: flex; gap: 0.4rem; padding: 0 1rem 0.6rem; overflow-x: auto; scrollbar-width: none; }
+.fn-atalhos::-webkit-scrollbar { display: none; }
+.fn-atalho { flex: 0 0 auto; padding: 0.45rem 0.8rem; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 999px; background: none; color: rgba(244, 244, 246, 0.85); font: inherit; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
+.fn-atalho:active { background: rgba(255, 255, 255, 0.1); }
+
+.fn-barra { display: flex; align-items: center; gap: 0.5rem; padding: 0.7rem 0.8rem calc(0.8rem + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.fn-barra input { flex: 1; min-width: 0; padding: 0.75rem 0.9rem; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: #fff; font: inherit; font-size: max(16px, 0.95rem); }
+.fn-barra input::placeholder { color: rgba(244, 244, 246, 0.42); }
+.fn-barra input:focus { outline: none; border-color: rgba(255, 255, 255, 0.4); }
+.fn-mic, .fn-enviar { flex: 0 0 auto; width: 42px; height: 42px; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer; }
+.fn-mic { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.fn-mic.ouvindo { background: #fff; color: #0d0d0f; animation: fn-ouve 1.4s ease-out infinite; }
+.fn-mic.fn-sem { opacity: 0.35; }
+@keyframes fn-ouve { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5); } 70%, 100% { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); } }
+.fn-enviar { background: #fff; color: #0d0d0f; }
+html.fn-travado, html.fn-travado body { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .fn-cubo, .fn-pensando i, .fn-mic.ouvindo { animation: none; } .fn, .fn-folha, .fn-btn { transition: none; } }
