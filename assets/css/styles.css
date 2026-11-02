@@ -3379,3 +3379,26 @@ html, body { max-width: 100%; overflow-x: clip; }
 /* aviso curto de privacidade onde o cliente manda nome e telefone (LGPD) */
 .nota-privacidade { margin: 0.6rem 0 0; font-size: 0.74rem; line-height: 1.4; opacity: 0.72; }
 .nota-privacidade a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---- faixa da inovação (IA que lê o cardápio) na tela de explorar ---- */
+.ia-faixa {
+  position: relative; overflow: hidden; margin: 1.4rem 0 1.6rem; padding: 1.1rem 1.15rem 1.2rem;
+  border-radius: 20px; border: 1.5px solid rgba(201, 162, 39, 0.5);
+  background: linear-gradient(135deg, rgba(201, 162, 39, 0.14), rgba(201, 162, 39, 0.03) 62%);
+}
+.ia-faixa::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 40%; pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: ia-brilho 7s ease-in-out infinite;
+}
+.ia-faixa .ia-selo {
+  display: inline-flex; align-items: center; gap: 0.35rem; margin-bottom: 0.5rem; padding: 0.24rem 0.65rem;
+  border-radius: 999px; background: #1f2024; color: #F0D27A;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.ia-faixa h2 { margin: 0; font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: clamp(1.25rem, 5.2vw, 1.6rem); line-height: 1.15; letter-spacing: -0.015em; min-height: 1.15em; }
+.ia-faixa p { margin: 0.5rem 0 0.9rem; font-size: 0.9rem; line-height: 1.5; color: var(--tinta-suave); }
+.ia-faixa .btn { width: 100%; justify-content: center; }
+@keyframes ia-brilho { 0%, 65% { transform: translateX(-160%); } 92%, 100% { transform: translateX(340%); } }
+@media (prefers-reduced-motion: reduce) { .ia-faixa::after { display: none; } }
+@media (min-width: 720px) { .ia-faixa .btn { width: auto; } }

@@ -1385,6 +1385,7 @@
     var tattoo = linhaAtual.segmento === 'tatuador';
     var palavra = tattoo ? 'sessão' : 'serviço', palavraP = tattoo ? 'sessões' : 'serviços';
     var MAIS = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    var ICONE_IA = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2.6l1.9 4.6 4.6 1.9-4.6 1.9L12 15.6l-1.9-4.6L5.5 9.1l4.6-1.9z"/><path d="M18.5 14.4l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z"/></svg>';
     var LIXO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
 
     function cartaoServico(s) {
@@ -1401,10 +1402,12 @@
     }
 
     container.innerHTML =
-      '<div class="vbs-passo"><b>1</b><span><strong>Toque no que você faz</strong><small>Entra na hora. Aí você escreve o preço — ninguém põe valor no seu lugar.</small></span></div>' +
-      '<button type="button" class="vbs-foto" id="vbsFotoBtn">' +
-        '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.6"/></svg>' +
-        '<span><strong>Tenho a tabela numa foto</strong><small>Mande a foto ou o print da sua tabela de preços: a gente lê pra você</small></span>' +
+      '<div class="vbs-passo"><b>1</b><span><strong data-digita>Toque no que você faz</strong><small>Entra na hora. Aí você escreve o preço — ninguém põe valor no seu lugar.</small></span></div>' +
+      '<button type="button" class="vbs-foto ia" id="vbsFotoBtn">' +
+        '<span class="ia-selo">' + ICONE_IA + 'Inteligência artificial</span>' +
+        '<strong data-digita="46">Manda a foto da sua tabela de preços</strong>' +
+        '<small>Foto ou print do papel, do caderno, do cartaz — a IA lê os nomes e os preços e já monta a sua lista. Você só confere.</small>' +
+        '<em class="ia-cta">Escolher a foto →</em>' +
         '<input type="file" accept="image/*" id="vbsFotoInput" hidden></button>' +
       (sugestoes.length
         ? '<div class="vbs-sug">' + sugestoes.map(function (s) {
@@ -1423,12 +1426,14 @@
           '<button type="button" class="btn btn-primario" id="vbTutServicoSalvar">Adicionar esse</button>' +
         '</div>' +
       '</details>' +
-      '<div class="vbs-passo"><b>2</b><span><strong>Escreva o preço e o tempo</strong><small>' +
+      '<div class="vbs-passo"><b>2</b><span><strong data-digita>Escreva o preço e o tempo</strong><small>' +
         (tattoo ? 'O tempo é o que a agenda reserva pra sessão.' : 'O tempo é quanto a agenda reserva pra cada cliente.') +
         '</small></span><em class="vbfc-selo" data-selo="svc"></em></div>' +
       (servicosCache.length
         ? '<ul class="vbs-lista">' + servicosCache.map(cartaoServico).join('') + '</ul>'
         : '<p class="vbs-nada">Nenhum ' + palavra + ' ainda. Toque num de cima pra começar — dá pra mudar tudo depois.</p>');
+
+    if (window.VBDigita) window.VBDigita.aoAparecer(container);
 
     function dizer(texto, erro) {
       var el = container.querySelector('[data-selo="svc"]');

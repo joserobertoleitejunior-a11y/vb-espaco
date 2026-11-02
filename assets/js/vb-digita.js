@@ -48,10 +48,37 @@
     };
   }
 
+  // Qualquer [data-digita] da página é digitado quando entra na tela, uma vez só.
+  // É um observador só por página e nenhum quadro é gasto fora da tela.
+  function aoAparecer(raiz) {
+    var alvos = (raiz || document).querySelectorAll('[data-digita]:not([data-digitado])');
+    if (!alvos.length) return;
+    if (reduz || !global.IntersectionObserver) {
+      alvos.forEach(function (el) { el.setAttribute('data-digitado', '1'); });
+      return;
+    }
+    if (!observador) {
+      observador = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          observador.unobserve(e.target);
+          e.target.setAttribute('data-digitado', '1');
+          em(e.target, e.target.textContent, { vel: Number(e.target.getAttribute('data-digita')) || 48 });
+        });
+      }, { rootMargin: '0px 0px -10% 0px' });
+    }
+    alvos.forEach(function (el) { observador.observe(el); });
+  }
+  var observador = null;
+
   // o cursor é do módulo (uma regra só, injetada uma vez)
   var est = document.createElement('style');
   est.textContent = ".vbd-on::after{content:'';display:inline-block;width:.5ch;height:1em;margin-left:2px;vertical-align:-.12em;background:var(--destaque,#C9A227);animation:vbd-pisca .75s steps(1) infinite}@keyframes vbd-pisca{50%{opacity:0}}";
   document.head.appendChild(est);
 
-  global.VBDigita = { em: em, fila: fila };
+  global.VBDigita = { em: em, fila: fila, aoAparecer: aoAparecer };
+
+  // o HTML da página só precisa marcar o que quer digitado: data-digita
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { aoAparecer(document); });
+  else aoAparecer(document);
 })(window);

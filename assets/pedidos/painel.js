@@ -662,11 +662,13 @@
     var semPreco = itens.filter(function (i) { return !Number(i.preco); }).length;
     var oQue = SERVICO ? 'O que você faz' : 'O que você vende';
     return '<div class="pc">' +
-      '<div class="pc-passo"><b>1</b><span><strong>' + oQue + '?</strong><small>Toque num nome: ele entra na hora, já na categoria certa. O preço é você quem põe.</small>' +
+      '<div class="pc-passo"><b>1</b><span><strong data-digita>' + oQue + '?</strong><small>Toque num nome: ele entra na hora, já na categoria certa. O preço é você quem põe.</small>' +
         '<em class="pc-selo" id="pcSelo"></em></span></div>' +
-      '<button type="button" class="pc-foto" id="pcFotoBtn">' +
-        '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.6"/></svg>' +
-        '<span><strong>Tenho o cardápio numa foto</strong><small>Mande a foto ou o print: a gente lê os nomes e os preços pra você</small></span>' +
+      '<button type="button" class="pc-foto ia" id="pcFotoBtn">' +
+        '<span class="ia-selo">' + ICONE_IA + 'Inteligência artificial</span>' +
+        '<strong data-digita="46">Manda a foto do seu ' + (SERVICO ? 'catálogo' : 'cardápio') + '</strong>' +
+        '<small>Foto ou print do papel, do caderno, do painel da parede — a IA lê os nomes e os preços e já monta tudo. Você só confere.</small>' +
+        '<em class="ia-cta">Escolher a foto →</em>' +
         '<input type="file" accept="image/*" id="pcFotoInput" hidden></button>' +
       (gs.length
         ? gs.map(function (g) {
@@ -675,7 +677,7 @@
             }).join('') + '</div>';
           }).join('')
         : '<p class="pc-ok">' + (itens.length ? 'Você já pôs tudo o que a gente sugere. Pra incluir mais, use o botão lá em cima.' : 'Use o botão lá em cima pra escrever o seu primeiro item.') + '</p>') +
-      '<div class="pc-passo"><b>2</b><span><strong>Agora ponha o preço</strong><small>' +
+      '<div class="pc-passo"><b>2</b><span><strong data-digita>Agora ponha o preço</strong><small>' +
         (semPreco ? semPreco + ' ' + (semPreco === 1 ? 'item está' : 'itens estão') + ' sem preço — toque em cada um pra escrever o valor.' : 'Toque num item da lista pra mudar nome, foto e preço.') +
       '</small></span></div></div>';
   }
@@ -683,6 +685,7 @@
   /* ---- foto do cardápio: o Gemini lê (edge function ler-cardapio) e o dono confere ----
      Nada entra no site sem ele olhar: a leitura abre numa lista, com preço de cada item
      num campo, e só vai pro cardápio quando ele toca em salvar. */
+  var ICONE_IA = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2.6l1.9 4.6 4.6 1.9-4.6 1.9L12 15.6l-1.9-4.6L5.5 9.1l4.6-1.9z"/><path d="M18.5 14.4l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z"/></svg>';
   var lidoDaFoto = null;
   async function lerFotoCardapio(arquivo) {
     var blob = await comprimir(arquivo, 1600, false);
@@ -790,6 +793,8 @@
       return '<div class="ca-linha"><span>' + esc(b.nome) + ' · <strong>+ ' + U.preco(b.preco) + '</strong></span>' +
         '<button type="button" data-remover-borda="' + b.id + '" aria-label="Remover">' + U.ICONES.lixo + '</button></div>';
     }).join('') : '<p class="ca-vazio">Sem bordas cadastradas.</p>';
+
+    if (window.VBDigita) window.VBDigita.aoAparecer($('abaCardapio'));
 
     $('listaCombos').innerHTML = combos.length ? combos.map(function (c) {
       return '<div class="ca-item' + (c.ativo ? '' : ' inativo') + '" data-editar-combo="' + c.id + '"><span class="ca-thumb">' + U.ICONES.combo.replace('<svg', '<svg width="22" height="22"') + '</span>' +
