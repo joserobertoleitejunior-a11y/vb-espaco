@@ -328,27 +328,34 @@ html.vbfc-travado, html.vbfc-travado body { overflow: hidden; }
 .vbf-conf-acoes { display: flex; gap: 0.5rem; margin-top: 0.9rem; }
 .vbf-conf-acoes .btn { flex: 1; }
 
-/* ===== cartão da inovação: a IA que lê a foto do cardápio/tabela =====
-   Um brilho dourado bem leve atravessa a borda de vez em quando — compositor
-   só (transform/opacity), nada de script. */
-.pc-foto.ia, .vbs-foto.ia {
+/* ===== cartão da IA (ler a foto do cardápio): preto e branco, com o feixe
+   da leitura passando devagar. Sem cor nenhuma — é a marca da novidade. ===== */
+.vbs-foto.ia {
   position: relative; display: block; overflow: hidden;
-  border: 1.5px solid rgba(201, 162, 39, 0.55);
-  background: linear-gradient(135deg, rgba(201, 162, 39, 0.12), rgba(201, 162, 39, 0.03) 60%);
-  padding: 1rem 1.05rem 0.95rem;
+  padding: 1.05rem 1.1rem 1rem; border: 0; border-radius: 18px;
+  background: #0d0d0f; color: #f4f4f6;
 }
-.pc-foto.ia::after, .vbs-foto.ia::after {
-  content: ''; position: absolute; top: 0; bottom: 0; width: 45%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  pointer-events: none; animation: ia-brilho 6.5s ease-in-out infinite;
+.vbs-foto.ia::before {
+  content: ''; position: absolute; inset: -40% -10%; pointer-events: none; opacity: 0.45;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 28px 28px, 28px 28px; animation: ia-anda 22s linear infinite;
 }
-@keyframes ia-brilho { 0%, 65% { transform: translateX(-160%); } 92%, 100% { transform: translateX(340%); } }
+.vbs-foto.ia::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 34%; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.45) 82%, transparent);
+  animation: ia-varre 5.4s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+.vbs-foto.ia > * { position: relative; z-index: 2; }
+@keyframes ia-anda { to { transform: translate3d(28px, 28px, 0); } }
+@keyframes ia-varre { 0%, 12% { transform: translateY(-110%); opacity: 0; } 25% { opacity: 1; } 70%, 100% { transform: translateY(330%); opacity: 0; } }
 .ia-selo {
-  display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 0.45rem;
-  padding: 0.22rem 0.6rem; border-radius: 999px; background: #1f2024; color: #F0D27A;
-  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 0.45rem; padding: 0.24rem 0.65rem;
+  border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.06); color: #fff;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
 }
-.pc-foto.ia strong, .vbs-foto.ia strong { display: block; font-size: 1.05rem; line-height: 1.25; letter-spacing: -0.01em; min-height: 1.25em; }
-.pc-foto.ia small, .vbs-foto.ia small { display: block; margin-top: 0.25rem; font-size: 0.84rem; line-height: 1.45; }
-.ia-cta { display: inline-block; margin-top: 0.6rem; font-style: normal; font-size: 0.86rem; font-weight: 800; color: #8a6d10; }
-@media (prefers-reduced-motion: reduce) { .pc-foto.ia::after, .vbs-foto.ia::after { animation: none; display: none; } }
+.vbs-foto.ia strong { display: block; color: #fff; font-size: 1.05rem; line-height: 1.25; letter-spacing: -0.01em; min-height: 1.25em; }
+.vbs-foto.ia strong.vbd-on::after { background: #fff !important; }
+.vbs-foto.ia small { display: block; margin-top: 0.3rem; font-size: 0.84rem; line-height: 1.45; color: rgba(244, 244, 246, 0.7); }
+.ia-cta { display: inline-block; margin-top: 0.7rem; font-style: normal; font-size: 0.86rem; font-weight: 800; color: #fff; }
+@media (prefers-reduced-motion: reduce) { .vbs-foto.ia::before { animation: none; } .vbs-foto.ia::after { display: none; } }
+.ia-selo svg { flex: 0 0 auto; fill: #fff; color: #fff; }

@@ -3380,25 +3380,82 @@ html, body { max-width: 100%; overflow-x: clip; }
 .nota-privacidade { margin: 0.6rem 0 0; font-size: 0.74rem; line-height: 1.4; opacity: 0.72; }
 .nota-privacidade a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 
-/* ---- faixa da inovação (IA que lê o cardápio) na tela de explorar ---- */
-.ia-faixa {
-  position: relative; overflow: hidden; margin: 1.4rem 0 1.6rem; padding: 1.1rem 1.15rem 1.2rem;
-  border-radius: 20px; border: 1.5px solid rgba(201, 162, 39, 0.5);
-  background: linear-gradient(135deg, rgba(201, 162, 39, 0.14), rgba(201, 162, 39, 0.03) 62%);
+/* ================= A área da IA (index.html) =================
+   Preto e branco, sem cor nenhuma: fundo escuro com uma grade fina que anda
+   devagar, um feixe que varre de cima a baixo (a "leitura" da foto) e o título
+   digitado (data-digita → vb-digita.js). Tudo em transform/opacity, que o
+   navegador resolve na GPU — não trava rolagem nem gasta bateria à toa. */
+.ia {
+  position: relative; isolation: isolate; overflow: hidden;
+  margin: 1.6rem 0 1.8rem; border-radius: 24px;
+  background: #0d0d0f; color: #f4f4f6;
+  box-shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.8);
 }
-.ia-faixa::after {
-  content: ''; position: absolute; top: 0; bottom: 0; width: 40%; pointer-events: none;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-  animation: ia-brilho 7s ease-in-out infinite;
+.ia-dentro { position: relative; z-index: 2; padding: 1.4rem 1.2rem 1.3rem; }
+@media (min-width: 720px) { .ia-dentro { padding: 2.2rem 2.4rem 2rem; } }
+
+/* grade de fundo: dois quadriculados finos que escorrem em velocidades diferentes */
+.ia-grade {
+  position: absolute; inset: -40% -10%; z-index: 0; opacity: 0.5;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 34px 34px, 34px 34px;
+  animation: ia-anda 22s linear infinite;
 }
-.ia-faixa .ia-selo {
-  display: inline-flex; align-items: center; gap: 0.35rem; margin-bottom: 0.5rem; padding: 0.24rem 0.65rem;
-  border-radius: 999px; background: #1f2024; color: #F0D27A;
-  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+@keyframes ia-anda { to { transform: translate3d(34px, 34px, 0); } }
+/* feixe da leitura: uma linha branca atravessa de cima a baixo e some */
+.ia-feixe {
+  position: absolute; left: 0; right: 0; top: 0; height: 32%; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.1) 55%, rgba(255, 255, 255, 0.5) 82%, transparent);
+  animation: ia-varre 5.4s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
-.ia-faixa h2 { margin: 0; font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: clamp(1.25rem, 5.2vw, 1.6rem); line-height: 1.15; letter-spacing: -0.015em; min-height: 1.15em; }
-.ia-faixa p { margin: 0.5rem 0 0.9rem; font-size: 0.9rem; line-height: 1.5; color: var(--tinta-suave); }
-.ia-faixa .btn { width: 100%; justify-content: center; }
-@keyframes ia-brilho { 0%, 65% { transform: translateX(-160%); } 92%, 100% { transform: translateX(340%); } }
-@media (prefers-reduced-motion: reduce) { .ia-faixa::after { display: none; } }
-@media (min-width: 720px) { .ia-faixa .btn { width: auto; } }
+@keyframes ia-varre { 0%, 12% { transform: translateY(-110%); opacity: 0; } 25% { opacity: 1; } 70%, 100% { transform: translateY(330%); opacity: 0; } }
+
+.ia-tag {
+  display: inline-flex; align-items: center; gap: 0.45rem; margin-bottom: 0.7rem;
+  padding: 0.3rem 0.75rem; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.06);
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.64rem; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
+}
+.ia-ponto { width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: ia-pulso 2s ease-out infinite; }
+@keyframes ia-pulso { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6); } 70%, 100% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); } }
+
+.ia h2 {
+  margin: 0; color: #fff; font-family: 'Fraunces', Georgia, serif; font-weight: 700;
+  font-size: clamp(1.5rem, 6.4vw, 2.3rem); line-height: 1.1; letter-spacing: -0.02em; min-height: 1.1em;
+}
+.ia h2 .vbd-cursor, .ia h2.vbd-on::after { background: #fff !important; }
+.ia-sub { margin: 0.6rem 0 0; font-size: 0.92rem; line-height: 1.55; color: rgba(244, 244, 246, 0.72); max-width: 44ch; }
+
+/* os três passos: cada um acende em sequência, de leve, e fica */
+.ia-passos { list-style: none; display: grid; gap: 0.5rem; margin: 1.1rem 0 1.2rem; padding: 0; }
+@media (min-width: 620px) { .ia-passos { grid-template-columns: repeat(3, 1fr); } }
+.ia-passos li {
+  display: flex; flex-direction: column; gap: 0.1rem; padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 14px; background: rgba(255, 255, 255, 0.04);
+  animation: ia-sobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ia-passos li:nth-child(2) { animation-delay: 0.12s; }
+.ia-passos li:nth-child(3) { animation-delay: 0.24s; }
+@keyframes ia-sobe { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.ia-n { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.7rem; font-weight: 600; color: rgba(255, 255, 255, 0.45); letter-spacing: 0.08em; }
+.ia-passos strong { font-size: 0.95rem; color: #fff; }
+.ia-passos small { font-size: 0.8rem; color: rgba(244, 244, 246, 0.6); line-height: 1.4; }
+
+.ia-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%;
+  padding: 0.95rem 1.3rem; border-radius: 999px; background: #fff; color: #0d0d0f;
+  font-size: 0.98rem; font-weight: 800; text-decoration: none; transition: transform 0.15s ease;
+}
+.ia-btn span { transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.ia-btn:hover span { transform: translateX(4px); }
+.ia-btn:active { transform: scale(0.98); }
+@media (min-width: 720px) { .ia-btn { width: auto; } }
+.ia-rodape { margin: 0.8rem 0 0; font-size: 0.78rem; line-height: 1.45; color: rgba(244, 244, 246, 0.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ia-grade, .ia-feixe, .ia-ponto, .ia-passos li { animation: none; }
+  .ia-feixe { display: none; }
+}

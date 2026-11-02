@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&display=optional" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=98">
+<link rel="stylesheet" href="/assets/css/styles.css?v=99">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=25">
 <link rel="stylesheet" href="/assets/css/splash.css?v=11">
 <link rel="stylesheet" href="/assets/css/guia.css?v=1">
@@ -152,12 +152,24 @@
         <div class="outdoor-promo-trilho" id="outdoorPromoTrilho"></div>
       </section>
 
-      <!-- a inovação que já está no ar pra todo mundo: a IA que monta o cardápio -->
-      <section class="ia-faixa" aria-labelledby="iaFaixaTitulo">
-        <span class="ia-selo"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2.6l1.9 4.6 4.6 1.9-4.6 1.9L12 15.6l-1.9-4.6L5.5 9.1l4.6-1.9z"/><path d="M18.5 14.4l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z"/></svg> Inteligência artificial · já no ar</span>
-        <h2 id="iaFaixaTitulo" data-digita="44">Tem um negócio? A IA monta o seu cardápio</h2>
-        <p>Manda a foto do cardápio, da tabela de preços, do caderno — a inteligência artificial lê os nomes e os valores e já deixa o seu site pronto. Você só confere e publica. Está liberado pra todo mundo, sem custo nenhum.</p>
-        <a class="btn btn-primario" href="/cadastro.html">Criar o meu site grátis →</a>
+      <!-- A inovação da casa, em preto e branco: a IA que lê a foto e monta o cardápio.
+           Todo o movimento é CSS (grade que anda, feixe que varre, cursor piscando) —
+           nenhum script extra, nada de imagem. -->
+      <section class="ia" aria-labelledby="iaTitulo">
+        <span class="ia-grade" aria-hidden="true"></span>
+        <span class="ia-feixe" aria-hidden="true"></span>
+        <div class="ia-dentro">
+          <span class="ia-tag"><i class="ia-ponto" aria-hidden="true"></i>Inteligência artificial · já no ar</span>
+          <h2 id="iaTitulo" data-digita="42">Manda a foto. A IA monta o seu cardápio.</h2>
+          <p class="ia-sub">Foto do cardápio, da tabela de preços, do caderno, do cartaz na parede. A inteligência artificial lê os nomes e os valores e deixa o seu site pronto. Você só confere e publica.</p>
+          <ol class="ia-passos">
+            <li><span class="ia-n">01</span><strong>Você tira a foto</strong><small>do jeito que já está hoje</small></li>
+            <li><span class="ia-n">02</span><strong>A IA lê tudo</strong><small>nome, descrição e preço</small></li>
+            <li><span class="ia-n">03</span><strong>Seu site publica</strong><small>em segundos, no ar</small></li>
+          </ol>
+          <a class="ia-btn" href="/cadastro.html">Criar o meu site grátis <span aria-hidden="true">→</span></a>
+          <p class="ia-rodape">Liberado pra todo mundo, sem custo nenhum — nenhuma outra plataforma da região faz isso.</p>
+        </div>
       </section>
 
       <p class="guia-todos-titulo" id="guiaTodosTitulo">Ou veja todos os lugares</p>
