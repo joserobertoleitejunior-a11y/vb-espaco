@@ -3455,7 +3455,103 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (min-width: 720px) { .ia-btn { width: auto; } }
 .ia-rodape { margin: 0.8rem 0 0; font-size: 0.78rem; line-height: 1.45; color: rgba(244, 244, 246, 0.5); }
 
+/* os dois blocos (foto→cardápio e funcionário): cada um é uma ilha dentro do
+   preto, separada por uma linha fininha, pra lista longa não virar parede */
+.ia-bloco { margin: 1.3rem 0 0; padding-top: 1.2rem; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+.ia-bloco > header { display: flex; align-items: baseline; gap: 0.6rem; }
+.ia-bloco h3 { margin: 0; font-size: 1.12rem; line-height: 1.25; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+.ia-bloco > p { margin: 0.45rem 0 0; font-size: 0.9rem; line-height: 1.55; color: rgba(244, 244, 246, 0.7); max-width: 46ch; }
+.ia-nota { margin: 0.7rem 0 0; font-size: 0.8rem; line-height: 1.45; color: rgba(244, 244, 246, 0.5); }
+
+/* a lista do funcionário: cada linha acende em sequência ao chegar na tela */
+.ia-lista { list-style: none; display: grid; gap: 0.1rem; margin: 0.9rem 0 0; padding: 0; }
+.ia-lista li {
+  display: grid; grid-template-columns: auto 1fr; gap: 0 0.6rem; align-items: baseline;
+  padding: 0.6rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  animation: ia-sobe 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ia-lista li:last-child { border-bottom: 0; }
+.ia-lista li:nth-child(2) { animation-delay: 0.06s; }
+.ia-lista li:nth-child(3) { animation-delay: 0.12s; }
+.ia-lista li:nth-child(4) { animation-delay: 0.18s; }
+.ia-lista li:nth-child(5) { animation-delay: 0.24s; }
+.ia-lista li:nth-child(6) { animation-delay: 0.3s; }
+.ia-lista li:nth-child(7) { animation-delay: 0.36s; }
+.ia-ic { grid-row: span 2; font-size: 0.5rem; color: rgba(255, 255, 255, 0.45); transform: translateY(-0.25em); }
+.ia-lista strong { font-size: 0.94rem; color: #fff; font-weight: 700; }
+.ia-lista small { grid-column: 2; margin-top: 0.12rem; font-size: 0.82rem; line-height: 1.45; color: rgba(244, 244, 246, 0.58); }
+
 @media (prefers-reduced-motion: reduce) {
-  .ia-grade, .ia-feixe, .ia-ponto, .ia-passos li { animation: none; }
+  .ia-grade, .ia-feixe, .ia-ponto, .ia-passos li, .ia-lista li { animation: none; }
   .ia-feixe { display: none; }
+}
+
+/* ---------- banner da IA na primeira tela (index.html, splash) ----------
+   Mesma família da sessão .ia: preto, grade que anda, feixe que varre. Aqui é
+   só o aperitivo — os nomes das funções passam num rolo de CSS puro e o toque
+   leva pra sessão #ia, que lista tudo. */
+.sp-ia {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; flex: 0 0 auto; align-items: center; gap: 0.8rem;
+  margin: 0.9rem 0 0.2rem; padding: 0.95rem 1rem; border-radius: 20px;
+  background: #0d0d0f; color: #f4f4f6; text-decoration: none;
+  box-shadow: 0 14px 36px -20px rgba(0, 0, 0, 0.85);
+}
+/* entra junto com as opções da splash (spSobe mora em splash.css) */
+@media (prefers-reduced-motion: no-preference) {
+  .sp-ia { animation: spSobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) calc(0.4s + var(--i, 4) * 0.07s) both; }
+}
+.sp-ia:active { transform: scale(0.99); }
+.sp-ia-grade {
+  position: absolute; inset: -60% -20%; z-index: 0; opacity: 0.45;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 26px 26px, 26px 26px;
+  animation: ia-anda 22s linear infinite;
+}
+.sp-ia-feixe {
+  position: absolute; left: 0; right: 0; top: 0; height: 40%; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.08) 55%, rgba(255, 255, 255, 0.4) 84%, transparent);
+  animation: ia-varre 6.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+.sp-ia-dentro { position: relative; z-index: 2; flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sp-ia-tag {
+  display: inline-flex; align-items: center; gap: 0.35rem; align-self: flex-start; margin-bottom: 0.35rem;
+  padding: 0.18rem 0.55rem; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.26); background: rgba(255, 255, 255, 0.06);
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.58rem; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
+}
+.sp-ia-tag .ia-ponto { width: 5px; height: 5px; }
+.sp-ia-tit { font-size: 0.98rem; font-weight: 800; line-height: 1.25; color: #fff; }
+
+/* o rolo: a lista sobe de um em um, parando em cada nome. Seis itens, e o
+   último repete o primeiro pra volta ao topo não dar solavanco. */
+.sp-ia-rolo {
+  display: block; margin-top: 0.2rem; overflow: hidden;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.78rem; height: 1.3em;
+}
+.sp-ia-rolo i {
+  display: block; height: 1.3em; line-height: 1.3em; font-style: normal; font-weight: 600;
+  color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sp-ia-rolo i { animation: spIaRolo 14s cubic-bezier(0.7, 0, 0.3, 1) infinite; }
+@keyframes spIaRolo {
+  0%, 13%    { transform: translateY(0); }
+  20%, 33%   { transform: translateY(-1.3em); }
+  40%, 53%   { transform: translateY(-2.6em); }
+  60%, 73%   { transform: translateY(-3.9em); }
+  80%, 93%   { transform: translateY(-5.2em); }
+  100%       { transform: translateY(-6.5em); }
+}
+.sp-ia-sub { margin-top: 0.3rem; font-size: 0.78rem; line-height: 1.4; color: rgba(244, 244, 246, 0.6); }
+.sp-ia-seta { position: relative; z-index: 2; flex: 0 0 auto; color: rgba(255, 255, 255, 0.5); }
+.sp-ia-seta svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-ia-grade, .sp-ia-rolo i { animation: none; }
+  .sp-ia-feixe { display: none; }
+  /* sem movimento: fica só o primeiro nome, parado */
+  .sp-ia-rolo i:not(:first-child) { display: none; }
 }

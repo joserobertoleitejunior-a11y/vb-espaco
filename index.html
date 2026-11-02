@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&display=optional" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=99">
+<link rel="stylesheet" href="/assets/css/styles.css?v=100">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=25">
 <link rel="stylesheet" href="/assets/css/splash.css?v=11">
 <link rel="stylesheet" href="/assets/css/guia.css?v=1">
@@ -57,6 +57,18 @@
       var ok = a === 'agenda' || a === 'delivery' || a === 'servicos' || /explorar/.test(location.pathname);
       document.body.setAttribute('data-tela', ok ? 'explorar' : 'splash');
       document.body.className = ok ? 'com-tabbar tela-catalogo' : 'sp-corpo';
+      // veio do banner da primeira tela (/explorar.html#ia): rola até a sessão
+      // da IA quando ela já tiver lugar na página. O rolar nativo do navegador
+      // acontece cedo demais, antes da lista montar, e cai no lugar errado.
+      if (location.hash === '#ia') {
+        addEventListener('DOMContentLoaded', function () {
+          var alvo = document.getElementById('ia');
+          if (!alvo) return;
+          requestAnimationFrame(function () {
+            alvo.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          });
+        });
+      }
     })();
   </script>
   <div class="sp-fundo" aria-hidden="true"><i class="sp-luz sp-luz-agenda"></i><i class="sp-luz sp-luz-delivery"></i><i class="sp-luz sp-luz-servicos"></i></div>
@@ -106,7 +118,29 @@
       </a>
     </nav>
 
-    <button type="button" class="sp-meus" id="spMeusAgendamentos" style="--i:4">
+    <!-- Banner da IA na primeira tela: enxuto, preto, só o aperitivo. Os nomes
+         das funções passam sozinhos (CSS puro) e o toque leva pra sessão
+         completa lá embaixo (#ia), que lista tudo o que a IA faz. -->
+    <a class="sp-ia" href="/explorar.html#ia" style="--i:4">
+      <span class="sp-ia-grade" aria-hidden="true"></span>
+      <span class="sp-ia-feixe" aria-hidden="true"></span>
+      <span class="sp-ia-dentro">
+        <span class="sp-ia-tag"><i class="ia-ponto" aria-hidden="true"></i>IA já no ar</span>
+        <strong class="sp-ia-tit">Seu negócio com inteligência artificial</strong>
+        <span class="sp-ia-rolo" aria-hidden="true">
+          <i>Foto vira cardápio</i>
+          <i>Funcionário que obedece</i>
+          <i>Lança venda por voz</i>
+          <i>Confirma horário sozinho</i>
+          <i>Responde quanto entrou hoje</i>
+          <i>Foto vira cardápio</i>
+        </span>
+        <span class="sp-ia-sub">Grátis pra todo estabelecimento. Veja tudo o que ela faz</span>
+      </span>
+      <span class="sp-ia-seta" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+
+    <button type="button" class="sp-meus" id="spMeusAgendamentos" style="--i:5">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8.5 3v4M15.5 3v4"/><path d="M8 14.5h3M8 17.5h6"/></svg>
       <span><strong id="spMeusTitulo">Meus agendamentos</strong><small id="spMeusSub">Ver, remarcar ou cancelar</small></span>
     </button>
@@ -155,20 +189,49 @@
       <!-- A inovação da casa, em preto e branco: a IA que lê a foto e monta o cardápio.
            Todo o movimento é CSS (grade que anda, feixe que varre, cursor piscando) —
            nenhum script extra, nada de imagem. -->
-      <section class="ia" aria-labelledby="iaTitulo">
+      <section class="ia" id="ia" aria-labelledby="iaTitulo">
         <span class="ia-grade" aria-hidden="true"></span>
         <span class="ia-feixe" aria-hidden="true"></span>
         <div class="ia-dentro">
           <span class="ia-tag"><i class="ia-ponto" aria-hidden="true"></i>Inteligência artificial · já no ar</span>
-          <h2 id="iaTitulo" data-digita="42">Manda a foto. A IA monta o seu cardápio.</h2>
-          <p class="ia-sub">Foto do cardápio, da tabela de preços, do caderno, do cartaz na parede. A inteligência artificial lê os nomes e os valores e deixa o seu site pronto. Você só confere e publica.</p>
-          <ol class="ia-passos">
-            <li><span class="ia-n">01</span><strong>Você tira a foto</strong><small>do jeito que já está hoje</small></li>
-            <li><span class="ia-n">02</span><strong>A IA lê tudo</strong><small>nome, descrição e preço</small></li>
-            <li><span class="ia-n">03</span><strong>Seu site publica</strong><small>em segundos, no ar</small></li>
-          </ol>
-          <a class="ia-btn" href="/cadastro.html">Criar o meu site grátis <span aria-hidden="true">→</span></a>
-          <p class="ia-rodape">Liberado pra todo mundo, sem custo nenhum — nenhuma outra plataforma da região faz isso.</p>
+          <h2 id="iaTitulo" data-digita="42">A IA trabalha no seu negócio.</h2>
+          <p class="ia-sub">Nenhuma outra plataforma da região faz isso — e aqui é de graça, pra todo estabelecimento. São duas coisas, e as duas tiram trabalho das suas costas.</p>
+
+          <!-- 1. a foto que vira cardápio -->
+          <article class="ia-bloco">
+            <header>
+              <span class="ia-n">01</span>
+              <h3>Manda a foto. Vira cardápio.</h3>
+            </header>
+            <p>Foto do cardápio, da tabela de preços, do caderno, do cartaz na parede. A IA lê e preenche tudo.</p>
+            <ol class="ia-passos">
+              <li><span class="ia-n">A</span><strong>Você tira a foto</strong><small>do jeito que já está hoje</small></li>
+              <li><span class="ia-n">B</span><strong>A IA lê tudo</strong><small>nome, descrição e preço</small></li>
+              <li><span class="ia-n">C</span><strong>Você confere</strong><small>e o site publica na hora</small></li>
+            </ol>
+            <p class="ia-nota">Vale pra cardápio de delivery e pra tabela de serviços de quem agenda.</p>
+          </article>
+
+          <!-- 2. o funcionário digital -->
+          <article class="ia-bloco">
+            <header>
+              <span class="ia-n">02</span>
+              <h3>Um funcionário que faz o que você pede.</h3>
+            </header>
+            <p>Um botão no painel. Você fala ou escreve, em português de gente, e ele executa. Você escolhe o nome dele.</p>
+            <ul class="ia-lista">
+              <li><span class="ia-ic" aria-hidden="true">&#9679;</span><strong>Confirma, conclui e cancela horário</strong><small>sem você caçar o agendamento na lista</small></li>
+              <li><span class="ia-ic" aria-hidden="true">&#9679;</span><strong>Toca o pedido pra frente</strong><small>aceitar, avisar que saiu, concluir, cancelar</small></li>
+              <li><span class="ia-ic" aria-hidden="true">&#9679;</span><strong>Lança venda no caixa</strong><small>"vendi um corte, 40 reais, no pix"</small></li>
+              <li><span class="ia-ic" aria-hidden="true">&#9679;</span><strong>Responde os números na hora</strong><small>quanto entrou hoje, quantos clientes, como vai o anúncio</small></li>
+              <li><span class="ia-ic" aria-hidden="true">&#9679;</span><strong>Abre a tela certa e o editor do site</strong><small>"abre o caixa", "quero trocar a foto principal"</small></li>
+              <li><span class="ia-ic" aria-hidden="true">&#9679;</span><strong>Entende a sua voz</strong><small>toque no microfone e fale, sem digitar</small></li>
+              <li><span class="ia-ic" aria-hidden="true">&#9679;</span><strong>Pergunta antes de mexer</strong><small>tudo o que muda alguma coisa pede um "sim"</small></li>
+            </ul>
+          </article>
+
+          <a class="ia-btn" href="/criar.html">Criar o meu site grátis <span aria-hidden="true">&#8594;</span></a>
+          <p class="ia-rodape">A IA nunca inventa número de venda, preço nem nome de cliente: quando falta informação, ela pergunta. E só o dono, logado, consegue usar.</p>
         </div>
       </section>
 
