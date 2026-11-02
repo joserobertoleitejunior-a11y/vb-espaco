@@ -90,7 +90,9 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: instrucao(corpo.contexto || {}) }] },
-        contents: [...conversa, { role: "user", parts: [{ text }] }],
+        // a variável é "texto": escrever só { text } procurava uma variável "text"
+        // que não existe, e a chamada morria aqui antes de sair
+        contents: [...conversa, { role: "user", parts: [{ text: texto }] }],
         generationConfig: { temperature: 0.2, maxOutputTokens: 700, responseMimeType: "application/json" },
       }),
     });
