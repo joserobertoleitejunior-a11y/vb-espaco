@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
   // Tiramos tudo o que não é a chave, e ela vai no cabeçalho x-goog-api-key em
   // vez da URL — assim ela não aparece em log nenhum.
   const chave = (Deno.env.get("GEMINI_API_KEY") || "").replace(/\s+/g, "");
-  if (!chave) return erro("A leitura por foto ainda não foi ligada neste app.", 503);
+  if (!chave) { console.error("ler-cardapio: sem GEMINI_API_KEY"); return erro("A leitura por foto ainda não foi ligada neste app.", 503); }
 
   // só dono logado usa (a chamada gasta cota)
   const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
@@ -89,14 +89,28 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: "Bearer " + jwt } },
   });
   const { data: quem } = await db.auth.getUser();
-  if (!quem?.user) return erro("Entre na sua conta primeiro.", 401);
+  if (!quem?.user) { console.error("ler-cardapio: sem sessão"); return erro("Entre na sua conta primeiro.", 401); }
 
   let corpo: { imagem?: string; tipo?: string };
-  try { corpo = await req.json(); } catch { return erro("Pedido inválido."); }
+  try { corpo = await req.json(); } catch (e) {
+    console.error("ler-cardapio: corpo não é JSON", String(e));
+    return erro("Pedido inválido.");
+  }
 
-  const m = /^data:(image\/(?:jpeg|png|webp|heic|heif));base64,([A-Za-z0-9+/=]+)$/.exec(corpo.imagem || "");
-  if (!m) return erro("Mande uma foto (JPG, PNG ou WebP).");
-  if (m[2].length * 0.75 > LIMITE_BYTES) return erro("Foto muito pesada — tire de mais perto ou mande em partes.");
+  // deixa rastro do que chegou: sem isso, "não consegui ler" vira adivinhação.
+  // Só o começo do data URL e o tamanho — nada da imagem em si vai pro log.
+  const img = corpo.imagem || "";
+  console.log("ler-cardapio: recebi", img.slice(0, 32), Math.round(img.length / 1024) + "KB", "tipo=" + (corpo.tipo || "cardapio"));
+
+  const m = /^data:(image\/(?:jpeg|png|webp|heic|heif));base64,([A-Za-z0-9+/=]+)$/.exec(img);
+  if (!m) {
+    console.error("ler-cardapio: formato recusado", img.slice(0, 48));
+    return erro("Mande uma foto (JPG, PNG ou WebP).");
+  }
+  if (m[2].length * 0.75 > LIMITE_BYTES) {
+    console.error("ler-cardapio: foto grande demais", Math.round(m[2].length * 0.75 / 1024) + "KB");
+    return erro("Foto muito pesada — tire de mais perto ou mande em partes.");
+  }
 
   const resposta = await pedirAoGemini(chave, {
     contents: [{ parts: [{ text: instrucao(corpo.tipo || "cardapio") }, { inline_data: { mime_type: m[1], data: m[2] } }] }],
@@ -110,7 +124,10 @@ Deno.serve(async (req) => {
   }
 
   let lido: { categorias?: { nome?: string; itens?: { nome?: string; descricao?: string; preco?: unknown }[] }[] };
-  try { lido = JSON.parse(resposta.texto.replace(/^```(?:json)?|```$/g, "").trim()); } catch { return erro("Não consegui ler essa foto. Tente uma mais nítida."); }
+  try { lido = JSON.parse(resposta.texto.replace(/^```(?:json)?|```$/g, "").trim()); } catch {
+    console.error("ler-cardapio: a IA não devolveu JSON", resposta.texto.slice(0, 200));
+    return erro("Não consegui ler essa foto. Tente uma mais nítida.");
+  }
 
   // limpa o que veio: nada de nome vazio, preço estranho ou lista gigante
   const categorias = (lido.categorias || []).slice(0, 12).map((c) => ({

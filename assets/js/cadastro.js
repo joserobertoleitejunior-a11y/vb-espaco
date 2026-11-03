@@ -666,7 +666,7 @@
   // o painel de pedidos fica dentro desta página (iframe) e continua vivo nas outras abas:
   // assim o aviso de pedido novo e o som não somem quando você olha a agenda
   var pedidosHost = null, pedidosPronto = false, pedidosSubPendente = null;
-  function prepararPedidos(estabId) {
+  function prepararPedidos(estabId, subInicial) {
     if (pedidosHost) { pedidosHost.remove(); pedidosHost = null; }
     pedidosPronto = false;
     var selo = document.getElementById('dashSeloPedidos'); if (selo) selo.classList.add('oculto');
@@ -676,10 +676,10 @@
     pedidosHost.className = 'ca-corpo ca-pedidos oculto';
     pedidosHost.innerHTML =
       '<div class="ca-chips" id="dashPedidosChips">' +
-        '<button type="button" class="ca-chip ativo" data-ped-sub="pedidos">' + (servico ? 'Chamados' : 'Pedidos') + '</button>' +
-        '<button type="button" class="ca-chip" data-ped-sub="cardapio">' + (servico ? 'Serviços' : 'Cardápio') + '</button>' +
-        '<button type="button" class="ca-chip" data-ped-sub="loja">Loja</button>' +
-      '</div><iframe class="ca-frame" title="Pedidos" src="/painel-area.html?embed=1&aba=pedidos"></iframe>';
+        '<button type="button" class="ca-chip' + (!subInicial || subInicial === 'pedidos' ? ' ativo' : '') + '" data-ped-sub="pedidos">' + (servico ? 'Chamados' : 'Pedidos') + '</button>' +
+        '<button type="button" class="ca-chip' + (subInicial === 'cardapio' ? ' ativo' : '') + '" data-ped-sub="cardapio">' + (servico ? 'Serviços' : 'Cardápio') + '</button>' +
+        '<button type="button" class="ca-chip' + (subInicial === 'loja' ? ' ativo' : '') + '" data-ped-sub="loja">Meu site</button>' +
+      '</div><iframe class="ca-frame" title="Pedidos" src="/painel-area.html?embed=1&aba=' + encodeURIComponent(subInicial || 'pedidos') + '"></iframe>';
     dashboardCorpo.insertAdjacentElement('afterend', pedidosHost);
     pedidosHost.querySelector('#dashPedidosChips').addEventListener('click', function (e) {
       var b = e.target.closest('[data-ped-sub]'); if (b) irPedidosSub(b.getAttribute('data-ped-sub'));
@@ -750,10 +750,12 @@
     var iniciar = function () {
       if (dashEstabId !== estabId) return;
       aplicarAbas(estabId);
-      prepararPedidos(estabId);
       var padrao = temAgendaNeg() ? 'agenda' : 'pedidos';
       var aba = abaInicial === 'caixa' || abaInicial === 'comunidade' || abaInicial === 'clientes' || abaInicial === 'resumo' || abaInicial === 'perfil' ? abaInicial
         : abaInicial === 'pedidos' && temPedidosNeg() ? 'pedidos' : abaInicial === 'agenda' && temAgendaNeg() ? 'agenda' : padrao;
+      // "Meu site" de quem só tem pedidos mora na aba "loja" do painel: o
+      // iframe já nasce nela, senão abre em Pedidos e fica nisso
+      prepararPedidos(estabId, aba === 'perfil' && !temAgendaNeg() && temPedidosNeg() ? 'loja' : 'pedidos');
       mostrarAbaDashboard(aba);
     };
     if (meuNegocio) iniciar(); else carregarMeuNegocio().then(iniciar);

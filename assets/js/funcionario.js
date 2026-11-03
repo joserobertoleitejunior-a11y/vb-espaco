@@ -214,21 +214,34 @@
      dono mandar salvar — ou abrir a lista pra corrigir antes. */
   var lido = null;
 
-  // a foto sai do celular já menor: 1600px e JPEG, senão a leitura demora
+  /* A foto sai do celular já menor: 1600px no lado maior, em JPEG. Foto de
+     câmera de celular passa fácil de 4 MB, e em base64 ainda cresce um terço
+     — iria grande demais pela rede do cliente. Se mesmo assim passar do
+     limite, encolhe de novo até caber, em vez de tentar mandar e falhar. */
+  var TETO_ENVIO = 3.5 * 1024 * 1024; // o data URL, já em base64
+
   function comprimir(arquivo, maxLado) {
     return new Promise(function (ok, falha) {
       var url = URL.createObjectURL(arquivo);
       var img = new Image();
       img.onload = function () {
-        var escala = Math.min(1, maxLado / Math.max(img.naturalWidth, img.naturalHeight));
-        var cv = document.createElement('canvas');
-        cv.width = Math.round(img.naturalWidth * escala);
-        cv.height = Math.round(img.naturalHeight * escala);
-        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        var lado = maxLado, qualidade = 0.84, saida = '';
+        for (var tentativa = 0; tentativa < 4; tentativa++) {
+          var escala = Math.min(1, lado / Math.max(img.naturalWidth, img.naturalHeight));
+          var cv = document.createElement('canvas');
+          cv.width = Math.max(1, Math.round(img.naturalWidth * escala));
+          cv.height = Math.max(1, Math.round(img.naturalHeight * escala));
+          cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+          saida = cv.toDataURL('image/jpeg', qualidade);
+          if (saida.length <= TETO_ENVIO) break;
+          lado = Math.round(lado * 0.75);
+          qualidade = Math.max(0.6, qualidade - 0.08);
+        }
         URL.revokeObjectURL(url);
-        ok(cv.toDataURL('image/jpeg', 0.84));
+        if (!saida || saida.indexOf('data:image/jpeg') !== 0) { falha(new Error('Não consegui preparar essa foto no seu aparelho.')); return; }
+        ok(saida);
       };
-      img.onerror = function () { URL.revokeObjectURL(url); falha(new Error('Não consegui abrir essa foto.')); };
+      img.onerror = function () { URL.revokeObjectURL(url); falha(new Error('Não consegui abrir essa foto. Tente outra.')); };
       img.src = url;
     });
   }
@@ -253,17 +266,35 @@
       return global.db.functions.invoke('ler-cardapio', { body: { imagem: dataUrl, tipo: servico ? 'servicos' : 'cardapio' } });
     }).then(function (r) {
       pensando(false);
-      if (r.error) {
-        var ctx = r.error.context;
-        if (ctx && ctx.json) return ctx.json().then(function (j) { dizer('ele', (j && j.erro) || 'Não consegui ler essa foto.'); }, function () { dizer('ele', 'Não consegui ler essa foto.'); });
-        dizer('ele', 'Não consegui ler essa foto.');
-        return;
-      }
+      if (r.error) return explicarFalha(r.error);
       mostrarLido(r.data || {});
     }, function (e) {
       pensando(false);
       dizer('ele', (e && e.message) || 'Não consegui ler essa foto agora.');
     });
+  }
+
+  /* Antes, qualquer tropeço virava "Não consegui ler essa foto" — e aí não
+     dava pra saber se foi a foto, a conexão, a fila do Google ou a conta.
+     Agora cada caso diz o que é, e o que fazer. */
+  function explicarFalha(erro) {
+    var ctx = erro && erro.context;
+    var status = (ctx && ctx.status) || 0;
+    var fechar = function (msg) { dizer('ele', msg); };
+    var porStatus = function (recado) {
+      if (status === 503) return fechar(recado || 'A IA está congestionada neste momento. Espere uns segundos e mande a foto de novo.');
+      if (status === 401) return fechar('Sua sessão caiu. Entre de novo e mande a foto.');
+      if (status === 413) return fechar('Essa foto é pesada demais pro envio. Tire de mais perto, ou em partes.');
+      if (status === 504 || status === 502) return fechar('A leitura demorou demais e caiu. Tente de novo em um instante.');
+      if (status) return fechar(recado || ('Não consegui ler essa foto agora (erro ' + status + ').'));
+      return fechar('Não cheguei a mandar a foto — parece falta de conexão. Confere a internet e tenta de novo.');
+    };
+    // o servidor manda o motivo em JSON; quando não vier, o status já diz muito
+    if (ctx && typeof ctx.json === 'function') {
+      ctx.json().then(function (j) { porStatus(j && j.erro); }, function () { porStatus(null); });
+      return;
+    }
+    porStatus(null);
   }
 
   function mostrarLido(dados) {

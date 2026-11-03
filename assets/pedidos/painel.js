@@ -140,6 +140,7 @@
     mostrarTela('app');
     if (!EMBUTIDO) montarCubo();
     await abrirLoja();
+    aplicarAbaPendente();
     avisarPai({ pronto: true });
     if (q.get('nova') === '1') abrirBoasVindas();
   }
@@ -1587,10 +1588,15 @@
     window.addEventListener('beforeunload', function (e) { if (Object.keys(rascunho).length) { e.preventDefault(); e.returnValue = ''; } });
   }
 
+  // Mensagem que chega antes da loja terminar de carregar ficava perdida — e
+  // era assim que "Meu site" acabava mostrando a tela de Pedidos. Agora a
+  // última guarda e é aplicada assim que a loja fica pronta.
+  var abaPendente = null;
+  function aplicarAbaPendente() { if (abaPendente) { trocarAba(abaPendente, true); abaPendente = null; } }
   window.addEventListener('message', function (e) {
-    if (e.origin !== location.origin || !e.data || !loja) return;
-    if (e.data.vbAba) { trocarAba(e.data.vbAba, true); return; }
-    if (e.data.vbAcao) atenderFuncionario(e.data);
+    if (e.origin !== location.origin || !e.data) return;
+    if (e.data.vbAba) { if (loja) trocarAba(e.data.vbAba, true); else abaPendente = e.data.vbAba; return; }
+    if (e.data.vbAcao && loja) atenderFuncionario(e.data);
   });
 
   // o funcionário digital pede daqui de fora (o botão dele mora no painel de cima);
