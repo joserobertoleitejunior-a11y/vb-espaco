@@ -8,8 +8,8 @@
 .loja-ui { --bg: #f4f4f6; --surface: rgba(255, 255, 255, 0.82); --surface-solida: #ffffff; --surface-2: rgba(31, 32, 36, 0.045); --line: rgba(31, 32, 36, 0.09); --ink: #1f2024; --ink-soft: #6b6d76; --ink-faint: #9a9ca4; --price: var(--ink); --accent: #C4553A; --accent-rgb: 196, 85, 58; --accent-texto: #B04A31; --on-accent: #ffffff; --tint-rgb: 232, 122, 70; --ok: #1e7a3d; --ok-rgb: 30, 122, 61; --danger: #c0392b; --dourado: #C9A227; --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; --font-display: var(--font-body); --display-weight: 800; --display-transform: none; --display-spacing: -0.01em; --radius: 14px; --radius-sm: 10px; --topbar-h: 56px; --largura: 720px; --g: max(20px, calc((100% - var(--largura)) / 2)); --ease: cubic-bezier(.2, .7, .2, 1); --vidro: saturate(160%) blur(14px); }
 body.travado { overflow: hidden; }
 .loja-ui h1, .loja-ui h2, .loja-ui h3, .loja-ui p { margin: 0; }
-.loja-ui a { color: inherit; text-decoration: none; }
-.loja-ui button { font-family: inherit; cursor: pointer; color: inherit; }
+:where(.loja-ui) a { color: inherit; text-decoration: none; }
+:where(.loja-ui) button { font-family: inherit; cursor: pointer; color: inherit; }
 .loja-ui img { max-width: 100%; display: block; }
 .loja-ui .oculto { display: none !important; }
 .loja-ui .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

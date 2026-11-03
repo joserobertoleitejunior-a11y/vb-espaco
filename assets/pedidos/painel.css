@@ -497,3 +497,35 @@ html.embutido .barra-salvar { bottom: 0; }
 .p-pix-tipo { margin: 0.4rem 0 0; min-height: 1.2em; font-size: 0.82rem; line-height: 1.45; }
 .p-pix-tipo.bom { color: #1d5b2c; }
 .p-pix-tipo.ruim { color: #9b2d20; }
+
+/* ===== Dentro do painel único (tela inteira, sem cartão sobre cartão) ===== */
+html.embutido, html.embutido body, html.embutido .painel { background: #fff; }
+html.embutido .p-aba { max-width: 760px; padding: 0.9rem 1rem 6rem; }
+html.embutido .p-secao { background: none; border: 0; border-radius: 0; padding: 0; margin-bottom: 1.5rem; }
+html.embutido .p-secao-topo { margin-bottom: 0.6rem; }
+html.embutido .p-secao h2 { font-size: 1.25rem; letter-spacing: -0.01em; }
+html.embutido .p-secao p.p-ajuda { margin: 0 0 0.9rem; font-size: 0.84rem; }
+
+/* Pedidos: a faixa de cima é uma linha só (loja aberta + trocar), não um bloco enorme */
+html.embutido .p-statusbar { padding: 0.9rem 1rem; margin-bottom: 0.9rem; border-radius: 18px; background: rgba(var(--ok-rgb, 30, 122, 61), 0.07); }
+html.embutido .p-statusbar .p-status-loja { margin-bottom: 0.65rem; }
+html.embutido .p-statusbar .p-status-loja strong { font-size: 1.08rem; }
+html.embutido .p-statusbar .seg { width: 100%; }
+html.embutido .p-statusbar .seg button { flex: 1; padding: 0.55rem 0.3rem; font-size: 0.8rem; white-space: nowrap; }
+html.embutido .p-statusbar .p-ferramentas { margin: 0.65rem 0 0; flex-wrap: nowrap; }
+html.embutido .p-statusbar .chip-btn { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0.5rem 0.4rem; font-size: 0.8rem; white-space: nowrap; background: #fff; }
+html.embutido .p-statusbar .chip-btn span:last-child { overflow: hidden; text-overflow: ellipsis; }
+html.embutido .p-status-loja.fechada { color: inherit; }
+html.embutido #abaPedidos > .p-statusbar:has(.p-status-loja.fechada) { background: rgba(192, 57, 43, 0.07); }
+
+/* filtros presos no topo ao rolar a lista */
+html.embutido .p-filtros { position: sticky; top: 0; z-index: 6; margin: 0 -1rem; padding: 0.55rem 1rem; background: #fff; box-shadow: 0 1px 0 rgba(20, 20, 30, 0.06); }
+html.embutido .pa-card { border-radius: 18px; box-shadow: 0 1px 2px rgba(20, 20, 30, 0.04), 0 8px 22px -14px rgba(20, 20, 30, 0.18); }
+
+/* Cardápio: lista limpa, uma linha por item, foto grande ao lado do nome */
+html.embutido .ca-item { gap: 0.85rem; padding: 0.75rem 0; margin: 0; border-radius: 0; background: none; border-bottom: 1px solid rgba(20, 20, 30, 0.07); }
+html.embutido .ca-item:hover { background: none; }
+html.embutido .ca-item .ca-thumb { width: 3.6rem; height: 3.6rem; border-radius: 14px; }
+html.embutido .ca-thumb.vazia { border: 1.5px dashed rgba(20, 20, 30, 0.22); background: rgba(20, 20, 30, 0.025); color: rgba(20, 20, 30, 0.4); }
+html.embutido .ca-info strong { font-size: 1rem; white-space: normal; }
+html.embutido .ca-grupo-titulo { margin: 1.1rem 0 0.1rem; font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint, #8a8c94); }

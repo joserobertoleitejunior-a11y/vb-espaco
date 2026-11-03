@@ -659,8 +659,13 @@
     var ba = document.querySelector('#dashboardAbas [data-dash-aba="agenda"]'), bp = document.querySelector('#dashboardAbas [data-dash-aba="pedidos"]');
     if (ba) ba.classList.toggle('oculto', !agenda);
     if (bp) bp.classList.toggle('oculto', !pedidos);
+    var bc = document.querySelector('#dashboardAbas [data-dash-aba="cardapio"]');
+    if (bc) bc.classList.toggle('oculto', !pedidos);
+    var soServico = a.indexOf('delivery') === -1 && a.indexOf('servicos') !== -1;
     var r = document.getElementById('dashRotuloPedidos');
-    if (r) r.textContent = a.indexOf('delivery') === -1 && a.indexOf('servicos') !== -1 ? 'Chamados' : 'Pedidos';
+    if (r) r.textContent = soServico ? 'Chamados' : 'Pedidos';
+    var rc = document.getElementById('dashRotuloCardapio');
+    if (rc) rc.textContent = soServico ? 'Serviços' : 'Cardápio';
   }
 
   // o painel de pedidos fica dentro desta página (iframe) e continua vivo nas outras abas:
@@ -674,21 +679,12 @@
     var servico = areasDe(estabId).indexOf('servicos') !== -1 && areasDe(estabId).indexOf('delivery') === -1;
     pedidosHost = document.createElement('section');
     pedidosHost.className = 'ca-corpo ca-pedidos oculto';
-    pedidosHost.innerHTML =
-      '<div class="ca-chips" id="dashPedidosChips">' +
-        '<button type="button" class="ca-chip' + (!subInicial || subInicial === 'pedidos' ? ' ativo' : '') + '" data-ped-sub="pedidos">' + (servico ? 'Chamados' : 'Pedidos') + '</button>' +
-        '<button type="button" class="ca-chip' + (subInicial === 'cardapio' ? ' ativo' : '') + '" data-ped-sub="cardapio">' + (servico ? 'Serviços' : 'Cardápio') + '</button>' +
-        '<button type="button" class="ca-chip' + (subInicial === 'loja' ? ' ativo' : '') + '" data-ped-sub="loja">Meu site</button>' +
-      '</div><iframe class="ca-frame" title="Pedidos" src="/painel-area.html?embed=1&aba=' + encodeURIComponent(subInicial || 'pedidos') + '"></iframe>';
+    // sem abas por dentro: Pedidos e Cardápio são itens do rodapé, cada um com a tela inteira
+    pedidosHost.innerHTML = '<iframe class="ca-frame" title="Pedidos" src="/painel-area.html?embed=1&aba=' + encodeURIComponent(subInicial || 'pedidos') + '"></iframe>';
     dashboardCorpo.insertAdjacentElement('afterend', pedidosHost);
-    pedidosHost.querySelector('#dashPedidosChips').addEventListener('click', function (e) {
-      var b = e.target.closest('[data-ped-sub]'); if (b) irPedidosSub(b.getAttribute('data-ped-sub'));
-    });
   }
-  function irPedidosSub(sub, semChips) {
+  function irPedidosSub(sub) {
     if (!pedidosHost) return;
-    pedidosHost.querySelectorAll('[data-ped-sub]').forEach(function (c) { c.classList.toggle('ativo', c.getAttribute('data-ped-sub') === sub); });
-    pedidosHost.querySelector('#dashPedidosChips').classList.toggle('oculto', !!semChips);
     var f = pedidosHost.querySelector('iframe');
     if (pedidosPronto && f.contentWindow) f.contentWindow.postMessage({ vbAba: sub }, location.origin);
     else pedidosSubPendente = sub;
@@ -757,7 +753,7 @@
       if (dashEstabId !== estabId) return;
       aplicarAbas(estabId);
       var padrao = temAgendaNeg() ? 'agenda' : 'pedidos';
-      var aba = abaInicial === 'caixa' || abaInicial === 'comunidade' || abaInicial === 'clientes' || abaInicial === 'resumo' || abaInicial === 'perfil' ? abaInicial
+      var aba = abaInicial === 'cardapio' && temPedidosNeg() ? 'cardapio' : abaInicial === 'caixa' || abaInicial === 'comunidade' || abaInicial === 'clientes' || abaInicial === 'resumo' || abaInicial === 'perfil' ? abaInicial
         : abaInicial === 'pedidos' && temPedidosNeg() ? 'pedidos' : abaInicial === 'agenda' && temAgendaNeg() ? 'agenda' : padrao;
       // "Meu site" de quem só tem pedidos mora na aba "loja" do painel: o
       // iframe já nasce nela, senão abre em Pedidos e fica nisso
@@ -808,7 +804,7 @@
       },
       acoes: {
         abrir_aba: function (a) {
-          var mapa = { agenda: 'agenda', pedidos: 'pedidos', caixa: 'caixa', clientes: 'clientes', ganhos: 'resumo', site: 'perfil' };
+          var mapa = { agenda: 'agenda', pedidos: 'pedidos', cardapio: 'cardapio', 'cardápio': 'cardapio', caixa: 'caixa', clientes: 'clientes', ganhos: 'resumo', site: 'perfil' };
           var aba = mapa[String(a.aba || '').toLowerCase()] || 'agenda';
           mostrarAbaDashboard(aba);
           return null;
@@ -968,11 +964,13 @@
   }
   var timerCarregando = null;
   function mostrarAbaDashboard(aba, sub) {
+    // "pedidos + cardápio" (atalhos e o funcionário) agora é o item Cardápio do rodapé
+    if (aba === 'pedidos' && sub === 'cardapio') { aba = 'cardapio'; sub = null; }
     dashAbaAtual = aba;
     var vb = document.getElementById('dashVoltar'); if (vb) { vb.classList.toggle('oculto', aba !== 'comunidade'); vb.setAttribute('data-ir-aba', 'perfil'); }
     // Meu site de quem só tem pedidos = a aba "Loja" do painel de pedidos
-    var noPedidos = aba === 'pedidos' || (aba === 'perfil' && !temAgendaNeg() && temPedidosNeg());
-    var marcada = aba === 'comunidade' ? 'perfil' : aba;
+    var noPedidos = aba === 'pedidos' || aba === 'cardapio' || (aba === 'perfil' && !temAgendaNeg() && temPedidosNeg());
+    var marcada = aba === 'comunidade' || (aba === 'pedidos' && sub === 'loja') ? 'perfil' : aba;
     document.querySelectorAll('#dashboardAbas [data-dash-aba]').forEach(function (b) {
       b.classList.toggle('is-ativa', b.getAttribute('data-dash-aba') === marcada);
     });
@@ -981,7 +979,7 @@
     dashboardOverlay.classList.toggle('ca-modo-pedidos', noPedidos);
     escreverTitulo(aba);
     if (noPedidos) {
-      if (aba === 'perfil') irPedidosSub('loja', true); else irPedidosSub(sub || 'pedidos');
+      irPedidosSub(aba === 'perfil' ? 'loja' : aba === 'cardapio' ? 'cardapio' : (sub || 'pedidos'));
       dashboardOverlay.scrollTop = 0;
       return;
     }

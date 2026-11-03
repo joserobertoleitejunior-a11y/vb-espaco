@@ -550,7 +550,7 @@
   function renderizarImpressoraChip() {
     var est = IMP.estado();
     $('btnImpressora').classList.toggle('ligado', est.conectada);
-    $('impTxt').textContent = est.conectada ? est.nome + (est.autoImprimir ? ' · automática' : '') : 'Conectar impressora';
+    $('impTxt').textContent = est.conectada ? est.nome + (est.autoImprimir ? ' · automática' : '') : (EMBUTIDO ? 'Impressora' : 'Conectar impressora');
   }
 
   function renderizarStatusLoja() {
@@ -644,7 +644,7 @@
   function thumb(it) {
     return it.foto_url
       ? '<span class="ca-thumb" style="background-image:url(&quot;' + esc(encodeURI(it.foto_url)) + '&quot;)"></span>'
-      : '<span class="ca-thumb">' + esc(it.nome.charAt(0).toUpperCase()) + '</span>';
+      : '<span class="ca-thumb vazia" title="Sem foto — toque no item pra pôr"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg></span>';
   }
 
   // ---- passo a passo do cardápio: toque no que vende, depois ponha o preço ----
