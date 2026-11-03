@@ -23,45 +23,53 @@ const erro = (m: string, s = 400) => resp({ erro: m }, s);
 // errada, pedido inválido) não melhora repetindo, então volta na hora.
 // Os nomes "latest" são apelidos do Google: não quebram quando uma versão
 // do modelo é aposentada.
-// o leve vai primeiro: escolher uma ação é fácil e ele responde em ~1 s mesmo quando o outro está congestionado
-const MODELOS = ["gemini-flash-lite-latest", Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest"];
+// Vários modelos em "corrida": o primeiro começa na hora; se demorar mais de 2,5 s, o segundo
+// entra junto; aos 5 s, o terceiro. Vale a primeira resposta boa. Assim um modelo congestionado
+// no Google não segura o dono (antes: 45 s esperando um 503).
+const MODELOS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest"];
 const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
-async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number }> {
-  let status = 0;
-  for (const modelo of MODELOS) {
-    for (let n = 0; n < 2; n++) {
-      let r: Response;
-      try {
-        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
-          body: JSON.stringify(corpo),
-          signal: AbortSignal.timeout(9000), // sem isso, um 503 travado segurava o dono por 45 s
-        });
-      } catch (e) {
-        // o motivo fica no log do projeto (sem a chave), pra não virar adivinhação
-        console.error("fetch gemini falhou", modelo, String(e));
-        status = 0;
-        break; // estourou o tempo: próximo modelo
-      }
-      if (r.ok) {
-        const d = await r.json().catch(() => null);
-        return { texto: d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "" };
-      }
-      status = r.status;
-      console.error("gemini", modelo, r.status, (await r.text().catch(() => "")).slice(0, 300));
-      // o modelo não aceitou desligar o "pensamento": repete sem essa opção, em vez de falhar
-      if (status === 400 && (corpo as { generationConfig?: { thinkingConfig?: unknown } }).generationConfig?.thinkingConfig) {
-        delete (corpo as { generationConfig: { thinkingConfig?: unknown } }).generationConfig.thinkingConfig;
-        n--; continue;
-      }
-      if (status !== 429 && status !== 503 && status < 500) return { erroStatus: status };
-      if (status === 503 || status === 429) break; // congestionado: troca de modelo na hora, não repete
-      await espera(300);
-    }
+async function umModelo(chave: string, modelo: string, corpo: Record<string, unknown>): Promise<string> {
+  const gc = { ...(corpo.generationConfig as Record<string, unknown>) };
+  // só o 2.5-flash (sem "lite") aceita desligar o pensamento por aqui; nos outros dava 400
+  if (!/^gemini-2\.5-flash$/.test(modelo)) delete gc.thinkingConfig;
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
+    body: JSON.stringify({ ...corpo, generationConfig: gc }),
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!r.ok) {
+    console.error("gemini", modelo, r.status, (await r.text().catch(() => "")).slice(0, 200));
+    throw { status: r.status };
   }
-  return { erroStatus: status };
+  const d = await r.json().catch(() => null);
+  const texto = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
+  if (!texto) throw { status: 502 };
+  return texto;
+}
+
+async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number }> {
+  return await new Promise((ok) => {
+    let falhas = 0, ultimo = 0, acabou = false;
+    const lancados = new Set<number>();
+    const lanca = (i: number) => {
+      if (acabou || lancados.has(i) || i >= MODELOS.length) return;
+      lancados.add(i);
+      umModelo(chave, MODELOS[i], corpo as Record<string, unknown>).then(
+        (texto) => { if (!acabou) { acabou = true; console.log("assistente: venceu", MODELOS[i]); ok({ texto }); } },
+        (e) => {
+          console.error("assistente: falhou", MODELOS[i], e && e.status ? e.status : String(e));
+          ultimo = (e && e.status) || 0; falhas++;
+          lanca(i + 1);                                   // falhou: chama o próximo já
+          if (falhas >= MODELOS.length && !acabou) { acabou = true; ok({ erroStatus: ultimo === 404 ? 503 : ultimo }); }
+        },
+      );
+    };
+    lanca(0);
+    espera(2500).then(() => lanca(1));
+    espera(5000).then(() => lanca(2));
+  });
 }
 
 // O que o funcionário pode fazer. O app conhece cada uma destas ações.
