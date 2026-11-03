@@ -723,7 +723,13 @@
       var f = pedidosHost && pedidosHost.querySelector('iframe');
       if (!f || !f.contentWindow || !pedidosPronto) { falha(new Error('Abra a aba de pedidos primeiro.')); return; }
       var id = 'p' + (++seqPedido);
-      var relogio = setTimeout(function () { delete respostasPedido[id]; falha(new Error('O painel de pedidos não respondeu.')); }, (segundos || 8) * 1000);
+      var relogio = setTimeout(function () {
+        delete respostasPedido[id];
+        // o quadro parou de ouvir (ficou velho ou navegou pra outro lugar): recria
+        // já, pra o próximo pedido funcionar, em vez de deixar o dono preso
+        if (dashEstabId) prepararPedidos(dashEstabId, 'pedidos');
+        falha(new Error('A tela de pedidos tinha travado. Reiniciei ela — peça de novo.'));
+      }, (segundos || 8) * 1000);
       respostasPedido[id] = function (texto) {
         clearTimeout(relogio);
         if (String(texto).indexOf('ERRO:') === 0) falha(new Error(String(texto).slice(5)));
@@ -821,19 +827,54 @@
         /* a foto que o dono mandou no chat: quem salva é o painel de pedidos,
            com as mesmas RPCs dos botões. Um item é uma chamada, então um
            cardápio grande leva um tempo — daí o prazo maior. */
+        /* Salva o cardápio lido da foto DIRETO daqui, com as mesmas RPCs do
+           painel de pedidos. Antes isto pedia pro quadro do painel fazer, e
+           quando o quadro não respondia o dono ficava com "o painel de pedidos
+           não respondeu" e 31 itens lidos sem lugar pra ir. Agora não depende
+           dele; no fim o quadro é recriado, e já abre com o cardápio novo. */
         salvar_cardapio_lido: function (a) {
-          if (!a.categorias || !a.categorias.length) return 'Não tenho nada lido pra salvar.';
-          mostrarAbaDashboard('pedidos');
-          return pedirAoPainelPedidos('salvar_cardapio_lido', a, 90).then(null, function (e) {
-            return (e.message || 'Não consegui salvar agora.') + ' Abri a tela do cardápio pra você terminar.';
-          });
-        },
-        conferir_cardapio_lido: function (a) {
-          if (!a.categorias || !a.categorias.length) return 'Não tenho nada lido pra conferir.';
-          mostrarAbaDashboard('pedidos');
-          return pedirAoPainelPedidos('conferir_cardapio_lido', a, 15).then(null, function (e) {
-            return e.message || 'Não consegui abrir a lista agora.';
-          });
+          var cats = a.categorias || [];
+          var total = cats.reduce(function (n, c) { return n + (c.itens || []).length; }, 0);
+          if (!total) return 'Não tenho nada lido pra salvar.';
+          var rpc = function (nome, params) {
+            return db.rpc(nome, params).then(function (r) { if (r.error) throw r.error; return r.data; });
+          };
+          return Promise.all([
+            rpc('delivery_admin_listar_categorias', { p_estabelecimento_id: estabId }),
+            rpc('delivery_admin_listar_itens', { p_estabelecimento_id: estabId })
+          ]).then(function (atual) {
+            var categorias = atual[0] || [], ordemItem = (atual[1] || []).length, feitos = 0;
+            // uma fila só, em ordem: cada item é uma chamada e a ordem importa
+            return cats.reduce(function (fila, c) {
+              return fila.then(function () {
+                var nomeCat = String(c.nome || 'Cardápio').trim() || 'Cardápio';
+                var cat = categorias.filter(function (x) { return String(x.nome).toLowerCase() === nomeCat.toLowerCase(); })[0];
+                var garante = cat ? Promise.resolve(cat) :
+                  rpc('delivery_admin_salvar_categoria', { p_id: null, p_estabelecimento_id: estabId, p_nome: nomeCat, p_ordem: categorias.length })
+                    .then(function (nova) { categorias = categorias.concat([nova]); return nova; });
+                return garante.then(function (categoria) {
+                  return (c.itens || []).reduce(function (f2, it) {
+                    return f2.then(function () {
+                      var nome = String(it.nome || '').trim();
+                      if (!nome) return null;
+                      return rpc('delivery_admin_salvar_item', {
+                        p_id: null, p_estabelecimento_id: estabId, p_categoria_id: categoria.id, p_nome: nome.slice(0, 80),
+                        p_descricao: it.descricao || null, p_preco: Number(it.preco) || 0, p_foto_url: null,
+                        p_permite_meio_a_meio: false, p_ativo: true, p_ordem: ordemItem + feitos, p_aceita_borda: false
+                      }).then(function () { feitos++; });
+                    });
+                  }, Promise.resolve());
+                });
+              });
+            }, Promise.resolve()).then(function () { return feitos; }, function (e) {
+              throw new Error('Parei em ' + feitos + ' de ' + total + ' itens: ' + (e && e.message ? e.message : 'erro ao salvar') + '. O que já entrou está no cardápio.');
+            });
+          }).then(function (feitos) {
+            // quadro novo = dados novos e um painel que com certeza responde
+            prepararPedidos(estabId, 'cardapio');
+            mostrarAbaDashboard('pedidos', 'cardapio');
+            return 'Pronto! Pus ' + feitos + (feitos === 1 ? ' item' : ' itens') + ' no cardápio. Abri o Cardápio pra você ver — é só tocar num item pra mexer no preço.';
+          }, function (e) { return (e && e.message) || 'Não consegui salvar o cardápio agora.'; });
         },
         lancar_venda: function (a) {
           var valor = Number(a.valor) || 0;

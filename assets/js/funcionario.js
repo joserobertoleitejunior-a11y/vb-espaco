@@ -110,8 +110,13 @@
       var esc = e.target.closest('[data-fn-lido]');
       if (esc && lido) {
         esc.closest('.fn-escolhas').remove();
-        executar(esc.getAttribute('data-fn-lido') === 'salvar' ? 'salvar_cardapio_lido' : 'conferir_cardapio_lido', { categorias: lido }, true);
+        if (esc.getAttribute('data-fn-lido') === 'salvar') executar('salvar_cardapio_lido', { categorias: lido }, true);
+        else abrirRevisao(lido);
+        return;
       }
+      if (e.target.closest('[data-fn-rev-cancelar]')) { var rv = e.target.closest('.fn-rev'); if (rv) rv.remove(); dizer('ele', 'Tudo bem, não salvei nada. Quando quiser, é só mandar a foto de novo.'); return; }
+      var salvarRev = e.target.closest('[data-fn-rev-salvar]');
+      if (salvarRev) { finalizarRevisao(salvarRev.closest('.fn-rev')); return; }
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && st.caixa && st.caixa.classList.contains('aberta')) fechar(); });
     document.getElementById('fnForm').addEventListener('submit', function (e) {
@@ -309,9 +314,61 @@
       amostra.join('\n• ') + (total > amostra.length ? '\n…e mais ' + (total - amostra.length) + '.' : '') +
       '\n\nConfira os preços: a leitura da foto pode errar.',
       '<div class="fn-escolhas">' +
-        '<button type="button" class="fn-esc fn-esc-forte" data-fn-lido="conferir">Conferir e corrigir</button>' +
+        '<button type="button" class="fn-esc fn-esc-forte" data-fn-lido="conferir">Revisar e corrigir aqui</button>' +
         '<button type="button" class="fn-esc" data-fn-lido="salvar">Pôr tudo do jeito que está</button>' +
       '</div>');
+  }
+
+  /* Revisar e finalizar, aqui no chat: a lista do que a IA leu, com nome e
+     preço editáveis e uma caixinha pra tirar o que não é do cardápio. Nada
+     entra no site até o dono tocar em salvar. */
+  function abrirRevisao(cats) {
+    var c = document.getElementById('fnConversa');
+    if (!c) return;
+    var n = 0;
+    var corpo = cats.map(function (cat, ci) {
+      return '<p class="fn-rev-cat">' + esc(cat.nome) + '</p>' + (cat.itens || []).map(function (it, ii) {
+        n++;
+        return '<div class="fn-rev-item" data-ci="' + ci + '" data-ii="' + ii + '">' +
+          '<label class="fn-rev-usar"><input type="checkbox" checked aria-label="Usar ' + esc(it.nome) + '"></label>' +
+          '<input type="text" class="fn-rev-nome" value="' + esc(it.nome) + '" maxlength="80" aria-label="Nome">' +
+          '<span class="fn-rev-moeda">R$<input type="text" inputmode="decimal" class="fn-rev-preco" value="' +
+            (it.preco ? String(Number(it.preco).toFixed(2)).replace('.', ',') : '') + '" placeholder="0,00" aria-label="Preço"></span>' +
+          '</div>';
+      }).join('');
+    }).join('');
+    var el = document.createElement('div');
+    el.className = 'fn-rev';
+    el.innerHTML =
+      '<p class="fn-rev-topo"><strong>Confira os ' + n + ' itens</strong><span>Corrija o que errei e tire o que não for do cardápio.</span></p>' +
+      '<div class="fn-rev-lista">' + corpo + '</div>' +
+      '<div class="fn-rev-acoes">' +
+        '<button type="button" class="fn-esc" data-fn-rev-cancelar>Cancelar</button>' +
+        '<button type="button" class="fn-esc fn-esc-forte" data-fn-rev-salvar>Salvar no cardápio</button>' +
+      '</div>';
+    c.appendChild(el);
+    c.scrollTop = c.scrollHeight;
+  }
+  function finalizarRevisao(el) {
+    if (!el || !lido) return;
+    var saida = [];
+    lido.forEach(function (cat, ci) {
+      var itens = [];
+      el.querySelectorAll('.fn-rev-item[data-ci="' + ci + '"]').forEach(function (linha) {
+        if (!linha.querySelector('input[type="checkbox"]').checked) return;
+        var nome = linha.querySelector('.fn-rev-nome').value.trim();
+        if (!nome) return;
+        var preco = parseFloat(linha.querySelector('.fn-rev-preco').value.replace(/\./g, '').replace(',', '.')) || 0;
+        var original = (cat.itens || [])[Number(linha.getAttribute('data-ii'))] || {};
+        itens.push({ nome: nome, descricao: original.descricao || '', preco: preco });
+      });
+      if (itens.length) saida.push({ nome: cat.nome, itens: itens });
+    });
+    if (!saida.length) { dizer('ele', 'Você tirou todos os itens, então não tenho o que salvar.'); return; }
+    el.remove();
+    dizer('eu', 'Salvar no cardápio');
+    pensando(true);
+    executar('salvar_cardapio_lido', { categorias: saida }, true);
   }
 
   /* ---------- microfone (do próprio navegador, sem mandar áudio pra lugar nenhum) ---------- */
@@ -406,9 +463,16 @@
       dizer('ele', 'Posso fazer? Responda sim pra eu seguir.');
       return;
     }
+    // salvar um cardápio inteiro leva um tempo: mostra o "pensando…" até acabar
+    var demora = nome === 'salvar_cardapio_lido';
+    if (demora) pensando(true);
     Promise.resolve().then(function () { return fn(args); }).then(function (txt) {
+      if (demora) pensando(false);
       if (txt) dizer('ele', String(txt));
-    }, function (e) { dizer('ele', (e && e.message) || 'Não deu certo dessa vez.'); });
+    }, function (e) {
+      if (demora) pensando(false);
+      dizer('ele', (e && e.message) || 'Não deu certo dessa vez.');
+    });
   }
 
   global.VBFuncionario = { montar: montar, abrir: abrir, nome: function () { return st.nome; }, dizer: dizer };

@@ -123,3 +123,23 @@ html.fn-travado, html.fn-travado body { overflow: hidden; }
   50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.22); }
 }
 @media (prefers-reduced-motion: reduce) { .fn-anexo.fn-pisca { animation: none; background: rgba(255, 255, 255, 0.22); } }
+
+/* ---------- revisar o cardápio lido da foto, aqui no chat ---------- */
+.fn-rev { align-self: stretch; padding: 0.9rem; border-radius: 18px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); }
+.fn-rev-topo strong { display: block; font-size: 1rem; }
+.fn-rev-topo span { display: block; margin-top: 0.2rem; font-size: 0.82rem; line-height: 1.4; color: rgba(244, 244, 246, 0.6); }
+.fn-rev-lista { max-height: 46vh; overflow-y: auto; margin: 0.7rem -0.2rem 0; padding: 0 0.2rem; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.35) transparent; }
+.fn-rev-lista::-webkit-scrollbar { width: 6px; }
+.fn-rev-lista::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 99px; }
+.fn-rev-cat { margin: 0.8rem 0 0.35rem; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); }
+.fn-rev-item { display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 0.55rem; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+.fn-rev-usar input { width: 1.25rem; height: 1.25rem; accent-color: #fff; }
+.fn-rev-item input[type="text"] {
+  min-width: 0; min-height: 2.6rem; padding: 0 0.7rem; border-radius: 12px; font: inherit; font-size: 0.92rem;
+  border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.06); color: #f4f4f6;
+}
+.fn-rev-item input[type="text"]:focus { outline: 0; border-color: #C9A227; }
+.fn-rev-moeda { grid-column: 2; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: rgba(244, 244, 246, 0.6); }
+.fn-rev-moeda input { width: 6.5rem; text-align: right; }
+.fn-rev-acoes { display: grid; grid-template-columns: 1fr 1.5fr; gap: 0.5rem; margin-top: 0.8rem; }
+.fn-rev-acoes .fn-esc { text-align: center; }
