@@ -346,3 +346,4 @@ html.dash-aberto, html.dash-aberto body { overflow: hidden; overscroll-behavior:
   #dashboardOverlay .ca-abas { max-width: 760px; }
   #dashboardOverlay.ca-modo-pedidos .ca-pedidos { max-width: 760px; margin: 0 auto; }
 }
+.cxw-busca { margin-bottom: 0.9rem; }

@@ -1550,10 +1550,14 @@
     Promise.all([
       db.rpc('tenant_listar_servicos', { p_estabelecimento_id: estabId }),
       db.rpc('tenant_admin_listar_vendas_hoje', { p_estabelecimento_id: estabId }),
-      db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId })
+      db.rpc('tenant_listar_equipe', { p_estabelecimento_id: estabId }),
+      // negócio com Delivery/Serviços: o que ele vende está no cardápio, não na lista de serviços da Agenda
+      temPedidosNeg() ? db.rpc('delivery_admin_listar_itens', { p_estabelecimento_id: estabId }) : Promise.resolve({ data: [] })
     ]).then(function (resultados) {
       if (dashEstabId !== estabId) return;
-      var servicos = resultados[0].data || [];
+      var servicos = (resultados[0].data || []).concat((resultados[3].data || [])
+        .filter(function (i) { return i.ativo !== false && Number(i.preco) > 0; })
+        .map(function (i) { return { id: 'cardapio-' + i.id, nome: i.nome, preco: i.preco, doCardapio: true }; }));
       var vendas = resultados[1].data || [];
       var equipe = resultados[2].data || [];
       var total = vendas.reduce(function (soma, v) { return soma + Number(v.valor); }, 0);

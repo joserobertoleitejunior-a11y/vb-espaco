@@ -74,13 +74,14 @@
 
     /* ---------- cada tela ---------- */
     function telaItens() {
-      var cartoes = (cfg.servicos || []).map(function (sv) {
+      var busca = (s.busca || '').toLowerCase();
+      var cartoes = (cfg.servicos || []).filter(function (sv) { return !busca || String(sv.nome).toLowerCase().indexOf(busca) !== -1; }).map(function (sv) {
         var q = qtdDe(String(sv.id));
         return '<div class="cxw-card' + (q ? ' on' : '') + '" data-cxw-item="' + esc(sv.id) + '" role="button" tabindex="0">' +
           '<span class="cxw-card-nome">' + esc(sv.nome) + '</span><span class="cxw-card-preco">' + cfg.preco(Number(sv.preco) || 0) + '</span>' +
           (q ? '<span class="cxw-qtd"><button type="button" data-cxw-menos="' + esc(sv.id) + '" aria-label="Tirar um">−</button><b>' + q + '</b></span>' : '') + '</div>';
       }).join('');
-      var avulsos = s.carrinho.filter(function (i) { return !i.servicoId; }).map(function (x) {
+      var avulsos = s.carrinho.filter(function (i) { return String(i.key).indexOf('avulso-') === 0; }).map(function (x) {
         return '<div class="cxw-card on" data-cxw-item="' + esc(x.key) + '"><span class="cxw-card-nome">' + esc(x.nome) + '</span><span class="cxw-card-preco">' + cfg.preco(x.preco) + '</span>' +
           '<span class="cxw-qtd"><button type="button" data-cxw-menos="' + esc(x.key) + '" aria-label="Tirar um">−</button><b>' + x.qtd + '</b></span></div>';
       }).join('');
@@ -89,7 +90,9 @@
           '<input id="cxwAvValor" type="text" inputmode="decimal" placeholder="Valor (R$)" autocomplete="off">' +
           '<button type="button" class="cxw-sec" data-cxw-avulso-ok>Colocar na venda</button></div>'
         : '';
-      return '<h2>O que foi vendido?</h2><p class="cxw-dica">Toque no serviço. Toque de novo pra somar mais um.</p>' +
+      var caixaBusca = (cfg.servicos || []).length > 8
+        ? '<input id="cxwBusca" class="cxw-busca" type="text" placeholder="Buscar item…" value="' + esc(s.busca || '') + '" autocomplete="off">' : '';
+      return '<h2>O que foi vendido?</h2><p class="cxw-dica">Toque no item. Toque de novo pra somar mais um.</p>' + caixaBusca +
         '<div class="cxw-grade">' + cartoes + avulsos +
         '<button type="button" class="cxw-card cxw-outro" data-cxw-avulso>' + (s.avulso ? 'Fechar' : '+ Outro item') + '<small>digitar o valor</small></button></div>' + avulsoBox;
     }
@@ -255,7 +258,7 @@
       if ((el = q('[data-cxw-item]'))) {
         var id = el.getAttribute('data-cxw-item');
         var sv = (cfg.servicos || []).filter(function (x) { return String(x.id) === id; })[0];
-        if (sv) mexer(id, sv.nome, Number(sv.preco) || 0, sv.id, 1); else mexer(id, '', 0, null, 1);
+        if (sv) mexer(id, sv.nome, Number(sv.preco) || 0, sv.doCardapio ? null : sv.id, 1); else mexer(id, '', 0, null, 1);
         return desenhar('mesma');
       }
       if (q('[data-cxw-avulso-ok]')) {
@@ -295,6 +298,13 @@
         s.recebido = e.target.value;
         var rec = numero(s.recebido), tr = arred(rec - total()), el = corpo.querySelector('#cxwTroco');
         if (el) { el.textContent = rec ? (tr >= 0 ? 'Troco: ' + cfg.preco(tr) : 'Faltam ' + cfg.preco(-tr)) : ''; el.classList.toggle('erro', !!rec && tr < 0); }
+      } else if (id === 'cxwBusca') {
+        s.busca = e.target.value;
+        var b = s.busca.toLowerCase();
+        corpo.querySelectorAll('.cxw-grade [data-cxw-item]').forEach(function (c) {
+          var nome = (c.querySelector('.cxw-card-nome') || {}).textContent || '';
+          c.style.display = !b || nome.toLowerCase().indexOf(b) !== -1 || c.classList.contains('on') ? '' : 'none';
+        });
       } else if (id === 'cxwNome') s.nome = e.target.value;
       else if (id === 'cxwTel') s.tel = e.target.value;
     });
