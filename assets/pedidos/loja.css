@@ -174,7 +174,7 @@ body.travado { overflow: hidden; }
 .loja-ui .pix-lado { flex: 1 1 11rem; min-width: 0; }
 .loja-ui .pix-btn {
   display: block; width: 100%; min-height: 3rem; padding: 0.75rem 1rem; border: 0; border-radius: 14px;
-  background: var(--ink, #1f2024); color: #fff; font: inherit; font-size: 0.95rem; font-weight: 800; cursor: pointer;
+  background: var(--ink, #1f2024); color: var(--bg, #fff); font: inherit; font-size: 0.95rem; font-weight: 800; cursor: pointer;
 }
 .loja-ui .pix-btn:active { transform: translateY(1px); }
 .loja-ui .pix-para { margin: 0.6rem 0 0; font-size: 0.82rem; line-height: 1.45; color: var(--ink-faint); }
@@ -309,7 +309,7 @@ html.mini #cartBar, html.mini .toast { display: none; }
 .vms-btn {
   flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 2.6rem;
   padding: 0.55rem 1rem; border-radius: 999px; text-decoration: none;
-  background: var(--ink, #1f2024); color: #fff; font-size: 0.86rem; font-weight: 700;
+  background: var(--ink, #1f2024); color: var(--bg, #fff); font-size: 0.86rem; font-weight: 700;
 }
 .vms-btn:active { transform: translateY(1px); }
 
