@@ -835,7 +835,8 @@
         salvar_cardapio_lido: function (a) {
           var cats = a.categorias || [];
           var total = cats.reduce(function (n, c) { return n + (c.itens || []).length; }, 0);
-          if (!total) return 'Não tenho nada lido pra salvar.';
+          var promos = a.promocoes || [];
+          if (!total && !promos.length) return 'Não tenho nada lido pra salvar.';
           var rpc = function (nome, params) {
             return db.rpc(nome, params).then(function (r) { if (r.error) throw r.error; return r.data; });
           };
@@ -844,6 +845,7 @@
           var pizza = function (nomeCat) {
             return segmento === 'pizzaria' && !/bebida|refri|suco|cerveja|[aá]gua|vinho|drink|sorvete|energ[eé]tico/i.test(String(nomeCat || ''));
           };
+          var promosFeitas = 0;
           return Promise.all([
             rpc('delivery_admin_listar_categorias', { p_estabelecimento_id: estabId }),
             rpc('delivery_admin_listar_itens', { p_estabelecimento_id: estabId })
@@ -871,14 +873,36 @@
                   }, Promise.resolve());
                 });
               });
-            }, Promise.resolve()).then(function () { return feitos; }, function (e) {
+            }, Promise.resolve()).then(function () {
+              // promoções viram combos: o cliente escolhe os sabores entre as pizzas do cardápio
+              if (!promos.length) return feitos;
+              return rpc('delivery_admin_listar_itens', { p_estabelecimento_id: estabId }).then(function (todos) {
+                todos = todos || [];
+                var pizzas = todos.filter(function (x) { return x.permite_meio_a_meio; });
+                var ids = (pizzas.length ? pizzas : todos).map(function (x) { return x.id; });
+                if (!ids.length) return feitos;
+                return rpc('delivery_admin_listar_combos', { p_estabelecimento_id: estabId }).then(function (ja) {
+                  var ordem = (ja || []).length;
+                  return promos.reduce(function (f, pr, k) {
+                    return f.then(function () {
+                      return rpc('delivery_admin_salvar_combo', {
+                        p_id: null, p_estabelecimento_id: estabId, p_nome: String(pr.nome).slice(0, 80),
+                        p_preco: Number(pr.preco) || 0, p_itens_permitidos: ids,
+                        p_qtd_sabores: Math.max(1, Math.min(6, Number(pr.qtd_sabores) || 1)), p_ativo: true, p_ordem: ordem + k
+                      }).then(function () { promosFeitas++; });
+                    });
+                  }, Promise.resolve()).then(function () { return feitos; });
+                });
+              });
+            }).then(function () { return feitos; }, function (e) {
               throw new Error('Parei em ' + feitos + ' de ' + total + ' itens: ' + (e && e.message ? e.message : 'erro ao salvar') + '. O que já entrou está no cardápio.');
             });
           }).then(function (feitos) {
             // quadro novo = dados novos e um painel que com certeza responde
             prepararPedidos(estabId, 'cardapio');
             mostrarAbaDashboard('pedidos', 'cardapio');
-            return 'Pronto! Pus ' + feitos + (feitos === 1 ? ' item' : ' itens') + ' no cardápio. Abri o Cardápio pra você ver — é só tocar num item pra mexer no preço.';
+            var extra = promosFeitas ? (feitos ? ' e ' : '') + promosFeitas + (promosFeitas === 1 ? ' promoção' : ' promoções') : '';
+            return 'Pronto! Pus ' + (feitos || !promosFeitas ? feitos + (feitos === 1 ? ' item' : ' itens') : '') + extra + ' no cardápio. Abri o Cardápio pra você ver — é só tocar num item pra mexer no preço.';
           }, function (e) { return (e && e.message) || 'Não consegui salvar o cardápio agora.'; });
         },
         lancar_venda: function (a) {

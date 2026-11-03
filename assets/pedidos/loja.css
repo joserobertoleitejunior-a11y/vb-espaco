@@ -401,8 +401,8 @@ html[data-area="delivery"] #tplServiceStrip { display: none !important; }
 /* a foto da tela de personalizar é uma faixa: sem isso ela tomava mais da metade da
    tela e as opções ficavam abaixo — e quem pede com preguiça não vai rolar */
 html[data-area="delivery"] .loja-ui .sheet-foto { height: 10.5rem; width: 100%; object-fit: cover; border-radius: var(--radius); }
-.loja-ui .dl-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-.loja-ui .dl-slot { display: flex; flex-direction: column; gap: 0.15rem; min-height: 4.6rem; padding: 0.75rem 0.85rem; text-align: left; color: inherit; border-radius: var(--radius); border: 1.5px dashed var(--line); background: transparent; transition: border-color 0.2s, background 0.2s; }
+.loja-ui .dl-slots { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
+.loja-ui .dl-slot { display: flex; flex-direction: column; gap: 0.15rem; min-height: 3.6rem; padding: 0.75rem 0.85rem; text-align: left; color: inherit; border-radius: var(--radius); border: 1.5px dashed var(--line); background: transparent; transition: border-color 0.2s, background 0.2s; }
 .loja-ui .dl-slot.cheio { border-style: solid; background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .loja-ui .dl-slot.ativo { border-color: var(--accent); border-style: solid; }
 .loja-ui .dl-slot-rot { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }

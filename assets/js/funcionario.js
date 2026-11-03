@@ -229,7 +229,7 @@
      Quem lê é a função 'ler-cardapio' (a mesma do painel); o que ela devolve
      NUNCA entra no site sozinho: o funcionário mostra o que leu e espera o
      dono mandar salvar — ou abrir a lista pra corrigir antes. */
-  var lido = null;
+  var lido = null, lidoPromos = [];
 
   /* A foto sai do celular já menor: 1600px no lado maior, em JPEG. Foto de
      câmera de celular passa fácil de 4 MB, e em base64 ainda cresce um terço
@@ -342,11 +342,14 @@
 
   function mostrarLido(dados, servico) {
     var cats = dados.categorias || [];
+    var promos = servico ? [] : (dados.promocoes || []);
+    lidoPromos = promos;
     var total = cats.reduce(function (n, c) { return n + (c.itens || []).length; }, 0);
-    if (!total) { dizer('ele', dados.aviso || 'Não achei nenhum item nessa foto. Tente com mais luz, mais perto ou sem cortar as bordas.'); return; }
+    if (!total && !promos.length) { dizer('ele', dados.aviso || 'Não achei nenhum item nessa foto. Tente com mais luz, mais perto ou sem cortar as bordas.'); return; }
     lido = cats;
     var o = servico ? 'serviço' : 'item';
-    var aviso = dizer('ele', 'Li ' + total + (total === 1 ? ' ' + o : ' ' + (servico ? 'serviços' : 'itens')) + ' em ' + cats.length + (cats.length === 1 ? ' categoria' : ' categorias') +
+    var textoPromo = promos.length ? (promos.length === 1 ? 'Achei 1 promoção' : 'Achei ' + promos.length + ' promoções') : '';
+    var aviso = dizer('ele', (total ? 'Li ' + total + (total === 1 ? ' ' + o : ' ' + (servico ? 'serviços' : 'itens')) + ' em ' + cats.length + (cats.length === 1 ? ' categoria' : ' categorias') + (textoPromo ? ' e ' + textoPromo.toLowerCase() : '') : textoPromo) +
       '. Deixe ligado o que entra no ' + (servico ? 'catálogo' : 'cardápio') + ' — e toque no nome ou no preço pra corrigir.');
 
     var i = 0;
@@ -366,6 +369,19 @@
         '<header><label class="fn-tg fn-tg-cat" aria-label="Ligar ou desligar toda a categoria ' + esc(cat.nome) + '"><input type="checkbox" checked data-fn-cat><i></i></label>' +
         '<h4>' + esc(cat.nome) + '</h4><small data-fn-cat-conta>' + (cat.itens || []).length + '</small></header>' + linhas + '</section>';
     }).join('');
+
+    if (promos.length) {
+      corpo += '<section class="fn-pz-cat fn-pz-promos" data-cat="promo"><header><label class="fn-tg fn-tg-cat" aria-label="Ligar ou desligar todas as promoções"><input type="checkbox" checked data-fn-cat><i></i></label>' +
+        '<h4>Promoções</h4><small data-fn-cat-conta>' + promos.length + '</small></header>' +
+        promos.map(function (pr, pi) {
+          var q = Number(pr.qtd_sabores) || 1;
+          return '<div class="fn-pz fn-pr" data-pi="' + pi + '" style="--d:' + Math.min(i++, 14) * 38 + 'ms">' +
+            '<label class="fn-tg" aria-label="Usar ' + esc(pr.nome) + '"><input type="checkbox" checked><i></i></label>' +
+            '<div class="fn-pz-meio"><input class="fn-pz-nome" type="text" value="' + esc(pr.nome) + '" maxlength="80" aria-label="Nome da promoção">' +
+            '<span class="fn-pz-desc">' + (q > 1 ? 'cliente escolhe ' + q + ' sabores' : 'combo') + (pr.descricao ? ' · ' + esc(pr.descricao) : '') + '</span></div>' +
+            '<span class="fn-pz-moeda"><em>R$</em><input class="fn-pz-preco' + (Number(pr.preco) ? '' : ' vazio') + '" type="text" inputmode="decimal" value="' + brl(pr.preco) + '" placeholder="preço" aria-label="Preço da promoção"></span></div>';
+        }).join('') + '</section>';
+    }
 
     var c = document.getElementById('fnConversa');
     if (!c) return;
@@ -421,11 +437,20 @@
       });
       if (itens.length) saida.push({ nome: cat.nome, itens: itens });
     });
-    var n = saida.reduce(function (t, c) { return t + c.itens.length; }, 0);
+    var promocoes = [];
+    cartao.querySelectorAll('.fn-pr').forEach(function (l) {
+      if (!l.querySelector('.fn-tg input').checked) return;
+      var nome = l.querySelector('.fn-pz-nome').value.trim();
+      if (!nome) return;
+      var original = (lidoPromos || [])[Number(l.getAttribute('data-pi'))] || {};
+      promocoes.push({ nome: nome, descricao: original.descricao || '', qtd_sabores: original.qtd_sabores || 1,
+        preco: parseFloat(l.querySelector('.fn-pz-preco').value.replace(/\./g, '').replace(',', '.')) || 0 });
+    });
+    var n = saida.reduce(function (t, c) { return t + c.itens.length; }, 0) + promocoes.length;
     if (!n) { dizer('ele', 'Não tem nada ligado, então não tenho o que pôr.'); return; }
     cartao.remove();
     dizer('eu', 'Pôr ' + n + (n === 1 ? ' item' : ' itens') + ' no site');
-    executar('salvar_cardapio_lido', { categorias: saida }, true);
+    executar('salvar_cardapio_lido', { categorias: saida, promocoes: promocoes }, true);
   }
 
   /* ---------- microfone (do próprio navegador, sem mandar áudio pra lugar nenhum) ---------- */

@@ -4,7 +4,7 @@
 // (secret GEMINI_API_KEY), nunca no navegador.
 //
 // POST { imagem: "data:image/jpeg;base64,...", tipo?: "cardapio" | "servicos" }
-//   → { categorias: [{ nome, itens: [{ nome, descricao, preco }] }], aviso? }
+//   → { categorias: [{ nome, itens: [{ nome, descricao, preco }] }], promocoes: [{ nome, descricao, preco, qtd_sabores }], aviso? }
 //
 // Só pra dono logado: o Authorization do Supabase precisa valer.
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -62,13 +62,15 @@ function instrucao(tipo: string) {
 
 Regras:
 - Responda SÓ o JSON, sem texto em volta e sem blocos de código.
-- Formato: {"categorias":[{"nome":"...","itens":[{"nome":"...","descricao":"...","preco":0}]}]}
+- Formato: {"categorias":[{"nome":"...","itens":[{"nome":"...","descricao":"...","preco":0}]}],"promocoes":[{"nome":"...","descricao":"...","preco":0,"qtd_sabores":2}]}
+- "promocoes" são ofertas e combos (ex.: "2 pizzas grandes por R$ 79,90", "Terça: pizza + refri"). "preco" é o preço fechado da promoção; "qtd_sabores" é quantas pizzas/sabores o cliente escolhe (1 se não for de sabores). Coloque aí só o que é promoção, nunca repita no cardápio normal. Se não houver, use [].
+- Foto que é SÓ uma promoção: devolva "categorias":[] e a promoção em "promocoes".
 - "preco" é número em reais (ex.: 42.90). Se o preço não estiver legível, use 0.
 - "descricao" é curta (até 90 caracteres); se não houver, use "".
 - Use as categorias que aparecem na foto. Se não houver nenhuma, use uma só, chamada "Cardápio".
 - Copie os nomes como estão escritos, só arrumando MAIÚSCULAS para a forma normal.
 - Não invente item nenhum: só o que dá pra ler na foto.
-- Se a foto não for um ${tipo === "servicos" ? "catálogo" : "cardápio"}, devolva {"categorias":[]}.`;
+- Se a foto não for um ${tipo === "servicos" ? "catálogo" : "cardápio"} nem tiver promoção, devolva {"categorias":[],"promocoes":[]}.`;
 }
 
 Deno.serve(async (req) => {
@@ -123,7 +125,7 @@ Deno.serve(async (req) => {
     return erro("Não consegui falar com o leitor de fotos agora.", 502);
   }
 
-  let lido: { categorias?: { nome?: string; itens?: { nome?: string; descricao?: string; preco?: unknown }[] }[] };
+  let lido: { categorias?: { nome?: string; itens?: { nome?: string; descricao?: string; preco?: unknown }[] }[]; promocoes?: { nome?: string; descricao?: string; preco?: unknown; qtd_sabores?: unknown }[] };
   try { lido = JSON.parse(resposta.texto.replace(/^```(?:json)?|```$/g, "").trim()); } catch {
     console.error("ler-cardapio: a IA não devolveu JSON", resposta.texto.slice(0, 200));
     return erro("Não consegui ler essa foto. Tente uma mais nítida.");
@@ -142,9 +144,21 @@ Deno.serve(async (req) => {
     }).filter((i) => i.nome),
   })).filter((c) => c.itens.length);
 
+  const promocoes = (lido.promocoes || []).slice(0, 12).map((x) => {
+    const preco = Number(String(x.preco ?? 0).replace(",", "."));
+    const q = Math.round(Number(x.qtd_sabores));
+    return {
+      nome: String(x.nome || "").trim().slice(0, 80),
+      descricao: String(x.descricao || "").trim().slice(0, 140),
+      preco: Number.isFinite(preco) && preco > 0 && preco < 100000 ? Math.round(preco * 100) / 100 : 0,
+      qtd_sabores: Number.isFinite(q) && q >= 1 && q <= 6 ? q : 1,
+    };
+  }).filter((x) => x.nome);
+
   const total = categorias.reduce((t, c) => t + c.itens.length, 0);
   return resp({
     categorias,
-    aviso: total ? "Confira os preços antes de salvar — a leitura da foto pode errar." : "Não achei nenhum item nessa foto. Tente com mais luz, mais perto ou sem cortar as bordas.",
+    promocoes,
+    aviso: total + promocoes.length ? "Confira os preços antes de salvar — a leitura da foto pode errar." : "Não achei nenhum item nessa foto. Tente com mais luz, mais perto ou sem cortar as bordas.",
   });
 });

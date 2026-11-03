@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
   await p.waitForTimeout(1800);
   await p.evaluate(() => {
     window.__chamadas = []; window.__proxima = null;
-    window.__lido = { categorias: [{ nome: 'Marmitas', itens: [
+    window.__lido = { promocoes: [{ nome: 'Combo 2 pizzas grandes', descricao: '', preco: 79.9, qtd_sabores: 2 }], categorias: [{ nome: 'Marmitas', itens: [
       { nome: 'Marmita P', descricao: '', preco: 18 }, { nome: 'Marmita G', descricao: '', preco: 24 }] }], aviso: 'confira' };
     window.db = window.db || {};
     window.db.functions = { invoke: (fn) => Promise.resolve(
@@ -56,9 +56,10 @@ const { chromium } = require('playwright');
   checa('o feixe de leitura sai ao terminar', !(await p.evaluate(() => document.querySelector('.fn-foto').classList.contains('lendo'))));
   const fala = await ultima();
   checa('a IA diz o que leu', /Li 2 itens/.test(fala), fala.slice(0, 40));
-  checa('cada item vira uma linha com interruptor', (await p.$$('.fn-pz .fn-tg input')).length === 2);
+  checa('cada item vira uma linha com interruptor', (await p.$$('.fn-pz .fn-tg input')).length === 3);
+  checa('a promocao aparece numa secao propria', (await p.$$('.fn-pr')).length === 1);
   const txtBotao = await p.textContent('[data-fn-cardapio-txt]');
-  checa('o botao diz quantos entram', /Pôr 2 itens/.test(txtBotao), txtBotao);
+  checa('o botao diz quantos entram', /Pôr 3 itens/.test(txtBotao), txtBotao);
 
   // 4. salvar do jeito que esta: tudo ligado manda tudo
   await p.click('[data-fn-cardapio-salvar]');
@@ -67,6 +68,7 @@ const { chromium } = require('playwright');
   checa('salvar tudo manda os 2 itens',
     !!(c && c.nome === 'salvar_cardapio_lido' && c.args.categorias[0].itens.length === 2),
     c ? c.nome + ' com ' + c.args.categorias[0].itens.length + ' itens' : 'nada');
+  checa('a promocao vai junto, com preco e sabores', !!(c && c.args.promocoes && c.args.promocoes[0].preco === 79.9 && c.args.promocoes[0].qtd_sabores === 2), JSON.stringify(c && c.args.promocoes));
   checa('o cartao some depois de salvar', (await p.$$('.fn-cardapio')).length === 0);
 
   // 5. desliga um item, corrige preco e nome: so o que ficou ligado vai, ja corrigido
@@ -74,7 +76,7 @@ const { chromium } = require('playwright');
   await mandarFoto('c.png');
   await p.click('.fn-pz[data-ii="1"] .fn-tg');
   const t1 = await p.textContent('[data-fn-cardapio-txt]');
-  checa('desligar um item atualiza o botao', /Pôr 1 item/.test(t1), t1);
+  checa('desligar um item atualiza o botao', /Pôr 2 itens/.test(t1), t1);
   checa('o item desligado fica apagado', await p.evaluate(() => document.querySelector('.fn-pz[data-ii="1"]').classList.contains('fn-pz-off')));
   await p.fill('.fn-pz[data-ii="0"] .fn-pz-preco', '19,90');
   await p.fill('.fn-pz[data-ii="0"] .fn-pz-nome', 'Marmita Pequena');
@@ -90,8 +92,10 @@ const { chromium } = require('playwright');
   await mandarFoto('c2.png');
   await p.click('.fn-pz-cat[data-cat="0"] .fn-tg-cat');
   checa('categoria desligada apaga todos os itens', (await p.$$('.fn-pz-off')).length === 2);
+  await p.click('.fn-pz-cat[data-cat="promo"] .fn-tg-cat');
   checa('sem nada ligado o botao fica travado', await p.evaluate(() => document.querySelector('[data-fn-cardapio-salvar]').disabled));
   await p.click('.fn-pz-cat[data-cat="0"] .fn-tg-cat');
+  await p.click('.fn-pz-cat[data-cat="promo"] .fn-tg-cat');
   checa('ligar a categoria de novo religa todos', (await p.$$('.fn-pz-off')).length === 0);
 
   // 5c. "Agora nao" nao salva nada
