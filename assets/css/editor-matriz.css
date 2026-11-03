@@ -374,3 +374,14 @@ html.vbfc-travado, html.vbfc-travado body { overflow: hidden; }
 .ia-cta { display: inline-block; margin-top: 0.7rem; font-style: normal; font-size: 0.86rem; font-weight: 800; color: #fff; }
 @media (prefers-reduced-motion: reduce) { .vbs-foto.ia::before { animation: none; } .vbs-foto.ia::after { display: none; } }
 .ia-selo svg { flex: 0 0 auto; fill: #fff; color: #fff; }
+
+/* passo da chave Pix: o aviso do que é, e a conferência do tipo da chave */
+.vb-ed-pix-aviso {
+  margin-bottom: 0.9rem; padding: 0.85rem 0.95rem; border-radius: 14px;
+  background: rgba(31, 32, 36, 0.05); border: 1px solid var(--vbe-borda, #e6e6ea);
+}
+.vb-ed-pix-aviso strong { display: block; font-size: 0.95rem; }
+.vb-ed-pix-aviso span { display: block; margin-top: 0.3rem; font-size: 0.85rem; line-height: 1.5; color: var(--vbe-suave, #6b6d75); }
+.vb-ed-pix-tipo { margin: 0.45rem 0 0; min-height: 1.2em; font-size: 0.82rem; line-height: 1.45; }
+.vb-ed-pix-tipo.bom { color: #1d5b2c; }
+.vb-ed-pix-tipo.ruim { color: #9b2d20; }

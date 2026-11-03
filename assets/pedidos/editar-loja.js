@@ -303,22 +303,41 @@
     $('vbEdTMax').addEventListener('change', function () { salvarLoja({ tempo_entrega_max: this.value }); });
   }
 
+  /* Pagamento: o app é 100% Pix. Nada de escolher forma — o que o dono
+     precisa fazer aqui é só uma coisa: dizer a chave. Abaixo do campo a gente
+     mostra o que entendeu da chave (CPF, celular, e-mail…) pra ele conferir na
+     hora, e o código de teste pra ele pagar um centavo pra si mesmo se quiser. */
   function passoPagamento(caixa) {
-    var e = estab(), formas = e.formas_pagamento || [];
+    var e = estab();
     caixa.innerHTML =
-      interruptor('vbEdPgPix', 'Pix', formas.indexOf('pix') > -1) +
-      interruptor('vbEdPgCartao', 'Cartão na entrega/retirada', formas.indexOf('cartao') > -1) +
-      interruptor('vbEdPgDinheiro', 'Dinheiro', formas.indexOf('dinheiro') > -1) +
-      campo('vbEdPix', 'Chave Pix (aparece pro cliente copiar)', e.chave_pix, 'text', ' maxlength="120"');
-    function salvarFormas() {
-      var f = [];
-      if ($('vbEdPgPix').checked) f.push('pix');
-      if ($('vbEdPgCartao').checked) f.push('cartao');
-      if ($('vbEdPgDinheiro').checked) f.push('dinheiro');
-      salvarLoja({ formas_pagamento: f });
+      '<div class="vb-ed-pix-aviso">' +
+        '<strong>O cliente paga por Pix, dentro do site.</strong>' +
+        '<span>Ele vê o QR Code com o valor certo e o dinheiro cai direto na sua conta. ' +
+        'Sem taxa, sem intermediário — a Matriz não toca no seu dinheiro.</span>' +
+      '</div>' +
+      campo('vbEdPix', 'Sua chave Pix', e.chave_pix, 'text', ' maxlength="120" placeholder="CPF, CNPJ, celular, e-mail ou chave aleatória"') +
+      '<p class="vb-ed-pix-tipo" id="vbEdPixTipo" aria-live="polite"></p>';
+
+    var inp = $('vbEdPix');
+    function conferir() {
+      var alvo = $('vbEdPixTipo');
+      var v = (inp.value || '').trim();
+      if (!v) { alvo.textContent = ''; alvo.className = 'vb-ed-pix-tipo'; return; }
+      var tipo = window.VBPix && window.VBPix.tipoDaChave(v);
+      if (!tipo) {
+        alvo.textContent = 'Não reconheci essa chave. Confira: CPF, CNPJ, celular com DDD, e-mail ou a chave aleatória do banco.';
+        alvo.className = 'vb-ed-pix-tipo ruim';
+        return;
+      }
+      alvo.textContent = 'Entendi: ' + (window.VBPix.NOME_TIPO[tipo] || tipo) + '. Se não for isso, corrija a chave.';
+      alvo.className = 'vb-ed-pix-tipo bom';
     }
-    ['vbEdPgPix', 'vbEdPgCartao', 'vbEdPgDinheiro'].forEach(function (id) { $(id).addEventListener('change', salvarFormas); });
-    $('vbEdPix').addEventListener('change', function () { salvarLoja({ chave_pix: this.value }); });
+    inp.addEventListener('input', conferir);
+    inp.addEventListener('change', function () {
+      // o app só aceita Pix: a forma de pagamento é sempre essa
+      salvarLoja({ chave_pix: this.value.trim(), formas_pagamento: ['pix'] });
+    });
+    conferir();
   }
 
   function passoHorario(caixa) {
@@ -372,7 +391,7 @@
       { id: 'itens', capitulo: 'oferta', obrigatorio: true, aviso: 'Cadastre pelo menos um item — sem isso o cliente não tem o que pedir.', titulo: S ? 'Serviços e preços' : 'Cardápio', pergunta: S ? 'Que serviços você faz?' : 'O que tem no cardápio?', ajuda: S ? 'Com preço — ou "a combinar" pra quem prefere orçar.' : 'Pelo menos um item pra começar a receber pedidos.', completo: function () { var c = api.cardapio(); return !!(c && c.itens && c.itens.length); }, render: passoItens },
       { id: 'galeria', capitulo: 'oferta', obrigatorio: false, titulo: 'Galeria de fotos', pergunta: 'Mostre o seu trabalho', ajuda: 'Fotos de verdade passam confiança. Aparecem nos dois sites (Agendar e ' + (S ? 'Chamar' : 'Pedir') + ').', completo: function () { return galeriaQtd > 0; }, render: passoGaleria },
       { id: 'atendimento', capitulo: 'funciona', obrigatorio: true, aviso: 'Diga como o cliente recebe pra continuar.', titulo: S ? 'Atendimento' : 'Entrega e retirada', pergunta: S ? (U2 ? 'Como você chega até o cliente?' : 'Onde você atende?') : 'Como o pedido chega no cliente?', ajuda: S ? 'Onde você atende, taxa e prazo.' : 'Entrega, retirada, taxa e tempo.', completo: function () { return !!(e().aceita_entrega || e().aceita_retirada); }, render: passoAtendimento },
-      { id: 'pagamento', capitulo: 'funciona', obrigatorio: true, aviso: 'Marque pelo menos uma forma de pagamento.', titulo: 'Pagamento', pergunta: 'Como o cliente pode pagar?', completo: function () { return !!(e().formas_pagamento && e().formas_pagamento.length); }, render: passoPagamento },
+      { id: 'pagamento', capitulo: 'funciona', obrigatorio: true, aviso: 'Escreva a sua chave Pix — é por ela que o cliente te paga.', titulo: 'Chave Pix', pergunta: 'Pra onde vai o seu dinheiro?', ajuda: 'O cliente paga por Pix dentro do site e cai direto na sua conta.', completo: function () { return !!(e().chave_pix || '').trim(); }, render: passoPagamento },
       { id: 'horario', capitulo: 'funciona', obrigatorio: true, aviso: 'Marque os dias e horários pra continuar.', titulo: 'Horário', pergunta: 'Que dias e horários você atende?', ajuda: 'Fora do horário o site mostra "Fechado".', completo: function () { var h = e().horarios; return !!(h && Object.keys(h).length); }, render: passoHorario },
       { id: 'endereco', capitulo: 'achar', obrigatorio: true, aviso: 'Escreva o endereço pra continuar.', titulo: 'Endereço e Instagram', pergunta: 'Onde te acham?', ajuda: 'Endereço e Instagram aparecem no site.', completo: function () { return !!(e().endereco || '').trim(); }, render: passoEndereco }
     ];

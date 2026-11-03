@@ -363,7 +363,7 @@
       return '<div class="fato"><span>' + f[0] + '</span><strong>' + esc(f[1]) + '</strong></div>';
     }).join('');
     montarToggleAreas();
-    if (!Object.keys(estab.horarios || {}).length && !estab.endereco && !(estab.formas_pagamento || []).length) $('heroMais').textContent = 'Sobre a loja';
+    if (!Object.keys(estab.horarios || {}).length && !estab.endereco && !formasAtivas().length) $('heroMais').textContent = 'Sobre a loja';
 
     if (estab.aviso) {
       $('promoBanner').textContent = estab.aviso;
@@ -516,6 +516,7 @@
         '<ul class="itens-redondos">' + g.lista.map(function (i) { return renderItemCard(i); }).join('') + '</ul></section>';
     }).join('');
     $('cardapioConteudo').innerHTML = html;
+    desenharPix($('cardapioConteudo'));
 
     marcarItensNoCarrinho();
   }
@@ -544,6 +545,7 @@
   function abrirSheet(nome, html) {
     $('sheetConteudo').innerHTML = html;
     sheetNome = nome;
+    desenharPix($('sheetConteudo')); // o QR do Pix só existe depois do HTML entrar
     var corpo = $('sheetConteudo').querySelector('.sheet-corpo');
     if (corpo) corpo.scrollTop = 0;
     if (!sheetAberto) {
@@ -771,6 +773,56 @@
   }
 
   function subtotal() { return carrinho.reduce(function (s, l) { return s + l.preco * l.qtd; }, 0); }
+
+  /* O app é 100% Pix. Loja cadastrada antes disso ainda tem 'cartao' e
+     'dinheiro' salvos no banco — esta função é a única porta por onde as
+     formas passam, então o que está velho no banco não vira opção na tela. */
+  function formasAtivas() {
+    var guardadas = estab.formas_pagamento || [];
+    return guardadas.indexOf('pix') > -1 || estab.chave_pix ? ['pix'] : [];
+  }
+
+  /* Pix dentro do app: o QR Code e o "copia e cola" são montados aqui mesmo
+     (VBPix, padrão BR Code do Banco Central), já com o valor do pedido. Não
+     passa por gateway nenhum: o dinheiro cai direto na conta da loja. Por
+     isso quem confirma que caiu é o dono, no painel. */
+  function codigoPix(valor) {
+    if (!window.VBPix || !estab.chave_pix) return '';
+    return window.VBPix.codigo({
+      chave: estab.chave_pix, valor: valor,
+      nome: estab.nome, cidade: estab.cidade, txid: null
+    });
+  }
+  function blocoPix(valor) {
+    if (!estab.chave_pix) {
+      return '<div class="pix-box pix-sem"><strong>A loja ainda não cadastrou a chave Pix.</strong>' +
+        '<span>Combine o pagamento direto com ela depois de fazer o pedido.</span></div>';
+    }
+    var cod = codigoPix(valor);
+    if (!cod) {
+      return '<div class="pix-box"><strong>Chave Pix da loja</strong><code id="pixChave">' + esc(estab.chave_pix) + '</code>' +
+        '<button type="button" class="link-acao" data-copiar-pix>Copiar chave</button></div>';
+    }
+    return '<div class="pix-box pix-qr">' +
+      '<p class="pix-topo"><strong>Pague ' + U.preco(valor) + ' no Pix</strong>' +
+        '<span>Abra o app do seu banco, aponte a câmera no código ou use o "Pix copia e cola".</span></p>' +
+      '<div class="pix-area">' +
+        '<div class="pix-img" data-pix-qr data-pix-cod="' + esc(cod) + '"></div>' +
+        '<div class="pix-lado">' +
+          '<button type="button" class="pix-btn" data-copiar-pix-cod="' + esc(cod) + '">Copiar código Pix</button>' +
+          '<p class="pix-para">Vai direto pra <strong>' + esc(estab.nome || 'a loja') + '</strong>, sem taxa nenhuma.</p>' +
+        '</div>' +
+      '</div>' +
+      '<p class="pix-aviso">Depois de pagar, é só enviar o pedido. A loja confere o comprovante e confirma.</p>' +
+      '</div>';
+  }
+  // desenha os QR que entraram na tela agora (o render monta o HTML antes)
+  function desenharPix(raiz) {
+    if (!window.VBPix) return;
+    (raiz || document).querySelectorAll('[data-pix-qr]:not([data-pronto]):not([data-erro])').forEach(function (cx) {
+      window.VBPix.qr(cx, cx.getAttribute('data-pix-cod'), 190);
+    });
+  }
   function qtdTotal() { return carrinho.reduce(function (s, l) { return s + l.qtd; }, 0); }
 
   function renderizarCarrinhoBar() {
@@ -842,7 +894,7 @@
       nome: salvo.nome || '', telefone: salvo.telefone ? U.formatarTelefone(salvo.telefone) : '',
       forma: estab.aceita_entrega ? 'entrega' : 'retirada',
       endereco: salvo.endereco || '', referencia: salvo.referencia || '',
-      pagamento: (estab.formas_pagamento || [])[0] || null, troco: '', obs: '', erro: null, enviando: false,
+      pagamento: formasAtivas()[0] || null, troco: '', obs: '', erro: null, enviando: false,
       gps: null, veiculo: salvo.veiculo || null, modelo: salvo.modelo || '', quando: ''
     };
     if (checkout.forma === 'entrega' && !estab.aceita_entrega) checkout.forma = 'retirada';
@@ -854,7 +906,7 @@
     var c = checkout;
     var sub = subtotal();
     var taxa = c.forma === 'entrega' ? Number(estab.taxa_entrega || 0) : 0;
-    var formas = estab.formas_pagamento || [];
+    var formas = formasAtivas();
 
     var corpo = '';
     if (c.erro) corpo += '<div class="aviso-loja" style="margin:0 0 1rem">' + U.ICONES.info.replace('<svg', '<svg width="20" height="20" style="flex-shrink:0"') + '<div>' + esc(c.erro) + '</div></div>';
@@ -899,9 +951,9 @@
       if (c.pagamento === 'dinheiro') {
         corpo += '<div style="margin-top:.7rem">' + campo('ckTroco', 'Troco para quanto?', '<input id="ckTroco" type="number" inputmode="decimal" min="0" step="0.01" value="' + esc(c.troco) + '" placeholder="Deixe vazio se não precisar">') + '</div>';
       }
-      if (c.pagamento === 'pix' && estab.chave_pix) {
-        corpo += '<div class="pix-box">Chave Pix da loja:<code id="pixChave">' + esc(estab.chave_pix) + '</code>' +
-          '<button type="button" class="link-acao" data-copiar-pix>Copiar chave</button></div>';
+      if (c.pagamento === 'pix') {
+        var totalPix = sub + (c.forma === 'entrega' ? Number(estab.taxa_entrega || 0) : 0);
+        corpo += blocoPix(totalPix);
       }
       corpo += '</div>';
     }
@@ -1272,7 +1324,7 @@
 
   function passosGuia() {
     var p = ['itens', 'onde', 'dados'];
-    if ((estab.formas_pagamento || []).length) p.push('pagamento');
+    if (formasAtivas().length) p.push('pagamento');
     p.push('confirmar');
     return p;
   }
@@ -1288,7 +1340,7 @@
       nome: salvo.nome || '', telefone: salvo.telefone ? U.formatarTelefone(salvo.telefone) : '',
       forma: estab.aceita_entrega ? 'entrega' : 'retirada',
       endereco: salvo.endereco || '', referencia: salvo.referencia || '',
-      pagamento: (estab.formas_pagamento || [])[0] || null, troco: '', obs: '', erro: null, enviando: false,
+      pagamento: formasAtivas()[0] || null, troco: '', obs: '', erro: null, enviando: false,
       gps: null, veiculo: salvo.veiculo || null, modelo: salvo.modelo || '', quando: ''
     };
     if (checkout.forma === 'entrega' && !estab.aceita_entrega) checkout.forma = 'retirada';
@@ -1373,11 +1425,11 @@
         '<p class="nota-privacidade">Seus dados vão só pra ' + esc(estab.nome) + ', pra fazer o seu pedido. <a href="/privacidade.html" target="_blank" rel="noopener">Privacidade</a></p>';
     }
     if (passo === 'pagamento') {
-      html += '<div class="opcoes">' + (estab.formas_pagamento || []).map(function (f) {
+      html += '<div class="opcoes">' + formasAtivas().map(function (f) {
         return '<button type="button" class="opcao' + (c.pagamento === f ? ' ativo' : '') + '" data-gpag="' + f + '"><span class="marca">' + U.ICONES.check + '</span><span class="opcao-nome">' + esc(U.PAGAMENTOS[f] || f) + '</span></button>';
       }).join('') + '</div>';
       if (c.pagamento === 'dinheiro') html += '<div style="margin-top:.7rem">' + campo('ckTroco', 'Troco para quanto?', '<input id="ckTroco" type="number" inputmode="decimal" min="0" step="0.01" value="' + esc(c.troco) + '" placeholder="Deixe vazio se não precisar">') + '</div>';
-      if (c.pagamento === 'pix' && estab.chave_pix) html += '<div class="pix-box">Chave Pix da loja:<code>' + esc(estab.chave_pix) + '</code><button type="button" class="link-acao" data-gpix>Copiar chave</button></div>';
+      if (c.pagamento === 'pix') html += blocoPix(sub + taxa);
       return html;
     }
     // confirmar
@@ -1488,6 +1540,14 @@
     if (gp) { checkout.pagamento = gp.getAttribute('data-gpag'); renderGuia(); return; }
     var gv = e.target.closest('[data-gveic]');
     if (gv) { checkout.veiculo = gv.getAttribute('data-gveic'); renderGuia(); return; }
+    var bCod = e.target.closest('[data-copiar-pix-cod]');
+    if (bCod) {
+      if (navigator.clipboard) navigator.clipboard.writeText(bCod.getAttribute('data-copiar-pix-cod')).then(function () {
+        U.toast('Código Pix copiado — cole no app do banco');
+        bCod.textContent = 'Copiado ✓';
+      });
+      return;
+    }
     if (e.target.closest('[data-gpix]')) { if (navigator.clipboard) navigator.clipboard.writeText(estab.chave_pix).then(function () { U.toast('Chave Pix copiada'); }); return; }
     if (e.target.closest('[data-gps]')) { pegarLocalizacao(); return; }
     if (e.target.closest('#guiaSeguirBtn')) {
@@ -1527,9 +1587,9 @@
           return '<tr class="' + (d === dowHoje ? 'hoje' : '') + '"><td>' + U.DIAS[d] + '</td><td>' + esc(U.descreverHorarioDia(h[String(d)])) + '</td></tr>';
         }).join('') + '</table></div>';
     }
-    if ((estab.formas_pagamento || []).length) {
+    if (formasAtivas().length) {
       corpo += '<div class="grupo"><div class="grupo-titulo">Pagamento</div><p class="sheet-desc">' +
-        estab.formas_pagamento.map(function (f) { return esc(U.PAGAMENTOS[f] || f); }).join(' · ') + '</p></div>';
+        formasAtivas().map(function (f) { return esc(U.PAGAMENTOS[f] || f); }).join(' · ') + '</p></div>';
     }
     var rodape = '<a class="btn whats cheio" href="' + esc(linkWhats('Olá! Vim pelo cardápio digital.')) + '" target="_blank" rel="noopener">' + U.ICONES.whats + 'Falar com a loja</a>';
     if (estab.instagram_url) {

@@ -10,10 +10,10 @@
 <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/assets/css/styles.css?v=101">
-<link rel="stylesheet" href="/assets/pedidos/loja.css?v=2">
-<link rel="stylesheet" href="/assets/pedidos/painel.css?v=18">
+<link rel="stylesheet" href="/assets/pedidos/loja.css?v=3">
+<link rel="stylesheet" href="/assets/pedidos/painel.css?v=19">
 <link rel="stylesheet" href="/assets/css/meu-site.css?v=2">
-<link rel="stylesheet" href="/assets/css/clientes-painel.css?v=5">
+<link rel="stylesheet" href="/assets/css/clientes-painel.css?v=6">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=25">
 <link rel="stylesheet" href="/assets/css/botoes.css?v=3">
 <script src="/assets/js/vibe-toggle.js?v=5"></script>
@@ -212,12 +212,10 @@
 
       <div class="p-secao">
         <div class="p-secao-topo"><h2>Pagamento</h2></div>
-        <div class="switches" id="formasPagamento">
-          <label class="switch"><input type="checkbox" value="pix" data-pagamento><span class="trilho"></span>Pix</label>
-          <label class="switch"><input type="checkbox" value="cartao" data-pagamento><span class="trilho"></span>Cartão na entrega/retirada</label>
-          <label class="switch"><input type="checkbox" value="dinheiro" data-pagamento><span class="trilho"></span>Dinheiro</label>
-        </div>
-        <div class="campo"><label for="lPix">Chave Pix <span style="font-weight:500;color:var(--ink-faint)">(aparece pro cliente copiar)</span></label><input id="lPix" maxlength="120" data-campo-loja="chave_pix"></div>
+        <!-- App 100% Pix: não há forma pra escolher. O dono só diz a chave, e
+             o cliente paga pelo QR Code dentro do site, direto pra conta dele. -->
+        <p class="p-ajuda">O cliente paga por <strong>Pix</strong>, dentro do site: ele vê o QR Code já com o valor certo e o dinheiro cai direto na sua conta. Sem taxa e sem intermediário — a Matriz não toca no seu dinheiro.</p>
+        <div class="campo"><label for="lPix">Sua chave Pix</label><input id="lPix" maxlength="120" data-campo-loja="chave_pix" placeholder="CPF, CNPJ, celular, e-mail ou chave aleatória"><p class="p-pix-tipo" id="lPixTipo" aria-live="polite"></p></div>
       </div>
 
       <div class="p-secao">
@@ -263,19 +261,20 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/js/supabase-client.js?v=1"></script>
 <script src="/assets/js/aviso-gratis.js?v=3"></script>
-<script src="/assets/pedidos/util.js?v=5"></script>
+<script src="/assets/pedidos/util.js?v=6"></script>
+  <script src="/assets/js/pix-brcode.js?v=2"></script>
 <script src="/assets/pedidos/tema.js?v=1"></script>
 <script src="/assets/pedidos/impressora.js?v=1"></script>
 <script src="/assets/js/segmentos.js?v=4"></script>
 <script src="/assets/js/estoque-fotos.js?v=4"></script>
 <script src="/assets/pedidos/demo.js?v=4"></script>
 <script src="/assets/js/perguntas-segmento.js?v=1"></script>
-<script src="/assets/js/meu-site.js?v=3"></script>
+<script src="/assets/js/meu-site.js?v=4"></script>
 <script src="/assets/js/avatar.js?v=1"></script>
 <script src="/assets/js/vb-digita.js?v=3"></script>
 <script src="/assets/js/clientes-painel.js?v=5"></script>
 <script src="/assets/pedidos/itens-sugeridos.js?v=1"></script>
-<script src="/assets/pedidos/painel.js?v=22"></script>
+<script src="/assets/pedidos/painel.js?v=23"></script>
 <script type="module" src="/assets/js/vb-pull-refresh.js?v=6"></script>
 </body>
 </html>
