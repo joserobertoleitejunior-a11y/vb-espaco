@@ -17,22 +17,37 @@ const CORS = {
 const resp = (c: unknown, s = 200) => new Response(JSON.stringify(c), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 const erro = (m: string, s = 400) => resp({ erro: m }, s);
 
-// Congestionamento no Google (503/429) é passageiro: em vez de desistir na
-// primeira, esperamos um pouco e repetimos; se o modelo preferido continuar
-// lotado, tentamos o irmão mais leve. Erro que não é congestionamento (chave
-// errada, pedido inválido) não melhora repetindo, então volta na hora.
-// Os nomes "latest" são apelidos do Google: não quebram quando uma versão
-// do modelo é aposentada.
-// Vários modelos em "corrida": o primeiro começa na hora; se demorar mais de 2,5 s, o segundo
-// entra junto; aos 5 s, o terceiro. Vale a primeira resposta boa. Assim um modelo congestionado
-// no Google não segura o dono (antes: 45 s esperando um 503).
-const MODELOS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest"];
+// Os modelos 2.5 foram aposentados para contas novas (o Google responde 404 e indica os
+// substitutos). Corremos três ao mesmo tempo: o primeiro sai na hora, o segundo aos 2,5 s e o
+// terceiro aos 5 s — vale a primeira resposta boa. Assim um modelo lotado (503) não segura o dono.
+const MODELOS = [
+  Deno.env.get("GEMINI_MODELO") || "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
+  "gemini-flash-latest",
+];
 const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
-async function umModelo(chave: string, modelo: string, corpo: Record<string, unknown>): Promise<string> {
+// Se nada funcionar, deixamos no log a lista de modelos que esta chave realmente pode usar:
+// sem isso, descobrir o nome certo vira adivinhação.
+async function logarModelosDisponiveis(chave: string) {
+  try {
+    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=100", {
+      headers: { "x-goog-api-key": chave },
+      signal: AbortSignal.timeout(8000),
+    });
+    const d = await r.json().catch(() => null);
+    const nomes = (d?.models || [])
+      .filter((m: { supportedGenerationMethods?: string[] }) => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map((m: { name?: string }) => String(m.name || "").replace("models/", ""));
+    console.error("assistente: modelos disponíveis para esta chave:", nomes.join(", ") || "(nenhum)");
+  } catch (e) {
+    console.error("assistente: não consegui listar os modelos:", String(e));
+  }
+}
+
+async function umModelo(chave: string, modelo: string, corpo: Record<string, unknown>, semPensar = true): Promise<string> {
   const gc = { ...(corpo.generationConfig as Record<string, unknown>) };
-  // só o 2.5-flash (sem "lite") aceita desligar o pensamento por aqui; nos outros dava 400
-  if (!/^gemini-2\.5-flash$/.test(modelo)) delete gc.thinkingConfig;
+  if (!semPensar) delete gc.thinkingConfig;
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
@@ -40,7 +55,10 @@ async function umModelo(chave: string, modelo: string, corpo: Record<string, unk
     signal: AbortSignal.timeout(12000),
   });
   if (!r.ok) {
-    console.error("gemini", modelo, r.status, (await r.text().catch(() => "")).slice(0, 200));
+    const txt = (await r.text().catch(() => "")).slice(0, 200);
+    console.error("gemini", modelo, r.status, txt);
+    // o modelo não aceitou desligar o "pensamento": repete uma vez sem essa opção
+    if (r.status === 400 && semPensar && gc.thinkingConfig) return await umModelo(chave, modelo, corpo, false);
     throw { status: r.status };
   }
   const d = await r.json().catch(() => null);
@@ -59,10 +77,16 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
       umModelo(chave, MODELOS[i], corpo as Record<string, unknown>).then(
         (texto) => { if (!acabou) { acabou = true; console.log("assistente: venceu", MODELOS[i]); ok({ texto }); } },
         (e) => {
-          console.error("assistente: falhou", MODELOS[i], e && e.status ? e.status : String(e));
-          ultimo = (e && e.status) || 0; falhas++;
-          lanca(i + 1);                                   // falhou: chama o próximo já
-          if (falhas >= MODELOS.length && !acabou) { acabou = true; ok({ erroStatus: ultimo === 404 ? 503 : ultimo }); }
+          const st = (e && e.status) || 0;
+          console.error("assistente: falhou", MODELOS[i], st || String(e));
+          if (st !== 404) ultimo = st;      // 404 é nome de modelo errado, não congestionamento
+          falhas++;
+          lanca(i + 1);
+          if (falhas >= MODELOS.length && !acabou) {
+            acabou = true;
+            logarModelosDisponiveis(chave);
+            ok({ erroStatus: ultimo || 404 });
+          }
         },
       );
     };
@@ -72,7 +96,6 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
   });
 }
 
-// O que o funcionário pode fazer. O app conhece cada uma destas ações.
 const ACOES = `
 abrir_aba           { aba: "agenda"|"pedidos"|"cardapio"|"caixa"|"clientes"|"ganhos"|"site" }   — leva o dono pra essa tela
 confirmar_agendamento { cliente?: string, id?: string }   — confirma um horário pendente
@@ -201,6 +224,7 @@ Deno.serve(async (req) => {
     const s = resposta.erroStatus;
     // dizemos a verdade: a fila é do Google, não é defeito do app nem do dono
     if (s === 429 || s === 503) return erro("A IA está congestionada neste momento. Espere uns segundos e peça de novo.", 503);
+    if (s === 404) return erro("O funcionário precisa de um ajuste técnico (o modelo de IA mudou de nome). Avise o suporte.", 503);
     if (s === 400 || s === 401 || s === 403) return erro("O funcionário não está ligado direito neste app.", 503);
     return erro("Não consegui falar com o funcionário agora.", 502);
   }

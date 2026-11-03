@@ -23,7 +23,9 @@ const erro = (msg: string, status = 400) => resp({ erro: msg }, status);
 // leve. Erro que não é congestionamento não melhora repetindo, então volta
 // na hora. Os nomes "latest" são apelidos do Google e não quebram quando
 // uma versão do modelo é aposentada.
-const MODELOS = [Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest", "gemini-flash-lite-latest"];
+// Ler foto é trabalho pesado: aqui vamos em fila mesmo (um por vez), mas com
+// limite de tempo, pra um modelo lotado não deixar o dono esperando à toa.
+const MODELOS = [Deno.env.get("GEMINI_MODELO") || "gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"];
 const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 const LIMITE_BYTES = 6 * 1024 * 1024; // ~6 MB de imagem já é foto grande demais
 
@@ -37,11 +39,12 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
           body: JSON.stringify(corpo),
+          signal: AbortSignal.timeout(50000), // ler foto demora, mas não pode ser pra sempre
         });
       } catch (e) {
         console.error("fetch gemini falhou", modelo, String(e));
         status = 0;
-        continue;
+        break; // estourou o tempo: vai pro próximo modelo
       }
       if (r.ok) {
         const d = await r.json().catch(() => null);
@@ -54,7 +57,9 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
         delete (corpo as { generationConfig: { thinkingConfig?: unknown } }).generationConfig.thinkingConfig;
         n--; continue;
       }
+      if (status === 404) break;   // modelo aposentado: tenta o próximo nome, não insiste neste
       if (status !== 429 && status !== 503 && status < 500) return { erroStatus: status };
+      if (status === 503 || status === 429) break; // lotado: troca de modelo na hora
       await espera(400 * (n + 1));
     }
   }
