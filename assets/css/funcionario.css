@@ -210,3 +210,127 @@ html.fn-travado, html.fn-travado body { overflow: hidden; }
 }
 
 .fn-atalhos, .fn-barra { flex: 0 0 auto; }
+
+/* =====================================================================
+   TERMINAL — o chat vira um console (à la Counter-Strike), no nosso estilo:
+   preto, dourado e branco, com boiserie nas laterais e nos filetes.
+   ===================================================================== */
+.fn-folha.fn-term {
+  --ouro: #C9A227; --ouro-suave: rgba(201, 162, 39, 0.32); --verde: #7dffa0; --tinta: #e9eaee; --mudo: rgba(233, 234, 238, 0.55);
+  position: absolute; inset: 0; width: auto; max-width: none; height: auto; max-height: none; margin: 0; border-radius: 0; border: 0;
+  display: flex; flex-direction: row; overflow: hidden; background: #060708; color: var(--tinta);
+  font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; box-shadow: none;
+}
+.fn-term .fn-miolo { position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; max-width: 920px; margin: 0 auto; background: linear-gradient(180deg, #08090a, #060708); box-shadow: 0 0 0 1px var(--ouro-suave), 0 0 60px -20px rgba(201, 162, 39, 0.25); }
+/* linhas de varredura bem suaves + vinheta: parece tela, sem cansar a vista */
+.fn-term .fn-miolo::before { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px), radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45)); }
+
+/* boiserie: painéis emoldurados nas laterais (no celular viram um filete fino) */
+.fn-parede { flex: 0 0 12px; display: flex; flex-direction: column; padding: 8px 0; background: #0a0a0b; }
+.fn-parede i { flex: 1; margin: 5px 3px; border: 1px solid var(--ouro-suave); border-radius: 3px; background: linear-gradient(180deg, #101012, #09090a); box-shadow: inset 0 0 0 3px #08090a, inset 0 0 0 4px rgba(201, 162, 39, 0.14), inset 0 12px 26px rgba(0, 0, 0, 0.55); }
+@media (min-width: 900px) { .fn-parede { flex: 1 1 0; padding: 18px 0; } .fn-parede i { margin: 10px 22px; border-radius: 4px; } .fn-parede.esq { align-items: flex-end; } .fn-parede.esq i, .fn-parede.dir i { width: min(160px, calc(100% - 44px)); } .fn-parede.dir { align-items: flex-start; } }
+
+.fn-term .fn-topo { padding: 0.65rem 0.8rem; border-bottom: 1px solid var(--ouro-suave); background: #0a0b0c; position: relative; z-index: 4; }
+.fn-term .fn-topo::after { content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: rgba(201, 162, 39, 0.14); }
+.fn-term .fn-quem strong { font-size: 0.82rem; letter-spacing: 0.12em; text-transform: uppercase; color: #fff; }
+.fn-term .fn-quem strong::before { content: '▌'; margin-right: 0.35rem; color: var(--ouro); }
+.fn-term .fn-quem small { font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--verde); opacity: 0.85; }
+.fn-uso { padding: 0.15rem 0.5rem; border: 1px solid var(--ouro-suave); border-radius: 999px; font-size: 0.66rem; color: var(--mudo); }
+.fn-uso:empty { display: none; }
+.fn-uso-alto { color: #ffb36b; border-color: rgba(255, 179, 107, 0.5); }
+.fn-term .fn-x { border-radius: 4px; background: transparent; border: 1px solid var(--ouro-suave); color: var(--tinta); }
+
+.fn-term .fn-conversa { position: relative; z-index: 1; padding: 0.9rem 0.9rem 0.4rem; gap: 0.55rem; background: transparent; }
+.fn-term .fn-msg { max-width: 100%; }
+.fn-term .fn-msg p { padding: 0; border-radius: 0; background: none; font-size: 0.82rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fn-term .fn-eu { align-self: stretch; }
+.fn-term .fn-eu p { color: #fff; font-weight: 700; background: none; }
+.fn-term .fn-eu p::before { content: '❯ '; color: var(--ouro); }
+.fn-term .fn-ele p { color: var(--tinta); background: none; }
+.fn-term .fn-ele p::before { content: '◆ '; color: var(--verde); }
+.fn-term .fn-sis p { color: var(--mudo); font-style: italic; }
+.fn-term .fn-sis p::before { content: '[!] '; color: var(--ouro); font-style: normal; }
+.fn-term .fn-ele p.vbd-on::after { background: var(--verde) !important; }
+.fn-dia { align-self: stretch; display: flex; align-items: center; gap: 0.6rem; margin: 0.5rem 0 0.1rem; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mudo); }
+.fn-dia::before, .fn-dia::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--ouro-suave)); }
+.fn-dia::after { transform: scaleX(-1); }
+.fn-term .fn-pensando p::before { content: none; }
+.fn-term .fn-pensando i { border-radius: 1px; width: 7px; height: 12px; background: var(--verde); }
+.fn-nota { margin: 0.35rem 0 0 !important; font-size: 0.72rem !important; color: var(--ouro) !important; font-style: normal !important; }
+.fn-nota::before { content: '↳ ' !important; color: var(--ouro) !important; }
+
+.fn-term .fn-atalhos { padding: 0.45rem 0.8rem; border-top: 1px solid rgba(201, 162, 39, 0.14); position: relative; z-index: 4; }
+.fn-term .fn-atalho { border-radius: 4px; border: 1px solid var(--ouro-suave); background: rgba(201, 162, 39, 0.06); color: var(--tinta); font-family: inherit; font-size: 0.72rem; }
+.fn-term .fn-barra { position: relative; z-index: 4; gap: 0.4rem; padding: 0.55rem 0.7rem calc(0.7rem + env(safe-area-inset-bottom)); background: #0a0b0c; border-top: 1px solid var(--ouro-suave); }
+.fn-prompt { flex: 0 0 auto; color: var(--ouro); font-weight: 800; font-size: 1rem; }
+.fn-term .fn-barra input { border: 0; border-bottom: 1px solid rgba(201, 162, 39, 0.28); border-radius: 0; background: transparent; color: #fff; font-family: inherit; font-size: 0.88rem; padding: 0.55rem 0.2rem; caret-color: var(--verde); }
+.fn-term .fn-barra input:focus { border-bottom-color: var(--ouro); outline: 0; }
+.fn-term .fn-mic, .fn-term .fn-anexo, .fn-term .fn-enviar { border-radius: 4px; width: 38px; height: 38px; background: transparent; border: 1px solid var(--ouro-suave); color: var(--tinta); }
+.fn-term .fn-enviar { background: var(--ouro); border-color: var(--ouro); color: #0b0b0c; }
+.fn-term .fn-batismo { font-family: inherit; }
+
+/* comandos, desfazer, dashboard */
+.fn-cmds { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.3rem; }
+.fn-cmds li { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; font-size: 0.76rem; }
+.fn-cmds button { padding: 0.15rem 0.5rem; border: 1px solid var(--ouro-suave); border-radius: 3px; background: rgba(201, 162, 39, 0.08); color: var(--ouro); font: inherit; font-weight: 700; cursor: pointer; }
+.fn-cmds span { color: var(--mudo); }
+.fn-desf { margin-top: 0.4rem; }
+.fn-desf-btn { padding: 0.3rem 0.6rem; border: 1px dashed var(--ouro-suave); border-radius: 3px; background: transparent; color: var(--ouro); font: inherit; font-size: 0.72rem; cursor: pointer; text-align: left; }
+.fn-desf-btn:disabled { opacity: 0.6; }
+.fn-desfeito { font-size: 0.72rem; color: var(--mudo); }
+
+.fn-dash { margin-top: 0.5rem; padding: 0.8rem; border: 1px solid var(--ouro-suave); border-radius: 4px; background: rgba(201, 162, 39, 0.035); box-shadow: inset 0 0 0 3px #08090a, inset 0 0 0 4px rgba(201, 162, 39, 0.12); }
+.fn-dash-topo { display: flex; justify-content: space-between; margin-bottom: 0.6rem; font-size: 0.62rem; letter-spacing: 0.14em; color: var(--ouro); }
+.fn-dash-big { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.7rem; }
+.fn-dash-big small { font-size: 0.6rem; letter-spacing: 0.14em; color: var(--mudo); }
+.fn-dash-big b { font-size: 1.7rem; color: #fff; letter-spacing: -0.02em; }
+.fn-delta { align-self: flex-start; margin-top: 0.25rem; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.68rem; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: var(--tinta); }
+.fn-delta.sobe { background: rgba(125, 255, 160, 0.14); color: var(--verde); }
+.fn-delta.desce { background: rgba(255, 120, 100, 0.16); color: #ffb0a4; }
+.fn-dash-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.7rem; }
+.fn-dash-kpis div { padding: 0.45rem 0.55rem; border: 1px solid rgba(201, 162, 39, 0.18); border-radius: 3px; background: rgba(0, 0, 0, 0.3); }
+.fn-dash-kpis span { display: block; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mudo); }
+.fn-dash-kpis b { font-size: 0.86rem; color: #fff; }
+.fn-dash .vg { margin: 0.2rem 0 0.7rem; }
+.fn-dash-vazio { margin: 0.3rem 0 0.7rem; font-size: 0.78rem; color: var(--mudo); }
+.fn-dash-top { margin: 0 0 0.7rem; padding: 0; list-style: none; display: grid; gap: 0.25rem; counter-reset: t; }
+.fn-dash-top li { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.76rem; counter-increment: t; }
+.fn-dash-top li::before { content: counter(t) '.'; color: var(--ouro); margin-right: 0.4rem; }
+.fn-dash-top li span { flex: 1; }
+.fn-dash-per { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.fn-dash-per button { padding: 0.25rem 0.55rem; border: 1px solid var(--ouro-suave); border-radius: 3px; background: transparent; color: var(--tinta); font: inherit; font-size: 0.7rem; cursor: pointer; }
+.fn-dash-per button.on { background: var(--ouro); border-color: var(--ouro); color: #0b0b0c; font-weight: 800; }
+.fn-dash-acoes { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.fn-dash-acoes button { padding: 0.4rem 0.65rem; border: 1px solid var(--ouro-suave); border-radius: 3px; background: rgba(201, 162, 39, 0.1); color: var(--ouro); font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+
+/* leitura de cardápio: o que já existe e o que está sem preço */
+.fn-pz-ja { opacity: 0.6; }
+.fn-pz-tag { display: inline-block; align-self: flex-start; padding: 0.05rem 0.4rem; border-radius: 3px; background: rgba(125, 255, 160, 0.14); color: var(--verde, #7dffa0); font-size: 0.62rem; font-weight: 700; }
+.fn-pz-preco.vazio { box-shadow: 0 0 0 1.5px #C9A227; border-radius: 6px; }
+
+/* tela de carregamento: boot do terminal + curiosidades do app */
+.fn-boot { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 1rem; background: #040405; transition: opacity 0.38s ease; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.fn-boot.saindo { opacity: 0; pointer-events: none; }
+.fn-boot-moldura { width: min(560px, 100%); padding: 1.2rem 1.1rem 1.1rem; border: 1px solid rgba(201, 162, 39, 0.45); border-radius: 4px; background: #07080a; box-shadow: inset 0 0 0 4px #07080a, inset 0 0 0 5px rgba(201, 162, 39, 0.2), 0 0 70px -24px rgba(201, 162, 39, 0.35); }
+.fn-boot-topo { display: flex; justify-content: space-between; margin-bottom: 0.8rem; font-size: 0.7rem; letter-spacing: 0.16em; color: #C9A227; }
+.fn-boot-log { margin: 0 0 0.9rem; min-height: 7.6em; font-size: 0.74rem; line-height: 1.55; color: #7dffa0; white-space: pre-wrap; }
+.fn-boot-log::after { content: '▌'; animation: fnPisca2 0.9s steps(2) infinite; }
+@keyframes fnPisca2 { 50% { opacity: 0; } }
+.fn-boot-barra { height: 6px; border: 1px solid rgba(201, 162, 39, 0.4); border-radius: 2px; overflow: hidden; }
+.fn-boot-barra i { display: block; height: 100%; width: 0; background: repeating-linear-gradient(90deg, #C9A227 0 8px, #8a6d10 8px 10px); transition: width 0.1s linear; }
+.fn-boot-num { margin: 0.3rem 0 1rem; text-align: right; font-size: 0.66rem; color: rgba(233, 234, 238, 0.55); }
+.fn-boot-dica { min-height: 5.6rem; padding: 0.8rem 0.9rem; border-left: 2px solid #C9A227; background: rgba(201, 162, 39, 0.06); }
+.fn-boot-dica small { font-size: 0.6rem; letter-spacing: 0.16em; color: #C9A227; }
+.fn-boot-dica p { margin: 0.35rem 0 0; font-size: 0.86rem; line-height: 1.5; color: #e9eaee; opacity: 0; transform: translateY(4px); transition: opacity 0.3s, transform 0.3s; }
+.fn-boot-dica p.on { opacity: 1; transform: none; }
+.fn-boot-pular { display: block; margin: 0.9rem auto 0; padding: 0.4rem 0.9rem; border: 1px solid rgba(201, 162, 39, 0.4); border-radius: 3px; background: transparent; color: #C9A227; font: inherit; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.fn-boot-pular.on { opacity: 1; pointer-events: auto; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .fn-boot-log::after { animation: none; } }
+
+/* resposta chegou com a conversa fechada */
+.fn-btn.fn-novo::after { content: ''; position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: #ff5a4a; box-shadow: 0 0 0 2px #0d0d0f; animation: fnPulsa 1.4s ease-in-out infinite; }
+@keyframes fnPulsa { 50% { transform: scale(1.25); } }
+.fn-aviso { position: fixed; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 2147483000; max-width: min(320px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 0.15rem; padding: 0.7rem 0.9rem; border: 1px solid rgba(201, 162, 39, 0.5); border-radius: 6px; background: #0b0c0e; color: #e9eaee; text-align: left; font-family: 'JetBrains Mono', ui-monospace, monospace; box-shadow: 0 16px 40px -14px rgba(0, 0, 0, 0.8); opacity: 0; transform: translateY(10px); transition: opacity 0.25s, transform 0.3s; cursor: pointer; }
+.fn-aviso.on { opacity: 1; transform: none; }
+.fn-aviso strong { font-size: 0.74rem; color: #C9A227; letter-spacing: 0.06em; }
+.fn-aviso span { font-size: 0.78rem; line-height: 1.4; }

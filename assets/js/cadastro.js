@@ -799,6 +799,8 @@
     if (!window.VBFuncionario) return;
     var e = meusEstabs[estabId] || {};
     var site = '/' + encodeURIComponent(e.slug || '') + '/' + encodeURIComponent(e.cidade || '');
+    var desfazerPendente = null;
+    var registrarDesfazer = function (d) { desfazerPendente = d; };
     function acharAgendamento(args, status) {
       var alvo = String(args.cliente || '').toLowerCase().trim();
       var lista = agendaCache.filter(function (a) { return status ? status.indexOf(a.status) !== -1 : a.status !== 'cancelado'; });
@@ -811,13 +813,14 @@
       if (!a) return Promise.resolve('Não achei esse horário. Diga o nome do cliente.');
       return db.rpc('tenant_admin_atualizar_agendamento', { p_estabelecimento_id: estabId, p_id: a.id, p_status: novo }).then(function (r) {
         if (r.error) throw new Error(r.error.message);
+        registrarDesfazer({ texto: 'Voltar o horário de ' + a.cliente_nome + ' para ' + (a.status || 'pendente'), passos: [{ rpc: 'tenant_admin_atualizar_agendamento', args: { p_estabelecimento_id: estabId, p_id: a.id, p_status: a.status || 'pendente' } }] });
         mostrarAbaDashboard('agenda');
         return verbo + ' o horário de ' + a.cliente_nome + '.';
       });
     }
     // tudo o que o painel faz, o bot também faz: as ações novas moram em bot-acoes.js
     var extras = window.VBBotAcoes ? window.VBBotAcoes.criar({
-      db: db, estabId: estabId, areas: areasDe(estabId), segmento: (meusEstabs[estabId] || {}).segmento, preco: formatarPreco,
+      db: db, estabId: estabId, areas: areasDe(estabId), segmento: (meusEstabs[estabId] || {}).segmento, preco: formatarPreco, registrarDesfazer: registrarDesfazer,
       recarregar: function (onde) {
         if (onde === 'cardapio') { prepararPedidos(estabId, 'cardapio'); mostrarAbaDashboard('cardapio'); }
         else if (onde === 'pedidos') { prepararPedidos(estabId, 'pedidos'); mostrarAbaDashboard('pedidos'); }
@@ -976,21 +979,39 @@
             if (q === 'vendas') return 'Nos últimos 14 dias entraram ' + formatarPreco(d.total_periodo || 0) + '.';
             return 'Hoje entraram ' + formatarPreco(d.total_hoje || 0) + '. Nos últimos 14 dias, ' + formatarPreco(d.total_periodo || 0) + '.';
           });
-        },
-        abrir_editor: function (a) {
-          // minúsculas e sem acento ANTES de limpar: sem isso "Foto" virava
-          // "oto", "TEXTOS" virava vazio e "Serviços" virava "servios" — e o
-          // editor abria no passo errado, ou em nenhum
-          var passo = String(a.parte || '').toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
-          window.location.href = site + '?editar=1' + (passo ? '&passo=' + passo : '');
-          return null;
         }
       }
     });
     // junta as ações novas às de sempre (as de sempre têm prioridade se o nome repetir)
     var cfg = window.VBFuncionario._cfg && window.VBFuncionario._cfg();
     if (cfg && cfg.acoes) Object.keys(extras).forEach(function (k) { if (!cfg.acoes[k]) cfg.acoes[k] = extras[k]; });
+    if (cfg) {
+      // o chat pega aqui como desfazer a última ação (e limpa, pra não valer duas vezes)
+      cfg.pegarDesfazer = function () { var d = desfazerPendente; desfazerPendente = null; return d; };
+      cfg.desfazer = function (passos) {
+        return window.VBBotAcoes.executarDesfazer(db, passos).then(function () {
+          if (temPedidosNeg()) { prepararPedidos(estabId, 'cardapio'); }
+          mostrarAbaDashboard(dashAbaAtual || 'resumo');
+          return 'Desfeito.';
+        });
+      };
+      // dashboard no chat: o período pedido + o dobro (pra comparar com o período anterior)
+      cfg.dashboard = function (dias) {
+        return Promise.all([
+          db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: dias }),
+          db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: dias * 2 }).then(function (r) { return r; }, function () { return {}; })
+        ]).then(function (x) {
+          if (x[0].error) throw new Error(x[0].error.message);
+          var r = x[0].data || {}, total = Number(r.total_periodo) || 0, dobro = x[1] && x[1].data ? Number(x[1].data.total_periodo) : null;
+          return { dias: dias, r: r, anterior: dobro == null ? null : Math.max(0, Math.round((dobro - total) * 100) / 100), formatar: formatarPreco, temAgenda: temAgendaNeg(), temPedidos: temPedidosNeg() };
+        });
+      };
+      // nomes que já estão no cardápio: a leitura da foto marca "já existe" em vez de duplicar
+      cfg.nomesDoCardapio = function () {
+        if (!temPedidosNeg()) return Promise.resolve([]);
+        return db.rpc('delivery_admin_listar_itens', { p_estabelecimento_id: estabId }).then(function (r) { return (r.data || []).map(function (i) { return i.nome; }); }, function () { return []; });
+      };
+    }
   }
   function fecharMenuDash() {
     var m = document.getElementById('dashMenu'), b = document.getElementById('dashMenuBtn');
