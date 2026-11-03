@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&display=optional" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=101">
+<link rel="stylesheet" href="/assets/css/styles.css?v=102">
 <link rel="stylesheet" href="/assets/css/vibe-toggle.css?v=25">
 <link rel="stylesheet" href="/assets/css/splash.css?v=11">
 <link rel="stylesheet" href="/assets/css/guia.css?v=1">
@@ -66,6 +66,7 @@
           if (!alvo) return;
           requestAnimationFrame(function () {
             alvo.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            setTimeout(function () { var t = document.getElementById('iaToggle'); if (t && t.getAttribute('aria-expanded') !== 'true') t.click(); }, 500);
           });
         });
       }
@@ -190,12 +191,17 @@
       <!-- A inovação da casa, em preto e branco: a IA que lê a foto e monta o cardápio.
            Todo o movimento é CSS (grade que anda, feixe que varre, cursor piscando) —
            nenhum script extra, nada de imagem. -->
-      <section class="ia" id="ia" aria-labelledby="iaTitulo">
+      <section class="ia" id="ia" aria-labelledby="iaMini">
         <span class="ia-grade" aria-hidden="true"></span>
         <span class="ia-feixe" aria-hidden="true"></span>
+        <button type="button" class="ia-cabeca" id="iaToggle" aria-expanded="false" aria-controls="iaCorpo">
+          <span class="ia-tag"><i class="ia-ponto" aria-hidden="true"></i>IA · já no ar</span>
+          <strong class="ia-mini" id="iaMini">Veja o que a IA faz pelo seu negócio</strong>
+          <span class="ia-mais" aria-hidden="true"><i></i><i></i></span>
+        </button>
+        <div class="ia-corpo" id="iaCorpo"><div class="ia-corpo-in">
         <div class="ia-dentro">
-          <span class="ia-tag"><i class="ia-ponto" aria-hidden="true"></i>Inteligência artificial · já no ar</span>
-          <h2 id="iaTitulo" data-digita="42">A IA trabalha no seu negócio.</h2>
+          <h2 id="iaTitulo">A IA trabalha no seu negócio.</h2>
           <p class="ia-sub">Nenhuma outra plataforma da região faz isso — e aqui é de graça, pra todo estabelecimento. São duas coisas, e as duas tiram trabalho das suas costas.</p>
 
           <!-- 1. a foto que vira cardápio -->
@@ -234,6 +240,7 @@
           <a class="ia-btn" href="/criar.html">Criar o meu site grátis <span aria-hidden="true">&#8594;</span></a>
           <p class="ia-rodape">A IA nunca inventa número de venda, preço nem nome de cliente: quando falta informação, ela pergunta. E só o dono, logado, consegue usar.</p>
         </div>
+        </div></div>
       </section>
 
       <p class="guia-todos-titulo" id="guiaTodosTitulo">Ou veja todos os lugares</p>
@@ -355,6 +362,35 @@
         navigator.serviceWorker.register('/sw.js').catch(function () {});
       });
     }
+  </script>
+
+  <script>
+  /* A área da IA começa pequena (não atrapalha a busca). Tocou: abre e o texto
+     vai sendo digitado, um bloco depois do outro (VBDigita.fila). Tocar de novo
+     termina a digitação na hora ou fecha. */
+  (function () {
+    var sec = document.getElementById('ia'), bt = document.getElementById('iaToggle');
+    if (!sec || !bt) return;
+    var alvos = [].slice.call(sec.querySelectorAll('#iaTitulo, .ia-sub, .ia-bloco h3, .ia-bloco > p'));
+    var textos = alvos.map(function (e) { return e.textContent; });
+    var pular = null;
+    function digitar() {
+      if (pular) pular();
+      if (!window.VBDigita) return;
+      alvos.forEach(function (e) { e.textContent = ''; });
+      var fila = alvos.map(function (e, i) { return [e, textos[i], i === 0 ? 38 : 150]; });
+      pular = window.VBDigita.fila(fila, function () { pular = null; });
+    }
+    bt.addEventListener('click', function () {
+      var abrir = bt.getAttribute('aria-expanded') !== 'true';
+      if (!abrir && pular) { pular(); pular = null; }
+      if (abrir && pular) { pular(); pular = null; return; }
+      bt.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+      sec.classList.toggle('aberto', abrir);
+      if (abrir) { digitar(); }
+      else alvos.forEach(function (e, i) { e.textContent = textos[i]; });
+    });
+  })();
   </script>
 </body>
 </html>

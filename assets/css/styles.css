@@ -3560,3 +3560,25 @@ html, body { max-width: 100%; overflow-x: clip; }
   .sp-ia-grade { animation: none; }
   .sp-ia-feixe { display: none; }
 }
+
+/* ===== Área da IA recolhida: pequena, toca e abre (digitando) ===== */
+.ia { margin: 0.9rem 0 1rem; border-radius: 18px; transition: border-radius 0.3s ease; }
+.ia-cabeca {
+  position: relative; z-index: 3; display: flex; align-items: center; gap: 0.6rem; width: 100%; box-sizing: border-box;
+  padding: 0.72rem 0.95rem; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.ia-cabeca:focus-visible { outline: 2px solid #fff; outline-offset: -4px; border-radius: 18px; }
+.ia-cabeca .ia-tag { flex: 0 0 auto; margin: 0; }
+.ia-mini { flex: 1; min-width: 0; font-size: 0.86rem; font-weight: 700; line-height: 1.25; color: #fff; }
+.ia-mais { position: relative; flex: 0 0 auto; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: rgba(255, 255, 255, 0.12); transition: transform 0.35s ease, background 0.2s ease; }
+.ia-mais i { position: absolute; left: 50%; top: 50%; width: 0.8rem; height: 2px; margin: -1px 0 0 -0.4rem; border-radius: 2px; background: #fff; }
+.ia-mais i + i { transform: rotate(90deg); transition: transform 0.35s ease; }
+.ia.aberto .ia-mais { transform: rotate(180deg); }
+.ia.aberto .ia-mais i + i { transform: rotate(0deg); }
+.ia-corpo { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 0.45s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.45s; }
+.ia-corpo-in { min-height: 0; overflow: hidden; }
+.ia.aberto .ia-corpo { grid-template-rows: 1fr; visibility: visible; transition-delay: 0s; }
+.ia:not(.aberto) .ia-feixe { display: none; }
+.ia:not(.aberto) .ia-grade { animation: none; }
+.ia.aberto { border-radius: 24px; }
+@media (prefers-reduced-motion: reduce) { .ia-corpo, .ia-mais, .ia-mais i { transition: none; } }
