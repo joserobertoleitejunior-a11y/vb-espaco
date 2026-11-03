@@ -434,7 +434,7 @@
     var validos = arquivos.filter(function (a) { return /^image\//.test(a.type); });
     if (!validos.length) { dizer('ele', 'Isso não parece uma foto. Mande uma imagem do cardápio.'); return; }
     var servico = (st.cfg.areas || []).indexOf('servicos') !== -1 && (st.cfg.areas || []).indexOf('delivery') === -1;
-    var juntos = { categorias: [], promocoes: [], aviso: '' }, falhas = 0;
+    var juntos = { categorias: [], promocoes: [], extras: [], aviso: '' }, falhas = 0;
     // junta o que cada foto trouxe: categoria com o mesmo nome vira uma só
     var juntar = function (d) {
       (d.categorias || []).forEach(function (cat) {
@@ -442,6 +442,7 @@
         if (ja) ja.itens = ja.itens.concat(cat.itens || []); else juntos.categorias.push({ nome: cat.nome, itens: (cat.itens || []).slice() });
       });
       juntos.promocoes = juntos.promocoes.concat(d.promocoes || []);
+      juntos.extras = juntos.extras.concat(d.extras || []);
       if (d.aviso) juntos.aviso = d.aviso;
     };
     pensando(true);
@@ -464,6 +465,8 @@
       var total = juntos.categorias.reduce(function (n, c) { return n + c.itens.length; }, 0);
       if (!total && !juntos.promocoes.length) { if (!falhas) dizer('ele', juntos.aviso || 'Não achei nenhum item nessas fotos. Tente com mais luz, mais perto ou sem cortar as bordas.', null, { sistema: true }); return; }
       mostrarLido(juntos, servico);
+      // bordas e adicionais não viram item: só avisa onde cadastrar
+      if (juntos.extras.length) dizer('ele', 'Vi também: ' + juntos.extras.slice(0, 6).map(function (x) { return x.nome + (x.preco ? ' (+R$ ' + Number(x.preco).toFixed(2).replace('.', ',') + ')' : ''); }).join(', ') + '. Isso você cadastra em Cardápio → Bordas — ou peça aqui: "adiciona a borda catupiry por 8".', null, { semSalvar: true, sistema: true });
     });
   }
 

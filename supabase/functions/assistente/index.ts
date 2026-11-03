@@ -71,8 +71,8 @@ avancar_pedido      { numero?: number }      — passa o pedido pro próximo pas
 cancelar_pedido     { numero: number }
 lancar_venda        { descricao: string, valor: number, forma?: "pix"|"dinheiro"|"cartao", cliente?: string }
 consultar           { oQue: "hoje"|"vendas"|"agenda"|"pedidos"|"clientes"|"anuncio" }  — responde com números
-abrir_editor        { parte?: "foto"|"textos"|"estilo"|"servicos"|"equipe"|"galeria"|"horario"|"contato"|"localizacao"|"redes" }
-pedir_foto_cardapio {}                     — o dono quer mexer no cardápio: peça a foto aqui no chat
+mostrar_dashboard   { dias?: 1|3|5|7|15|30 }   — mostra no chat o gráfico e os números de faturamento do período (use pra "como foi a semana", "gráfico", "dashboard")
+pedir_foto_cardapio {}                     — o dono quer montar ou atualizar o cardápio (ou mandar uma promoção): peça a foto aqui no chat; dá pra mandar várias de uma vez
 mudar_nome_funcionario { nome: string }   — o dono quer chamar o funcionário de outro jeito
 adicionar_item      { nome: string, preco?: number, categoria?: string, descricao?: string }   — põe um item/serviço no cardápio
 mudar_preco_item    { nome: string, preco: number }
@@ -99,7 +99,6 @@ publicar_promocao   { titulo: string, texto?: string, dias?: number }   — prom
 apagar_promocao     { titulo: string }
 publicar_recado     { texto: string }      — recado do dia no site (24 horas)
 remover_venda       { descricao?: string } — apaga a venda de hoje (a última, se não disser qual)
-editar_site         { titulo?: string, subtitulo?: string, sobre?: string, instagram?: string, cta?: string }
 buscar_cliente      { nome: string }       — telefone e histórico de um cliente
 abrir_tour          {}                     — o dono quer aprender a usar o app: abre o tour
 nada                {}                     — só conversa, sem ação
@@ -131,7 +130,9 @@ Regras:
   (ou a tabela de serviços), NÃO mande ele pra outra tela. Use
   "pedir_foto_cardapio" e diga, na "fala", que ele pode mandar a foto do
   cardápio pelo botão da câmera aqui do chat, que você lê e preenche.
-  Só use "abrir_editor" se ele pedir pra mexer num item específico à mão.
+  Se ele quiser mexer num item específico, use mudar_preco_item, mudar_nome_item ou disponibilidade_item.
+- VOCÊ NÃO EDITA O SITE (fotos, textos, estilo, cores, galeria, endereço do site): isso o dono faz na aba "Meu site", pelo editor. Se pedirem, explique isso em uma frase e mande "acao": null.
+- Gráficos e números: pra mostrar faturamento, semana, mês ou dashboard use "mostrar_dashboard" (o gráfico aparece no chat). Escolha o período mais próximo do que ele pediu.
 
 O que está na tela agora (use para entender o pedido):
 ${JSON.stringify(ctx).slice(0, 3000)}`;
@@ -156,10 +157,20 @@ Deno.serve(async (req) => {
   const { data: quem } = await db.auth.getUser();
   if (!quem?.user) return erro("Entre na sua conta primeiro.", 401);
 
-  let corpo: { texto?: string; contexto?: Record<string, unknown>; historico?: { de: string; texto: string }[] };
+  let corpo: { texto?: string; contexto?: Record<string, unknown>; historico?: { de: string; texto: string }[]; estabId?: string };
   try { corpo = await req.json(); } catch { return erro("Pedido inválido."); }
   const texto = String(corpo.texto || "").trim().slice(0, 600);
   if (!texto) return erro("Diga o que você quer.");
+
+  // Limite justo por estabelecimento (por dia). Se a função de contagem ainda não existe no banco,
+  // deixa passar: o limite só vale depois que ela for criada.
+  if (corpo.estabId && /^[0-9a-f-]{36}$/i.test(corpo.estabId)) {
+    const { data: uso, error: eUso } = await db.rpc("assistente_consumir", { p_estabelecimento_id: corpo.estabId, p_tipo: "mensagem" });
+    if (eUso) console.error("assistente: contagem de uso indisponível:", eUso.message);
+    else if (uso && uso.ok === false) {
+      return erro(`Você já usou as ${uso.limite} mensagens de hoje. O limite volta amanhã — enquanto isso, os botões do painel continuam funcionando normalmente.`, 429);
+    }
+  }
 
   const conversa = (corpo.historico || []).slice(-6).map((m) => ({
     role: m.de === "eu" ? "user" : "model",
