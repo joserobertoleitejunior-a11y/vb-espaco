@@ -312,3 +312,126 @@ html.mini #cartBar, html.mini .toast { display: none; }
   background: var(--ink, #1f2024); color: #fff; font-size: 0.86rem; font-weight: 700;
 }
 .vms-btn:active { transform: translateY(1px); }
+
+/* =====================================================================
+   DELIVERY: o cardápio em lista (assets/pedidos/loja.js → dlLinha)
+   Delivery não é Agenda: ver a comida, escolher rápido, fechar.
+   Cores vêm do estilo da loja (--accent, --ink, --line...), nada fixo aqui.
+   ===================================================================== */
+
+/* o topo da loja de delivery: sem os botões redondos "Ver / Pedir" da Agenda
+   nem o "Fazer pedido" — a lista logo abaixo já é o caminho, e o pedido tem a
+   barra de baixo. Ficam o nome, a foto e a situação da loja. */
+html[data-area="delivery"] .hero-cta,
+html[data-area="delivery"] .hero-guia,
+html[data-area="delivery"] #tplServiceStrip { display: none !important; }
+
+/* no celular o topo ocupava a tela inteira (78vh só de foto) antes de aparecer a
+   primeira pizza. Em delivery a foto vira uma faixa, e o cardápio já aparece. Os
+   templates usam todos as mesmas classes e o mesmo ponto de quebra (900px). */
+@media (max-width: 900px) {
+  html[data-area="delivery"] .hero-split { min-height: 0 !important; }
+  /* a moldura dourada foi desenhada pro topo alto da Agenda; com a foto em faixa ela cortava o texto */
+  html[data-area="delivery"] .hero-split-frame { display: none !important; }
+  html[data-area="delivery"] .hero-split-photo { min-height: 0 !important; height: 36vh; max-height: 17rem; }
+  html[data-area="delivery"] .hero-split-copy { padding-top: 1.1rem !important; padding-bottom: 0.4rem !important; }
+  html[data-area="delivery"] .hero-split-copy h1 { margin-top: 0.3rem; font-size: clamp(1.9rem, 8.4vw, 2.7rem); }
+  html[data-area="delivery"] .hero-split-copy p { margin-top: 0.55rem; }
+}
+
+.loja-ui .dl-lista { list-style: none; margin: 0; padding: 0; }
+.loja-ui .dl-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.9rem 0; border-bottom: 1px solid var(--line); }
+.loja-ui .dl-item.oculto { display: none; }
+.loja-ui .dl-lista .dl-item:last-child { border-bottom: 0; }
+
+.loja-ui .dl-abrir { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.9rem; padding: 0; border: 0; background: none; text-align: left; color: inherit; -webkit-tap-highlight-color: transparent; }
+.loja-ui .dl-abrir:active .dl-nome { opacity: 0.7; }
+
+/* a caixinha da foto, ao lado do nome. Sem foto ainda: o desenho do tipo de comida */
+.loja-ui .dl-foto {
+  flex: 0 0 auto; width: 5.6rem; height: 5.6rem; border-radius: var(--radius); overflow: hidden; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg)); box-shadow: inset 0 0 0 1px var(--line);
+}
+.loja-ui .dl-foto img { width: 100%; height: 100%; object-fit: cover; }
+.loja-ui .dl-foto-vazia { color: var(--accent-texto); }
+
+.loja-ui .dl-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.18rem; }
+.loja-ui .dl-nome { font-weight: 700; font-size: 1.02rem; line-height: 1.25; letter-spacing: -0.01em; }
+.loja-ui .dl-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.8rem; line-height: 1.4; color: var(--ink-soft); }
+.loja-ui .dl-rodape { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.6rem; margin-top: 0.1rem; }
+.loja-ui .dl-preco { font-weight: 800; font-size: 0.97rem; color: var(--price); }
+.loja-ui .dl-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; color: var(--accent-texto); }
+
+/* o "+" e o contador: um toque põe a pizza inteira no pedido */
+.loja-ui .dl-acao { flex: 0 0 auto; min-width: 2.9rem; display: grid; place-items: center; }
+.loja-ui .dl-mais {
+  width: 2.9rem; height: 2.9rem; display: grid; place-items: center; border-radius: 50%;
+  border: 1.5px solid var(--accent); background: transparent; color: var(--accent-texto);
+  transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
+}
+.loja-ui .dl-mais:active { transform: scale(0.9); background: var(--accent); color: var(--on-accent); }
+.loja-ui .dl-qtd { display: flex; align-items: center; padding: 0.12rem; border-radius: 999px; background: var(--accent); color: var(--on-accent); animation: dlPop 0.3s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.loja-ui .dl-qtd button { width: 2.35rem; height: 2.35rem; border: 0; border-radius: 50%; background: none; color: inherit; font-size: 1.25rem; font-weight: 700; line-height: 1; }
+.loja-ui .dl-qtd button:active { background: rgba(0, 0, 0, 0.16); }
+.loja-ui .dl-qtd span { min-width: 1.15rem; text-align: center; font-weight: 800; font-size: 0.95rem; }
+@keyframes dlPop { from { transform: scale(0.7); opacity: 0; } to { transform: none; opacity: 1; } }
+.loja-ui .dl-seta { font-size: 1.6rem; line-height: 1; color: var(--ink-faint); }
+
+/* o cartão do meio a meio, no topo: o desenho da pizza cortada ao meio */
+.loja-ui .dl-meio {
+  display: flex; align-items: center; gap: 0.95rem; width: 100%; margin: 1.1rem 0 0.3rem; padding: 0.95rem 1rem; text-align: left; color: inherit;
+  border-radius: var(--radius); border: 1.5px solid var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.loja-ui .dl-meio:active { transform: scale(0.99); }
+.loja-ui .dl-pizza { position: relative; flex: 0 0 auto; width: 3.4rem; height: 3.4rem; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 2px var(--accent); }
+.loja-ui .dl-pizza i { position: absolute; top: 0; bottom: 0; width: 50%; }
+.loja-ui .dl-pizza i:first-child { left: 0; background: var(--accent); }
+.loja-ui .dl-pizza i:last-child { right: 0; background: color-mix(in srgb, var(--accent) 38%, var(--bg)); }
+
+/* a tela do meio a meio */
+.loja-ui .dl-pizza-grande { position: relative; width: 7.5rem; height: 7.5rem; margin: 0.4rem auto 0.6rem; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 2px var(--accent), 0 10px 26px -12px rgba(0, 0, 0, 0.5); }
+.loja-ui .dl-pizza-grande i { position: absolute; top: 0; bottom: 0; width: 50%; background: var(--accent); opacity: 0.1; transition: opacity 0.35s ease; }
+.loja-ui .dl-pizza-grande i:first-child { left: 0; }
+.loja-ui .dl-pizza-grande i:last-child { right: 0; }
+.loja-ui .dl-pizza-grande.a i:first-child, .loja-ui .dl-pizza-grande.b i:last-child { opacity: 1; }
+.loja-ui .dl-pizza-grande.b i:last-child { background: color-mix(in srgb, var(--accent) 62%, var(--bg)); }
+.loja-ui .dl-pizza-grande::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--bg); }
+.loja-ui .dl-meio-aviso { text-align: center; margin-bottom: 0.9rem; }
+.loja-ui .dl-dica { margin: 1.1rem 0 -0.4rem; font-size: 0.82rem; color: var(--ink-faint); }
+/* a foto da tela de personalizar é uma faixa: sem isso ela tomava mais da metade da
+   tela e as opções ficavam abaixo — e quem pede com preguiça não vai rolar */
+html[data-area="delivery"] .loja-ui .sheet-foto { height: 10.5rem; width: 100%; object-fit: cover; border-radius: var(--radius); }
+.loja-ui .dl-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.loja-ui .dl-slot { display: flex; flex-direction: column; gap: 0.15rem; min-height: 4.6rem; padding: 0.75rem 0.85rem; text-align: left; color: inherit; border-radius: var(--radius); border: 1.5px dashed var(--line); background: transparent; transition: border-color 0.2s, background 0.2s; }
+.loja-ui .dl-slot.cheio { border-style: solid; background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.loja-ui .dl-slot.ativo { border-color: var(--accent); border-style: solid; }
+.loja-ui .dl-slot-rot { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.loja-ui .dl-slot-nome { font-weight: 700; font-size: 0.95rem; line-height: 1.25; }
+.loja-ui .dl-slot:not(.cheio) .dl-slot-nome { color: var(--accent-texto); }
+.loja-ui .dl-slot-preco { font-size: 0.8rem; color: var(--ink-soft); }
+.loja-ui .dl-busca-sabor { display: block; width: 100%; margin: 1rem 0 0.3rem; padding: 0.8rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface-2); color: inherit; font-size: max(16px, 1rem); }
+.loja-ui .dl-busca-sabor:focus { outline: 0; border-color: var(--accent); }
+.loja-ui .dl-escolha { display: grid; }
+.loja-ui .dl-opcao { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; text-align: left; color: inherit; border: 0; border-bottom: 1px solid var(--line); background: none; }
+.loja-ui .dl-opcao .dl-foto { width: 3.2rem; height: 3.2rem; border-radius: var(--radius-sm); }
+.loja-ui .dl-opcao .dl-foto svg { width: 22px; height: 22px; }
+.loja-ui .dl-opcao.oculto { display: none; }
+.loja-ui .dl-opcao.ativo .dl-nome { color: var(--accent-texto); }
+.loja-ui .dl-opcao:disabled { opacity: 0.4; }
+.loja-ui .dl-opcao .dl-preco { flex: 0 0 auto; font-size: 0.85rem; }
+
+/* tirar ingrediente: tudo vem incluído; tocar risca, tocar de novo volta */
+.loja-ui .dl-ings { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.loja-ui .dl-ing {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.8rem 0.5rem 0.55rem; border-radius: 999px; color: inherit; font-size: 0.88rem; font-weight: 600;
+  border: 1.5px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); transition: all 0.2s ease;
+}
+.loja-ui .dl-ing-marca { width: 1.15rem; height: 1.15rem; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); }
+.loja-ui .dl-ing-marca svg { width: 11px; height: 11px; }
+.loja-ui .dl-ing.fora { border-style: dashed; border-color: var(--ink-faint); background: transparent; color: var(--ink-faint); text-decoration: line-through; }
+.loja-ui .dl-ing.fora .dl-ing-marca { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ink-faint); }
+
+@media (prefers-reduced-motion: reduce) {
+  .loja-ui .dl-qtd { animation: none; }
+  .loja-ui .dl-pizza-grande i, .loja-ui .dl-ing, .loja-ui .dl-mais { transition: none; }
+}

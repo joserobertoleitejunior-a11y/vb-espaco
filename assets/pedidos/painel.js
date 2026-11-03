@@ -722,6 +722,14 @@
     abrirSheet('Confira o que eu li', corpo,
       '<button type="button" class="btn sec" data-fechar-sheet>Cancelar</button><button type="button" class="btn" id="pcfSalvar">Pôr no ' + (SERVICO ? 'catálogo' : 'cardápio') + '</button>');
   }
+
+  /* Pizzaria: a pizza lida da foto já nasce com meio a meio e borda ligados —
+     é o jeito de pedir pizza. Antes tudo entrava desligado e o botão "meio a
+     meio" nem aparecia, por mais pizzas que houvesse. Bebida não. */
+  function ehPizzaDeCardapio(segmento, nomeCategoria) {
+    return segmento === 'pizzaria' && !/bebida|refri|suco|cerveja|[aá]gua|vinho|drink|sorvete|energ[eé]tico/i.test(String(nomeCategoria || ''));
+  }
+
   async function salvarLidoDaFoto(btn) {
     var caixa = $('sheetConteudo');
     var escolhidos = [];
@@ -751,7 +759,7 @@
         }
         await rpc('delivery_admin_salvar_item', {
           p_id: null, p_estabelecimento_id: loja.id, p_categoria_id: cat.id, p_nome: e.nome, p_descricao: e.descricao,
-          p_preco: e.preco, p_foto_url: null, p_permite_meio_a_meio: false, p_ativo: true, p_ordem: itens.length + i, p_aceita_borda: false
+          p_preco: e.preco, p_foto_url: null, p_permite_meio_a_meio: ehPizzaDeCardapio(loja.segmento, e.cat), p_ativo: true, p_ordem: itens.length + i, p_aceita_borda: ehPizzaDeCardapio(loja.segmento, e.cat)
         });
         feitos++;
       }
@@ -785,7 +793,7 @@
         await rpc('delivery_admin_salvar_item', {
           p_id: null, p_estabelecimento_id: loja.id, p_categoria_id: cat.id, p_nome: nome.slice(0, 80),
           p_descricao: lista[ii].descricao || null, p_preco: Number(lista[ii].preco) || 0, p_foto_url: null,
-          p_permite_meio_a_meio: false, p_ativo: true, p_ordem: itens.length + feitos, p_aceita_borda: false
+          p_permite_meio_a_meio: ehPizzaDeCardapio(loja.segmento, nomeCat), p_ativo: true, p_ordem: itens.length + feitos, p_aceita_borda: ehPizzaDeCardapio(loja.segmento, nomeCat)
         });
         feitos++;
       }

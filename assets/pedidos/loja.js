@@ -222,7 +222,7 @@
   // "O próximo passo a um clique": o pedido (ou orçamento/chamado) em
   // passos — primeiro o que vai querer (por categoria), depois o carrinho
   function montarPassoSite() {
-    if (!window.VBPassoSite || MODO_DEMO) return;
+    if (!window.VBPassoSite || MODO_DEMO || emLista()) return;
     var base = '/' + encodeURIComponent(estab.slug) + '/' + encodeURIComponent(estab.cidade);
     var fone = U.soDigitos(estab.telefone_whatsapp || ident.telefone_whatsapp);
     var comentarios = false;
@@ -474,6 +474,63 @@
   function iconeDoSegmento() {
     return window.VibeSegmentos ? window.VibeSegmentos.icone(estab.segmento, 30, 1.8) : '';
   }
+  /* ===================== delivery: o cardápio em LISTA =====================
+     Delivery não é Agenda. Aqui a pessoa quer ver a comida, escolher rápido e
+     fechar: cada item é uma linha — foto ao lado do nome, os ingredientes, o
+     preço e um "+" que já põe no pedido, sem abrir nada. Tocar na linha abre a
+     tela de personalizar (tirar ingrediente, borda, meio a meio, observação).
+     Chamar/orçamento (serviços) continua com os botões redondos. */
+  function emLista() { return !SERVICO; }
+
+  function qtdDoItem(id) {
+    return carrinho.reduce(function (n, l) { return n + (l.tipo === 'item' && l.item_id === id ? l.qtd : 0); }, 0);
+  }
+  var SVG_MAIS = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+
+  function dlFoto(item) {
+    if (item.foto_url) return '<span class="dl-foto"><img loading="lazy" src="' + esc(item.foto_url) + '" alt=""></span>';
+    // sem foto ainda: a caixinha fica lá, com o desenho do tipo de comida — o dono põe a foto depois
+    return '<span class="dl-foto dl-foto-vazia" aria-hidden="true">' + iconeDoSegmento() + '</span>';
+  }
+  function dlAcao(item) {
+    var n = qtdDoItem(item.id);
+    if (!n) return '<button type="button" class="dl-mais" data-dl-mais="' + item.id + '" aria-label="Adicionar ' + esc(item.nome) + ' ao pedido">' + SVG_MAIS + '</button>';
+    return '<div class="dl-qtd"><button type="button" data-dl-menos="' + item.id + '" aria-label="Tirar um">−</button><span>' + n + '</span>' +
+      '<button type="button" data-dl-mais="' + item.id + '" aria-label="Mais um">+</button></div>';
+  }
+  function dlLinha(item) {
+    return '<li class="dl-item" data-item="' + item.id + '" data-busca="' + esc((item.nome + ' ' + (item.descricao || '')).toLowerCase()) + '">' +
+      '<button type="button" class="dl-abrir" data-abrir-item="' + item.id + '" aria-label="Personalizar ' + esc(item.nome) + '">' + dlFoto(item) +
+        '<span class="dl-texto"><span class="dl-nome">' + esc(item.nome) + '</span>' +
+          (item.descricao ? '<span class="dl-desc">' + esc(item.descricao) + '</span>' : '') +
+          '<span class="dl-rodape"><span class="dl-preco">' + U.precoOuCombinar(item.preco) + '</span></span>' +
+        '</span></button>' +
+      '<div class="dl-acao" data-n="' + qtdDoItem(item.id) + '">' + dlAcao(item) + '</div></li>';
+  }
+  // o topo do cardápio: meio a meio (se a loja tem) e os combos
+  function dlEspeciais() {
+    var html = '';
+    if (elegiveisMeio().length > 1) {
+      html += '<button type="button" class="dl-meio" data-meio="1">' +
+        '<span class="dl-pizza" aria-hidden="true"><i></i><i></i></span>' +
+        '<span class="dl-texto"><span class="dl-nome">Meio a meio</span>' +
+        '<span class="dl-desc">Dois sabores na mesma pizza. Você paga só o mais caro.</span></span>' +
+        '<span class="dl-seta" aria-hidden="true">›</span></button>';
+    }
+    if (cardapio.combos.length) {
+      html += '<h2 class="cardapio-categoria-titulo" id="catg-especiais">Combos</h2><ul class="dl-lista">' +
+        cardapio.combos.map(function (co) {
+          return '<li class="dl-item dl-combo" data-busca="' + esc(co.nome.toLowerCase()) + '"><button type="button" class="dl-abrir" data-combo="' + co.id + '">' +
+            '<span class="dl-foto dl-foto-vazia" aria-hidden="true">' + iconeDoSegmento() + '</span>' +
+            '<span class="dl-texto"><span class="dl-nome">' + esc(co.nome) + '</span>' +
+            (co.qtd_sabores ? '<span class="dl-desc">Escolha ' + co.qtd_sabores + ' sabores</span>' : '') +
+            '<span class="dl-rodape"><span class="dl-preco">' + U.preco(co.preco) + '</span></span></span></button>' +
+            '<div class="dl-acao"><span class="dl-seta" aria-hidden="true">›</span></div></li>';
+        }).join('') + '</ul>';
+    }
+    return html ? '<section class="secao-especial grupo-cardapio dl-especiais" id="secaoEspeciais">' + html + '</section>' : '';
+  }
+
   function renderItemCard(item) {
     return botaoRedondo('data-item="' + item.id + '"', item.nome, U.precoOuCombinar(item.preco), item.foto_url, item.nome + ' ' + (item.descricao || ''));
   }
@@ -491,7 +548,7 @@
 
   function renderizarCardapio() {
     var grupos = agrupar();
-    var temEspeciais = elegiveisMeio().length > 1 || cardapio.combos.length > 0;
+    var temEspeciais = emLista() ? cardapio.combos.length > 0 : (elegiveisMeio().length > 1 || cardapio.combos.length > 0);
     var ancoras = (temEspeciais ? [{ id: 'especiais', nome: 'Combos' }] : []).concat(grupos);
 
     var pills = $('navPills');
@@ -513,8 +570,12 @@
     }
 
     contadorRedondo = 0;
-    var html = renderizarEspeciais();
+    var html = emLista() ? dlEspeciais() : renderizarEspeciais();
     html += grupos.map(function (g) {
+      if (emLista()) {
+        return '<section class="grupo-cardapio" data-grupo="' + g.id + '"><h2 class="cardapio-categoria-titulo" id="catg-' + g.id + '">' + esc(g.nome) + '</h2>' +
+          '<ul class="dl-lista">' + g.lista.map(dlLinha).join('') + '</ul></section>';
+      }
       // se todo item da categoria aceita a mesma coisa, avisa uma vez só
       var comum = extrasDoItem(g.lista[0]);
       var todos = g.lista.length > 1 && comum && g.lista.every(function (i) { return extrasDoItem(i) === comum; });
@@ -534,6 +595,11 @@
     var contagem = {};
     carrinho.forEach(function (l) {
       if (l.tipo === 'item') contagem[l.item_id] = (contagem[l.item_id] || 0) + l.qtd;
+    });
+    document.querySelectorAll('.dl-item[data-item]').forEach(function (li) {
+      var id = li.getAttribute('data-item'), n = contagem[id] || 0;
+      var alvo = li.querySelector('.dl-acao'), item = itemPorId(id);
+      if (alvo && item && alvo.getAttribute('data-n') !== String(n)) { alvo.innerHTML = dlAcao(item); alvo.setAttribute('data-n', n); }
     });
     document.querySelectorAll('.servico-redondo[data-item]').forEach(function (bt) {
       var n = contagem[bt.getAttribute('data-item')] || 0;
@@ -620,7 +686,7 @@
   function abrirItem(id, opts) {
     var item = itemPorId(id);
     if (!item) return;
-    estadoItem = { item: item, meio: !!(opts && opts.meio && item.permite_meio_a_meio), metadeId: null, bordaId: null, qtd: 1, obs: '' };
+    estadoItem = { item: item, meio: !!(opts && opts.meio && item.permite_meio_a_meio), metadeId: null, bordaId: null, qtd: 1, obs: '', tirar: {} };
     renderItemSheet(true);
   }
 
@@ -639,8 +705,12 @@
     var s = estadoItem, it = s.item;
     var corpo = '';
     corpo += fotoOuMono(it, 'sheet-foto');
-    if (it.descricao) corpo += '<p class="sheet-desc">' + esc(it.descricao) + '</p>';
+    var ings = ingredientesDe(it);
+    // se a descrição é uma lista de ingredientes, ela vira as caixinhas de tirar (mais abaixo);
+    // senão fica o texto como sempre foi
+    if (it.descricao && !(emLista() && ings.length)) corpo += '<p class="sheet-desc">' + esc(it.descricao) + '</p>';
     corpo += '<p class="sheet-preco-base">' + U.precoOuCombinar(it.preco) + '</p>';
+    if (emLista() && ings.length) corpo += blocoIngredientes(ings, s.tirar, 'tirar');
 
     var outras = elegiveisMeio().filter(function (i) { return i.id !== it.id; });
     if (it.permite_meio_a_meio && outras.length) {
@@ -696,11 +766,169 @@
     if (borda) desc += ' — borda ' + borda.nome;
     adicionarAoCarrinho({
       tipo: 'item', item_id: it.id, meio_item_id: metade ? metade.id : null, borda_id: borda ? borda.id : null,
-      qtd: s.qtd, obs: (s.obs || '').trim(), descricao: desc, preco: precoItemAtual()
+      qtd: s.qtd, obs: window.VBIngredientes.observacao(ingredientesDe(it).filter(function (x) { return s.tirar && s.tirar[x]; }), s.obs),
+      descricao: desc, preco: precoItemAtual()
     });
     if (guia && guia.voltar) { guia.voltar = false; renderGuia(); U.toast(V.adicionado); return; }
     fecharSheet();
     U.toast(s.qtd > 1 ? s.qtd + '× — ' + V.adicionado.toLowerCase() : V.adicionado);
+  }
+
+
+  /* ===================== tirar ingredientes ===================== */
+  function ingredientesDe(item) { return (window.VBIngredientes && item) ? window.VBIngredientes.de(item.descricao) : []; }
+  function alternarTirar(mapa, nome) { if (mapa[nome]) delete mapa[nome]; else mapa[nome] = true; }
+  // as caixinhas: tudo vem incluído; tocar tira (risca) e volta a tocar
+  function blocoIngredientes(lista, tirados, atributo, titulo, dica) {
+    var fora = lista.filter(function (x) { return tirados[x]; }).length;
+    return '<div class="grupo"><div class="grupo-titulo">' + (titulo || 'Ingredientes') + ' <em>' + (fora ? fora + ' fora' : (dica || 'Toque no que não quer')) + '</em></div>' +
+      '<div class="dl-ings">' + lista.map(function (x) {
+        var off = !!tirados[x];
+        return '<button type="button" class="dl-ing' + (off ? ' fora' : '') + '" data-' + atributo + '="' + esc(x) + '" aria-pressed="' + off + '">' +
+          '<span class="dl-ing-marca" aria-hidden="true">' + (off ? '' : U.ICONES.check) + '</span>' + esc(x) + '</button>';
+      }).join('') + '</div></div>';
+  }
+
+  /* o "+" da linha: sempre a pizza inteira, do jeito do cardápio — um toque e pronto */
+  function dlMudar(id, d) {
+    var item = itemPorId(id);
+    if (!item) return;
+    if (d > 0) {
+      adicionarAoCarrinho({ tipo: 'item', item_id: id, meio_item_id: null, borda_id: null, qtd: 1, obs: '', descricao: item.nome, preco: Number(item.preco) });
+      if (qtdDoItem(id) === 1) U.toast(item.nome + ' no pedido'); // só na primeira: depois o contador já mostra
+      return;
+    }
+    for (var i = carrinho.length - 1; i >= 0; i--) {
+      var l = carrinho[i];
+      if (l.tipo === 'item' && l.item_id === id) {
+        l.qtd -= 1;
+        if (l.qtd <= 0) carrinho.splice(i, 1);
+        salvarCarrinho(); renderizarCarrinhoBar(); marcarItensNoCarrinho();
+        return;
+      }
+    }
+  }
+
+  /* ===================== meio a meio ===================== */
+  /* Tela própria, em duas escolhas: 1ª metade, 2ª metade — e pronto. O desenho
+     de uma pizza em CSS vai enchendo conforme escolhe. Cobra o sabor mais caro,
+     como a loja já cobrava; o pedido segue o mesmo formato (item + meio_item). */
+  var estadoMeio = null;
+
+  function abrirMeio(primeiroId) {
+    if (elegiveisMeio().length < 2) return;
+    var a = primeiroId ? itemPorId(primeiroId) : null;
+    estadoMeio = { a: a, b: null, ativo: a ? 'b' : 'a', bordaId: null, tirarA: {}, tirarB: {}, qtd: 1, obs: '' };
+    renderMeioSheet(true);
+  }
+  function precoMeio() {
+    var s = estadoMeio;
+    var base = Math.max(s.a ? Number(s.a.preco) : 0, s.b ? Number(s.b.preco) : 0);
+    var b = s.bordaId ? bordaPorId(s.bordaId) : null;
+    return base + (b ? Number(b.preco) : 0);
+  }
+  function obsDoMeio() {
+    var s = estadoMeio, partes = [];
+    var sem = function (ing, mapa) { return ing.filter(function (x) { return mapa[x]; }).map(function (x) { return 'sem ' + x; }).join(', '); };
+    var a = s.a ? sem(ingredientesDe(s.a), s.tirarA) : '', b = s.b ? sem(ingredientesDe(s.b), s.tirarB) : '';
+    if (a) partes.push('1ª metade ' + a);
+    if (b) partes.push('2ª metade ' + b);
+    return window.VBIngredientes.juntar(partes.join(' · '), s.obs);
+  }
+
+  function renderMeioSheet(primeiraVez, rolarTopo) {
+    var s = estadoMeio;
+    var eleg = elegiveisMeio();
+    var slot = function (qual, rotulo) {
+      var it = s[qual];
+      return '<button type="button" class="dl-slot' + (it ? ' cheio' : '') + (s.ativo === qual ? ' ativo' : '') + '" data-meio-slot="' + qual + '">' +
+        '<span class="dl-slot-rot">' + rotulo + '</span>' +
+        '<span class="dl-slot-nome">' + (it ? esc(it.nome) : 'Escolher sabor') + '</span>' +
+        (it ? '<span class="dl-slot-preco">' + U.preco(it.preco) + '</span>' : '') + '</button>';
+    };
+    var corpo = '<div class="dl-pizza-grande' + (s.a ? ' a' : '') + (s.b ? ' b' : '') + '" aria-hidden="true"><i></i><i></i></div>' +
+      '<p class="sheet-desc dl-meio-aviso">Escolha dois sabores. Você paga só o mais caro.</p>' +
+      '<div class="dl-slots">' + slot('a', '1ª metade') + slot('b', '2ª metade') + '</div>';
+
+    if (s.ativo) {
+      corpo += '<input type="search" class="dl-busca-sabor" id="meioBusca" placeholder="Buscar sabor (ex.: portuguesa)" autocomplete="off" aria-label="Buscar sabor">' +
+        '<div class="dl-escolha" id="meioLista">' + eleg.map(function (o) {
+          var outra = s.ativo === 'a' ? s.b : s.a, atual = s[s.ativo];
+          var jaNaOutra = outra && outra.id === o.id;
+          return '<button type="button" class="dl-opcao' + (atual && atual.id === o.id ? ' ativo' : '') + '"' + (jaNaOutra ? ' disabled' : '') +
+            ' data-meio-pick="' + o.id + '" data-busca="' + esc((o.nome + ' ' + (o.descricao || '')).toLowerCase()) + '">' +
+            dlFoto(o) + '<span class="dl-texto"><span class="dl-nome">' + esc(o.nome) + '</span>' +
+            (o.descricao ? '<span class="dl-desc">' + esc(o.descricao) + '</span>' : '') + '</span>' +
+            '<span class="dl-preco">' + (jaNaOutra ? 'já escolhido' : U.preco(o.preco)) + '</span></button>';
+        }).join('') + '</div>';
+    } else if (s.a && s.b) {
+      var ia = ingredientesDe(s.a), ib = ingredientesDe(s.b);
+      if (ia.length || ib.length) corpo += '<p class="sheet-desc dl-dica">Toque no ingrediente que você não quer.</p>';
+      if (ia.length) corpo += blocoIngredientes(ia, s.tirarA, 'tirar-a', esc(s.a.nome), '1ª metade');
+      if (ib.length) corpo += blocoIngredientes(ib, s.tirarB, 'tirar-b', esc(s.b.nome), '2ª metade');
+      if (aceitaBorda(s.a) && aceitaBorda(s.b)) {
+        corpo += '<div class="grupo"><div class="grupo-titulo">Borda <em>Opcional</em></div><div class="opcoes">' +
+          '<button type="button" class="opcao' + (!s.bordaId ? ' ativo' : '') + '" data-meio-borda=""><span class="marca">' + U.ICONES.check + '</span><span class="opcao-nome">Sem borda</span></button>' +
+          cardapio.bordas.map(function (b) {
+            return '<button type="button" class="opcao' + (s.bordaId === b.id ? ' ativo' : '') + '" data-meio-borda="' + b.id + '">' +
+              '<span class="marca">' + U.ICONES.check + '</span><span class="opcao-nome">' + esc(b.nome) + '</span><span class="opcao-extra">+ ' + U.preco(b.preco) + '</span></button>';
+          }).join('') + '</div></div>';
+      }
+      corpo += '<div class="grupo"><div class="grupo-titulo">Alguma observação? <em>Opcional</em></div>' +
+        '<div class="campo"><textarea id="meioObs" maxlength="140" rows="2" placeholder="Ex.: bem assada, cortar em 8">' + esc(s.obs) + '</textarea></div></div>';
+    }
+
+    var falta = !(s.a && s.b);
+    var rodape = '<div class="qtd" aria-label="Quantidade"><button type="button" data-meio-qtd="-1" ' + (s.qtd <= 1 ? 'disabled' : '') + ' aria-label="Menos">−</button>' +
+      '<span>' + s.qtd + '</span><button type="button" data-meio-qtd="1" aria-label="Mais">+</button></div>' +
+      '<button type="button" class="btn cheio" id="meioAddBtn" ' + (falta ? 'disabled' : '') + '>' +
+      (falta ? (s.a ? 'Escolha a 2ª metade' : 'Escolha a 1ª metade') : 'Adicionar<span class="valor">' + U.preco(precoMeio() * s.qtd) + '</span>') + '</button>';
+
+    var corpoAtual = (primeiraVez || rolarTopo) ? null : $('sheetConteudo').querySelector('.sheet-corpo');
+    var scroll = corpoAtual ? corpoAtual.scrollTop : 0;
+    abrirSheet('meio', cabecaSheet('Meio a meio') + '<div class="sheet-corpo">' + corpo + '</div><div class="sheet-rodape">' + rodape + '</div>');
+    var novo = $('sheetConteudo').querySelector('.sheet-corpo');
+    if (novo) novo.scrollTop = scroll;
+  }
+
+  function cliqueMeio(e) {
+    var s = estadoMeio;
+    if (!s) return;
+    var lerObsMeio = function () { var el = $('meioObs'); if (el) s.obs = el.value; };
+    var sl = e.target.closest('[data-meio-slot]');
+    if (sl) { s.ativo = s.ativo === sl.getAttribute('data-meio-slot') ? null : sl.getAttribute('data-meio-slot'); renderMeioSheet(false, true); return; }
+    var pk = e.target.closest('[data-meio-pick]');
+    if (pk && !pk.disabled) {
+      var it = itemPorId(pk.getAttribute('data-meio-pick'));
+      var qual = s.ativo;
+      s[qual] = it; if (qual === 'a') s.tirarA = {}; else s.tirarB = {};
+      // depois da 1ª já abre a 2ª; depois da 2ª fecha a lista e mostra o resto
+      s.ativo = qual === 'a' && !s.b ? 'b' : (qual === 'b' && !s.a ? 'a' : null);
+      renderMeioSheet(false, true);
+      return;
+    }
+    var ta = e.target.closest('[data-tirar-a]');
+    if (ta) { lerObsMeio(); alternarTirar(s.tirarA, ta.getAttribute('data-tirar-a')); renderMeioSheet(); return; }
+    var tb = e.target.closest('[data-tirar-b]');
+    if (tb) { lerObsMeio(); alternarTirar(s.tirarB, tb.getAttribute('data-tirar-b')); renderMeioSheet(); return; }
+    var bo = e.target.closest('[data-meio-borda]');
+    if (bo) { lerObsMeio(); s.bordaId = bo.getAttribute('data-meio-borda') || null; renderMeioSheet(); return; }
+    var q = e.target.closest('[data-meio-qtd]');
+    if (q) { lerObsMeio(); s.qtd = Math.max(1, Math.min(50, s.qtd + Number(q.getAttribute('data-meio-qtd')))); renderMeioSheet(); return; }
+    if (e.target.closest('#meioAddBtn')) { lerObsMeio(); adicionarMeioDaSheet(); }
+  }
+
+  function adicionarMeioDaSheet() {
+    var s = estadoMeio;
+    if (!s.a || !s.b) return;
+    var borda = s.bordaId ? bordaPorId(s.bordaId) : null;
+    var desc = 'Meio a meio: ' + s.a.nome + ' / ' + s.b.nome + (borda ? ' — borda ' + borda.nome : '');
+    adicionarAoCarrinho({
+      tipo: 'item', item_id: s.a.id, meio_item_id: s.b.id, borda_id: borda ? borda.id : null,
+      qtd: s.qtd, obs: obsDoMeio(), descricao: desc, preco: precoMeio()
+    });
+    fecharSheet();
+    U.toast('Meio a meio no pedido');
   }
 
   /* ===================== sheet do combo ===================== */
@@ -931,8 +1159,10 @@
       '<button type="button" data-forma="retirada" class="' + (c.forma === 'retirada' ? 'ativo' : '') + '" ' + (estab.aceita_retirada ? '' : 'disabled') + '>' + V.retirada + '</button></div>';
     if (c.forma === 'entrega') {
       corpo += '<div style="margin-top:.8rem">';
-      if (URGENTE) corpo += blocoGps();
-      corpo += campo('ckEnd', URGENTE ? (c.gps && c.gps.status === 'ok' ? 'Endereço ou ponto de referência (opcional)' : V.enderecoRotulo) : V.enderecoRotulo,
+      // delivery também: um toque pega a localização e já preenche rua e bairro —
+      // digitar endereço no celular é a parte mais chata do pedido
+      if (URGENTE || emLista()) corpo += blocoGps();
+      corpo += campo('ckEnd', (URGENTE || emLista()) ? (c.gps && c.gps.status === 'ok' ? 'Endereço ou ponto de referência (opcional)' : V.enderecoRotulo) : V.enderecoRotulo,
           '<input id="ckEnd" autocomplete="street-address" maxlength="200" value="' + esc(c.endereco) + '" placeholder="' + (SERVICO ? 'Rua, número, bairro — ou um ponto de referência' : 'Rua, número, bairro') + '">') +
         campo('ckRef', URGENTE ? 'Como te achar?' : 'Complemento / referência', '<input id="ckRef" maxlength="140" value="' + esc(c.referencia) + '" placeholder="' + (URGENTE ? 'Ex.: carro prata no posto, em frente ao mercado' : 'Apto, bloco, perto de…') + '">') + '</div>';
     } else if (estab.endereco) {
@@ -952,7 +1182,7 @@
     }
 
     if (formas.length) {
-      corpo += '<div class="grupo"><div class="grupo-titulo">Pagamento <em>Na entrega/retirada</em></div><div class="opcoes">' +
+      corpo += '<div class="grupo"><div class="grupo-titulo">Pagamento <em>Pix, direto pra loja</em></div><div class="opcoes">' +
         formas.map(function (f) {
           return '<button type="button" class="opcao' + (c.pagamento === f ? ' ativo' : '') + '" data-pag="' + f + '"><span class="marca">' + U.ICONES.check + '</span>' +
             '<span class="opcao-nome">' + esc(U.PAGAMENTOS[f] || f) + '</span></button>';
@@ -1696,6 +1926,7 @@
       if (card) { abrirItem(card.getAttribute('data-item')); return; }
       if (e.target.closest('[data-meio]')) {
         var eleg = elegiveisMeio();
+        if (emLista()) { abrirMeio(); return; }
         if (eleg.length) abrirItem(eleg[0].id, { meio: true });
         return;
       }
@@ -1716,10 +1947,26 @@
       var voltar = e.target.closest('[data-voltar]');
       if (voltar) { lerCamposCheckout(); abrirCarrinho(); return; }
 
+      // delivery em lista: "+" põe a pizza inteira no pedido sem abrir nada; "−" tira
+      var dlMais = e.target.closest('[data-dl-mais]');
+      if (dlMais) { dlMudar(dlMais.getAttribute('data-dl-mais'), 1); return; }
+      var dlMenos = e.target.closest('[data-dl-menos]');
+      if (dlMenos) { dlMudar(dlMenos.getAttribute('data-dl-menos'), -1); return; }
+      var abreItem = e.target.closest('[data-abrir-item]');
+      if (abreItem) { abrirItem(abreItem.getAttribute('data-abrir-item')); return; }
+
+      if (sheetNome === 'meio') { cliqueMeio(e); return; }
+
       // dentro da sheet do item
       if (sheetNome === 'item') {
         var op = e.target.closest('[data-meio-op]');
-        if (op) { lerObs('itemObs', estadoItem); estadoItem.meio = op.getAttribute('data-meio-op') === '1'; if (!estadoItem.meio) estadoItem.metadeId = null; renderItemSheet(); return; }
+        if (op) {
+          lerObs('itemObs', estadoItem);
+          if (emLista() && op.getAttribute('data-meio-op') === '1') { abrirMeio(estadoItem.item.id); return; }
+          estadoItem.meio = op.getAttribute('data-meio-op') === '1'; if (!estadoItem.meio) estadoItem.metadeId = null; renderItemSheet(); return;
+        }
+        var ti = e.target.closest('[data-tirar]');
+        if (ti) { lerObs('itemObs', estadoItem); alternarTirar(estadoItem.tirar, ti.getAttribute('data-tirar')); renderItemSheet(); return; }
         var met = e.target.closest('[data-metade]');
         if (met) { lerObs('itemObs', estadoItem); estadoItem.metadeId = met.getAttribute('data-metade'); renderItemSheet(); return; }
         var bo = e.target.closest('[data-borda]');
@@ -1784,6 +2031,16 @@
       buscaTimer = setTimeout(function () { filtrar(campoBusca.value); }, 90);
     });
 
+    // busca de sabor na tela do meio a meio (sem redesenhar, pra não perder o foco do teclado)
+    document.addEventListener('input', function (e) {
+      if (!e.target || e.target.id !== 'meioBusca') return;
+      var termo = U.slugificar(e.target.value).replace(/-/g, ' ');
+      document.querySelectorAll('#meioLista .dl-opcao').forEach(function (b) {
+        var alvo = U.slugificar(b.getAttribute('data-busca')).replace(/-/g, ' ');
+        b.classList.toggle('oculto', !!termo && alvo.indexOf(termo) === -1);
+      });
+    });
+
     ligarScrollspy();
 
     if (MODO_PREVIEW) {
@@ -1805,10 +2062,10 @@
   function filtrar(texto) {
     var termo = U.slugificar(texto).replace(/-/g, ' ');
     var algum = false;
-    document.querySelectorAll('.servico-redondo[data-item]').forEach(function (card) {
+    document.querySelectorAll('.servico-redondo[data-item], .dl-item[data-item]').forEach(function (card) {
       var alvo = U.slugificar(card.getAttribute('data-busca')).replace(/-/g, ' ');
       var mostra = !termo || alvo.indexOf(termo) !== -1;
-      card.parentNode.classList.toggle('oculto', !mostra);
+      (card.classList.contains('dl-item') ? card : card.parentNode).classList.toggle('oculto', !mostra);
       if (mostra) algum = true;
     });
     document.querySelectorAll('.grupo-cardapio:not(#secaoEspeciais)').forEach(function (g) {

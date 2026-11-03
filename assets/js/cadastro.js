@@ -839,6 +839,11 @@
           var rpc = function (nome, params) {
             return db.rpc(nome, params).then(function (r) { if (r.error) throw r.error; return r.data; });
           };
+          // pizzaria: a pizza nasce com meio a meio e borda ligados (bebida não)
+          var segmento = (meusEstabs[estabId] || {}).segmento;
+          var pizza = function (nomeCat) {
+            return segmento === 'pizzaria' && !/bebida|refri|suco|cerveja|[aá]gua|vinho|drink|sorvete|energ[eé]tico/i.test(String(nomeCat || ''));
+          };
           return Promise.all([
             rpc('delivery_admin_listar_categorias', { p_estabelecimento_id: estabId }),
             rpc('delivery_admin_listar_itens', { p_estabelecimento_id: estabId })
@@ -860,7 +865,7 @@
                       return rpc('delivery_admin_salvar_item', {
                         p_id: null, p_estabelecimento_id: estabId, p_categoria_id: categoria.id, p_nome: nome.slice(0, 80),
                         p_descricao: it.descricao || null, p_preco: Number(it.preco) || 0, p_foto_url: null,
-                        p_permite_meio_a_meio: false, p_ativo: true, p_ordem: ordemItem + feitos, p_aceita_borda: false
+                        p_permite_meio_a_meio: pizza(nomeCat), p_ativo: true, p_ordem: ordemItem + feitos, p_aceita_borda: pizza(nomeCat)
                       }).then(function () { feitos++; });
                     });
                   }, Promise.resolve());
