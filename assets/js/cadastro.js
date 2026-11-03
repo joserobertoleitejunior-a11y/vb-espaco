@@ -718,12 +718,12 @@
     if (!pedidosPronto) return;
     pedirAoPainelPedidos('resumo').then(function (t) { try { ultimoResumoPedidos = JSON.parse(t); } catch (e) {} }, function () {});
   }
-  function pedirAoPainelPedidos(acao, args) {
+  function pedirAoPainelPedidos(acao, args, segundos) {
     return new Promise(function (ok, falha) {
       var f = pedidosHost && pedidosHost.querySelector('iframe');
       if (!f || !f.contentWindow || !pedidosPronto) { falha(new Error('Abra a aba de pedidos primeiro.')); return; }
       var id = 'p' + (++seqPedido);
-      var relogio = setTimeout(function () { delete respostasPedido[id]; falha(new Error('O painel de pedidos não respondeu.')); }, 8000);
+      var relogio = setTimeout(function () { delete respostasPedido[id]; falha(new Error('O painel de pedidos não respondeu.')); }, (segundos || 8) * 1000);
       respostasPedido[id] = function (texto) {
         clearTimeout(relogio);
         if (String(texto).indexOf('ERRO:') === 0) falha(new Error(String(texto).slice(5)));
@@ -815,6 +815,23 @@
         cancelar_pedido: function (a) {
           return pedirAoPainelPedidos('cancelar_pedido', a).then(function (t) { mostrarAbaDashboard('pedidos'); return t; },
             function (e) { mostrarAbaDashboard('pedidos'); return (e.message || '') + ' Abri a tela de pedidos pra você.'; });
+        },
+        /* a foto que o dono mandou no chat: quem salva é o painel de pedidos,
+           com as mesmas RPCs dos botões. Um item é uma chamada, então um
+           cardápio grande leva um tempo — daí o prazo maior. */
+        salvar_cardapio_lido: function (a) {
+          if (!a.categorias || !a.categorias.length) return 'Não tenho nada lido pra salvar.';
+          mostrarAbaDashboard('pedidos');
+          return pedirAoPainelPedidos('salvar_cardapio_lido', a, 90).then(null, function (e) {
+            return (e.message || 'Não consegui salvar agora.') + ' Abri a tela do cardápio pra você terminar.';
+          });
+        },
+        conferir_cardapio_lido: function (a) {
+          if (!a.categorias || !a.categorias.length) return 'Não tenho nada lido pra conferir.';
+          mostrarAbaDashboard('pedidos');
+          return pedirAoPainelPedidos('conferir_cardapio_lido', a, 15).then(null, function (e) {
+            return e.message || 'Não consegui abrir a lista agora.';
+          });
         },
         lancar_venda: function (a) {
           var valor = Number(a.valor) || 0;

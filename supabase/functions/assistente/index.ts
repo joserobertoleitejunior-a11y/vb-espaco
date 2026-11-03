@@ -67,6 +67,7 @@ cancelar_pedido     { numero: number }
 lancar_venda        { descricao: string, valor: number, forma?: "pix"|"dinheiro"|"cartao", cliente?: string }
 consultar           { oQue: "hoje"|"vendas"|"agenda"|"pedidos"|"clientes"|"anuncio" }  — responde com números
 abrir_editor        { parte?: "foto"|"textos"|"estilo"|"servicos"|"equipe"|"galeria"|"horario"|"contato"|"localizacao"|"redes" }
+pedir_foto_cardapio {}                     — o dono quer mexer no cardápio: peça a foto aqui no chat
 mudar_nome_funcionario { nome: string }   — o dono quer chamar o funcionário de outro jeito
 nada                {}                     — só conversa, sem ação
 `;
@@ -86,6 +87,11 @@ Regras:
 - Para consultar qualquer número, use a ação "consultar": o app mostra os dados de verdade.
 - Nunca fale de chave, API, banco de dados nem de como o app funciona por dentro.
 - Se o dono quiser te dar outro nome, use "mudar_nome_funcionario".
+- Cardápio: se ele falar em montar, preencher, atualizar ou "editar o cardápio"
+  (ou a tabela de serviços), NÃO mande ele pra outra tela. Use
+  "pedir_foto_cardapio" e diga, na "fala", que ele pode mandar a foto do
+  cardápio pelo botão da câmera aqui do chat, que você lê e preenche.
+  Só use "abrir_editor" se ele pedir pra mexer num item específico à mão.
 
 O que está na tela agora (use para entender o pedido):
 ${JSON.stringify(ctx).slice(0, 3000)}`;

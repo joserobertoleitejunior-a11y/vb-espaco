@@ -92,6 +92,9 @@
         '<div class="fn-conversa" id="fnConversa"></div>' +
         '<div class="fn-atalhos" id="fnAtalhos"></div>' +
         '<form class="fn-barra" id="fnForm">' +
+          '<button type="button" class="fn-anexo" id="fnAnexo" aria-label="Mandar foto do cardápio">' +
+            '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg></button>' +
+          '<input type="file" accept="image/*" id="fnArquivo" hidden>' +
           '<button type="button" class="fn-mic" id="fnMic" aria-label="Falar">' +
             '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></button>' +
           '<input id="fnTexto" type="text" autocomplete="off" placeholder="Fale ou escreva o que precisa" aria-label="O que você precisa">' +
@@ -102,7 +105,14 @@
     document.body.appendChild(c);
     st.caixa = c;
     document.documentElement.classList.add('fn-travado');
-    c.addEventListener('click', function (e) { if (e.target.closest('[data-fn-fechar]')) fechar(); });
+    c.addEventListener('click', function (e) {
+      if (e.target.closest('[data-fn-fechar]')) { fechar(); return; }
+      var esc = e.target.closest('[data-fn-lido]');
+      if (esc && lido) {
+        esc.closest('.fn-escolhas').remove();
+        executar(esc.getAttribute('data-fn-lido') === 'salvar' ? 'salvar_cardapio_lido' : 'conferir_cardapio_lido', { categorias: lido }, true);
+      }
+    });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && st.caixa && st.caixa.classList.contains('aberta')) fechar(); });
     document.getElementById('fnForm').addEventListener('submit', function (e) {
       e.preventDefault();
@@ -113,6 +123,7 @@
       mandar(t);
     });
     ligarMicrofone();
+    ligarFoto();
     atalhos();
     if (!st.nome) batizar();
     else if (!st.hist.length) dizer('ele', 'Oi! Sou ' + st.nome + '. Me peça o que precisar: confirmar um horário, lançar uma venda, ver quanto entrou hoje…');
@@ -196,6 +207,82 @@
     c.scrollTop = c.scrollHeight;
   }
 
+  /* ---------- foto do cardápio pelo chat ----------
+     O dono manda a foto aqui mesmo em vez de ir procurar a tela do cardápio.
+     Quem lê é a função 'ler-cardapio' (a mesma do painel); o que ela devolve
+     NUNCA entra no site sozinho: o funcionário mostra o que leu e espera o
+     dono mandar salvar — ou abrir a lista pra corrigir antes. */
+  var lido = null;
+
+  // a foto sai do celular já menor: 1600px e JPEG, senão a leitura demora
+  function comprimir(arquivo, maxLado) {
+    return new Promise(function (ok, falha) {
+      var url = URL.createObjectURL(arquivo);
+      var img = new Image();
+      img.onload = function () {
+        var escala = Math.min(1, maxLado / Math.max(img.naturalWidth, img.naturalHeight));
+        var cv = document.createElement('canvas');
+        cv.width = Math.round(img.naturalWidth * escala);
+        cv.height = Math.round(img.naturalHeight * escala);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url);
+        ok(cv.toDataURL('image/jpeg', 0.84));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); falha(new Error('Não consegui abrir essa foto.')); };
+      img.src = url;
+    });
+  }
+
+  function ligarFoto() {
+    var b = document.getElementById('fnAnexo'), inp = document.getElementById('fnArquivo');
+    if (!b || !inp) return;
+    b.addEventListener('click', function () { inp.click(); });
+    inp.addEventListener('change', function () {
+      var arq = inp.files && inp.files[0];
+      inp.value = '';
+      if (arq) mandarFoto(arq);
+    });
+  }
+
+  function mandarFoto(arquivo) {
+    if (!/^image\//.test(arquivo.type)) { dizer('ele', 'Isso não parece uma foto. Mande uma imagem do cardápio.'); return; }
+    var servico = (st.cfg.areas || []).indexOf('servicos') !== -1 && (st.cfg.areas || []).indexOf('delivery') === -1;
+    dizer('eu', servico ? 'Foto da tabela de serviços' : 'Foto do cardápio');
+    pensando(true);
+    comprimir(arquivo, 1600).then(function (dataUrl) {
+      return global.db.functions.invoke('ler-cardapio', { body: { imagem: dataUrl, tipo: servico ? 'servicos' : 'cardapio' } });
+    }).then(function (r) {
+      pensando(false);
+      if (r.error) {
+        var ctx = r.error.context;
+        if (ctx && ctx.json) return ctx.json().then(function (j) { dizer('ele', (j && j.erro) || 'Não consegui ler essa foto.'); }, function () { dizer('ele', 'Não consegui ler essa foto.'); });
+        dizer('ele', 'Não consegui ler essa foto.');
+        return;
+      }
+      mostrarLido(r.data || {});
+    }, function (e) {
+      pensando(false);
+      dizer('ele', (e && e.message) || 'Não consegui ler essa foto agora.');
+    });
+  }
+
+  function mostrarLido(dados) {
+    var cats = dados.categorias || [];
+    var total = cats.reduce(function (n, c) { return n + (c.itens || []).length; }, 0);
+    if (!total) { dizer('ele', dados.aviso || 'Não achei nenhum item nessa foto. Tente com mais luz, mais perto ou sem cortar as bordas.'); return; }
+    lido = cats;
+    // uma amostra: o dono reconhece o cardápio dele sem precisar abrir nada
+    var amostra = [];
+    cats.forEach(function (c) { (c.itens || []).forEach(function (i) { if (amostra.length < 6) amostra.push(i.nome + (i.preco ? ' — R$ ' + i.preco.toFixed(2).replace('.', ',') : ' — sem preço')); }); });
+    dizer('ele', 'Li ' + total + (total === 1 ? ' item' : ' itens') + ' em ' + cats.length + (cats.length === 1 ? ' categoria' : ' categorias') + ':\n• ' +
+      amostra.join('\n• ') + (total > amostra.length ? '\n…e mais ' + (total - amostra.length) + '.' : '') +
+      '\n\nConfira os preços: a leitura da foto pode errar.',
+      '<div class="fn-escolhas">' +
+        '<button type="button" class="fn-esc fn-esc-forte" data-fn-lido="conferir">Conferir e corrigir</button>' +
+        '<button type="button" class="fn-esc" data-fn-lido="salvar">Pôr tudo do jeito que está</button>' +
+      '</div>');
+  }
+
   /* ---------- microfone (do próprio navegador, sem mandar áudio pra lugar nenhum) ---------- */
   var Rec = global.SpeechRecognition || global.webkitSpeechRecognition;
   function ligarMicrofone() {
@@ -273,6 +360,12 @@
         atualizarBotao();
         var n = document.getElementById('fnNome'); if (n) n.textContent = st.nome;
       });
+      return;
+    }
+    // a IA pediu a foto: quem abre a câmera é o próprio chat, aqui
+    if (nome === 'pedir_foto_cardapio') {
+      var bAnexo = document.getElementById('fnAnexo');
+      if (bAnexo) { bAnexo.classList.add('fn-pisca'); setTimeout(function () { bAnexo.classList.remove('fn-pisca'); }, 4000); }
       return;
     }
     var fn = (st.cfg.acoes || {})[nome];
