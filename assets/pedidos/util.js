@@ -130,6 +130,19 @@
     return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10);
   }
 
+  /* As faixas de um dia são uma LISTA: [["18:00","23:30"]]. Se vier qualquer
+     outra coisa no banco — um objeto {abre,fecha}, um texto, nulo — a conta
+     de horário explodia e levava a PÁGINA INTEIRA do cliente junto (tela
+     preta, nada carregava). Horário torto agora vira "sem horário": chato,
+     mas não derruba a loja de ninguém. */
+  function faixasDoDia(h, dia) {
+    var v = h && h[String(dia)];
+    if (Array.isArray(v)) return v.filter(function (f) { return Array.isArray(f) && f.length >= 2; });
+    // formato { abre, fecha }: aproveitamos em vez de quebrar
+    if (v && typeof v === 'object' && v.abre && v.fecha) return [[v.abre, v.fecha]];
+    return [];
+  }
+
   // Mesma regra da função delivery_loja_aberta do banco
   function lojaAberta(estab) {
     if (!estab) return false;
@@ -138,13 +151,13 @@
     var h = estab.horarios || {};
     if (!Object.keys(h).length) return true;
     var agora = agoraBrasilia();
-    var hoje = h[String(agora.dow)] || [];
+    var hoje = faixasDoDia(h, agora.dow);
     for (var i = 0; i < hoje.length; i++) {
       var a = paraMinutos(hoje[i][0]), f = paraMinutos(hoje[i][1]);
       if (f > a) { if (agora.minutos >= a && agora.minutos < f) return true; }
       else if (agora.minutos >= a) return true;
     }
-    var ontem = h[String((agora.dow + 6) % 7)] || [];
+    var ontem = faixasDoDia(h, (agora.dow + 6) % 7);
     for (var j = 0; j < ontem.length; j++) {
       var a2 = paraMinutos(ontem[j][0]), f2 = paraMinutos(ontem[j][1]);
       if (f2 <= a2 && agora.minutos < f2) return true;
@@ -158,7 +171,7 @@
     var h = estab.horarios || {};
     if (!Object.keys(h).length || aberto24h(h)) return null;
     var agora = agoraBrasilia();
-    var hoje = h[String(agora.dow)] || [];
+    var hoje = faixasDoDia(h, agora.dow);
     for (var i = 0; i < hoje.length; i++) {
       var a = paraMinutos(hoje[i][0]), f = paraMinutos(hoje[i][1]);
       if ((f > a && agora.minutos >= a && agora.minutos < f) || (f <= a && agora.minutos >= a)) {
@@ -166,7 +179,7 @@
         return (hoje[i][1] === '24:00' || hoje[i][1] === '00:00') ? 'meia-noite' : hoje[i][1];
       }
     }
-    var ontem = h[String((agora.dow + 6) % 7)] || [];
+    var ontem = faixasDoDia(h, (agora.dow + 6) % 7);
     for (var j = 0; j < ontem.length; j++) {
       if (paraMinutos(ontem[j][1]) <= paraMinutos(ontem[j][0]) && agora.minutos < paraMinutos(ontem[j][1])) return ontem[j][1];
     }
@@ -181,7 +194,7 @@
     var agora = agoraBrasilia();
     for (var add = 0; add < 8; add++) {
       var dia = (agora.dow + add) % 7;
-      var faixas = (h[String(dia)] || []).slice().sort(function (x, y) { return paraMinutos(x[0]) - paraMinutos(y[0]); });
+      var faixas = faixasDoDia(h, dia).slice().sort(function (x, y) { return paraMinutos(x[0]) - paraMinutos(y[0]); });
       for (var i = 0; i < faixas.length; i++) {
         if (add === 0 && paraMinutos(faixas[i][0]) <= agora.minutos) continue;
         var quando = add === 0 ? 'hoje' : add === 1 ? 'amanhã' : DIAS[dia].toLowerCase();
@@ -194,7 +207,7 @@
   function aberto24h(horarios) {
     var h = horarios || {};
     return [0, 1, 2, 3, 4, 5, 6].every(function (d) {
-      var f = (h[String(d)] || [])[0];
+      var f = faixasDoDia(h, d)[0];
       return f && f[0] === '00:00' && (f[1] === '24:00' || f[1] === '23:59' || f[1] === '00:00');
     });
   }
