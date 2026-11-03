@@ -57,3 +57,54 @@ revoke all on function public.assistente_historico_desfeito(uuid, uuid) from pub
 grant execute on function public.assistente_historico_listar(uuid, integer) to authenticated;
 grant execute on function public.assistente_historico_salvar(uuid, text, text, text, jsonb) to authenticated;
 grant execute on function public.assistente_historico_desfeito(uuid, uuid) to authenticated;
+
+-- ===== Limite de uso do funcionário por estabelecimento (limite justo, por dia) =====
+-- Mensagens de texto e fotos de cardápio contam separado (a foto gasta bem mais da IA).
+create table if not exists public.assistente_uso (
+  estabelecimento_id uuid not null references public.estabelecimentos(id) on delete cascade,
+  dia date not null,
+  mensagens integer not null default 0,
+  fotos integer not null default 0,
+  primary key (estabelecimento_id, dia)
+);
+alter table public.assistente_uso enable row level security;
+revoke all on public.assistente_uso from anon, authenticated;
+
+-- Consome 1 uso do tipo pedido ('mensagem' ou 'foto'). Devolve se pode, quanto usou e o limite.
+create or replace function public.assistente_consumir(p_estabelecimento_id uuid, p_tipo text default 'mensagem')
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+  v_lim_msg constant integer := 80;
+  v_lim_foto constant integer := 12;
+  v_msg integer; v_foto integer;
+begin
+  perform public.vibe_exigir_dono(p_estabelecimento_id);
+  insert into public.assistente_uso (estabelecimento_id, dia) values (p_estabelecimento_id, v_hoje) on conflict do nothing;
+  select mensagens, fotos into v_msg, v_foto from public.assistente_uso where estabelecimento_id = p_estabelecimento_id and dia = v_hoje for update;
+  if p_tipo = 'foto' then
+    if v_foto >= v_lim_foto then return jsonb_build_object('ok', false, 'tipo', 'foto', 'usados', v_foto, 'limite', v_lim_foto); end if;
+    update public.assistente_uso set fotos = fotos + 1 where estabelecimento_id = p_estabelecimento_id and dia = v_hoje;
+    return jsonb_build_object('ok', true, 'tipo', 'foto', 'usados', v_foto + 1, 'limite', v_lim_foto);
+  end if;
+  if v_msg >= v_lim_msg then return jsonb_build_object('ok', false, 'tipo', 'mensagem', 'usados', v_msg, 'limite', v_lim_msg); end if;
+  update public.assistente_uso set mensagens = mensagens + 1 where estabelecimento_id = p_estabelecimento_id and dia = v_hoje;
+  return jsonb_build_object('ok', true, 'tipo', 'mensagem', 'usados', v_msg + 1, 'limite', v_lim_msg);
+end $$;
+
+-- Quanto já usou hoje (pra mostrar no chat sem gastar nada)
+create or replace function public.assistente_uso_hoje(p_estabelecimento_id uuid)
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare v_hoje date := (now() at time zone 'America/Sao_Paulo')::date; v_msg integer := 0; v_foto integer := 0;
+begin
+  perform public.vibe_exigir_dono(p_estabelecimento_id);
+  select mensagens, fotos into v_msg, v_foto from public.assistente_uso where estabelecimento_id = p_estabelecimento_id and dia = v_hoje;
+  return jsonb_build_object('mensagens', coalesce(v_msg, 0), 'fotos', coalesce(v_foto, 0), 'limite_mensagens', 80, 'limite_fotos', 12);
+end $$;
+
+revoke all on function public.assistente_consumir(uuid, text) from public, anon;
+revoke all on function public.assistente_uso_hoje(uuid) from public, anon;
+grant execute on function public.assistente_consumir(uuid, text) to authenticated;
+grant execute on function public.assistente_uso_hoje(uuid) to authenticated;

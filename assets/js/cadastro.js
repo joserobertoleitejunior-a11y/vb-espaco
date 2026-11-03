@@ -1058,7 +1058,7 @@
   var TITULOS_ABA = {
     agenda: ['Sua agenda', 'Aqui ficam os horários que seus clientes marcaram. Toque em <b>Confirmar</b> quando aceitar e em <b>Concluir</b> quando terminar o serviço.'],
     clientes: ['Seus clientes', 'Todo mundo que agendou, pediu ou só visitou seu site fica salvo aqui. Toque num nome pra ver tudo.'],
-    resumo: ['Quanto você ganhou', 'O dinheiro que entrou, quantos clientes vieram e o que mais vende.'],
+    resumo: ['Quanto você ganhou', 'Escolha o período e veja o dinheiro que entrou, quantos clientes vieram e o que mais vende.'],
     caixa: ['Caixa', 'Vendeu algo? Toque em Nova venda e responda uma pergunta por tela: o valor vai pra aba Ganhos.'],
     comunidade: ['Promoções e recados', 'Mostre uma promoção ou um recado do dia pra quem visita o seu site.'],
     perfil: ['Seu site', 'Deixe seu site bonito em poucos toques. Siga a lista: cada item ganha um visto quando estiver pronto.']
@@ -1092,61 +1092,78 @@
       (no_ar ? '' : '<a class="btn btn-ghost" href="/anunciar.html" style="margin-top:0.6rem">Anunciar de novo</a>') + '</div>';
   }
 
+  // Ganhos: períodos clicáveis (1, 3, 5, 7, 15 dias e mensal), comparação com o período anterior
+  var GANHOS_PERIODOS = [{ d: 1, r: '1 dia' }, { d: 3, r: '3 dias' }, { d: 5, r: '5 dias' }, { d: 7, r: '7 dias' }, { d: 15, r: '15 dias' }, { d: 30, r: 'Mensal' }];
+  var ganhosDias = (function () { try { var v = Number(localStorage.getItem('vbGanhosDias')); return GANHOS_PERIODOS.some(function (p) { return p.d === v; }) ? v : 7; } catch (e) { return 7; } })();
+  function nomePeriodo(d) { var p = GANHOS_PERIODOS.filter(function (x) { return x.d === d; })[0]; return p ? (d === 30 ? 'últimos 30 dias' : d === 1 ? 'hoje' : 'últimos ' + d + ' dias') : 'período'; }
   function renderizarDashResumo() {
-    var estabId = dashEstabId;
+    var estabId = dashEstabId, dias = ganhosDias;
     var anunciosP = db.rpc('tenant_admin_meus_anuncios', { p_estabelecimento_id: estabId }).then(function (r) { return (r && r.data) || []; }, function () { return []; });
-    db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: 14 }).then(function (res) {
-      return anunciosP.then(function (an) { res.anuncios = an; return res; });
+    // o período anterior (mesmo tamanho) entra pela diferença entre "2n dias" e "n dias"
+    var anteriorP = db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: dias * 2 }).then(function (r) { return r && r.data ? Number(r.data.total_periodo) || 0 : null; }, function () { return null; });
+    db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: dias }).then(function (res) {
+      return Promise.all([anunciosP, anteriorP]).then(function (x) { res.anuncios = x[0]; res.dobro = x[1]; return res; });
     }).then(function (res) {
       if (dashEstabId !== estabId) return;
       if (res.error) { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">' + escapeHtml(res.error.message) + '</p>'; return; }
       var r = res.data || {};
-      var dias = r.faturamento_por_dia || [];
-      var maiorValor = dias.reduce(function (m, d) { return Math.max(m, Number(d.total)); }, 0);
+      var serie = r.faturamento_por_dia || [];
+      var total = Number(r.total_periodo) || 0;
+      var anterior = res.dobro == null ? null : Math.max(0, Math.round((res.dobro - total) * 100) / 100);
       var status = r.agendamentos_por_status || {};
       var statusComMovimento = Object.keys(STATUS_LABEL).filter(function (k) { return status[k] > 0; });
+      var movimentos = (Number(r.pedidos_periodo) || 0) + (Number(r.agendamentos_periodo) || 0);
+      var melhor = serie.reduce(function (m, d) { return Number(d.total) > Number(m.total || 0) ? d : m; }, {});
+      var delta = '';
+      if (anterior != null && dias > 1 || anterior != null) {
+        if (anterior > 0) {
+          var pct = Math.round(((total - anterior) / anterior) * 100);
+          delta = '<span class="gn-delta ' + (pct > 0 ? 'sobe' : pct < 0 ? 'desce' : 'igual') + '">' + (pct > 0 ? '▲ ' : pct < 0 ? '▼ ' : '= ') + Math.abs(pct) + '% vs período anterior</span>';
+        } else if (total > 0) delta = '<span class="gn-delta sobe">▲ período anterior sem vendas</span>';
+      }
 
       dashboardCorpo.classList.remove('dash-carregando');
       dashboardCorpo.innerHTML =
-        '<p class="dash-secao-intro">Visão geral dos últimos 14 dias: quanto entrou, quantos agendamentos e quantos clientes já passaram por aqui.</p>' +
+        '<div class="gn-periodos" role="tablist" aria-label="Período">' + GANHOS_PERIODOS.map(function (p) {
+          return '<button type="button" class="gn-per' + (p.d === dias ? ' on' : '') + '" data-gn-dias="' + p.d + '" role="tab" aria-selected="' + (p.d === dias) + '">' + p.r + '</button>';
+        }).join('') + '</div>' +
+        '<div class="gn-destaque"><small>Faturado — ' + nomePeriodo(dias) + '</small><strong>' + formatarPreco(total) + '</strong>' + delta + '</div>' +
+        '<div class="gn-cartoes">' +
+          '<div class="gn-cartao"><b>' + formatarPreco(r.total_hoje || 0) + '</b><span>Faturado hoje</span></div>' +
+          '<div class="gn-cartao"><b>' + formatarPreco(dias > 0 ? total / dias : 0) + '</b><span>Média por dia</span></div>' +
+          (temAgendaNeg() ? '<div class="gn-cartao"><b>' + (r.agendamentos_periodo || 0) + '</b><span>Agendamentos</span></div>' : '') +
+          (temPedidosNeg() ? '<div class="gn-cartao"><b>' + (r.pedidos_periodo || 0) + '</b><span>Pedidos</span></div>' : '') +
+          (movimentos > 0 ? '<div class="gn-cartao"><b>' + formatarPreco(total / movimentos) + '</b><span>Média por ' + (temPedidosNeg() && !temAgendaNeg() ? 'pedido' : 'atendimento') + '</span></div>' : '') +
+          (melhor.dia && Number(melhor.total) > 0 ? '<div class="gn-cartao"><b>' + escapeHtml(melhor.dia) + '</b><span>Melhor dia · ' + formatarPreco(melhor.total) + '</span></div>' : '') +
+          '<div class="gn-cartao"><b>' + (r.clientes_novos_periodo || 0) + '</b><span>Clientes novos</span></div>' +
+          '<div class="gn-cartao"><b>' + (r.total_clientes || 0) + '</b><span>Clientes no total</span></div>' +
+        '</div>' +
+        '<p class="gn-titulo">Faturamento por dia</p>' +
+        (window.VBGrafico && serie.some(function (d) { return Number(d.total) > 0; })
+          ? window.VBGrafico.barras(serie, { formatar: formatarPreco })
+          : '<p class="gn-vazio">Sem vendas neste período. Escolha outro período acima, ou lance uma venda na aba Caixa.</p>') +
+        (!temAgendaNeg() ? '' : '<p class="gn-titulo">Agendamentos por status</p>') +
+        (!temAgendaNeg() ? '' : statusComMovimento.length
+          ? '<div class="dash-status-resumo">' + statusComMovimento.map(function (k) { return '<span class="painel-status-badge ' + k + '">' + STATUS_LABEL[k] + ': ' + status[k] + '</span>'; }).join('') + '</div>'
+          : '<p class="gn-vazio">Nenhum agendamento ainda — eles aparecem aqui separados por status.</p>') +
+        (r.top_servicos && r.top_servicos.length ? '<p class="gn-titulo">Mais vendidos no período</p><div id="dashTopServicos">' +
+          r.top_servicos.map(function (s2) {
+            return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(s2.nome) + '</span><br><span class="secundario">' + s2.qtd + ' venda(s)</span></span><span><strong>' + formatarPreco(s2.total) + '</strong></span></div>';
+          }).join('') + '</div>' : '') +
+        blocoAnuncio(res.anuncios || []) +
         '<details class="dash-como"><summary>Como o dinheiro chega aqui?</summary><ol>' +
         '<li>Na <b>Agenda</b>, toque em <b>Concluir</b> quando o serviço for feito e informe o valor.</li>' +
         (temPedidosNeg() ? '<li>Pedido <b>Concluído</b> na aba de Pedidos entra sozinho.</li>' : '') +
-        '<li>Ou lance direto na aba <b>Caixa</b> (vendas avulsas, produtos).</li>' +
-        '<li>Pronto: o valor aparece nos cartões e no gráfico.</li></ol></details>' +
-        '<div class="dash-resumo-cards">' +
-        '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(r.total_hoje || 0) + '</span><span class="dash-resumo-label">Faturado hoje</span></div>' +
-        '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + formatarPreco(r.total_periodo || 0) + '</span><span class="dash-resumo-label">Últimos 14 dias</span></div>' +
-        (temAgendaNeg() ? '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.agendamentos_periodo || 0) + '</span><span class="dash-resumo-label">Agendamentos (14 dias)</span></div>' : '') +
-        (temPedidosNeg() ? '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.pedidos_periodo || 0) + '</span><span class="dash-resumo-label">Pedidos (14 dias)</span></div>' : '') +
-        '<div class="dash-resumo-card"><span class="dash-resumo-numero">' + (r.total_clientes || 0) + '</span><span class="dash-resumo-label">Clientes no total</span></div>' +
-        '</div>' +
-        blocoAnuncio(res.anuncios || []) +
-        '<p class="dash-resumo-subtitulo">Faturamento por dia</p>' +
-        (maiorValor > 0
-          ? '<div class="dash-grafico-barras">' +
-            dias.map(function (d) {
-              var altura = Math.round((Number(d.total) / maiorValor) * 100);
-              return '<div class="dash-barra-coluna-envolt" title="' + escapeHtml(d.dia) + ': ' + formatarPreco(d.total) + '">' +
-                '<div class="dash-barra-coluna"><div class="dash-barra" style="height:' + altura + '%;"></div></div>' +
-                '<span class="dash-barra-label">' + escapeHtml(d.dia) + '</span>' +
-                '</div>';
-            }).join('') +
-            '</div>'
-          : blocoVazio(ICONE_VAZIO_GRAFICO, 'Ainda sem vendas no período', (status.concluido > 0 ? 'Você tem ' + status.concluido + ' agendamento(s) concluído(s), mas sem valor lançado — por isso o faturamento está zerado. Dos próximos em diante, ao tocar em Concluir na Agenda, o app pergunta o valor e lança no Caixa sozinho. Pra os antigos, lance na aba Caixa.' : 'Quando você concluir um agendamento (informando o valor) ou lançar uma venda na aba Caixa, o faturamento de cada dia aparece aqui, em barras.'))
-        ) +
-        (!temAgendaNeg() ? '' : '<p class="dash-resumo-subtitulo">Agendamentos por status</p>') +
-        (!temAgendaNeg() ? '' : statusComMovimento.length
-          ? '<div class="dash-status-resumo">' +
-            statusComMovimento.map(function (k) {
-              return '<span class="painel-status-badge ' + k + '">' + STATUS_LABEL[k] + ': ' + status[k] + '</span>';
-            }).join('') +
-            '</div>'
-          : '<p class="dash-secao-intro" style="margin:0;">Nenhum agendamento pendente, confirmado, cancelado ou concluído ainda — eles vão aparecer aqui separados por status conforme forem chegando.</p>') +
-        (r.top_servicos && r.top_servicos.length ? '<p class="dash-resumo-subtitulo">Mais vendidos no período</p><div id="dashTopServicos">' +
-          r.top_servicos.map(function (s) {
-            return '<div class="painel-lista-item"><span><span class="principal">' + escapeHtml(s.nome) + '</span><br><span class="secundario">' + s.qtd + ' venda(s)</span></span><span><strong>' + formatarPreco(s.total) + '</strong></span></div>';
-          }).join('') + '</div>' : '');
+        '<li>Ou lance direto na aba <b>Caixa</b> (vendas avulsas, produtos).</li></ol></details>' +
+        '<p class="dash-secao-intro" style="margin-top:1rem">Dica: o seu funcionário digital também lê estes números e desenha os gráficos na conversa. Peça: "mostra o dashboard de 7 dias".</p>';
+      dashboardCorpo.querySelectorAll('[data-gn-dias]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          ganhosDias = Number(b.getAttribute('data-gn-dias'));
+          try { localStorage.setItem('vbGanhosDias', String(ganhosDias)); } catch (e) {}
+          dashboardCorpo.classList.add('dash-carregando');
+          renderizarDashResumo();
+        });
+      });
     }, function () { dashboardCorpo.classList.remove('dash-carregando'); dashboardCorpo.innerHTML = '<p class="msg msg-erro">Sem conexão agora.</p>'; });
   }
 

@@ -1,0 +1,36 @@
+/* Gráfico de barras (assets/js/grafico-ganhos.js) — tema claro (painel) e terminal (chat) */
+.vg { --vg-barra: #C9A227; --vg-barra-2: #8a6d10; --vg-fundo: #f3f3f5; --vg-tinta: #1f2024; --vg-suave: #6b6d75; margin: 0.4rem 0 1rem; }
+.vg-terminal { --vg-barra: #7dffa0; --vg-barra-2: #2fb868; --vg-fundo: rgba(125, 255, 160, 0.08); --vg-tinta: #d6ffe2; --vg-suave: rgba(214, 255, 226, 0.55); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.vg-leitura { margin: 0 0 0.5rem; min-height: 1.3em; font-size: 0.82rem; color: var(--vg-suave); }
+.vg-leitura b { color: var(--vg-tinta); }
+.vg-barras { display: flex; align-items: stretch; gap: 4px; height: 9.5rem; }
+.vg-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; font: inherit; }
+.vg-trilho { flex: 1; width: 100%; display: flex; align-items: flex-end; border-radius: 6px; background: var(--vg-fundo); overflow: hidden; }
+.vg-barra { display: block; width: 100%; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, var(--vg-barra), var(--vg-barra-2)); transform-origin: bottom; animation: vgSobe 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; transition: filter 0.15s; }
+@keyframes vgSobe { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.vg-col:hover .vg-barra, .vg-col.on .vg-barra { filter: brightness(1.25); }
+.vg-col.on .vg-trilho { box-shadow: 0 0 0 2px var(--vg-barra); }
+.vg-melhor .vg-barra { box-shadow: 0 0 14px -2px var(--vg-barra); }
+.vg-rotulo { height: 0.9rem; font-size: 0.58rem; line-height: 0.9rem; white-space: nowrap; color: var(--vg-suave); transform: rotate(-35deg); transform-origin: center top; }
+.vg-denso { gap: 2px; }
+@media (prefers-reduced-motion: reduce) { .vg-barra { animation: none; } }
+
+/* ===== Ganhos: períodos clicáveis e cartões ===== */
+.gn-periodos { display: flex; gap: 0.4rem; overflow-x: auto; margin: 0.2rem -0.2rem 1rem; padding: 0.2rem; scrollbar-width: none; }
+.gn-periodos::-webkit-scrollbar { display: none; }
+.gn-per { flex: 0 0 auto; min-height: 2.5rem; padding: 0.45rem 0.95rem; border: 1.5px solid #e6e6ea; border-radius: 999px; background: #fff; color: #1f2024; font: inherit; font-size: 0.86rem; font-weight: 700; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.gn-per:active { transform: scale(0.97); }
+.gn-per.on { background: #1f2024; border-color: #1f2024; color: #fff; }
+.gn-destaque { display: flex; flex-direction: column; gap: 0.15rem; margin: 0 0 0.9rem; padding: 1rem 1.1rem; border-radius: 18px; background: linear-gradient(135deg, #1f2024, #34363d); color: #fff; }
+.gn-destaque small { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
+.gn-destaque strong { font-size: 2rem; line-height: 1.1; letter-spacing: -0.02em; }
+.gn-delta { display: inline-flex; align-items: center; align-self: flex-start; margin-top: 0.3rem; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.78rem; font-weight: 800; }
+.gn-delta.sobe { background: rgba(125, 255, 160, 0.18); color: #9dffb8; }
+.gn-delta.desce { background: rgba(255, 120, 100, 0.2); color: #ffb0a4; }
+.gn-delta.igual { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.gn-cartoes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
+.gn-cartao { padding: 0.85rem 0.9rem; border: 1px solid #ececf0; border-radius: 16px; background: #fafafb; }
+.gn-cartao b { display: block; font-size: 1.25rem; letter-spacing: -0.01em; }
+.gn-cartao span { font-size: 0.76rem; color: #6b6d75; }
+.gn-titulo { margin: 1.2rem 0 0.4rem; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #8a6d10; }
+.gn-vazio { margin: 0; padding: 1.4rem 1rem; border-radius: 16px; background: #fafafb; text-align: center; font-size: 0.9rem; color: #6b6d75; }
