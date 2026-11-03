@@ -848,7 +848,18 @@
           });
         },
         consultar: function (a) {
-          var q = String(a.oQue || 'hoje');
+          var q = String(a.oQue || 'hoje').toLowerCase();
+          // os números do anúncio vêm de outra RPC, não do resumo do caixa
+          if (q === 'anuncio') {
+            return db.rpc('tenant_admin_meus_anuncios', { p_estabelecimento_id: estabId }).then(function (r) {
+              var lista = (r && r.data) || [];
+              if (!lista.length) return 'Você ainda não anunciou. Dá pra anunciar de graça pela aba Ganhos.';
+              var soma = function (k) { return lista.reduce(function (t2, x) { return t2 + (Number(x[k]) || 0); }, 0); };
+              var vistos = soma('vistos'), cliques = soma('cliques'), fecharam = soma('agendamentos') + soma('pedidos');
+              if (!cliques) return vistos + ' pessoa(s) viram o seu anúncio, mas ninguém tocou nele ainda.';
+              return vistos + ' viram, ' + cliques + ' vieram pelo anúncio e ' + fecharam + ' fecharam com você.';
+            }, function () { return 'Não consegui ver os números do anúncio agora.'; });
+          }
           return db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: 14 }).then(function (r) {
             var d = (r && r.data) || {};
             if (q === 'agenda') return agendaCache.filter(function (x) { return x.status === 'pendente'; }).length + ' horário(s) esperando confirmação, ' + agendaCache.filter(function (x) { return x.status === 'confirmado'; }).length + ' confirmado(s).';
@@ -859,7 +870,11 @@
           });
         },
         abrir_editor: function (a) {
-          var passo = String(a.parte || '').replace(/[^a-z]/g, '');
+          // minúsculas e sem acento ANTES de limpar: sem isso "Foto" virava
+          // "oto", "TEXTOS" virava vazio e "Serviços" virava "servios" — e o
+          // editor abria no passo errado, ou em nenhum
+          var passo = String(a.parte || '').toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
           window.location.href = site + '?editar=1' + (passo ? '&passo=' + passo : '');
           return null;
         }
