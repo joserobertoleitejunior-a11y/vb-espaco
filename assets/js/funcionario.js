@@ -107,16 +107,23 @@
     document.documentElement.classList.add('fn-travado');
     c.addEventListener('click', function (e) {
       if (e.target.closest('[data-fn-fechar]')) { fechar(); return; }
-      var esc = e.target.closest('[data-fn-lido]');
-      if (esc && lido) {
-        esc.closest('.fn-escolhas').remove();
-        if (esc.getAttribute('data-fn-lido') === 'salvar') executar('salvar_cardapio_lido', { categorias: lido }, true);
-        else abrirRevisao(lido);
+      if (e.target.closest('[data-fn-cardapio-cancelar]')) {
+        var cx = e.target.closest('.fn-cardapio'); if (cx) cx.remove();
+        dizer('ele', 'Tudo bem, não pus nada. Quando quiser, é só mandar a foto de novo.');
         return;
       }
-      if (e.target.closest('[data-fn-rev-cancelar]')) { var rv = e.target.closest('.fn-rev'); if (rv) rv.remove(); dizer('ele', 'Tudo bem, não salvei nada. Quando quiser, é só mandar a foto de novo.'); return; }
-      var salvarRev = e.target.closest('[data-fn-rev-salvar]');
-      if (salvarRev) { finalizarRevisao(salvarRev.closest('.fn-rev')); return; }
+      var salvar = e.target.closest('[data-fn-cardapio-salvar]');
+      if (salvar && !salvar.disabled) finalizarCardapio(salvar.closest('.fn-cardapio'));
+    });
+    // os interruptores: um por item e um por categoria
+    c.addEventListener('change', function (e) {
+      var cartao = e.target.closest && e.target.closest('.fn-cardapio');
+      if (!cartao) return;
+      if (e.target.hasAttribute('data-fn-cat')) {
+        var ligar = e.target.checked;
+        e.target.closest('.fn-pz-cat').querySelectorAll('.fn-pz .fn-tg input').forEach(function (i) { i.checked = ligar; });
+      }
+      contarMarcados(cartao);
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && st.caixa && st.caixa.classList.contains('aberta')) fechar(); });
     document.getElementById('fnForm').addEventListener('submit', function (e) {
@@ -194,7 +201,12 @@
     c.appendChild(el);
     c.scrollTop = c.scrollHeight;
     var p = el.querySelector('p');
-    if (de !== 'eu' && global.VBDigita) global.VBDigita.em(p, texto, { vel: 62, aoFim: function () { c.scrollTop = c.scrollHeight; } });
+    // ao terminar de digitar, só desce se a pessoa já estava no pé da conversa.
+    // Sem isso, a frase terminava e puxava tudo pro fim — mesmo quando o dono
+    // estava lendo o começo do cardápio que acabou de chegar.
+    if (de !== 'eu' && global.VBDigita) global.VBDigita.em(p, texto, { vel: 62, aoFim: function () {
+      if (c.scrollHeight - c.scrollTop - c.clientHeight < 120) c.scrollTop = c.scrollHeight;
+    } });
     else p.textContent = texto;
     return el;
   }
@@ -262,19 +274,39 @@
     });
   }
 
+  /* A foto que o dono mandou aparece na conversa, como numa mensagem de verdade.
+     Enquanto a IA lê, um feixe de luz varre a imagem de cima a baixo — o mesmo
+     gesto da sessão da IA na primeira tela. Sai sozinho quando a leitura acaba. */
+  function dizerFoto(arquivo) {
+    var c = document.getElementById('fnConversa');
+    if (!c) return null;
+    st.hist.push({ de: 'eu', texto: 'Foto do cardápio' });
+    var url = URL.createObjectURL(arquivo);
+    var el = document.createElement('div');
+    el.className = 'fn-msg fn-eu fn-msg-foto';
+    el.innerHTML = '<figure class="fn-foto lendo"><img alt="A foto que você mandou" src="' + url + '"><i class="fn-feixe" aria-hidden="true"></i></figure>';
+    c.appendChild(el);
+    c.scrollTop = c.scrollHeight;
+    var img = el.querySelector('img');
+    // a foto carrega depois de entrar na tela: rola de novo quando tiver altura
+    img.addEventListener('load', function () { c.scrollTop = c.scrollHeight; });
+    return el.querySelector('.fn-foto');
+  }
+
   function mandarFoto(arquivo) {
     if (!/^image\//.test(arquivo.type)) { dizer('ele', 'Isso não parece uma foto. Mande uma imagem do cardápio.'); return; }
     var servico = (st.cfg.areas || []).indexOf('servicos') !== -1 && (st.cfg.areas || []).indexOf('delivery') === -1;
-    dizer('eu', servico ? 'Foto da tabela de serviços' : 'Foto do cardápio');
+    var fig = dizerFoto(arquivo);
+    var fimDaLeitura = function () { if (fig) fig.classList.remove('lendo'); };
     pensando(true);
     comprimir(arquivo, 1600).then(function (dataUrl) {
       return global.db.functions.invoke('ler-cardapio', { body: { imagem: dataUrl, tipo: servico ? 'servicos' : 'cardapio' } });
     }).then(function (r) {
-      pensando(false);
+      pensando(false); fimDaLeitura();
       if (r.error) return explicarFalha(r.error);
-      mostrarLido(r.data || {});
+      mostrarLido(r.data || {}, servico);
     }, function (e) {
-      pensando(false);
+      pensando(false); fimDaLeitura();
       dizer('ele', (e && e.message) || 'Não consegui ler essa foto agora.');
     });
   }
@@ -302,72 +334,97 @@
     porStatus(null);
   }
 
-  function mostrarLido(dados) {
+  /* O que a IA leu vira um cartão: cada item é uma linha com um interruptor,
+     desenhado em código, tudo ligado de partida. O dono desliga o que não é do
+     cardápio, toca no nome ou no preço pra corrigir, e só então manda pôr no
+     site. Nada entra sozinho. */
+  var brl = function (v) { return Number(v) ? Number(v).toFixed(2).replace('.', ',') : ''; };
+
+  function mostrarLido(dados, servico) {
     var cats = dados.categorias || [];
     var total = cats.reduce(function (n, c) { return n + (c.itens || []).length; }, 0);
     if (!total) { dizer('ele', dados.aviso || 'Não achei nenhum item nessa foto. Tente com mais luz, mais perto ou sem cortar as bordas.'); return; }
     lido = cats;
-    // uma amostra: o dono reconhece o cardápio dele sem precisar abrir nada
-    var amostra = [];
-    cats.forEach(function (c) { (c.itens || []).forEach(function (i) { if (amostra.length < 6) amostra.push(i.nome + (i.preco ? ' — R$ ' + i.preco.toFixed(2).replace('.', ',') : ' — sem preço')); }); });
-    dizer('ele', 'Li ' + total + (total === 1 ? ' item' : ' itens') + ' em ' + cats.length + (cats.length === 1 ? ' categoria' : ' categorias') + ':\n• ' +
-      amostra.join('\n• ') + (total > amostra.length ? '\n…e mais ' + (total - amostra.length) + '.' : '') +
-      '\n\nConfira os preços: a leitura da foto pode errar.',
-      '<div class="fn-escolhas">' +
-        '<button type="button" class="fn-esc fn-esc-forte" data-fn-lido="conferir">Revisar e corrigir aqui</button>' +
-        '<button type="button" class="fn-esc" data-fn-lido="salvar">Pôr tudo do jeito que está</button>' +
-      '</div>');
-  }
+    var o = servico ? 'serviço' : 'item';
+    var aviso = dizer('ele', 'Li ' + total + (total === 1 ? ' ' + o : ' ' + (servico ? 'serviços' : 'itens')) + ' em ' + cats.length + (cats.length === 1 ? ' categoria' : ' categorias') +
+      '. Deixe ligado o que entra no ' + (servico ? 'catálogo' : 'cardápio') + ' — e toque no nome ou no preço pra corrigir.');
 
-  /* Revisar e finalizar, aqui no chat: a lista do que a IA leu, com nome e
-     preço editáveis e uma caixinha pra tirar o que não é do cardápio. Nada
-     entra no site até o dono tocar em salvar. */
-  function abrirRevisao(cats) {
-    var c = document.getElementById('fnConversa');
-    if (!c) return;
-    var n = 0;
+    var i = 0;
     var corpo = cats.map(function (cat, ci) {
-      return '<p class="fn-rev-cat">' + esc(cat.nome) + '</p>' + (cat.itens || []).map(function (it, ii) {
-        n++;
-        return '<div class="fn-rev-item" data-ci="' + ci + '" data-ii="' + ii + '">' +
-          '<label class="fn-rev-usar"><input type="checkbox" checked aria-label="Usar ' + esc(it.nome) + '"></label>' +
-          '<input type="text" class="fn-rev-nome" value="' + esc(it.nome) + '" maxlength="80" aria-label="Nome">' +
-          '<span class="fn-rev-moeda">R$<input type="text" inputmode="decimal" class="fn-rev-preco" value="' +
-            (it.preco ? String(Number(it.preco).toFixed(2)).replace('.', ',') : '') + '" placeholder="0,00" aria-label="Preço"></span>' +
+      var linhas = (cat.itens || []).map(function (it, ii) {
+        var delay = Math.min(i++, 14) * 38; // só os primeiros entram em sequência: o resto já está lá
+        return '<div class="fn-pz" data-ci="' + ci + '" data-ii="' + ii + '" style="--d:' + delay + 'ms">' +
+          '<label class="fn-tg" aria-label="Usar ' + esc(it.nome) + '"><input type="checkbox" checked><i></i></label>' +
+          '<div class="fn-pz-meio">' +
+            '<input class="fn-pz-nome" type="text" value="' + esc(it.nome) + '" maxlength="80" aria-label="Nome">' +
+            (it.descricao ? '<span class="fn-pz-desc">' + esc(it.descricao) + '</span>' : '') +
+          '</div>' +
+          '<span class="fn-pz-moeda"><em>R$</em><input class="fn-pz-preco' + (Number(it.preco) ? '' : ' vazio') + '" type="text" inputmode="decimal" value="' + brl(it.preco) + '" placeholder="preço" aria-label="Preço"></span>' +
           '</div>';
       }).join('');
+      return '<section class="fn-pz-cat" data-cat="' + ci + '">' +
+        '<header><label class="fn-tg fn-tg-cat" aria-label="Ligar ou desligar toda a categoria ' + esc(cat.nome) + '"><input type="checkbox" checked data-fn-cat><i></i></label>' +
+        '<h4>' + esc(cat.nome) + '</h4><small data-fn-cat-conta>' + (cat.itens || []).length + '</small></header>' + linhas + '</section>';
     }).join('');
-    var el = document.createElement('div');
-    el.className = 'fn-rev';
-    el.innerHTML =
-      '<p class="fn-rev-topo"><strong>Confira os ' + n + ' itens</strong><span>Corrija o que errei e tire o que não for do cardápio.</span></p>' +
-      '<div class="fn-rev-lista">' + corpo + '</div>' +
-      '<div class="fn-rev-acoes">' +
-        '<button type="button" class="fn-esc" data-fn-rev-cancelar>Cancelar</button>' +
-        '<button type="button" class="fn-esc fn-esc-forte" data-fn-rev-salvar>Salvar no cardápio</button>' +
-      '</div>';
-    c.appendChild(el);
-    c.scrollTop = c.scrollHeight;
+
+    var c = document.getElementById('fnConversa');
+    if (!c) return;
+    var cartao = document.createElement('div');
+    cartao.className = 'fn-cardapio';
+    cartao.innerHTML = corpo +
+      '<footer class="fn-cardapio-pe">' +
+        '<button type="button" class="fn-cardapio-cancelar" data-fn-cardapio-cancelar>Agora não</button>' +
+        '<button type="button" class="fn-cardapio-salvar" data-fn-cardapio-salvar><span data-fn-cardapio-txt></span></button>' +
+      '</footer>';
+    c.appendChild(cartao);
+    contarMarcados(cartao);
+    // abre no COMEÇO: a frase do bot e as primeiras linhas (são muitos itens, não dá pra ir até o fim).
+    // Mede pela tela — offsetTop contava a partir da folha inteira e jogava a rolagem lá pra baixo.
+    setTimeout(function () {
+      var alvo = aviso || cartao;
+      c.scrollTop += alvo.getBoundingClientRect().top - c.getBoundingClientRect().top - 10;
+    }, 80);
   }
-  function finalizarRevisao(el) {
-    if (!el || !lido) return;
+
+  // quantos estão ligados: o botão diz "Pôr 31 no cardápio" e acompanha cada toque
+  function contarMarcados(cartao) {
+    var itens = cartao.querySelectorAll('.fn-pz');
+    var ligados = 0;
+    itens.forEach(function (l) {
+      var on = l.querySelector('.fn-tg input').checked;
+      l.classList.toggle('fn-pz-off', !on);
+      if (on) ligados++;
+    });
+    cartao.querySelectorAll('.fn-pz-cat').forEach(function (sec) {
+      var linhas = sec.querySelectorAll('.fn-pz'), on = 0;
+      linhas.forEach(function (l) { if (l.querySelector('.fn-tg input').checked) on++; });
+      sec.querySelector('[data-fn-cat]').checked = on === linhas.length;
+      sec.querySelector('[data-fn-cat-conta]').textContent = on === linhas.length ? linhas.length : on + ' de ' + linhas.length;
+    });
+    var b = cartao.querySelector('[data-fn-cardapio-salvar]');
+    b.disabled = ligados === 0;
+    b.querySelector('[data-fn-cardapio-txt]').textContent = ligados === 0 ? 'Nada ligado' : 'Pôr ' + ligados + (ligados === 1 ? ' item' : ' itens') + ' no site';
+  }
+
+  function finalizarCardapio(cartao) {
+    if (!cartao || !lido) return;
     var saida = [];
     lido.forEach(function (cat, ci) {
       var itens = [];
-      el.querySelectorAll('.fn-rev-item[data-ci="' + ci + '"]').forEach(function (linha) {
-        if (!linha.querySelector('input[type="checkbox"]').checked) return;
-        var nome = linha.querySelector('.fn-rev-nome').value.trim();
+      cartao.querySelectorAll('.fn-pz[data-ci="' + ci + '"]').forEach(function (l) {
+        if (!l.querySelector('.fn-tg input').checked) return;
+        var nome = l.querySelector('.fn-pz-nome').value.trim();
         if (!nome) return;
-        var preco = parseFloat(linha.querySelector('.fn-rev-preco').value.replace(/\./g, '').replace(',', '.')) || 0;
-        var original = (cat.itens || [])[Number(linha.getAttribute('data-ii'))] || {};
+        var preco = parseFloat(l.querySelector('.fn-pz-preco').value.replace(/\./g, '').replace(',', '.')) || 0;
+        var original = (cat.itens || [])[Number(l.getAttribute('data-ii'))] || {};
         itens.push({ nome: nome, descricao: original.descricao || '', preco: preco });
       });
       if (itens.length) saida.push({ nome: cat.nome, itens: itens });
     });
-    if (!saida.length) { dizer('ele', 'Você tirou todos os itens, então não tenho o que salvar.'); return; }
-    el.remove();
-    dizer('eu', 'Salvar no cardápio');
-    pensando(true);
+    var n = saida.reduce(function (t, c) { return t + c.itens.length; }, 0);
+    if (!n) { dizer('ele', 'Não tem nada ligado, então não tenho o que pôr.'); return; }
+    cartao.remove();
+    dizer('eu', 'Pôr ' + n + (n === 1 ? ' item' : ' itens') + ' no site');
     executar('salvar_cardapio_lido', { categorias: saida }, true);
   }
 

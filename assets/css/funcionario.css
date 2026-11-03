@@ -48,7 +48,7 @@
 .fn-quem small { font-size: 0.74rem; color: rgba(244, 244, 246, 0.55); }
 .fn-x { width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 0.9rem; cursor: pointer; }
 
-.fn-conversa { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.fn-conversa { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
 .fn-msg { max-width: 85%; }
 .fn-msg p { margin: 0; padding: 0.7rem 0.9rem; border-radius: 16px; font-size: 0.93rem; line-height: 1.45; }
 .fn-eu { align-self: flex-end; }
@@ -106,16 +106,6 @@ html.fn-travado, html.fn-travado body { overflow: hidden; }
 }
 .fn-anexo:active { transform: scale(0.94); }
 
-/* as duas saídas depois da leitura: conferir (o seguro) ou pôr do jeito que está */
-.fn-escolhas { display: grid; gap: 0.45rem; margin-top: 0.55rem; }
-.fn-esc {
-  min-height: 2.9rem; padding: 0.7rem 1rem; border-radius: 14px; cursor: pointer;
-  border: 1.5px solid rgba(255, 255, 255, 0.2); background: transparent; color: #f4f4f6;
-  font: inherit; font-size: 0.9rem; font-weight: 700; text-align: left;
-}
-.fn-esc-forte { background: #fff; border-color: #fff; color: #0d0d0f; }
-.fn-esc:active { transform: translateY(1px); }
-
 /* quando a IA pede a foto, o botão da câmera chama atenção por uns segundos */
 .fn-anexo.fn-pisca { animation: fnPisca 1.1s ease-in-out 3; }
 @keyframes fnPisca {
@@ -124,22 +114,99 @@ html.fn-travado, html.fn-travado body { overflow: hidden; }
 }
 @media (prefers-reduced-motion: reduce) { .fn-anexo.fn-pisca { animation: none; background: rgba(255, 255, 255, 0.22); } }
 
-/* ---------- revisar o cardápio lido da foto, aqui no chat ---------- */
-.fn-rev { align-self: stretch; padding: 0.9rem; border-radius: 18px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); }
-.fn-rev-topo strong { display: block; font-size: 1rem; }
-.fn-rev-topo span { display: block; margin-top: 0.2rem; font-size: 0.82rem; line-height: 1.4; color: rgba(244, 244, 246, 0.6); }
-.fn-rev-lista { max-height: 46vh; overflow-y: auto; margin: 0.7rem -0.2rem 0; padding: 0 0.2rem; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.35) transparent; }
-.fn-rev-lista::-webkit-scrollbar { width: 6px; }
-.fn-rev-lista::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 99px; }
-.fn-rev-cat { margin: 0.8rem 0 0.35rem; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); }
-.fn-rev-item { display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 0.55rem; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
-.fn-rev-usar input { width: 1.25rem; height: 1.25rem; accent-color: #fff; }
-.fn-rev-item input[type="text"] {
-  min-width: 0; min-height: 2.6rem; padding: 0 0.7rem; border-radius: 12px; font: inherit; font-size: 0.92rem;
-  border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.06); color: #f4f4f6;
+/* =====================================================================
+   A FOTO NA CONVERSA E O CARDÁPIO QUE A IA LEU
+   Preto e branco, como o resto do funcionário; o dourado só aparece onde
+   o dono precisa olhar (um preço que a IA não conseguiu ler).
+   ===================================================================== */
+
+/* a foto que o dono mandou, como numa mensagem de verdade */
+.fn-msg-foto { max-width: 72%; }
+.fn-foto { position: relative; margin: 0; border-radius: 20px 20px 6px 20px; overflow: hidden; background: #1b1b1e; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14); }
+.fn-foto img { display: block; width: 100%; max-height: 15rem; object-fit: cover; }
+/* enquanto a IA lê: a imagem escurece um pouco e um feixe de luz varre de cima a baixo */
+.fn-foto::after { content: ''; position: absolute; inset: 0; background: rgba(13, 13, 15, 0); transition: background 0.5s; pointer-events: none; }
+.fn-foto.lendo::after { background: rgba(13, 13, 15, 0.38); }
+.fn-feixe {
+  position: absolute; left: 0; right: 0; top: 0; height: 38%; z-index: 2; pointer-events: none; opacity: 0;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.16) 55%, rgba(255, 255, 255, 0.75) 92%, transparent);
 }
-.fn-rev-item input[type="text"]:focus { outline: 0; border-color: #C9A227; }
-.fn-rev-moeda { grid-column: 2; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: rgba(244, 244, 246, 0.6); }
-.fn-rev-moeda input { width: 6.5rem; text-align: right; }
-.fn-rev-acoes { display: grid; grid-template-columns: 1fr 1.5fr; gap: 0.5rem; margin-top: 0.8rem; }
-.fn-rev-acoes .fn-esc { text-align: center; }
+.fn-foto.lendo .fn-feixe { animation: fnVarre 2.1s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
+@keyframes fnVarre { 0% { transform: translateY(-105%); opacity: 0; } 18% { opacity: 1; } 78%, 100% { transform: translateY(290%); opacity: 0; } }
+
+/* o cartão: tudo o que foi lido, uma linha por item */
+.fn-cardapio { align-self: stretch; margin-top: 0.15rem; padding: 0.3rem 0.95rem 0; border-radius: 22px; background: rgba(255, 255, 255, 0.045); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12); }
+
+.fn-pz-cat header { display: flex; align-items: center; gap: 0.55rem; padding: 1.05rem 0 0.35rem; }
+.fn-pz-cat h4 { order: 1; margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.62); }
+.fn-pz-cat small { order: 2; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.68rem; color: rgba(255, 255, 255, 0.34); }
+.fn-pz-cat header .fn-tg { order: 3; margin-left: auto; }
+
+/* o interruptor: uma pílula e uma bolinha. Desligado é só um contorno; ligado
+   enche de branco e a bolinha escurece, com um pulinho de mola ao virar. */
+.fn-tg { position: relative; flex: 0 0 auto; display: block; width: 2.6rem; height: 1.55rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fn-tg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 2; }
+.fn-tg i { position: absolute; inset: 0; border-radius: 999px; border: 1.5px solid rgba(255, 255, 255, 0.28); background: transparent; transition: background 0.25s ease, border-color 0.25s ease; }
+.fn-tg i::after {
+  content: ''; position: absolute; top: 50%; left: 0.2rem; width: 0.95rem; height: 0.95rem; margin-top: -0.475rem; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5); transition: transform 0.32s cubic-bezier(0.3, 1.5, 0.5, 1), background 0.25s ease;
+}
+.fn-tg input:checked + i { background: #fff; border-color: #fff; }
+.fn-tg input:checked + i::after { background: #0d0d0f; transform: translateX(1.05rem); }
+.fn-tg input:active + i::after { width: 1.15rem; }
+.fn-tg input:checked:active + i::after { transform: translateX(0.85rem); }
+.fn-tg input:focus-visible + i { box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.55); }
+.fn-tg-cat { width: 2.1rem; height: 1.25rem; }
+.fn-tg-cat i::after { left: 0.17rem; width: 0.72rem; height: 0.72rem; margin-top: -0.36rem; }
+.fn-tg-cat input:checked + i::after { transform: translateX(0.84rem); }
+
+/* cada pizza: interruptor, nome (com os ingredientes embaixo) e preço */
+.fn-pz {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 0.85rem; align-items: center;
+  padding: 0.8rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  animation: fnPzEntra 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: var(--d, 0ms);
+}
+.fn-pz-cat .fn-pz:last-child { border-bottom: 0; }
+@keyframes fnPzEntra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fn-pz-meio { min-width: 0; transition: opacity 0.25s ease; }
+.fn-pz-moeda { transition: opacity 0.25s ease; }
+/* desligado: some de leve, sem sumir — dá pra ligar de novo a qualquer hora */
+.fn-pz-off .fn-pz-meio, .fn-pz-off .fn-pz-moeda { opacity: 0.32; }
+
+/* nome e preço são campos de verdade, mas desenhados como texto: toca e corrige */
+.fn-pz input[type="text"] { font-family: inherit; color: #f4f4f6; background: transparent; border: 0; border-bottom: 1px solid transparent; border-radius: 0; padding: 0.1rem 0; margin: 0; min-width: 0; outline: 0; transition: border-color 0.2s; }
+.fn-pz input[type="text"]:focus { border-bottom-color: #C9A227; }
+.fn-pz .fn-pz-nome { width: 100%; font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+.fn-pz-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 0.12rem; font-size: 0.76rem; line-height: 1.4; color: rgba(244, 244, 246, 0.46); }
+.fn-pz-moeda { display: flex; align-items: baseline; gap: 0.28rem; }
+.fn-pz-moeda em { font-style: normal; font-size: 0.72rem; color: rgba(244, 244, 246, 0.42); }
+.fn-pz .fn-pz-preco { width: 4.7rem; text-align: right; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.98rem; font-weight: 600; }
+/* a IA não leu o preço: o dourado pede o olho do dono, sem gritar */
+.fn-pz .fn-pz-preco.vazio { border-bottom: 1px dashed rgba(201, 162, 39, 0.75); }
+.fn-pz-preco.vazio::placeholder { color: rgba(201, 162, 39, 0.8); font-family: inherit; font-size: 0.82rem; font-weight: 500; text-align: right; }
+.fn-pz-preco::placeholder { color: rgba(244, 244, 246, 0.3); }
+
+/* a barra de salvar acompanha a rolagem: com 30 itens, o botão nunca fica longe.
+   (sticky precisa que nenhum ancestral tenha overflow, por isso o cartão não corta) */
+.fn-cardapio-pe {
+  position: sticky; bottom: -1rem; z-index: 3; display: grid; grid-template-columns: auto 1fr; gap: 0.6rem; align-items: center;
+  margin: 0.4rem -0.95rem 0; padding: 0.75rem 0.95rem; border-radius: 0 0 22px 22px;
+  background: rgba(13, 13, 15, 0.9); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.fn-cardapio-cancelar { padding: 0.5rem 0.2rem; border: 0; background: none; color: rgba(244, 244, 246, 0.55); font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+.fn-cardapio-salvar {
+  min-height: 3rem; padding: 0.7rem 1.1rem; border: 0; border-radius: 999px; cursor: pointer;
+  background: #fff; color: #0d0d0f; font: inherit; font-size: 0.97rem; font-weight: 800; letter-spacing: -0.01em;
+  transition: transform 0.15s ease, opacity 0.2s ease;
+}
+.fn-cardapio-salvar:active { transform: scale(0.98); }
+.fn-cardapio-salvar:disabled { opacity: 0.3; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fn-foto.lendo .fn-feixe { animation: none; }
+  .fn-pz { animation: none; }
+  .fn-tg i, .fn-tg i::after { transition: none; }
+}
+
+.fn-atalhos, .fn-barra { flex: 0 0 auto; }
