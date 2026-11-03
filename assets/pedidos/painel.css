@@ -529,3 +529,11 @@ html.embutido .ca-item .ca-thumb { width: 3.6rem; height: 3.6rem; border-radius:
 html.embutido .ca-thumb.vazia { border: 1.5px dashed rgba(20, 20, 30, 0.22); background: rgba(20, 20, 30, 0.025); color: rgba(20, 20, 30, 0.4); }
 html.embutido .ca-info strong { font-size: 1rem; white-space: normal; }
 html.embutido .ca-grupo-titulo { margin: 1.1rem 0 0.1rem; font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint, #8a8c94); }
+
+/* item novo: "mais detalhes" fechado por padrão */
+.fi-mais { margin-top: 0.4rem; border-top: 1px solid var(--borda, #e6e6ea); padding-top: 0.3rem; }
+.fi-mais > summary { cursor: pointer; list-style: none; padding: 0.8rem 0; font-weight: 700; font-size: 0.92rem; color: var(--cor-marca, #0F6B5C); }
+.fi-mais > summary::-webkit-details-marker { display: none; }
+.fi-mais > summary small { font-weight: 500; color: var(--ink-faint, #8a8c94); }
+.fi-mais > summary::after { content: ' +'; }
+.fi-mais[open] > summary::after { content: ' −'; }

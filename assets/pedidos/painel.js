@@ -1047,6 +1047,26 @@
         '<label class="switch' + (SERVICO ? ' oculto' : '') + '"><input type="checkbox" id="fiBorda" ' + (f.aceita_borda ? 'checked' : '') + '><span class="trilho"></span>Aceita borda recheada</label>' +
         '<label class="switch"><input type="checkbox" id="fiAtivo" ' + (f.ativo ? 'checked' : '') + '><span class="trilho"></span>Disponível no cardápio</label>' +
       '</div><p class="p-msg" id="fiMsg"></p>';
+    // item NOVO: só nome e categoria à vista. Foto, preço e descrição ficam num "mais detalhes"
+    // fechado — dá pra salvar só com o nome e completar depois (preço vazio = "a combinar").
+    var corpoNovo =
+      '<div class="campo"><label for="fiNome">Nome</label><input id="fiNome" maxlength="80" value="" placeholder="' + (SERVICO ? 'Ex.: Troca de pneu' : 'Ex.: Calabresa') + '" autocomplete="off"></div>' +
+      '<div class="campo"><label for="fiCat">Categoria</label><select id="fiCat">' + opcoesCat + '</select></div>' +
+      '<details class="fi-mais"><summary>Preço, foto e mais detalhes <small>(opcional)</small></summary>' +
+      '<label class="foto-upload' + (f.foto_url ? ' tem' : '') + '" id="fiFoto" style="' + (f.foto_url ? 'background-image:url(&quot;' + esc(encodeURI(f.foto_url)) + '&quot;)' : '') + '">' +
+        U.ICONES.mais.replace('<svg', '<svg width="28" height="28"') + (SERVICO ? 'Foto do serviço (opcional)' : 'Foto do item (opcional)') + '<input type="file" accept="image/*" id="fiArquivo"></label>' +
+      '<button type="button" class="link-acao' + (f.foto_url ? '' : ' oculto') + '" id="fiTirarFoto">Tirar foto</button>' +
+      
+      '<button type="button" class="link-acao oculto" id="fiTirarFoto">Tirar foto</button>' +
+      '<div class="campo"><label for="fiDesc">Descrição</label><textarea id="fiDesc" maxlength="300" rows="2" placeholder="' + (SERVICO ? 'O que está incluso, tempo médio, observações…' : 'Ingredientes, tamanho, o que vem…') + '">' + esc(f.descricao || '') + '</textarea></div>' +
+      
+      '<div class="campo"><label for="fiPreco">Preço (R$)</label><input id="fiPreco" type="number" inputmode="decimal" min="0" step="0.01" value="" placeholder="Vazio = a combinar"></div>' +
+      '<div class="switches">' +
+        '<label class="switch' + (SERVICO ? ' oculto' : '') + '"><input type="checkbox" id="fiMeio" ' + (f.permite_meio_a_meio ? 'checked' : '') + '><span class="trilho"></span>Pode ser meio a meio</label>' +
+        '<label class="switch' + (SERVICO ? ' oculto' : '') + '"><input type="checkbox" id="fiBorda" ' + (f.aceita_borda ? 'checked' : '') + '><span class="trilho"></span>Aceita borda recheada</label>' +
+        '<label class="switch"><input type="checkbox" id="fiAtivo" ' + (f.ativo ? 'checked' : '') + '><span class="trilho"></span>Disponível no cardápio</label>' +
+      '</div></details><p class="p-msg" id="fiMsg"></p>';
+    if (!f.id) corpo = corpoNovo;
     var rodape = (f.id ? '<button type="button" class="btn perigo" id="fiExcluir">Excluir</button>' : '') + '<button type="button" class="btn cheio" id="fiSalvar">' + (SERVICO ? 'Salvar serviço' : 'Salvar item') + '</button>';
     abrirSheet(f.id ? (SERVICO ? 'Editar serviço' : 'Editar item') : (SERVICO ? 'Novo serviço' : 'Novo item'), corpo, rodape);
 
@@ -1071,9 +1091,10 @@
     });
     $('fiSalvar').addEventListener('click', async function () {
       var nome = $('fiNome').value.trim();
-      var preco = parseFloat(String($('fiPreco').value).replace(',', '.'));
+      var precoTxt = String($('fiPreco').value).replace(',', '.').trim();
+      var preco = precoTxt === '' ? 0 : parseFloat(precoTxt);
       if (nome.length < 2) { $('fiMsg').textContent = 'Dá um nome pro item.'; $('fiMsg').className = 'p-msg erro'; return; }
-      if (isNaN(preco) || preco < 0) { $('fiMsg').textContent = 'Informe o preço.'; $('fiMsg').className = 'p-msg erro'; return; }
+      if (isNaN(preco) || preco < 0) { $('fiMsg').textContent = 'Preço inválido. Deixe vazio pra "a combinar".'; $('fiMsg').className = 'p-msg erro'; return; }
       this.disabled = true;
       try {
         await rpc('delivery_admin_salvar_item', {

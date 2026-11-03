@@ -18,6 +18,17 @@ update delivery_cardapio_itens set preco = 52 where id = '39b74cfe-659e-4a63-9fc
 update delivery_cardapio_itens set preco = 40 where id = 'ea18a155-2ac9-48d3-a443-14b421427931' and preco = 0; -- Chocolate
 update delivery_cardapio_itens set preco = 40 where id = '5229ee7b-b03c-4b06-b896-221455397873' and preco = 0; -- Banana com canela
 
+-- clientes globais (os pedidos e agendamentos apontam pra eles pelo telefone)
+insert into vb_clientes_globais (telefone, nome) values
+ ('15990000001','Maria Souza'),('15990000002','João Lima'),('15990000003','Ana Paula Ribeiro'),('15990000004','Carlos Mendes'),
+ ('15990000005','Fernanda Alves'),('15990000006','Rafael Costa'),('15990000007','Juliana Prado'),('15990000008','Pedro Henrique'),
+ ('15990000009','Camila Duarte'),('15990000010','Lucas Barros'),('15990000011','Patrícia Nunes'),('15990000012','Bruno Teixeira'),
+ ('15990000013','Thiago Moura'),('15990000014','Elaine Santos'),
+ ('15991000001','Larissa Gomes'),('15991000002','Renata Silva'),('15991000003','Beatriz Rocha'),('15991000004','Sandra Moreira'),
+ ('15991000005','Tatiane Lopes'),('15991000006','Michele Dias'),('15991000007','Vanessa Freitas'),('15991000008','Aline Carvalho'),
+ ('15991000009','Priscila Andrade'),('15991000010','Gabriela Martins'),('15991000011','Cíntia Barbosa')
+on conflict (telefone) do nothing;
+
 -- bordas
 insert into delivery_cardapio_bordas (id, estabelecimento_id, nome, preco, ativo, ordem) values
  ('dede0002-0000-4000-8000-000000000001', 'c633459d-fa57-4659-8429-812d7351cf3f', 'Catupiry', 8, true, 0),
