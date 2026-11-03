@@ -353,7 +353,7 @@
         taxa_entrega: base.taxa_entrega != null ? base.taxa_entrega : 6, pedido_minimo: global.VB && global.VB.modoDoSegmento(seg) === 'servico' ? null : 25,
         aceita_entrega: true, aceita_retirada: true,
         status_manual: 'aberto', horarios: base.horarios,
-        formas_pagamento: ['pix', 'cartao', 'dinheiro'], chave_pix: 'pix@exemplo.com.br',
+        formas_pagamento: ['pix'], chave_pix: 'pix@exemplo.com.br',
         endereco: 'Rua Campos Salles, 100 — Centro', instagram_url: null,
         foto_capa_url: null, foto_perfil_url: null, aberto_agora: true
       },

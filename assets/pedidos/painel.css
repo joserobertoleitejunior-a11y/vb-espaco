@@ -492,3 +492,8 @@ html.embutido .barra-salvar { bottom: 0; }
 .ia-cta { display: inline-block; margin-top: 0.7rem; font-style: normal; font-size: 0.86rem; font-weight: 800; color: #fff; }
 @media (prefers-reduced-motion: reduce) { .pc-foto.ia::before { animation: none; } .pc-foto.ia::after { display: none; } }
 .ia-selo svg { flex: 0 0 auto; fill: #fff; color: #fff; }
+
+/* conferência da chave Pix na aba Loja */
+.p-pix-tipo { margin: 0.4rem 0 0; min-height: 1.2em; font-size: 0.82rem; line-height: 1.45; }
+.p-pix-tipo.bom { color: #1d5b2c; }
+.p-pix-tipo.ruim { color: #9b2d20; }

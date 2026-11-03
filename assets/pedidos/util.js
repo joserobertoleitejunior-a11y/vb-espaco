@@ -107,7 +107,11 @@
 
   var DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
+  // App 100% Pix: é o único jeito de pagar dentro do app. Cartão e dinheiro
+  // continuam nomeados aqui só pra não quebrar pedido antigo que já foi feito
+  // com eles — nenhum pedido novo nasce assim.
   var PAGAMENTOS = { pix: 'Pix', cartao: 'Cartão na entrega', dinheiro: 'Dinheiro' };
+  var PAGAMENTOS_ATIVOS = ['pix'];
 
   // data/hora "agora" em Brasília, independente do fuso do aparelho
   function agoraBrasilia() {
@@ -266,7 +270,7 @@
   global.VB = {
     escapeHtml: escapeHtml, preco: preco, soDigitos: soDigitos, formatarTelefone: formatarTelefone,
     mascaraTelefone: mascaraTelefone, slugificar: slugificar, cidadeLegivel: cidadeLegivel,
-    SEGMENTOS: SEGMENTOS, DIAS: DIAS, PAGAMENTOS: PAGAMENTOS,
+    SEGMENTOS: SEGMENTOS, DIAS: DIAS, PAGAMENTOS: PAGAMENTOS, PAGAMENTOS_ATIVOS: PAGAMENTOS_ATIVOS,
     modoDoSegmento: modoDoSegmento, tipoServico: tipoServico, usaVeiculo: usaVeiculo, vocab: vocab, aberto24h: aberto24h, precoOuCombinar: precoOuCombinar,
     lojaAberta: lojaAberta, proximaAbertura: proximaAbertura, fechaAs: fechaAs, descreverHorarioDia: descreverHorarioDia,
     ICONES: ICONES, toast: toast, lerLocal: lerLocal, gravarLocal: gravarLocal, mensagemErro: mensagemErro

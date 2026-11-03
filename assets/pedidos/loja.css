@@ -151,6 +151,36 @@ body.travado { overflow: hidden; }
 .loja-ui .link-acao { background: none; border: 0; color: var(--accent-texto); font-weight: 600; font-size: 0.9rem; padding: 0.4rem 0; }
 .loja-ui .pix-box { margin-top: 0.7rem; padding: 0.8rem 0.9rem; border-radius: var(--radius-sm); background: var(--surface-2); font-size: 0.88rem; }
 .loja-ui .pix-box code { display: block; margin-top: 0.3rem; font-size: 0.95rem; font-weight: 600; word-break: break-all; color: var(--ink); }
+
+/* Pix dentro do site: o QR Code com o valor do pedido, montado no próprio
+   celular (assets/js/pix-brcode.js). Nada de gateway: o dinheiro cai direto
+   na conta da loja, por isso o aviso de que ela confere o comprovante. */
+.loja-ui .pix-qr { padding: 1rem; border: 1.5px solid var(--linha, #e6e6ea); background: var(--surface); }
+.loja-ui .pix-topo strong { display: block; font-size: 1.05rem; font-weight: 800; color: var(--ink); }
+.loja-ui .pix-topo span { display: block; margin-top: 0.25rem; font-size: 0.85rem; line-height: 1.45; color: var(--ink-faint); }
+.loja-ui .pix-area { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 0.9rem; }
+.loja-ui .pix-img {
+  flex: 0 0 auto; width: 10.5rem; height: 10.5rem; padding: 0.5rem; border-radius: 14px;
+  background: #fff; border: 1px solid var(--linha, #e6e6ea); display: grid; place-items: center;
+}
+.loja-ui .pix-img canvas, .loja-ui .pix-img img { width: 100% !important; height: 100% !important; display: block; }
+.loja-ui .pix-img:not([data-pronto])::before { content: 'montando o código…'; font-size: 0.75rem; color: var(--ink-faint); }
+.loja-ui .pix-img[data-pronto]::before { content: none; }
+.loja-ui .pix-img[data-erro] {
+  width: 100%; height: auto; min-height: 0; padding: 0.7rem 0.8rem; text-align: left;
+  font-size: 0.82rem; line-height: 1.45; color: var(--ink-faint); background: var(--surface-2);
+}
+.loja-ui .pix-img[data-erro]::before { content: none; }
+.loja-ui .pix-lado { flex: 1 1 11rem; min-width: 0; }
+.loja-ui .pix-btn {
+  display: block; width: 100%; min-height: 3rem; padding: 0.75rem 1rem; border: 0; border-radius: 14px;
+  background: var(--ink, #1f2024); color: #fff; font: inherit; font-size: 0.95rem; font-weight: 800; cursor: pointer;
+}
+.loja-ui .pix-btn:active { transform: translateY(1px); }
+.loja-ui .pix-para { margin: 0.6rem 0 0; font-size: 0.82rem; line-height: 1.45; color: var(--ink-faint); }
+.loja-ui .pix-aviso { margin: 0.9rem 0 0; padding-top: 0.75rem; border-top: 1px solid var(--linha, #e6e6ea); font-size: 0.82rem; line-height: 1.45; color: var(--ink-faint); }
+.loja-ui .pix-sem strong { display: block; color: var(--ink); }
+.loja-ui .pix-sem span { display: block; margin-top: 0.25rem; font-size: 0.85rem; line-height: 1.45; color: var(--ink-faint); }
 .loja-ui .sucesso { text-align: center; padding: 0.5rem 0; }
 .loja-ui .sucesso-check { width: 64px; height: 64px; margin: 0.4rem auto 1rem; border-radius: 50%; background: var(--ok); color: #fff; display: flex; align-items: center; justify-content: center; }
 .loja-ui .sucesso-check svg { width: 32px; height: 32px; stroke-dasharray: 48; stroke-dashoffset: 48; animation: vbCheck 0.4s 0.15s ease forwards; }

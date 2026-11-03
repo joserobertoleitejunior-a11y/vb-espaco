@@ -718,12 +718,12 @@
     if (!pedidosPronto) return;
     pedirAoPainelPedidos('resumo').then(function (t) { try { ultimoResumoPedidos = JSON.parse(t); } catch (e) {} }, function () {});
   }
-  function pedirAoPainelPedidos(acao, args) {
+  function pedirAoPainelPedidos(acao, args, segundos) {
     return new Promise(function (ok, falha) {
       var f = pedidosHost && pedidosHost.querySelector('iframe');
       if (!f || !f.contentWindow || !pedidosPronto) { falha(new Error('Abra a aba de pedidos primeiro.')); return; }
       var id = 'p' + (++seqPedido);
-      var relogio = setTimeout(function () { delete respostasPedido[id]; falha(new Error('O painel de pedidos não respondeu.')); }, 8000);
+      var relogio = setTimeout(function () { delete respostasPedido[id]; falha(new Error('O painel de pedidos não respondeu.')); }, (segundos || 8) * 1000);
       respostasPedido[id] = function (texto) {
         clearTimeout(relogio);
         if (String(texto).indexOf('ERRO:') === 0) falha(new Error(String(texto).slice(5)));
@@ -816,6 +816,23 @@
           return pedirAoPainelPedidos('cancelar_pedido', a).then(function (t) { mostrarAbaDashboard('pedidos'); return t; },
             function (e) { mostrarAbaDashboard('pedidos'); return (e.message || '') + ' Abri a tela de pedidos pra você.'; });
         },
+        /* a foto que o dono mandou no chat: quem salva é o painel de pedidos,
+           com as mesmas RPCs dos botões. Um item é uma chamada, então um
+           cardápio grande leva um tempo — daí o prazo maior. */
+        salvar_cardapio_lido: function (a) {
+          if (!a.categorias || !a.categorias.length) return 'Não tenho nada lido pra salvar.';
+          mostrarAbaDashboard('pedidos');
+          return pedirAoPainelPedidos('salvar_cardapio_lido', a, 90).then(null, function (e) {
+            return (e.message || 'Não consegui salvar agora.') + ' Abri a tela do cardápio pra você terminar.';
+          });
+        },
+        conferir_cardapio_lido: function (a) {
+          if (!a.categorias || !a.categorias.length) return 'Não tenho nada lido pra conferir.';
+          mostrarAbaDashboard('pedidos');
+          return pedirAoPainelPedidos('conferir_cardapio_lido', a, 15).then(null, function (e) {
+            return e.message || 'Não consegui abrir a lista agora.';
+          });
+        },
         lancar_venda: function (a) {
           var valor = Number(a.valor) || 0;
           if (!a.descricao || !valor) return 'Me diga o que foi vendido e por quanto.';
@@ -831,7 +848,18 @@
           });
         },
         consultar: function (a) {
-          var q = String(a.oQue || 'hoje');
+          var q = String(a.oQue || 'hoje').toLowerCase();
+          // os números do anúncio vêm de outra RPC, não do resumo do caixa
+          if (q === 'anuncio') {
+            return db.rpc('tenant_admin_meus_anuncios', { p_estabelecimento_id: estabId }).then(function (r) {
+              var lista = (r && r.data) || [];
+              if (!lista.length) return 'Você ainda não anunciou. Dá pra anunciar de graça pela aba Ganhos.';
+              var soma = function (k) { return lista.reduce(function (t2, x) { return t2 + (Number(x[k]) || 0); }, 0); };
+              var vistos = soma('vistos'), cliques = soma('cliques'), fecharam = soma('agendamentos') + soma('pedidos');
+              if (!cliques) return vistos + ' pessoa(s) viram o seu anúncio, mas ninguém tocou nele ainda.';
+              return vistos + ' viram, ' + cliques + ' vieram pelo anúncio e ' + fecharam + ' fecharam com você.';
+            }, function () { return 'Não consegui ver os números do anúncio agora.'; });
+          }
           return db.rpc('tenant_admin_dashboard_resumo', { p_estabelecimento_id: estabId, p_dias: 14 }).then(function (r) {
             var d = (r && r.data) || {};
             if (q === 'agenda') return agendaCache.filter(function (x) { return x.status === 'pendente'; }).length + ' horário(s) esperando confirmação, ' + agendaCache.filter(function (x) { return x.status === 'confirmado'; }).length + ' confirmado(s).';
@@ -842,7 +870,11 @@
           });
         },
         abrir_editor: function (a) {
-          var passo = String(a.parte || '').replace(/[^a-z]/g, '');
+          // minúsculas e sem acento ANTES de limpar: sem isso "Foto" virava
+          // "oto", "TEXTOS" virava vazio e "Serviços" virava "servios" — e o
+          // editor abria no passo errado, ou em nenhum
+          var passo = String(a.parte || '').toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
           window.location.href = site + '?editar=1' + (passo ? '&passo=' + passo : '');
           return null;
         }

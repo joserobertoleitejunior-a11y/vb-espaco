@@ -1,14 +1,19 @@
 /* Aba "Meu site" — a mesma nos painéis de Agendar (cadastro.html),
    Pedir e Chamar (painel-area.html). Não edita nada aqui: mostra o quanto
-   o site está pronto, por capítulo, e cada linha abre o editor passo a
-   passo (editor-matriz.js) direto naquele passo (?editar=1&passo=<id>).
-   Embaixo: link, QR Code e Anunciar.
+   o site está pronto e cada linha abre o editor passo a passo
+   (editor-matriz.js) direto naquele passo (?editar=1&passo=<id>).
+
+   Duas regras que mandam na tela toda:
+   - passo OBRIGATÓRIO (opcional: false) — sem ele o site não vai pro ar.
+     Conta na porcentagem e aparece na lista "Precisa fazer".
+   - passo OPCIONAL (opcional: true) — enfeita, não trava nada. Fica numa
+     lista separada, com a palavra "se quiser".
 
    VBMeuSite.montar(caixa, {
      nome: 'Barbearia do Zé',
-     link: 'https://…/ze/campinas',          // site público
-     editar: '/ze/campinas?editar=1',         // abre o editor
-     passos: [{ id, capitulo, titulo, feito }] // feito: true | false | null (não sabe)
+     link: 'https://…/ze/campinas',           // site público
+     editar: '/ze/campinas?editar=1',          // abre o editor
+     passos: [{ id, capitulo, titulo, feito, opcional, ajuda }]
    }) */
 (function (global) {
   var CAPITULOS = {
@@ -37,13 +42,43 @@
       '</svg><span class="ms-anel-num">' + pct + '<small>%</small></span>';
   }
 
+  function marcaOk() {
+    return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  }
+
+  // uma linha da lista: nome em cima, explicação embaixo, selo do lado.
+  // O nome quebra em várias linhas de propósito — nada de palavra cortada.
+  function linha(p, ir) {
+    var est = p.feito ? 'ok' : p.opcional ? 'extra' : 'falta';
+    var selo = p.feito ? 'pronto' : p.opcional ? 'se quiser' : 'precisa';
+    return '<a class="ms-passo ms-' + est + '" href="' + ir(p.id) + '">' +
+      '<span class="ms-marca" aria-hidden="true">' + (p.feito ? marcaOk() : '') + '</span>' +
+      '<span class="ms-passo-txt">' +
+        '<span class="ms-passo-nome">' + esc(p.titulo) + '</span>' +
+        (p.ajuda ? '<span class="ms-passo-ajuda">' + esc(p.ajuda) + '</span>' : '') +
+      '</span>' +
+      '<span class="ms-passo-selo">' + selo + '</span>' +
+      '<span class="ms-seta" aria-hidden="true">›</span>' +
+      '</a>';
+  }
+
   function html(cfg) {
-    var passos = cfg.passos || [];
-    var conta = passos.filter(function (p) { return p.feito != null; });
-    var feitos = conta.filter(function (p) { return p.feito; }).length;
-    var pct = conta.length ? Math.round(feitos / conta.length * 100) : 0;
-    var proximo = passos.filter(function (p) { return p.feito === false; })[0];
+    var passos = (cfg.passos || []).map(function (p) {
+      // feito: null significava "não sei" — vira opcional, que é o que é na prática
+      return {
+        id: p.id, capitulo: p.capitulo, titulo: p.titulo, ajuda: p.ajuda,
+        feito: !!p.feito,
+        opcional: p.opcional != null ? !!p.opcional : p.feito == null
+      };
+    });
     var ir = function (id) { return esc(cfg.editar + (cfg.editar.indexOf('?') > -1 ? '&' : '?') + 'passo=' + encodeURIComponent(id)); };
+
+    var precisa = passos.filter(function (p) { return !p.opcional; });
+    var faltando = precisa.filter(function (p) { return !p.feito; });
+    var extras = passos.filter(function (p) { return p.opcional && !p.feito; });
+    var pct = precisa.length ? Math.round((precisa.length - faltando.length) / precisa.length * 100) : 100;
+    var pronto = faltando.length === 0;
+    var proximo = faltando[0] || extras[0];
 
     var grupos = {}, ordem = [];
     passos.forEach(function (p) {
@@ -52,46 +87,73 @@
     });
 
     var limpo = (cfg.link || '').replace(/^https?:\/\//, '');
-    return '<div class="ms">' +
-      '<a class="ms-topo" href="' + esc(proximo ? ir(proximo.id) : cfg.editar) + '">' +
-        '<span class="ms-anel-caixa">' + anel(pct) + '</span>' +
-        '<span class="ms-topo-txt">' +
-          '<strong>' + (pct === 100 ? 'Seu site está completo' : 'Seu site está ' + pct + '% pronto') + '</strong>' +
-          '<small>' + (proximo ? 'Próximo: ' + esc(proximo.titulo) : 'Toque pra revisar qualquer parte') + '</small>' +
-        '</span>' +
-        '<span class="ms-topo-btn">' + (pct === 0 ? 'Começar' : proximo ? 'Continuar' : 'Editar') + '</span>' +
-      '</a>' +
-      '<p class="ms-ajuda">Tudo se edita do mesmo jeito: passo a passo, vendo o site mudar na hora. Toque numa parte pra ir direto nela.</p>' +
+    var out = '<div class="ms' + (pronto ? ' ms-completo' : '') + '">';
+
+    // 1. o anel: só conta o que é obrigatório
+    out += '<a class="ms-topo" href="' + esc(proximo ? ir(proximo.id) : cfg.editar) + '">' +
+      '<span class="ms-anel-caixa">' + anel(pct) + '</span>' +
+      '<span class="ms-topo-txt">' +
+        '<strong>' + (pronto ? 'Seu site está no ar' : 'Faltam ' + faltando.length + (faltando.length === 1 ? ' passo' : ' passos')) + '</strong>' +
+        '<small>' + (pronto ? 'Tudo o que precisava já está preenchido' : 'Toque pra fazer o próximo: ' + esc(faltando[0].titulo)) + '</small>' +
+      '</span>' +
+      '<span class="ms-seta ms-seta-topo" aria-hidden="true">›</span>' +
+      '</a>';
+
+    // 2. a lista curta do que trava o site
+    if (!pronto) {
+      out += '<section class="ms-bloco ms-bloco-precisa">' +
+        '<header><h3>Precisa fazer</h3><p>Sem estes passos o site não fica pronto. São ' + faltando.length + ' e dá pra fazer agora.</p></header>' +
+        '<div class="ms-lista">' + faltando.map(function (p) { return linha(p, ir); }).join('') + '</div>' +
+        '</section>';
+    } else {
+      out += '<p class="ms-ok-aviso"><span aria-hidden="true">' + marcaOk() + '</span> Obrigatórios prontos. Daqui pra frente é só melhorar.</p>';
+    }
+
+    // 3. o que é enfeite
+    if (extras.length) {
+      out += '<section class="ms-bloco ms-bloco-extra">' +
+        '<header><h3>Se quiser deixar mais bonito</h3><p>Nada aqui é obrigatório. O site funciona sem.</p></header>' +
+        '<div class="ms-lista">' + extras.map(function (p) { return linha(p, ir); }).join('') + '</div>' +
+        '</section>';
+    }
+
+    // 4. tudo, por capítulo, pra quem quer mexer em algo já pronto
+    out += '<details class="ms-tudo"' + (pronto ? ' open' : '') + '>' +
+      '<summary><strong>Ver e editar todas as partes</strong><small>' + passos.length + ' partes do seu site</small></summary>' +
       ordem.map(function (cap) {
         var lista = grupos[cap];
         var ok = lista.filter(function (p) { return p.feito; }).length;
-        return '<section class="ms-cap">' +
-          '<header><h3>' + esc(CAPITULOS[cap] || cap) + '</h3><span>' + ok + '/' + lista.length + '</span></header>' +
-          lista.map(function (p) {
-            var est = p.feito ? 'ok' : p.feito === false ? 'falta' : 'opcional';
-            return '<a class="ms-passo ms-' + est + '" href="' + ir(p.id) + '">' +
-              '<span class="ms-marca" aria-hidden="true">' + (p.feito ? '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span>' +
-              '<span class="ms-passo-nome">' + esc(p.titulo) + '</span>' +
-              '<span class="ms-passo-est">' + (p.feito ? 'pronto' : p.feito === false ? 'falta' : 'opcional') + '</span>' +
-              '</a>';
-          }).join('') +
+        return '<section class="ms-bloco ms-cap">' +
+          '<header><h3>' + esc(CAPITULOS[cap] || cap) + '</h3><span class="ms-conta">' + ok + ' de ' + lista.length + '</span></header>' +
+          '<div class="ms-lista">' + lista.map(function (p) { return linha(p, ir); }).join('') + '</div>' +
           '</section>';
       }).join('') +
-      '<section class="ms-cap ms-divulgar">' +
-        '<header><h3>Divulgar</h3></header>' +
-        '<div class="ms-link"><code>' + esc(limpo) + '</code></div>' +
-        '<div class="ms-botoes">' +
-          '<button type="button" class="ms-btn" data-ms="copiar">Copiar link</button>' +
-          '<button type="button" class="ms-btn" data-ms="compartilhar">Compartilhar</button>' +
-          '<a class="ms-btn" href="' + esc(cfg.link) + '" target="_blank" rel="noopener">Abrir</a>' +
-        '</div>' +
-        '<div class="ms-qr"><div class="ms-qr-img" data-ms-qr></div><div><p>QR Code pra colar no balcão, no cartão e nas embalagens.</p><button type="button" class="ms-btn" data-ms="baixar">Baixar QR Code</button></div></div>' +
-      '</section>' +
-      '<a class="ms-anunciar" href="/anunciar.html">' +
-        '<span class="ms-anunciar-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16.5 9a4 4 0 0 1 0 6"/><path d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg></span>' +
-        '<span><strong>Anunciar</strong><small>Seu negócio em destaque na busca</small></span>' +
-      '</a>' +
-      '</div>';
+      '</details>';
+
+    // 5. divulgar
+    out += '<section class="ms-bloco ms-divulgar">' +
+      '<header><h3>Divulgar</h3><p>Este é o endereço do seu site. Manda pra quem você quiser.</p></header>' +
+      '<div class="ms-link"><code>' + esc(limpo) + '</code></div>' +
+      '<div class="ms-botoes">' +
+        '<button type="button" class="ms-btn ms-btn-forte" data-ms="copiar">Copiar o link</button>' +
+        '<button type="button" class="ms-btn" data-ms="compartilhar">Mandar no WhatsApp</button>' +
+        '<a class="ms-btn" href="' + esc(cfg.link) + '" target="_blank" rel="noopener">Abrir o site</a>' +
+      '</div>' +
+      '<div class="ms-qr">' +
+        '<div class="ms-qr-img" data-ms-qr></div>' +
+        '<div class="ms-qr-txt"><p>QR Code pra colar no balcão, no cartão e nas embalagens. O cliente aponta a câmera e cai no seu site.</p>' +
+        '<button type="button" class="ms-btn" data-ms="baixar">Baixar o QR Code</button></div>' +
+      '</div>' +
+      '</section>';
+
+    // 6. anunciar
+    out += '<a class="ms-anunciar" href="/anunciar.html">' +
+      '<span class="ms-anunciar-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16.5 9a4 4 0 0 1 0 6"/><path d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg></span>' +
+      '<span class="ms-anunciar-txt"><strong>Anunciar</strong><small>Seu negócio em destaque na busca de quem está perto</small></span>' +
+      '<span class="ms-seta" aria-hidden="true">›</span>' +
+      '</a>';
+
+    return out + '</div>';
   }
 
   function desenharQr(alvo, url) {
@@ -136,32 +198,50 @@
     });
   }
 
-  // as perguntas do tipo de negócio (perguntas-segmento.js), no capítulo "sobre"
+  // as perguntas do tipo de negócio (perguntas-segmento.js), no capítulo "sobre".
+  // Nenhuma é obrigatória: são detalhes que ajudam o cliente a decidir.
   function passosSobre(segmento, areas, respostas) {
     if (!global.VBPerguntas) return [];
     return global.VBPerguntas.lista(segmento, areas).map(function (p) {
       var v = respostas[p.chave];
-      return { id: 'q_' + p.chave, capitulo: 'sobre', titulo: p.pergunta, feito: p.tipo === 'varios' ? Array.isArray(v) : v != null && v !== '' };
+      return {
+        id: 'q_' + p.chave, capitulo: 'sobre', titulo: p.pergunta, opcional: true,
+        ajuda: 'Detalhe que o cliente gosta de saber antes de chegar',
+        feito: p.tipo === 'varios' ? Array.isArray(v) : v != null && v !== ''
+      };
     });
   }
   var tem = function (v) { return !!String(v || '').trim(); };
-  var qtd = function (l) { return l == null ? null : l.length > 0; };
+  var qtd = function (l) { return !!(l && l.length > 0); };
 
   // mesmos ids e capítulos do editor da Agenda (perfil.js → montarPassosEdicao)
   function passosAgenda(d) {
     var l = d.linha || {}, tattoo = l.segmento === 'tatuador';
     return [
-      { id: 'foto', capitulo: 'impressao', titulo: 'Foto principal', feito: !!(l.foto_hero_url || l.foto_capa_url) },
-      { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frases', feito: tem(l.titulo_hero) },
-      { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', feito: !!l.template },
-      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', feito: null },
-      { id: 'servicos', capitulo: 'oferta', titulo: tattoo ? 'Sessões e preços' : 'Serviços e preços', feito: qtd(d.servicos) },
-      { id: 'equipe', capitulo: 'oferta', titulo: 'Quem atende', feito: qtd(d.equipe) },
-      { id: 'galeria', capitulo: 'oferta', titulo: tattoo ? 'Portfólio' : 'Galeria de fotos', feito: qtd(d.galeria) },
-      { id: 'horario', capitulo: 'funciona', titulo: 'Horário', feito: qtd(d.horarios) },
-      { id: 'contato', capitulo: 'funciona', titulo: 'WhatsApp', feito: tem(String(l.telefone_whatsapp || '').replace(/\D/g, '')) },
-      { id: 'localizacao', capitulo: 'achar', titulo: 'Endereço', feito: tem(l.endereco) },
-      { id: 'redes', capitulo: 'achar', titulo: 'Redes sociais', feito: !!(l.instagram_url || l.facebook_url || l.tiktok_url) }
+      { id: 'foto', capitulo: 'impressao', titulo: 'Foto principal', opcional: false,
+        ajuda: 'A primeira coisa que o cliente vê. Pode ser foto sua, do lugar ou do trabalho.',
+        feito: !!(l.foto_hero_url || l.foto_capa_url) },
+      { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frase do seu negócio', opcional: false,
+        ajuda: 'O nome grande e uma frase curta dizendo o que você faz.', feito: tem(l.titulo_hero) },
+      { id: 'servicos', capitulo: 'oferta', titulo: tattoo ? 'Sessões e preços' : 'Serviços e preços', opcional: false,
+        ajuda: 'Sem isso o cliente não tem o que escolher na hora de agendar.', feito: qtd(d.servicos) },
+      { id: 'horario', capitulo: 'funciona', titulo: 'Dias e horários que você atende', opcional: false,
+        ajuda: 'É o que libera os horários na agenda do cliente.', feito: qtd(d.horarios) },
+      { id: 'contato', capitulo: 'funciona', titulo: 'Seu WhatsApp', opcional: false,
+        ajuda: 'Pra você receber os agendamentos e o cliente falar com você.',
+        feito: tem(String(l.telefone_whatsapp || '').replace(/\D/g, '')) },
+      { id: 'localizacao', capitulo: 'achar', titulo: 'Endereço', opcional: false,
+        ajuda: 'Onde o cliente te acha. Aparece no mapa do site.', feito: tem(l.endereco) },
+      { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', opcional: true,
+        ajuda: 'Já vem um estilo escolhido. Troque se quiser outra cara.', feito: !!l.template },
+      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', opcional: true,
+        ajuda: 'Uma animação na entrada do site.', feito: false },
+      { id: 'equipe', capitulo: 'oferta', titulo: 'Quem atende', opcional: true,
+        ajuda: 'Se trabalha com mais gente, o cliente escolhe com quem quer.', feito: qtd(d.equipe) },
+      { id: 'galeria', capitulo: 'oferta', titulo: tattoo ? 'Portfólio' : 'Galeria de fotos', opcional: true,
+        ajuda: 'Fotos dos seus trabalhos. Vende sozinho.', feito: qtd(d.galeria) },
+      { id: 'redes', capitulo: 'achar', titulo: 'Instagram e redes', opcional: true,
+        ajuda: 'Liga o site às suas redes.', feito: !!(l.instagram_url || l.facebook_url || l.tiktok_url) }
     ].concat(passosSobre(l.segmento, d.areas || ['agenda'], d.respostas || {}));
   }
 
@@ -170,17 +250,32 @@
     var e = d.loja || {}, ident = d.identidade || {}, S = !!d.servico;
     var h = e.horarios;
     return [
-      { id: 'foto', capitulo: 'impressao', titulo: 'Foto principal', feito: !!(ident.foto_hero_url || e.foto_capa_url) },
-      { id: 'logo', capitulo: 'impressao', titulo: 'Logo', feito: !!e.foto_perfil_url },
-      { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frases', feito: tem(e.descricao) },
-      { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', feito: d.identidade ? !!ident.template : null },
-      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', feito: null },
-      { id: 'itens', capitulo: 'oferta', titulo: S ? 'Serviços e preços' : 'Cardápio', feito: d.itens == null ? null : d.itens > 0 },
-      { id: 'galeria', capitulo: 'oferta', titulo: 'Galeria de fotos', feito: d.galeria == null ? null : d.galeria > 0 },
-      { id: 'atendimento', capitulo: 'funciona', titulo: S ? 'Atendimento' : 'Entrega e retirada', feito: !!(e.aceita_entrega || e.aceita_retirada) },
-      { id: 'pagamento', capitulo: 'funciona', titulo: 'Pagamento', feito: !!(e.formas_pagamento && e.formas_pagamento.length) },
-      { id: 'horario', capitulo: 'funciona', titulo: 'Horário', feito: !!(h && Object.keys(h).length) },
-      { id: 'endereco', capitulo: 'achar', titulo: 'Endereço e Instagram', feito: tem(e.endereco) }
+      { id: 'foto', capitulo: 'impressao', titulo: 'Foto principal', opcional: false,
+        ajuda: 'A primeira coisa que o cliente vê. Uma foto boa do lugar ou do produto.',
+        feito: !!(ident.foto_hero_url || e.foto_capa_url) },
+      { id: 'textos', capitulo: 'impressao', titulo: 'Nome e frase do seu negócio', opcional: false,
+        ajuda: 'O nome grande e uma frase curta dizendo o que você vende.', feito: tem(e.descricao) },
+      { id: 'itens', capitulo: 'oferta', titulo: S ? 'Serviços e preços' : 'Cardápio com preços', opcional: false,
+        ajuda: S ? 'Sem isso o cliente não tem o que pedir.' : 'O coração do site. Pode mandar uma foto do cardápio e a IA preenche.',
+        feito: !!(d.itens && d.itens > 0) },
+      { id: 'atendimento', capitulo: 'funciona', titulo: S ? 'Como você atende' : 'Entrega e retirada', opcional: false,
+        ajuda: S ? 'Diz se atende no local, em casa ou os dois.' : 'Diz se você entrega, se o cliente busca, e quanto custa a entrega.',
+        feito: !!(e.aceita_entrega || e.aceita_retirada) },
+      { id: 'pagamento', capitulo: 'funciona', titulo: 'Sua chave Pix', opcional: false,
+        ajuda: 'É por ela que o cliente te paga, dentro do site. O dinheiro cai direto na sua conta.',
+        feito: tem(e.chave_pix) },
+      { id: 'horario', capitulo: 'funciona', titulo: 'Dias e horários que você abre', opcional: false,
+        ajuda: 'É o que mostra "aberto agora" pro cliente.', feito: !!(h && Object.keys(h).length) },
+      { id: 'endereco', capitulo: 'achar', titulo: 'Endereço', opcional: false,
+        ajuda: 'Onde o cliente te acha e de onde sai a entrega.', feito: tem(e.endereco) },
+      { id: 'logo', capitulo: 'impressao', titulo: 'Logo', opcional: true,
+        ajuda: 'Se você tem uma marca, suba aqui. Sem logo o site usa o nome.', feito: !!e.foto_perfil_url },
+      { id: 'estilo', capitulo: 'impressao', titulo: 'Cores e estilo', opcional: true,
+        ajuda: 'Já vem um estilo escolhido. Troque se quiser outra cara.', feito: !!ident.template },
+      { id: 'efeito', capitulo: 'impressao', titulo: 'Efeito do título', opcional: true,
+        ajuda: 'Uma animação na entrada do site.', feito: false },
+      { id: 'galeria', capitulo: 'oferta', titulo: 'Galeria de fotos', opcional: true,
+        ajuda: 'Fotos dos pratos, dos produtos, do lugar.', feito: !!(d.galeria && d.galeria > 0) }
     ].concat(passosSobre(e.segmento, e.areas || [S ? 'servicos' : 'delivery'], d.respostas || {}));
   }
 

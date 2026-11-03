@@ -765,6 +765,34 @@
     }
   }
 
+  /* Grava no cardápio o que a IA leu da foto — o mesmo caminho do botão
+     "Pôr no cardápio", só que sem tela: é o que o funcionário usa quando o
+     dono manda a foto pelo chat e diz pra salvar do jeito que está. */
+  async function porNoCardapio(cats) {
+    var feitos = 0;
+    for (var ci = 0; ci < cats.length; ci++) {
+      var nomeCat = String(cats[ci].nome || 'Cardápio').trim() || 'Cardápio';
+      var lista = cats[ci].itens || [];
+      var cat = categorias.filter(function (c) { return c.nome.toLowerCase() === nomeCat.toLowerCase(); })[0];
+      if (!cat && lista.length) {
+        cat = await rpc('delivery_admin_salvar_categoria', { p_id: null, p_estabelecimento_id: loja.id, p_nome: nomeCat, p_ordem: categorias.length });
+        categorias = categorias.concat([cat]);
+      }
+      for (var ii = 0; ii < lista.length; ii++) {
+        var nome = String(lista[ii].nome || '').trim();
+        if (!nome) continue;
+        await rpc('delivery_admin_salvar_item', {
+          p_id: null, p_estabelecimento_id: loja.id, p_categoria_id: cat.id, p_nome: nome.slice(0, 80),
+          p_descricao: lista[ii].descricao || null, p_preco: Number(lista[ii].preco) || 0, p_foto_url: null,
+          p_permite_meio_a_meio: false, p_ativo: true, p_ordem: itens.length + feitos, p_aceita_borda: false
+        });
+        feitos++;
+      }
+    }
+    if (feitos) await carregarCardapio();
+    return feitos;
+  }
+
   function renderizarCardapio() {
     var grupos = categorias.map(function (c) { return { nome: c.nome, lista: itens.filter(function (i) { return i.categoria_id === c.id; }) }; });
     var sem = itens.filter(function (i) { return !categorias.some(function (c) { return c.id === i.categoria_id; }); });
@@ -1219,10 +1247,29 @@
       else if (campo === 'telefone_whatsapp') el.value = U.formatarTelefone(v);
       else el.value = v == null ? '' : v;
     });
-    document.querySelectorAll('[data-pagamento]').forEach(function (el) { el.checked = (loja.formas_pagamento || []).indexOf(el.value) !== -1; });
+    conferirChavePix();
     renderizarHorarios(loja.horarios || {});
     renderizarFotosLoja();
   }
+
+  /* Diz pro dono o que entendemos da chave que ele digitou (CPF, celular,
+     e-mail…). Chave errada só apareceria como erro na hora que o cliente
+     fosse pagar — aqui ele vê na hora. */
+  function conferirChavePix() {
+    var inp = document.getElementById('lPix'), alvo = document.getElementById('lPixTipo');
+    if (!inp || !alvo) return;
+    var v = (inp.value || '').trim();
+    if (!v) { alvo.textContent = ''; alvo.className = 'p-pix-tipo'; return; }
+    var tipo = window.VBPix && window.VBPix.tipoDaChave(v);
+    if (!tipo) {
+      alvo.textContent = 'Não reconheci essa chave. Confira: CPF, CNPJ, celular com DDD, e-mail ou a chave aleatória do banco.';
+      alvo.className = 'p-pix-tipo ruim';
+      return;
+    }
+    alvo.textContent = 'Entendi: ' + (window.VBPix.NOME_TIPO[tipo] || tipo) + '. Se não for isso, corrija a chave.';
+    alvo.className = 'p-pix-tipo bom';
+  }
+  document.addEventListener('input', function (e) { if (e.target && e.target.id === 'lPix') conferirChavePix(); });
 
   function renderizarHorarios(h) {
     $('gradeHorarios').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(function (d) {
@@ -1262,8 +1309,8 @@
         var v = el.type === 'checkbox' ? el.checked : el.value;
         if (campo === 'slug') { v = U.slugificar(v); }
         marcarRascunho(campo, v);
-      } else if (el.hasAttribute('data-pagamento')) {
-        marcarRascunho('formas_pagamento', Array.prototype.map.call(document.querySelectorAll('[data-pagamento]:checked'), function (x) { return x.value; }));
+        // app 100% Pix: quem tem chave, aceita Pix — e só
+        if (campo === 'chave_pix') marcarRascunho('formas_pagamento', String(v || '').trim() ? ['pix'] : []);
       } else if (el.closest('.hor-linha')) {
         var linha = el.closest('.hor-linha');
         var on = linha.querySelector('[data-hor-aberto]').checked;
@@ -1564,6 +1611,21 @@
         em_andamento: andando.map(function (p) { return '#' + p.numero + ' ' + rotuloStatusAdmin(p); }),
         itens_sem_preco: itens.filter(function (i) { return !Number(i.preco); }).length
       }));
+    }
+    // a foto do cardápio lida no chat do funcionário (assets/js/funcionario.js)
+    if (msg.vbAcao === 'conferir_cardapio_lido') {
+      trocarAba('cardapio', true);
+      sheetFotoCardapio({ categorias: args.categorias || [], aviso: '' });
+      return responder(id, 'Abri a lista do que eu li. Corrija o que precisar e toque em salvar.');
+    }
+    if (msg.vbAcao === 'salvar_cardapio_lido') {
+      trocarAba('cardapio', true);
+      try {
+        var n = await porNoCardapio(args.categorias || []);
+        return responder(id, n ? 'Pus ' + n + (n === 1 ? ' item' : ' itens') + ' no cardápio. Confira os preços.' : 'ERRO:Não achei item nenhum pra pôr.');
+      } catch (err) {
+        return responder(id, 'ERRO:' + ((err && err.message) || 'Não consegui salvar o cardápio.'));
+      }
     }
     var p = achaPedido(args);
     if (!p) return responder(id, 'ERRO:Me diga o número do pedido.');

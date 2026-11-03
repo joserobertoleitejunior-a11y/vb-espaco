@@ -1,19 +1,11 @@
 /*
-  X-Frame-Options: DENY
+  # frame-ancestors 'self': o próprio site pode se abrir numa janelinha interna
+  # (o painel de pedidos dentro do painel, a prévia do editor), e nenhum outro
+  # site consegue. O X-Frame-Options fica junto pros navegadores antigos.
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-
-/preview-embutido.html
-  X-Frame-Options: SAMEORIGIN
-
-# o painel de pedidos aparece dentro do painel único (cadastro.html)
-/painel-area.html
-  ! X-Frame-Options
-  X-Frame-Options: SAMEORIGIN
-
-/painel-area
-  ! X-Frame-Options
-  X-Frame-Options: SAMEORIGIN
 
 /sw.js
   Cache-Control: no-cache
