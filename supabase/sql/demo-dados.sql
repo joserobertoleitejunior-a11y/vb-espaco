@@ -122,10 +122,10 @@ update tenant_staff set nome = 'Dani' where id = '85d4e405-e316-4264-bc6e-6206e8
 
 -- mais serviços
 insert into tenant_services (id, estabelecimento_id, nome, preco, categoria, ativo, duracao_min) values
- ('dede0007-0000-4000-8000-000000000001', 'd71109d1-62ea-4892-bab5-6c63ca2a3301', 'Hidratação', 80, 'Cabelo', true, 60),
- ('dede0007-0000-4000-8000-000000000002', 'd71109d1-62ea-4892-bab5-6c63ca2a3301', 'Manicure', 35, 'Unhas', true, 45),
- ('dede0007-0000-4000-8000-000000000003', 'd71109d1-62ea-4892-bab5-6c63ca2a3301', 'Pedicure', 40, 'Unhas', true, 50),
- ('dede0007-0000-4000-8000-000000000004', 'd71109d1-62ea-4892-bab5-6c63ca2a3301', 'Mechas', 180, 'Cabelo', true, 150)
+ ('dede0007-0000-4000-8000-000000000001', 'd71109d1-62ea-4892-bab5-6c63ca2a3301', 'Hidratação', 80, 'unissex', true, 60),
+ ('dede0007-0000-4000-8000-000000000002', 'd71109d1-62ea-4892-bab5-6c63ca2a3301', 'Manicure', 35, 'unissex', true, 45),
+ ('dede0007-0000-4000-8000-000000000003', 'd71109d1-62ea-4892-bab5-6c63ca2a3301', 'Pedicure', 40, 'unissex', true, 50),
+ ('dede0007-0000-4000-8000-000000000004', 'd71109d1-62ea-4892-bab5-6c63ca2a3301', 'Mechas', 180, 'unissex', true, 150)
 on conflict (id) do nothing;
 
 -- agendamentos: 12 já concluídos, 4 hoje, 3 amanhã e 2 nos próximos dias
@@ -161,12 +161,12 @@ on conflict (id) do nothing;
 
 -- vendas do salão (as dos atendimentos concluídos + alguns produtos)
 insert into tenant_vendas (id, estabelecimento_id, servico_id, staff_id, staff_nome, descricao, valor, forma_pagamento, criado_em, cliente_nome, cliente_telefone)
-select ('dede0009-0000-4000-8000-' || lpad(a.n::text, 12, '0'))::uuid, 'd71109d1-62ea-4892-bab5-6c63ca2a3301',
+select ('dede0009-0000-4000-8000-' || lpad(split_part(a.id::text, '-', 5)::bigint::text, 12, '0'))::uuid, 'd71109d1-62ea-4892-bab5-6c63ca2a3301',
        (select s.id from tenant_services s where s.estabelecimento_id = 'd71109d1-62ea-4892-bab5-6c63ca2a3301' and s.nome = a.servico limit 1),
        a.staff_id, a.staff_nome, a.servico,
        coalesce((select s.preco from tenant_services s where s.estabelecimento_id = 'd71109d1-62ea-4892-bab5-6c63ca2a3301' and s.nome = a.servico limit 1), 50),
-       (array['pix', 'cartao', 'dinheiro', 'pix'])[1 + (right(a.id::text, 2)::int % 4)],
-       (a.dia + a.horario::time + (a.duracao_min || ' minutes')::interval) at time zone 'America/Sao_Paulo', a.cliente_nome, a.cliente_telefone
+       (array['pix', 'cartao', 'dinheiro', 'pix'])[1 + (split_part(a.id::text, '-', 5)::bigint % 4)::int],
+       ((a.dia + a.horario::time + (a.duracao_min || ' minutes')::interval) at time zone 'America/Sao_Paulo'), a.cliente_nome, a.cliente_telefone
 from tenant_appointments a
 where a.id::text like 'dede0008%' and a.status = 'concluido'
 on conflict (id) do nothing;

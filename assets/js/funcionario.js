@@ -520,7 +520,25 @@
   }
 
   // ações que mexem em alguma coisa pedem confirmação antes
-  var PRECISA_SIM = ['confirmar_agendamento', 'concluir_agendamento', 'cancelar_agendamento', 'avancar_pedido', 'cancelar_pedido', 'lancar_venda'];
+  var PRECISA_SIM = ['confirmar_agendamento', 'concluir_agendamento', 'cancelar_agendamento', 'avancar_pedido', 'cancelar_pedido', 'lancar_venda',
+    'limpar_cardapio', 'remover_item', 'remover_categoria', 'remover_borda', 'remover_combo', 'remover_servico', 'remover_profissional', 'remover_venda', 'apagar_promocao'];
+  // o que o bot vai fazer, dito claramente, antes do "sim" (sobretudo o que apaga e não dá pra desfazer)
+  function textoConfirma(nome, a) {
+    a = a || {};
+    var q = function (v) { return '"' + String(v || '').slice(0, 40) + '"'; };
+    var t = {
+      limpar_cardapio: 'Vou apagar TODOS os itens e categorias do cardápio. Isso não dá pra desfazer. Responda sim pra eu apagar tudo.',
+      remover_item: 'Vou apagar ' + q(a.nome) + ' do cardápio. Responda sim pra eu seguir.',
+      remover_categoria: 'Vou apagar a categoria ' + q(a.nome) + '. Responda sim pra eu seguir.',
+      remover_borda: 'Vou apagar a borda ' + q(a.nome) + '. Responda sim pra eu seguir.',
+      remover_combo: 'Vou apagar o combo ' + q(a.nome) + '. Responda sim pra eu seguir.',
+      remover_servico: 'Vou apagar o serviço ' + q(a.nome) + '. Responda sim pra eu seguir.',
+      remover_profissional: 'Vou tirar ' + q(a.nome) + ' da equipe. Responda sim pra eu seguir.',
+      remover_venda: 'Vou apagar essa venda do caixa de hoje. Responda sim pra eu seguir.',
+      apagar_promocao: 'Vou apagar a promoção ' + q(a.titulo || a.nome) + '. Responda sim pra eu seguir.'
+    };
+    return t[nome] || 'Posso fazer? Responda sim pra eu seguir.';
+  }
   function executar(nome, args, jaConfirmou) {
     if (nome === 'mudar_nome_funcionario') {
       var novo = String(args.nome || '').trim().slice(0, 20);
@@ -542,7 +560,7 @@
     if (!fn) { dizer('ele', 'Isso eu ainda não faço por aqui.'); return; }
     if (PRECISA_SIM.indexOf(nome) !== -1 && !jaConfirmou) {
       st.pendente = { nome: nome, args: args };
-      dizer('ele', 'Posso fazer? Responda sim pra eu seguir.');
+      dizer('ele', textoConfirma(nome, args));
       return;
     }
     // salvar um cardápio inteiro leva um tempo: mostra o "pensando…" até acabar
@@ -557,5 +575,5 @@
     });
   }
 
-  global.VBFuncionario = { montar: montar, abrir: abrir, nome: function () { return st.nome; }, dizer: dizer };
+  global.VBFuncionario = { montar: montar, abrir: abrir, nome: function () { return st.nome; }, dizer: dizer, _cfg: function () { return st.cfg; } };
 })(window);

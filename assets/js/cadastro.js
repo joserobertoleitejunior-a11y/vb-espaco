@@ -815,6 +815,17 @@
         return verbo + ' o horário de ' + a.cliente_nome + '.';
       });
     }
+    // tudo o que o painel faz, o bot também faz: as ações novas moram em bot-acoes.js
+    var extras = window.VBBotAcoes ? window.VBBotAcoes.criar({
+      db: db, estabId: estabId, areas: areasDe(estabId), segmento: (meusEstabs[estabId] || {}).segmento, preco: formatarPreco,
+      recarregar: function (onde) {
+        if (onde === 'cardapio') { prepararPedidos(estabId, 'cardapio'); mostrarAbaDashboard('cardapio'); }
+        else if (onde === 'pedidos') { prepararPedidos(estabId, 'pedidos'); mostrarAbaDashboard('pedidos'); }
+        else if (onde === 'agenda') mostrarAbaDashboard('agenda');
+        else if (onde === 'caixa') mostrarAbaDashboard('caixa');
+      },
+      tour: function () { iniciarTour(); }
+    }) : {};
     window.VBFuncionario.montar({
       estabId: estabId,
       negocio: nome,
@@ -977,6 +988,9 @@
         }
       }
     });
+    // junta as ações novas às de sempre (as de sempre têm prioridade se o nome repetir)
+    var cfg = window.VBFuncionario._cfg && window.VBFuncionario._cfg();
+    if (cfg && cfg.acoes) Object.keys(extras).forEach(function (k) { if (!cfg.acoes[k]) cfg.acoes[k] = extras[k]; });
   }
   function fecharMenuDash() {
     var m = document.getElementById('dashMenu'), b = document.getElementById('dashMenuBtn');

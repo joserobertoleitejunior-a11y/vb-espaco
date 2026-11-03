@@ -74,10 +74,40 @@ consultar           { oQue: "hoje"|"vendas"|"agenda"|"pedidos"|"clientes"|"anunc
 abrir_editor        { parte?: "foto"|"textos"|"estilo"|"servicos"|"equipe"|"galeria"|"horario"|"contato"|"localizacao"|"redes" }
 pedir_foto_cardapio {}                     — o dono quer mexer no cardápio: peça a foto aqui no chat
 mudar_nome_funcionario { nome: string }   — o dono quer chamar o funcionário de outro jeito
+adicionar_item      { nome: string, preco?: number, categoria?: string, descricao?: string }   — põe um item/serviço no cardápio
+mudar_preco_item    { nome: string, preco: number }
+mudar_nome_item     { nome: string, novo_nome: string }
+disponibilidade_item { nome: string, disponivel: boolean }   — esgotado (false) ou de volta (true)
+remover_item        { nome: string }
+limpar_cardapio     {}                     — apaga TODOS os itens e categorias do cardápio
+criar_categoria     { nome: string }
+remover_categoria   { nome: string }
+adicionar_borda     { nome: string, preco: number }
+remover_borda       { nome: string }
+criar_combo         { nome: string, preco: number, qtd_sabores?: number }   — promoção fechada de pizzas/itens
+remover_combo       { nome: string }
+abrir_fechar_loja   { modo: "aberto"|"fechado"|"auto" }   — abre/fecha a loja de delivery agora, ou volta ao horário
+configurar_loja     { taxa_entrega?: number, pedido_minimo?: number, tempo_min?: number, tempo_max?: number, entrega?: boolean, retirada?: boolean, aviso?: string, chave_pix?: string, whatsapp?: string }
+criar_agendamento   { cliente: string, telefone?: string, servico?: string, profissional?: string, dia: "YYYY-MM-DD", horario: "HH:MM" }
+adicionar_servico   { nome: string, preco: number }   — serviço da agenda
+mudar_preco_servico { nome: string, preco: number }
+remover_servico     { nome: string }
+adicionar_profissional { nome: string, especialidade?: string }
+remover_profissional   { nome: string }
+horario_funcionamento  { dia: "segunda"…"domingo", abre?: "HH:MM", fecha?: "HH:MM", fechado?: boolean }
+publicar_promocao   { titulo: string, texto?: string, dias?: number }   — promoção que aparece no site
+apagar_promocao     { titulo: string }
+publicar_recado     { texto: string }      — recado do dia no site (24 horas)
+remover_venda       { descricao?: string } — apaga a venda de hoje (a última, se não disser qual)
+editar_site         { titulo?: string, subtitulo?: string, sobre?: string, instagram?: string, cta?: string }
+buscar_cliente      { nome: string }       — telefone e histórico de um cliente
+abrir_tour          {}                     — o dono quer aprender a usar o app: abre o tour
 nada                {}                     — só conversa, sem ação
 `;
 
 function instrucao(ctx: Record<string, unknown>) {
+  const hoje = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
+  const diaSemana = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long" }).format(new Date());
   return `Você é ${ctx.nome_assistente || "o funcionário"}, o funcionário digital do estabelecimento "${ctx.negocio || ""}" no app Matriz. Fala com o DONO do negócio, em português do Brasil, do jeito mais simples possível — como um colega de trabalho, nunca como um robô.
 
 Responda SEMPRE em JSON: {"fala":"...","acao":{"nome":"...","args":{}}}
@@ -86,7 +116,12 @@ Responda SEMPRE em JSON: {"fala":"...","acao":{"nome":"...","args":{}}}
 
 Ações que você pode pedir:${ACOES}
 
+Hoje é ${hoje} (${diaSemana}). Use isso pra entender \"hoje\", \"amanhã\", \"sexta\" e mande a data em YYYY-MM-DD.
+
 Regras:
+- VOCÊ CONSEGUE FAZER TUDO o que o app faz: cada coisa tem uma ação na lista. Nunca diga que não consegue nem mande o dono fazer à mão se existe uma ação pra isso. Pra \"apagar tudo do cardápio\" use limpar_cardapio; pra apagar um item, remover_item; pra mudar preço, mudar_preco_item; pra marcar esgotado, disponibilidade_item.
+- Ações que apagam ou mexem em dinheiro: o app pede o \"sim\" do dono sozinho, então só mande a ação — sem perguntar de novo na fala.
+- Se faltar um dado (nome do item, preço, dia, hora), pergunte só o que falta e mande \"acao\": null.
 - Nunca invente número de venda, preço ou nome de cliente. Se faltar informação, pergunte na "fala" e mande "acao": null.
 - Se o dono pedir algo que não está na lista, explique na "fala" o que dá pra fazer e mande "acao": null.
 - Para consultar qualquer número, use a ação "consultar": o app mostra os dados de verdade.
@@ -137,7 +172,7 @@ Deno.serve(async (req) => {
     // a variável é "texto": escrever só { text } procurava uma variável "text"
     // que não existe, e a chamada morria antes de sair
     contents: [...conversa, { role: "user", parts: [{ text: texto }] }],
-    generationConfig: { temperature: 0.2, maxOutputTokens: 700, responseMimeType: "application/json" , thinkingConfig: { thinkingBudget: 0 } },
+    generationConfig: { temperature: 0.2, maxOutputTokens: 900, responseMimeType: "application/json" , thinkingConfig: { thinkingBudget: 0 } },
   });
   console.log("assistente: gemini respondeu em", Date.now() - t0, "ms");
   if ("erroStatus" in resposta) {
