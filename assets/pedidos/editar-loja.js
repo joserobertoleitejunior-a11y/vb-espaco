@@ -370,13 +370,37 @@
     });
   }
 
+  /* Endereço: o mesmo mapa da Agenda (VBLocal) — busca enquanto digita, botão
+     "usar minha localização" e o pino que o dono arrasta até a porta. Antes
+     aqui era só um campo de texto, então o cliente nunca via mapa nenhum.
+     Guardamos também o ponto (lat/lng): é dele que sai o mapa no site. */
+  var localLoja = null;
   function passoEndereco(caixa) {
     var e = estab();
     caixa.innerHTML =
-      campo('vbEdEndereco', 'Endereço (rua, número, bairro)', e.endereco, 'text', ' maxlength="200"') +
-      campo('vbEdInsta', 'Instagram', e.instagram_url, 'text', ' maxlength="200" placeholder="@sualoja"');
-    $('vbEdEndereco').addEventListener('change', function () { salvarLoja({ endereco: this.value }); });
+      '<div id="vbEdMapa" class="vb-ed-mapa"></div>' +
+      campo('vbEdInsta', 'Instagram <span style="font-weight:500;opacity:.65">(opcional)</span>', e.instagram_url, 'text', ' maxlength="200" placeholder="@sualoja"');
     $('vbEdInsta').addEventListener('change', function () { salvarLoja({ instagram_url: this.value.trim() }); });
+
+    if (!window.VBLocal) {
+      // sem o módulo do mapa, pelo menos dá pra escrever o endereço na mão
+      $('vbEdMapa').innerHTML = campo('vbEdEndereco', 'Endereço (rua, número, bairro)', e.endereco, 'text', ' maxlength="200"');
+      $('vbEdEndereco').addEventListener('change', function () { salvarLoja({ endereco: this.value }); });
+      return;
+    }
+    var pendente = null;
+    if (localLoja) { try { localLoja.destruir(); } catch (x) {} localLoja = null; }
+    localLoja = window.VBLocal.montar($('vbEdMapa'), {
+      endereco: e.endereco || '', lat: e.endereco_lat, lng: e.endereco_lng, cidade: e.cidade,
+      aoMudar: function (v) {
+        // arrastar o pino dispara muita mudança: só salva quando para
+        clearTimeout(pendente);
+        pendente = setTimeout(function () {
+          salvarLoja({ endereco: v.endereco, endereco_lat: v.lat, endereco_lng: v.lng })
+            .then(function () { if (editor) editor.estado(); });
+        }, 400);
+      }
+    });
   }
 
   function montarPassos(respostas) {
@@ -402,7 +426,10 @@
   /* ---------- o editor único (assets/js/editor-matriz.js) ---------- */
   var editor = null;
   function redesenhar() { if (editor) editor.atualizar(); }
-  function concluir() { window.location.href = '/cadastro.html?aba=pedidos'; }
+  // Terminou de editar: volta pro painel, na aba "Meu site", na JANELA INTEIRA.
+  // (window.top: se por qualquer motivo isto estiver num quadro, não abre um
+  // painel dentro do outro — era o painel duplicado que aparecia.)
+  function concluir() { (window.top || window).location.href = '/cadastro.html?aba=perfil'; }
   // acabou de criar o negócio: mostra o site pronto, que é a recompensa
   function concluirCriacao() { window.location.href = location.pathname; }
 
@@ -445,6 +472,9 @@
         // continua aqui, no site de verdade, com a contagem seguindo de lá
         var criando = q.get('tutorial') === '1';
         if (q.get('editar') !== '1' && !criando) { atalhoDono(); return; }
+        // Editar é uma página só dele, em tela cheia. Se esta página foi aberta
+        // dentro do quadro do painel, sai do quadro antes de abrir o editor.
+        if (window.top !== window.self) { try { window.top.location.replace(location.href); return; } catch (x) { /* outro domínio: segue */ } }
         if (!window.VBEditor) return;
         var respostas = {};
         var abrir = function () {

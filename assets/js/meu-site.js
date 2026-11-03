@@ -51,7 +51,9 @@
   function linha(p, ir) {
     var est = p.feito ? 'ok' : p.opcional ? 'extra' : 'falta';
     var selo = p.feito ? 'pronto' : p.opcional ? 'se quiser' : 'precisa';
-    return '<a class="ms-passo ms-' + est + '" href="' + ir(p.id) + '">' +
+    // target=_top: a edição abre na JANELA INTEIRA, não dentro do quadro do
+    // painel — senão o editor aparecia com o painel de gestão em volta
+    return '<a class="ms-passo ms-' + est + '" href="' + ir(p.id) + '" target="_top">' +
       '<span class="ms-marca" aria-hidden="true">' + (p.feito ? marcaOk() : '') + '</span>' +
       '<span class="ms-passo-txt">' +
         '<span class="ms-passo-nome">' + esc(p.titulo) + '</span>' +
@@ -90,7 +92,7 @@
     var out = '<div class="ms' + (pronto ? ' ms-completo' : '') + '">';
 
     // 1. o anel: só conta o que é obrigatório
-    out += '<a class="ms-topo" href="' + esc(proximo ? ir(proximo.id) : cfg.editar) + '">' +
+    out += '<a class="ms-topo" href="' + esc(proximo ? ir(proximo.id) : cfg.editar) + '" target="_top">' +
       '<span class="ms-anel-caixa">' + anel(pct) + '</span>' +
       '<span class="ms-topo-txt">' +
         '<strong>' + (pronto ? 'Seu site está no ar' : 'Faltam ' + faltando.length + (faltando.length === 1 ? ' passo' : ' passos')) + '</strong>' +
@@ -147,7 +149,7 @@
       '</section>';
 
     // 6. anunciar
-    out += '<a class="ms-anunciar" href="/anunciar.html">' +
+    out += '<a class="ms-anunciar" href="/anunciar.html" target="_top">' +
       '<span class="ms-anunciar-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16.5 9a4 4 0 0 1 0 6"/><path d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg></span>' +
       '<span class="ms-anunciar-txt"><strong>Anunciar</strong><small>Seu negócio em destaque na busca de quem está perto</small></span>' +
       '<span class="ms-seta" aria-hidden="true">›</span>' +

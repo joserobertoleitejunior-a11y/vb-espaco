@@ -322,6 +322,15 @@
       });
     }
     $('tplCidadeRodape').textContent = U.cidadeLegivel(estab.cidade);
+    // o mapa só aparece pra quem marcou o ponto no editor — endereço só
+    // escrito não vira mapa, porque pino no lugar errado é pior que nenhum
+    if (window.VBMapaSite) {
+      window.VBMapaSite.montar($('lojaMapa'), {
+        lat: estab.endereco_lat != null ? estab.endereco_lat : ident.endereco_lat,
+        lng: estab.endereco_lng != null ? estab.endereco_lng : ident.endereco_lng,
+        endereco: estab.endereco || ident.endereco, nome: estab.nome
+      });
+    }
     if (estab.endereco || ident.endereco) {
       $('tplEnderecoRodape').textContent = estab.endereco || ident.endereco;
       $('tplEnderecoMenu').textContent = estab.endereco || ident.endereco;

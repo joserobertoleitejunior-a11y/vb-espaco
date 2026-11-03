@@ -13,7 +13,7 @@
 .vbe .oculto { display: none !important; }
 .vbe-dock {
   pointer-events: auto; margin: 0 auto; max-width: 34rem;
-  display: flex; flex-direction: column; max-height: min(64vh, 34rem);
+  display: flex; flex-direction: column; max-height: min(82vh, 42rem);
   background: var(--vbe-fundo); border-radius: 22px 22px 0 0;
   box-shadow: 0 -18px 50px -20px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--vbe-borda);
   padding: 0.75rem 1rem calc(0.8rem + env(safe-area-inset-bottom));
@@ -76,7 +76,21 @@
 .vbe-tag-opcional::before { content: '○ '; }
 .vbe-pergunta { margin: 0.25rem 0 0.2rem; font-size: 1.18rem; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; color: var(--vbe-tinta); }
 .vbe-ajuda { margin: 0 0 0.7rem; font-size: 0.84rem; line-height: 1.45; color: var(--vbe-suave); }
-.vbe-campos { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0.1rem 0.1rem 0.3rem; color: var(--vbe-tinta); }
+.vbe-campos {
+  flex: 1 1 auto; min-height: 9rem; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0.1rem 0.35rem 0.3rem 0.1rem; color: var(--vbe-tinta);
+  /* a barra de rolagem some no Android e ninguém percebe que tem mais coisa */
+  scrollbar-width: thin; scrollbar-color: rgba(31, 32, 36, 0.3) transparent;
+}
+.vbe-campos::-webkit-scrollbar { width: 8px; }
+.vbe-campos::-webkit-scrollbar-thumb { background: rgba(31, 32, 36, 0.28); border-radius: 99px; }
+.vbe-campos::-webkit-scrollbar-track { background: transparent; }
+/* uma sombrinha no pé avisa que ainda tem conteúdo abaixo */
+.vbe-palco { position: relative; }
+.vbe-palco::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1.4rem; pointer-events: none;
+  background: linear-gradient(to top, var(--vbe-fundo), transparent);
+}
 .vbe-campos input, .vbe-campos textarea, .vbe-campos select { color: var(--vbe-tinta); }
 .vbe-aviso { margin: 0.4rem 0 0; font-size: 0.8rem; font-weight: 600; color: #b3261e; }
 
@@ -385,3 +399,8 @@ html.vbfc-travado, html.vbfc-travado body { overflow: hidden; }
 .vb-ed-pix-tipo { margin: 0.45rem 0 0; min-height: 1.2em; font-size: 0.82rem; line-height: 1.45; }
 .vb-ed-pix-tipo.bom { color: #1d5b2c; }
 .vb-ed-pix-tipo.ruim { color: #9b2d20; }
+
+/* passo do endereço: o mapa do VBLocal dentro do editor precisa de altura
+   própria, senão nasce achatado e o dono não consegue mirar o pino */
+.vb-ed-mapa { margin-bottom: 0.9rem; }
+.vb-ed-mapa .vbl-mapa, .vb-ed-mapa .vbl-mapa-leaflet { min-height: 12rem; }

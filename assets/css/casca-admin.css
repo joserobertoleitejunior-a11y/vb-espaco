@@ -100,9 +100,10 @@
 /* Pedidos / Cardápio / Loja: o painel de pedidos aparece aqui dentro, sem trocar de página */
 .ca-pedidos { padding: 0; overflow: hidden; }
 .ca-pedidos.oculto, .ca-corpo.oculto { display: none; }
-.ca-chips { display: flex; gap: 0.4rem; padding: 0.7rem 0.8rem 0.5rem; }
+.ca-chips { display: flex; gap: 0.4rem; padding: 0.7rem 0.8rem 0.5rem; overflow-x: auto; scrollbar-width: none; }
+.ca-chips::-webkit-scrollbar { display: none; }
 .ca-chips.oculto { display: none; }
-.ca-chip { flex: 1 1 0; padding: 0.55rem 0.4rem; border-radius: 999px; border: 1.5px solid var(--borda, #e6e6ea); background: #fff; font: inherit; font-size: 0.85rem; font-weight: 700; color: #1f2024; cursor: pointer; }
+.ca-chip { flex: 1 1 auto; white-space: nowrap; padding: 0.55rem 0.85rem; border-radius: 999px; border: 1.5px solid var(--borda, #e6e6ea); background: #fff; font: inherit; font-size: 0.85rem; font-weight: 700; color: #1f2024; cursor: pointer; }
 .ca-chip.ativo { background: #1f2024; border-color: #1f2024; color: #fff; }
 .ca-frame { display: block; width: 100%; height: calc(100dvh - 235px); min-height: 420px; border: 0; background: transparent; }
 
