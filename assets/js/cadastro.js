@@ -762,6 +762,35 @@
     };
     if (meuNegocio) iniciar(); else carregarMeuNegocio().then(iniciar);
     ligarFuncionario(estabId, nome);
+    if (window.VBTour) setTimeout(function () { if (dashEstabId === estabId) window.VBTour.oferecer({ chave: 'vbTourVisto', aoAceitar: iniciarTour }); }, 2200);
+  }
+
+
+  /* ---------- tour clicável: um passo por botão do rodapé que o negócio tem ---------- */
+  function iniciarTour() {
+    if (!window.VBTour || !dashEstabId) return;
+    var a = areasDe(dashEstabId), soServico = a.indexOf('delivery') === -1 && a.indexOf('servicos') !== -1;
+    var aba = function (n) { return function () { return document.querySelector('#dashboardAbas [data-dash-aba="' + n + '"]:not(.oculto)'); }; };
+    var TEXTOS = {
+      agenda: ['Agenda', 'Aqui ficam os horários que seus clientes marcaram. Toque em Confirmar quando aceitar e em Concluir quando terminar o serviço.'],
+      pedidos: [soServico ? 'Chamados' : 'Pedidos', 'Quando alguém pedir, toca um aviso e o pedido aparece aqui. Toque em Aceitar e siga os botões até entregar.'],
+      cardapio: [soServico ? 'Serviços' : 'Cardápio', 'Seus produtos com foto e preço. A chave liga e desliga na hora, quando acabar. Mande a foto do cardápio e a IA monta tudo.'],
+      caixa: ['Caixa', 'Vendeu algo? Registre aqui. É passo a passo, em poucos toques.'],
+      clientes: ['Clientes', 'Todo mundo que agendou, pediu ou só visitou o seu site fica salvo aqui, com o histórico.'],
+      resumo: ['Ganhos', 'Quanto dinheiro entrou, quantos clientes vieram e o que mais vende.'],
+      perfil: ['Meu site', 'Deixe seu site bonito e copie o link pra divulgar. Cada item ganha um visto quando está pronto.']
+    };
+    var passos = [{ titulo: 'Vamos conhecer o app', texto: 'Em 1 minuto eu mostro cada botão. Você pode tocar no botão em destaque ou em Próximo.' }];
+    ['agenda', 'pedidos', 'cardapio', 'caixa', 'clientes', 'resumo', 'perfil'].forEach(function (n) {
+      if (!aba(n)()) return;
+      passos.push({ alvo: aba(n), titulo: TEXTOS[n][0], texto: TEXTOS[n][1] });
+      if (n === 'caixa') passos.push({ alvo: '#caixaNova', titulo: 'Nova venda', texto: 'Toque aqui e responda uma pergunta por tela: o que vendeu, quem atendeu e como pagou.', tocar: false });
+    });
+    passos.push({ alvo: '.fn-btn', titulo: 'Seu funcionário digital', texto: 'Fale ou escreva o que precisa, por exemplo: lança um corte de 40 no pix. Ele faz por você.', tocar: false });
+    passos.push({ alvo: '#dashVerSite', titulo: 'Ver meu site', texto: 'Veja como seus clientes enxergam o seu site.', tocar: false });
+    passos.push({ alvo: '#dashMenuBtn', titulo: 'Menu', texto: 'Aqui você troca de negócio, ativa a digital, vê privacidade e sai. Para repetir este tour, toque em Como usar o painel.', tocar: false });
+    passos.push({ titulo: 'Pronto!', texto: 'Agora é só usar. Qualquer dúvida, fale com o seu funcionário digital.', botao: 'Começar a usar' });
+    window.VBTour.iniciar({ passos: passos, aoFim: function () { try { localStorage.setItem('vbTourVisto', '1'); } catch (e) {} } });
   }
 
   /* ---------- o funcionário digital (assets/js/funcionario.js) ----------
@@ -1016,7 +1045,7 @@
     agenda: ['Sua agenda', 'Aqui ficam os horários que seus clientes marcaram. Toque em <b>Confirmar</b> quando aceitar e em <b>Concluir</b> quando terminar o serviço.'],
     clientes: ['Seus clientes', 'Todo mundo que agendou, pediu ou só visitou seu site fica salvo aqui. Toque num nome pra ver tudo.'],
     resumo: ['Quanto você ganhou', 'O dinheiro que entrou, quantos clientes vieram e o que mais vende.'],
-    caixa: ['Caixa', 'Vendeu algo? Toque no serviço, escolha como foi pago e pronto: o valor vai pra aba Ganhos.'],
+    caixa: ['Caixa', 'Vendeu algo? Toque em Nova venda e responda uma pergunta por tela: o valor vai pra aba Ganhos.'],
     comunidade: ['Promoções e recados', 'Mostre uma promoção ou um recado do dia pra quem visita o seu site.'],
     perfil: ['Seu site', 'Deixe seu site bonito em poucos toques. Siga a lista: cada item ganha um visto quando estiver pronto.']
   };
@@ -1595,10 +1624,7 @@
   document.getElementById('dashMenuExcluir').addEventListener('click', function () { fecharMenuDash(); excluirConta(); });
   document.getElementById('dashMenuDigital').addEventListener('click', function () { fecharMenuDash(); ativarDigital(); });
   var ajudaBtn = document.getElementById('dashAjuda');
-  if (ajudaBtn) ajudaBtn.addEventListener('click', function () {
-    fecharMenuDash();
-    window.VBDialogo.alert('Como usar, em 6 passos:\n\n1. Agenda: veja quem marcou horário. Toque em Confirmar e depois em Concluir.\n2. Pedidos: quando alguém pedir, toca um aviso. Toque em Aceitar e siga os botões.\n3. Clientes: todo mundo que veio fica salvo, com o histórico.\n4. Caixa: vendeu algo? Toque no serviço e lance a venda.\n5. Ganhos: veja quanto dinheiro entrou.\n6. Meu site: deixe seu site bonito e copie o link pra divulgar.');
-  });
+  if (ajudaBtn) ajudaBtn.addEventListener('click', function () { fecharMenuDash(); iniciarTour(); });
   document.getElementById('dashboardOverlay').addEventListener('click', function (e) {
     var at = e.target.closest('[data-ir-aba]');
     if (at && dashEstabId) irPara(at.getAttribute('data-ir-aba'), at.getAttribute('data-ir-sub'));

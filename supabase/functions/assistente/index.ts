@@ -49,8 +49,13 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
       }
       status = r.status;
       console.error("gemini", modelo, r.status, (await r.text().catch(() => "")).slice(0, 300));
+      // o modelo não aceitou desligar o "pensamento": repete sem essa opção, em vez de falhar
+      if (status === 400 && (corpo as { generationConfig?: { thinkingConfig?: unknown } }).generationConfig?.thinkingConfig) {
+        delete (corpo as { generationConfig: { thinkingConfig?: unknown } }).generationConfig.thinkingConfig;
+        n--; continue;
+      }
       if (status !== 429 && status !== 503 && status < 500) return { erroStatus: status };
-      await espera(800 * (n + 1));
+      await espera(400 * (n + 1));
     }
   }
   return { erroStatus: status };
@@ -58,7 +63,7 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
 
 // O que o funcionário pode fazer. O app conhece cada uma destas ações.
 const ACOES = `
-abrir_aba           { aba: "agenda"|"pedidos"|"caixa"|"clientes"|"ganhos"|"site" }   — leva o dono pra essa tela
+abrir_aba           { aba: "agenda"|"pedidos"|"cardapio"|"caixa"|"clientes"|"ganhos"|"site" }   — leva o dono pra essa tela
 confirmar_agendamento { cliente?: string, id?: string }   — confirma um horário pendente
 concluir_agendamento  { cliente?: string, id?: string }   — marca como concluído (pergunta o valor)
 cancelar_agendamento  { cliente?: string, id?: string }
@@ -126,13 +131,15 @@ Deno.serve(async (req) => {
     parts: [{ text: String(m.texto || "").slice(0, 500) }],
   }));
 
+  const t0 = Date.now();
   const resposta = await pedirAoGemini(chave, {
     systemInstruction: { parts: [{ text: instrucao(corpo.contexto || {}) }] },
     // a variável é "texto": escrever só { text } procurava uma variável "text"
     // que não existe, e a chamada morria antes de sair
     contents: [...conversa, { role: "user", parts: [{ text: texto }] }],
-    generationConfig: { temperature: 0.2, maxOutputTokens: 700, responseMimeType: "application/json" },
+    generationConfig: { temperature: 0.2, maxOutputTokens: 700, responseMimeType: "application/json" , thinkingConfig: { thinkingBudget: 0 } },
   });
+  console.log("assistente: gemini respondeu em", Date.now() - t0, "ms");
   if ("erroStatus" in resposta) {
     const s = resposta.erroStatus;
     // dizemos a verdade: a fila é do Google, não é defeito do app nem do dono

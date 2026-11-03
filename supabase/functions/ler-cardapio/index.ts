@@ -49,8 +49,13 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
       }
       status = r.status;
       console.error("gemini", modelo, r.status, (await r.text().catch(() => "")).slice(0, 300));
+      // o modelo não aceitou desligar o "pensamento": repete sem essa opção, em vez de falhar
+      if (status === 400 && (corpo as { generationConfig?: { thinkingConfig?: unknown } }).generationConfig?.thinkingConfig) {
+        delete (corpo as { generationConfig: { thinkingConfig?: unknown } }).generationConfig.thinkingConfig;
+        n--; continue;
+      }
       if (status !== 429 && status !== 503 && status < 500) return { erroStatus: status };
-      await espera(800 * (n + 1));
+      await espera(400 * (n + 1));
     }
   }
   return { erroStatus: status };
@@ -116,7 +121,7 @@ Deno.serve(async (req) => {
 
   const resposta = await pedirAoGemini(chave, {
     contents: [{ parts: [{ text: instrucao(corpo.tipo || "cardapio") }, { inline_data: { mime_type: m[1], data: m[2] } }] }],
-    generationConfig: { temperature: 0, maxOutputTokens: 4096, responseMimeType: "application/json" },
+    generationConfig: { temperature: 0, maxOutputTokens: 4096, responseMimeType: "application/json" , thinkingConfig: { thinkingBudget: 0 } },
   });
   if ("erroStatus" in resposta) {
     const s = resposta.erroStatus;
