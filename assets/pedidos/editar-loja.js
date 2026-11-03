@@ -244,12 +244,24 @@
     var palavra = api.servico() ? 'serviço' : 'item';
     caixa.innerHTML = '<p class="vb-ed-rotulo">Carregando…</p>';
     carregarItens().then(function () {
-      caixa.innerHTML =
+      // Jeito rápido: o funcionário digital lê a foto do cardápio e monta tudo. Digitar item
+      // por item é o plano B. O cartão é o mesmo do painel (aba Cardápio), pra não ter
+      // duas linguagens pra mesma coisa.
+      var oQue = api.servico() ? 'catálogo' : 'cardápio';
+      var atalhoFoto =
+        '<button type="button" class="pc-foto ia" id="vbEdIAFoto">' +
+          '<span class="ia-selo"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2.6l1.9 4.6 4.6 1.9-4.6 1.9L12 15.6l-1.9-4.6L5.5 9.1l4.6-1.9z"/><path d="M18.5 14.4l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z"/></svg>Inteligência artificial</span>' +
+          '<strong>Manda a foto do seu ' + oQue + '</strong>' +
+          '<small>Foto ou print do papel, do caderno, do painel da parede — a IA lê os nomes e os preços e já monta tudo. Você só confere.</small>' +
+          '<em class="ia-cta">Escolher a foto →</em>' +
+        '</button>';
+      caixa.innerHTML = atalhoFoto +
         (itensAdmin.length ? '<ul class="vb-tutorial-lista">' + itensAdmin.map(function (i) {
           return '<li><span>' + esc(i.nome) + ' · ' + (Number(i.preco) > 0 ? 'R$ ' + Number(i.preco).toFixed(2).replace('.', ',') : 'a combinar') + (i.ativo ? '' : ' <em style="opacity:.6">(desligado)</em>') + '</span>' +
             '<button type="button" class="vb-remover-x" data-remover="' + i.id + '" aria-label="Remover">×</button></li>';
         }).join('') + '</ul>' : '<p class="vb-ed-rotulo">Nenhum ' + palavra + ' ainda.</p>') +
         '<div class="vb-ed-novo">' +
+        '<p class="vb-ed-ou">ou cadastre à mão</p>' +
         campo('vbEdItemNome', 'Novo ' + palavra, '', 'text', ' placeholder="Nome"') +
         campo('vbEdItemPreco', 'Preço (R$)', '', 'text', ' inputmode="decimal" placeholder="0 = a combinar"') +
         (categoriasAdmin.length > 1 ? '<div class="field"><label for="vbEdItemCat">Categoria</label><select id="vbEdItemCat">' + categoriasAdmin.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nome) + '</option>'; }).join('') + '</select></div>' : '') +
@@ -261,6 +273,12 @@
         avisar('Removendo…');
         rpc('delivery_admin_remover_item', { p_id: b.getAttribute('data-remover'), p_estabelecimento_id: estab().id })
           .then(function () { return api.recarregar(); }).then(function () { avisar('Removido ✓'); redesenhar(); }, function (er) { avisar(er.message, true); });
+      });
+      var bIA = $('vbEdIAFoto');
+      if (bIA) bIA.addEventListener('click', function () {
+        if (window.VBFuncionario && window.VBFuncionario.abrirFoto) return window.VBFuncionario.abrirFoto();
+        // o editor do site não tem o terminal: leva pro painel já com a câmera aberta
+        location.href = '/cadastro.html?abrir=' + encodeURIComponent(estab().id) + '&aba=pedidos&ia=foto';
       });
       $('vbEdItemAdd').addEventListener('click', function () {
         var nome = $('vbEdItemNome').value.trim();

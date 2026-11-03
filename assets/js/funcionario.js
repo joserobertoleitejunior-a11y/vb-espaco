@@ -18,7 +18,7 @@
   'use strict';
   var CHAVE_NOME = 'vbFuncionarioNome_';
   // sem nome = o dono ainda não batizou. Nunca inventamos um nome por ele.
-  var st = { estabId: null, nome: '', cfg: null, caixa: null, hist: [], ouvindo: null, pendente: null, pronto: false, usos: null, notaT: null };
+  var st = { querFoto: false, estabId: null, nome: '', cfg: null, caixa: null, hist: [], ouvindo: null, pendente: null, pronto: false, usos: null, notaT: null };
 
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   // o banco é a verdade; o aparelho só guarda uma cópia pra pintar na hora
@@ -920,6 +920,7 @@
       verificarPendente(d.rows);
       st.pronto = true;
       cv.scrollTop = cv.scrollHeight;
+      if (st.querFoto) { st.querFoto = false; pedirFoto(); return; }
       focar();
     });
   }
@@ -995,5 +996,20 @@
     }, function (e) { btn.disabled = false; btn.textContent = rot; dizer('ele', 'Não consegui desfazer: ' + ((e && e.message) || 'tente de novo') + '.', null, { sistema: true }); });
   }
 
-  global.VBFuncionario = { montar: montar, abrir: abrir, nome: function () { return st.nome; }, dizer: dizer, _cfg: function () { return st.cfg; } };
+  // Atalho usado por outras telas ("mande a foto do cardápio"): abre o terminal e,
+  // assim que ele termina de carregar, já abre a câmera/galeria.
+  function pedirFoto() {
+    dizer('ele', 'Manda a foto do cardápio (ou um print). Pode mandar várias de uma vez — eu leio e monto tudo pra você conferir.', null, { semSalvar: true, semDigitar: true, sistema: true });
+    var f = document.getElementById('fnArquivo');
+    if (f) setTimeout(function () { f.click(); }, 350);
+  }
+  function abrirFoto() {
+    if (st.caixa && st.pronto && st.caixa.classList.contains('aberta')) { pedirFoto(); return; }
+    st.querFoto = true;
+    abrir();
+    // se já estava aberto e pronto (sem boot pra disparar), resolve aqui
+    if (st.pronto && st.querFoto) { st.querFoto = false; pedirFoto(); }
+  }
+
+  global.VBFuncionario = { montar: montar, abrir: abrir, abrirFoto: abrirFoto, nome: function () { return st.nome; }, dizer: dizer, _cfg: function () { return st.cfg; } };
 })(window);

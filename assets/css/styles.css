@@ -3658,3 +3658,37 @@ html, body { max-width: 100%; overflow-x: clip; }
 .catalogo-promo .catalogo-promo-fogo svg { width: 18px; height: 18px; }
 .promo-sheet .btn.promo-sheet-sec { background: transparent; color: var(--ink, #1f2024); border: 1.5px solid rgba(31, 32, 36, 0.25); box-shadow: none; opacity: 1; }
 .promo-sheet .btn.promo-sheet-cta { background: #d1481f; color: #fff; border: 0; box-shadow: 0 12px 24px -14px #d1481f; }
+
+/* Passo do cardápio: o atalho da foto (a IA monta) vem antes do cadastro à mão.
+   É o mesmo cartão da aba Cardápio do painel (assets/pedidos/painel.css), porque
+   o editor do site não carrega aquele arquivo. */
+.pc-foto.ia {
+  position: relative; display: block; overflow: hidden; width: 100%; margin: 0 0 1rem;
+  padding: 1.05rem 1.1rem 1rem; border: 0; border-radius: 18px; text-align: left;
+  background: #0d0d0f; color: #f4f4f6; font: inherit; cursor: pointer;
+}
+.pc-foto.ia::before {
+  content: ''; position: absolute; inset: -40% -10%; pointer-events: none; opacity: 0.45;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 28px 28px, 28px 28px; animation: ia-anda 22s linear infinite;
+}
+.pc-foto.ia::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 34%; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.45) 82%, transparent);
+  animation: ia-varre 5.4s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+.pc-foto.ia > * { position: relative; z-index: 2; }
+.pc-foto.ia:active { transform: scale(0.99); }
+@keyframes ia-anda { to { transform: translate3d(28px, 28px, 0); } }
+@keyframes ia-varre { 0%, 12% { transform: translateY(-110%); opacity: 0; } 25% { opacity: 1; } 70%, 100% { transform: translateY(330%); opacity: 0; } }
+.pc-foto.ia .ia-selo {
+  display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 0.45rem; padding: 0.24rem 0.65rem;
+  border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.06); color: #fff;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.pc-foto.ia .ia-selo svg { flex: 0 0 auto; fill: #fff; }
+.pc-foto.ia strong { display: block; color: #fff; font-size: 1.05rem; line-height: 1.25; letter-spacing: -0.01em; }
+.pc-foto.ia small { display: block; margin-top: 0.3rem; font-size: 0.84rem; line-height: 1.45; color: rgba(244, 244, 246, 0.7); }
+.pc-foto.ia .ia-cta { display: inline-block; margin-top: 0.7rem; font-style: normal; font-size: 0.86rem; font-weight: 800; color: #fff; }
+@media (prefers-reduced-motion: reduce) { .pc-foto.ia::before { animation: none; } .pc-foto.ia::after { display: none; } }
+.vb-ed-ou { margin: 0 0 0.5rem; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #8a8c95; }

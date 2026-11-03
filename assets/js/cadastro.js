@@ -829,6 +829,13 @@
       },
       tour: function () { iniciarTour(); }
     }) : {};
+    // ?ia=foto (veio do editor do site: "mande a foto do cardápio") abre o terminal já na câmera
+    try {
+      if (new URLSearchParams(location.search).get('ia') === 'foto' && window.VBFuncionario.abrirFoto) {
+        setTimeout(function () { window.VBFuncionario.abrirFoto(); }, 600);
+        var u = new URL(location.href); u.searchParams.delete('ia'); history.replaceState(null, '', u);
+      }
+    } catch (e) {}
     window.VBFuncionario.montar({
       estabId: estabId,
       negocio: nome,
