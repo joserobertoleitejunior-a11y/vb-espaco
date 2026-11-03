@@ -520,7 +520,7 @@
     if (cardapio.combos.length) {
       html += '<h2 class="cardapio-categoria-titulo" id="catg-especiais">Combos</h2><ul class="dl-lista">' +
         cardapio.combos.map(function (co) {
-          return '<li class="dl-item dl-combo" data-busca="' + esc(co.nome.toLowerCase()) + '"><button type="button" class="dl-abrir" data-combo="' + co.id + '">' +
+          return '<li class="dl-item dl-combo" data-combo="' + co.id + '" data-busca="' + esc(co.nome.toLowerCase()) + '"><button type="button" class="dl-abrir" data-combo="' + co.id + '">' +
             '<span class="dl-foto dl-foto-vazia" aria-hidden="true">' + iconeDoSegmento() + '</span>' +
             '<span class="dl-texto"><span class="dl-nome">' + esc(co.nome) + '</span>' +
             (co.qtd_sabores ? '<span class="dl-desc">Escolha ' + co.qtd_sabores + ' sabores</span>' : '') +

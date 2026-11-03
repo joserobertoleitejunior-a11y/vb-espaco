@@ -2120,22 +2120,93 @@
   // ---- promoções ativas (público) — o dono cadastra no painel de
   // gestão (aba Comunidade); aqui só mostramos quem já tem promoção
   // vigente, escondendo a seção inteira quando não há nenhuma. ----
+  var promosCache = [];
+  function validadePromo(p) {
+    if (!p.expira_em) return '';
+    var ate = new Date(p.expira_em), dias = Math.ceil((ate.getTime() - Date.now()) / 86400000);
+    return dias <= 1 ? 'Termina hoje' : 'Até ' + String(ate.getDate()).padStart(2, '0') + '/' + String(ate.getMonth() + 1).padStart(2, '0');
+  }
+  var FOGO_PROMO = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#ff6a1a" d="M12.5 1.5c1.2 3.4-3.2 4.6-3.2 8.2a3.2 3.2 0 006.4 0c0-1-0.6-1.8-0.9-2.6 2.4 1.4 4.2 4 4.2 6.9a6.5 6.5 0 01-13 0c0-5.6 4.4-7.3 6.5-12.5z"/><path fill="#ffcf40" d="M12.3 10.2c0.7 1.4-1.5 2-1.5 3.7a1.7 1.7 0 003.4 0c0-0.5-0.3-0.9-0.5-1.3 1 0.7 1.6 1.8 1.6 2.9a3 3 0 01-6 0c0-2.6 1.9-3.8 3-5.3z"/></svg>';
   function carregarPromocoesPublicas() {
     var secao = document.getElementById('promocoesSecao');
     var lista = document.getElementById('tplListaPromocoes');
     if (!secao || !lista) return;
     db.rpc('estabelecimento_promocoes_publicas', { p_estabelecimento_id: estabId }).then(function (res) {
       var linhas = res.data || [];
+      promosCache = linhas;
       if (!linhas.length) { secao.classList.add('oculto'); return; }
       secao.classList.remove('oculto');
-      lista.innerHTML = linhas.map(function (p) {
-        return '<div class="promocao-card">' +
-          (p.foto_url ? '<span class="promocao-card-foto" style="background-image:url(\'' + escapeHtml(p.foto_url) + '\')"></span>' : '') +
-          '<span class="promocao-card-texto"><strong>' + escapeHtml(p.titulo) + '</strong>' + (p.texto ? '<br>' + escapeHtml(p.texto) : '') + '</span>' +
-          '</div>';
+      // cada promoção é um botão de verdade: toca e abre os detalhes, com o que fazer em seguida
+      lista.innerHTML = linhas.map(function (p, i) {
+        var v = validadePromo(p);
+        return '<button type="button" class="promo-ticket" data-promo="' + i + '" aria-label="Ver a promoção ' + escapeHtml(p.titulo) + '">' +
+          (p.foto_url ? '<span class="promo-ticket-foto" style="background-image:url(\'' + escapeHtml(p.foto_url) + '\')"></span>' : '<span class="promo-ticket-foto sem">' + FOGO_PROMO + '</span>') +
+          '<span class="promo-ticket-corpo"><small>Promoção</small><strong>' + escapeHtml(p.titulo) + '</strong>' +
+          (p.texto ? '<span class="promo-ticket-texto">' + escapeHtml(p.texto) + '</span>' : '') +
+          (v ? '<em>' + v + '</em>' : '') + '</span>' +
+          '<span class="promo-ticket-ir" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>' +
+          '</button>';
       }).join('');
     }, function () { secao.classList.add('oculto'); });
   }
+
+  // detalhe da promoção: foto grande, texto inteiro, validade e os botões que fazem alguma coisa
+  var promoSheet = null;
+  function fecharPromoSheet() {
+    if (!promoSheet) return;
+    promoSheet.classList.remove('on');
+    var el = promoSheet; promoSheet = null;
+    setTimeout(function () { el.remove(); }, 220);
+    document.removeEventListener('keydown', teclaPromo, true);
+  }
+  function teclaPromo(e) { if (e.key === 'Escape') { e.stopPropagation(); fecharPromoSheet(); } }
+  function abrirPromoSheet(p) {
+    fecharPromoSheet();
+    var agenda = !!document.querySelector('[data-open-widget]');
+    var v = validadePromo(p);
+    var el = document.createElement('div');
+    el.className = 'promo-sheet';
+    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Promoção ' + p.titulo);
+    el.innerHTML = '<div class="promo-sheet-fundo" data-fechar></div><div class="promo-sheet-caixa">' +
+      '<button type="button" class="promo-sheet-x" data-fechar aria-label="Fechar">&times;</button>' +
+      (p.foto_url ? '<div class="promo-sheet-foto" style="background-image:url(\'' + escapeHtml(p.foto_url) + '\')"></div>' : '<div class="promo-sheet-foto sem">' + FOGO_PROMO + '</div>') +
+      '<div class="promo-sheet-corpo"><span class="promo-sheet-selo">Promoção</span>' + (v ? '<span class="promo-sheet-validade">' + v + '</span>' : '') +
+      '<h3>' + escapeHtml(p.titulo) + '</h3>' + (p.texto ? '<p>' + escapeHtml(p.texto) + '</p>' : '') +
+      '<div class="promo-sheet-botoes">' +
+        (agenda ? '<button type="button" class="btn promo-sheet-cta" data-promo-agendar>Agendar com essa promoção</button>' : '') +
+        '<button type="button" class="btn promo-sheet-sec" data-promo-compartilhar>Compartilhar</button>' +
+      '</div><p class="promo-sheet-msg" data-promo-msg></p></div></div>';
+    document.body.appendChild(el);
+    promoSheet = el;
+    requestAnimationFrame(function () { el.classList.add('on'); });
+    document.addEventListener('keydown', teclaPromo, true);
+    el.addEventListener('click', function (e) {
+      if (e.target.closest('[data-fechar]')) return fecharPromoSheet();
+      if (e.target.closest('[data-promo-agendar]')) {
+        // a escolha vai junto no agendamento, pra o dono saber de qual promoção veio
+        window.VB_PROMO_ATIVA = p.titulo;
+        fecharPromoSheet();
+        var b = document.querySelector('[data-open-widget]');
+        if (b) setTimeout(function () { b.click(); }, 240);
+        return;
+      }
+      if (e.target.closest('[data-promo-compartilhar]')) {
+        var url = location.origin + location.pathname + '#promocoesSecao';
+        var texto = p.titulo + (p.texto ? ' — ' + p.texto : '');
+        var msg = el.querySelector('[data-promo-msg]');
+        if (navigator.share) { navigator.share({ title: p.titulo, text: texto, url: url }).catch(function () {}); return; }
+        var copiado = function () { msg.textContent = 'Link copiado!'; };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto + ' ' + url).then(copiado, function () { msg.textContent = url; });
+        else msg.textContent = url;
+      }
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-promo]');
+    if (!b) return;
+    var p = promosCache[Number(b.getAttribute('data-promo'))];
+    if (p) abrirPromoSheet(p);
+  });
 
   // ---- equipe (aparece só pro admin nesta página — o público vê a
   // equipe no site institucional, mas o dono gerencia direto por aqui) ----
@@ -2551,8 +2622,9 @@
       });
     }
     function briefingDetalhes() {
-      if (!ehTattoo()) return null;
-      return { local: choices.b_local || '', tamanho: choices.b_tamanho || '', estilo: choices.b_estilo || '', ideia: choices.b_ideia || '', maior_idade: !!choices.b_maior, referencia: fotosBriefing().join(' ') };
+      var base = ehTattoo() ? { local: choices.b_local || '', tamanho: choices.b_tamanho || '', estilo: choices.b_estilo || '', ideia: choices.b_ideia || '', maior_idade: !!choices.b_maior, referencia: fotosBriefing().join(' ') } : null;
+      if (window.VB_PROMO_ATIVA) base = Object.assign(base || {}, { promocao: window.VB_PROMO_ATIVA });
+      return base;
     }
     function briefingLinhas() {
       if (!ehTattoo()) return [];

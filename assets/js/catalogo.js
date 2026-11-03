@@ -184,10 +184,14 @@
         ? 'https://www.google.com/maps/search/?api=1&query=' + e.endereco_lat + ',' + e.endereco_lng
         : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([e.nome, e.endereco, e.cidade].filter(Boolean).join(' '));
       var tagMapa = '<a class="catalogo-tag catalogo-tag-mapa" href="' + mapaHref + '" target="_blank" rel="noopener" aria-label="Abrir endereço no mapa" data-mapa-link style="background:' + hexParaRgba(cor, 0.15) + '; color:' + cor + ';">' + SVG_PIN + ' ' + escapeHtml(enderecoTexto) + '</a>';
+      // promoção como "ticket" em HTML (fogo + nome da promoção + quantas + seta), não só uma frase.
+      // O nome real da promoção entra logo depois que a lista aparece (enriquecerPromocoes).
       var avisoPromo = e.tem_promocao_ativa
-        ? '<button type="button" class="catalogo-promo-aviso" data-abrir-promocoes="' + e.id + '" aria-label="Ver promoções de ' + escapeHtml(e.nome) + '">' +
+        ? '<button type="button" class="catalogo-promo" data-abrir-promocoes="' + e.id + '" style="--promo-cor:' + cor + ';" aria-label="Ver promoções de ' + escapeHtml(e.nome) + '">' +
           '<span class="catalogo-promo-fogo" aria-hidden="true">' + SVG_FOGO + '</span>' +
-          'Essa loja contém promoções, <u>clique para saber mais</u>' +
+          '<span class="catalogo-promo-meio"><small>Promoção</small><strong data-promo-titulo>Toque pra ver</strong></span>' +
+          '<span class="catalogo-promo-mais oculto" data-promo-mais></span>' +
+          '<span class="catalogo-promo-ir" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>' +
           '</button>'
         : '';
       return '<div class="catalogo-item">' +
@@ -211,14 +215,15 @@
         (e.distancia_km != null ? '<span class="catalogo-tag catalogo-tag-distancia">' + SVG_PIN + ' ' + String(e.distancia_km).replace('.', ',') + ' km</span>' : '') +
         '</span>' +
         (selosSociais ? '<span class="catalogo-tags catalogo-tags-social">' + selosSociais + '</span>' : '') +
-        avisoPromo +
         '</span>' +
         '<span class="catalogo-seta" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>' +
         '</div>' +
+        avisoPromo +   // faixa de largura total, no pé do cartão: o texto não precisa se espremer ao lado da foto
         '</div>' +
         '<a class="catalogo-criar-assim" href="' + (AREA === 'agenda' ? 'criar.html?template=' + encodeURIComponent(e.template || 'classico-boiserie') : 'criar.html?area=' + AREA + '&segmento=' + encodeURIComponent(e.segmento || '')) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Criar ' + (AREA === 'agenda' ? 'um site assim' : 'uma loja assim') + '</a>' +
         '</div>';
     }).join('') + ctaCadastro();
+    enriquecerPromocoes();
   }
 
   // o card inteiro age como link (acessível por teclado também), mas os
@@ -256,6 +261,28 @@
   function abrirCard(card) {
     if (window.VibeToggle) window.VibeToggle.marcarDirecao('avanca');
     window.location.href = card.getAttribute('data-href');
+  }
+
+
+  // põe o nome da promoção (e quantas há) dentro do botão de cada loja — uma busca só, pra todas
+  function enriquecerPromocoes() {
+    if (!listaEl.querySelector('[data-promo-titulo]')) return;
+    var aplicar = function (lista) {
+      var por = {};
+      (lista || []).forEach(function (p) { (por[p.estabelecimento_id] = por[p.estabelecimento_id] || []).push(p); });
+      listaEl.querySelectorAll('.catalogo-promo[data-abrir-promocoes]').forEach(function (b) {
+        var ps = por[b.getAttribute('data-abrir-promocoes')];
+        if (!ps || !ps.length) return;
+        b.querySelector('[data-promo-titulo]').textContent = ps[0].titulo;
+        var mais = b.querySelector('[data-promo-mais]');
+        if (ps.length > 1) { mais.textContent = '+' + (ps.length - 1); mais.classList.remove('oculto'); }
+      });
+    };
+    if (memo.promoVitrine) { aplicar(memo.promoVitrine); return; }
+    db.rpc('promocoes_vitrine_publica', { p_limite: 30 }).then(function (r) {
+      if (r.error || !r.data) return;
+      memo.promoVitrine = r.data; aplicar(r.data);
+    }, function () {});
   }
 
   // ---- balãozinho de promoções: um popover pequeno, ancorado no botão
@@ -304,9 +331,13 @@
       var lista = res.data || [];
       if (!lista.length) { corpoEl.innerHTML = '<p class="catalogo-promo-popover-vazio">Sem promoções ativas no momento.</p>'; return; }
       corpoEl.innerHTML = lista.map(function (p) {
+        var ate = p.expira_em ? new Date(p.expira_em) : null;
+        var dias = ate ? Math.ceil((ate.getTime() - Date.now()) / 86400000) : null;
+        var valida = dias == null ? '' : dias <= 1 ? 'Termina hoje' : 'Até ' + String(ate.getDate()).padStart(2, '0') + '/' + String(ate.getMonth() + 1).padStart(2, '0');
         return '<a class="catalogo-promo-banner" href="' + link + '#promocoesSecao">' +
-          (p.foto_url ? '<span class="catalogo-promo-banner-foto" style="background-image:url(\'' + p.foto_url + '\')"></span>' : '') +
-          '<span class="catalogo-promo-banner-texto"><strong>' + escapeHtml(p.titulo) + '</strong>' + (p.texto ? '<br>' + escapeHtml(p.texto) : '') + '</span>' +
+          (p.foto_url ? '<span class="catalogo-promo-banner-foto" style="background-image:url(\'' + p.foto_url + '\')"></span>' : '<span class="catalogo-promo-banner-foto sem">' + SVG_FOGO + '</span>') +
+          '<span class="catalogo-promo-banner-texto"><strong>' + escapeHtml(p.titulo) + '</strong>' + (p.texto ? escapeHtml(p.texto) : '') + (valida ? '<em>' + valida + '</em>' : '') + '</span>' +
+          '<span class="catalogo-promo-banner-ir" aria-hidden="true">›</span>' +
           '</a>';
       }).join('');
     }, function () { corpoEl.innerHTML = '<p class="catalogo-promo-popover-vazio">Sem conexão agora.</p>'; });

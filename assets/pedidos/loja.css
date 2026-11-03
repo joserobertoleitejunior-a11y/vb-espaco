@@ -435,3 +435,4 @@ html[data-area="delivery"] .loja-ui .sheet-foto { height: 10.5rem; width: 100%; 
   .loja-ui .dl-qtd { animation: none; }
   .loja-ui .dl-pizza-grande i, .loja-ui .dl-ing, .loja-ui .dl-mais { transition: none; }
 }
+.loja-ui .dl-combo { cursor: pointer; }
