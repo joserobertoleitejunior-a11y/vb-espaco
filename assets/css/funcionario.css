@@ -334,3 +334,23 @@ html.fn-travado, html.fn-travado body { overflow: hidden; }
 .fn-aviso.on { opacity: 1; transform: none; }
 .fn-aviso strong { font-size: 0.74rem; color: #C9A227; letter-spacing: 0.06em; }
 .fn-aviso span { font-size: 0.78rem; line-height: 1.4; }
+
+/* ===== tamanho da letra do terminal (botões A− / A+ no topo) ===== */
+.fn-term { --fn-z: 1.2; }
+.fn-term .fn-msg p { font-size: calc(0.82rem * var(--fn-z)); }
+.fn-term .fn-atalho { font-size: calc(0.72rem * var(--fn-z)); }
+.fn-term .fn-barra input { font-size: max(16px, calc(0.88rem * var(--fn-z))); }
+.fn-term .fn-nota { font-size: calc(0.72rem * var(--fn-z)) !important; }
+.fn-term .fn-cmds li { font-size: calc(0.76rem * var(--fn-z)); }
+.fn-term .fn-desf-btn, .fn-term .fn-desfeito { font-size: calc(0.72rem * var(--fn-z)); }
+.fn-term .fn-dash-top li { font-size: calc(0.76rem * var(--fn-z)); }
+.fn-term .fn-dash-kpis b { font-size: calc(0.86rem * var(--fn-z)); }
+.fn-term .fn-dash-kpis span, .fn-term .fn-dash-big small { font-size: calc(0.6rem * var(--fn-z)); }
+.fn-term .fn-dash-per button, .fn-term .fn-dash-acoes button { font-size: calc(0.7rem * var(--fn-z)); }
+.fn-term .vg-leitura { font-size: calc(0.82rem * var(--fn-z)); }
+.fn-term .fn-dia { font-size: calc(0.62rem * var(--fn-z)); }
+.fn-term .fn-aviso span { font-size: calc(0.78rem * var(--fn-z)); }
+.fn-az { width: auto !important; min-width: 34px; padding: 0 0.45rem; font: inherit; font-size: 0.78rem !important; font-weight: 800; letter-spacing: 0; cursor: pointer; }
+.fn-az:disabled { opacity: 0.3; cursor: default; }
+.fn-az-mais { color: var(--ouro) !important; }
+.fn-term .fn-topo { gap: 0.4rem; }

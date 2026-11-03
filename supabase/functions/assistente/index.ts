@@ -23,7 +23,8 @@ const erro = (m: string, s = 400) => resp({ erro: m }, s);
 // errada, pedido inválido) não melhora repetindo, então volta na hora.
 // Os nomes "latest" são apelidos do Google: não quebram quando uma versão
 // do modelo é aposentada.
-const MODELOS = [Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest", "gemini-flash-lite-latest"];
+// o leve vai primeiro: escolher uma ação é fácil e ele responde em ~1 s mesmo quando o outro está congestionado
+const MODELOS = ["gemini-flash-lite-latest", Deno.env.get("GEMINI_MODELO") || "gemini-flash-latest"];
 const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
 async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number }> {
@@ -36,12 +37,13 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
           body: JSON.stringify(corpo),
+          signal: AbortSignal.timeout(9000), // sem isso, um 503 travado segurava o dono por 45 s
         });
       } catch (e) {
         // o motivo fica no log do projeto (sem a chave), pra não virar adivinhação
         console.error("fetch gemini falhou", modelo, String(e));
         status = 0;
-        continue;
+        break; // estourou o tempo: próximo modelo
       }
       if (r.ok) {
         const d = await r.json().catch(() => null);
@@ -55,7 +57,8 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
         n--; continue;
       }
       if (status !== 429 && status !== 503 && status < 500) return { erroStatus: status };
-      await espera(400 * (n + 1));
+      if (status === 503 || status === 429) break; // congestionado: troca de modelo na hora, não repete
+      await espera(300);
     }
   }
   return { erroStatus: status };

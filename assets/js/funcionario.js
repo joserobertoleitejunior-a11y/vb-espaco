@@ -123,6 +123,26 @@
   }
   function norm(t) { return String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
 
+  // tamanho da letra do terminal: 5 níveis, lembrado neste aparelho
+  var LETRAS = [1, 1.2, 1.4, 1.65, 1.9];
+  function nivelLetra() {
+    try { var n = parseInt(localStorage.getItem('vbFnLetra'), 10); if (n >= 0 && n < LETRAS.length) return n; } catch (e) {}
+    return 1;
+  }
+  function aplicarLetra(c) {
+    var n = nivelLetra();
+    var t = c.querySelector('.fn-term') || c; t.style.setProperty('--fn-z', LETRAS[n]);
+    var m = c.querySelector('[data-fn-letra="-1"]'), p = c.querySelector('[data-fn-letra="1"]');
+    if (m) m.disabled = n === 0;
+    if (p) p.disabled = n === LETRAS.length - 1;
+  }
+  function mudarLetra(c, d) {
+    var n = Math.max(0, Math.min(LETRAS.length - 1, nivelLetra() + d));
+    try { localStorage.setItem('vbFnLetra', String(n)); } catch (e) {}
+    aplicarLetra(c);
+    var cv = document.getElementById('fnConversa'); if (cv) cv.scrollTop = cv.scrollHeight;
+  }
+
   function montar(cfg) {
     st.cfg = cfg;
     st.estabId = cfg.estabId;
@@ -167,6 +187,8 @@
         '<header class="fn-topo">' + CUBO +
           '<div class="fn-quem"><strong id="fnNome">' + esc(comoChamar()) + '</strong><small id="fnStatus">terminal · matriz</small></div>' +
           '<span class="fn-uso" id="fnUso" aria-live="polite"></span>' +
+          '<button type="button" class="fn-x fn-az" data-fn-letra="-1" aria-label="Diminuir a letra">A−</button>' +
+          '<button type="button" class="fn-x fn-az fn-az-mais" data-fn-letra="1" aria-label="Aumentar a letra">A+</button>' +
           '<button type="button" class="fn-x" data-fn-fechar aria-label="Fechar">✕</button>' +
         '</header>' +
         '<div class="fn-conversa" id="fnConversa"></div>' +
@@ -185,7 +207,10 @@
     document.body.appendChild(c);
     st.caixa = c;
     document.documentElement.classList.add('fn-travado');
+    aplicarLetra(c);
     c.addEventListener('click', function (e) {
+      var az = e.target.closest('[data-fn-letra]');
+      if (az) { mudarLetra(c, Number(az.getAttribute('data-fn-letra'))); return; }
       if (e.target.closest('[data-fn-fechar]')) { fechar(); return; }
       if (e.target.closest('[data-fn-cardapio-cancelar]')) {
         var cx = e.target.closest('.fn-cardapio'); if (cx) cx.remove();
