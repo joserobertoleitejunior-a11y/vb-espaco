@@ -848,7 +848,12 @@
       Promise.all([Hist.carregar(), usoHoje()]).then(function (x) { dados.rows = x[0] || []; dados.uso = x[1]; real = true; }, function () { real = true; });
       if (!el) { var espera = setInterval(function () { if (real) { clearInterval(espera); ok(dados); } }, 60); return; }
       var reduz = global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var MIN = reduz ? 900 : 3000;
+      // primeira vez do dia: a abertura completa, com as curiosidades. Depois disso, quem usa o
+      // terminal o dia inteiro não merece esperar 3 segundos toda vez — entra quase direto.
+      var jaHoje = false;
+      try { jaHoje = Date.now() - Number(localStorage.getItem('vbFnBoot') || 0) < 6 * 3600 * 1000; } catch (e) {}
+      try { localStorage.setItem('vbFnBoot', String(Date.now())); } catch (e) {}
+      var MIN = reduz ? 700 : jaHoje ? 1100 : 3000;
       var log = el.querySelector('#fnBootLog'), dica = el.querySelector('#fnBootDica'), barra = el.querySelector('.fn-boot-barra i'), num = el.querySelector('#fnBootNum'), pular = el.querySelector('#fnBootPular');
       var script = ['> iniciando terminal matriz v1.0', '> abrindo a sessão de ' + comoChamar().toLowerCase(), '> carregando o histórico da conversa', '> conferindo o seu limite de hoje', '> conectando com a IA', '> pronto.'];
       var t0 = Date.now(), fim = false, linha = 0, iDica = Math.floor(Math.random() * CURIOSIDADES.length), tick, roda;
@@ -864,7 +869,7 @@
         while (linha < alvo) { log.textContent += script[linha] + '\n'; linha++; }
         barra.style.width = Math.round(prog * 100) + '%'; num.textContent = Math.round(prog * 100) + '%';
         if (prog >= 1 && real) terminar();
-        if (dt > 1200 && real) pular.classList.add('on');
+        if (dt > (jaHoje ? 400 : 1200) && real) pular.classList.add('on');
       }, 80);
       function mostrarDica() {
         dica.classList.remove('on');

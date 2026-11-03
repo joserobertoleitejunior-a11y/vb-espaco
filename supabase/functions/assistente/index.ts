@@ -27,21 +27,31 @@ const MODELOS = [
 ];
 const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
-// Se nada funcionar, deixamos no log a lista de modelos que esta chave realmente pode usar:
-// sem isso, descobrir o nome certo vira adivinhação.
-async function logarModelosDisponiveis(chave: string) {
+// O Google aposenta modelos de tempos em tempos (responde 404). Em vez de o app quebrar
+// esperando alguém trocar o nome na mão, ele pergunta ao próprio Google quais modelos esta
+// chave pode usar e passa a usar esses. A lista fica guardada enquanto a função está de pé.
+let descobertos: string[] | null = null;
+async function descobrirModelos(chave: string): Promise<string[]> {
+  if (descobertos) return descobertos;
   try {
-    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=100", {
+    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", {
       headers: { "x-goog-api-key": chave },
       signal: AbortSignal.timeout(8000),
     });
     const d = await r.json().catch(() => null);
-    const nomes = (d?.models || [])
+    const nomes: string[] = (d?.models || [])
       .filter((m: { supportedGenerationMethods?: string[] }) => (m.supportedGenerationMethods || []).includes("generateContent"))
-      .map((m: { name?: string }) => String(m.name || "").replace("models/", ""));
-    console.error("assistente: modelos disponíveis para esta chave:", nomes.join(", ") || "(nenhum)");
+      .map((m: { name?: string }) => String(m.name || "").replace("models/", ""))
+      // fora o que não serve pra conversar: imagem, áudio, embeddings, experimentais
+      .filter((n: string) => /flash|pro/.test(n) && !/image|audio|tts|embedding|live|vision|exp|thinking/.test(n));
+    // os "lite" primeiro (respondem mais rápido), depois os flash comuns
+    nomes.sort((a, b) => (b.includes("lite") ? 1 : 0) - (a.includes("lite") ? 1 : 0));
+    console.log("assistente: modelos desta chave:", nomes.join(", ") || "(nenhum)");
+    descobertos = nomes.slice(0, 3);
+    return descobertos;
   } catch (e) {
     console.error("assistente: não consegui listar os modelos:", String(e));
+    return [];
   }
 }
 
@@ -67,26 +77,25 @@ async function umModelo(chave: string, modelo: string, corpo: Record<string, unk
   return texto;
 }
 
-async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number }> {
-  return await new Promise((ok) => {
-    let falhas = 0, ultimo = 0, acabou = false;
+// Corre vários modelos: o primeiro sai na hora, o segundo aos 2,5 s, o terceiro aos 5 s.
+// Vale a primeira resposta boa — um modelo lotado não segura o dono.
+function corrida(chave: string, corpo: unknown, lista: string[]): Promise<{ texto: string } | { erroStatus: number; teve404: boolean }> {
+  return new Promise((ok) => {
+    if (!lista.length) return ok({ erroStatus: 404, teve404: true });
+    let falhas = 0, ultimo = 0, teve404 = false, acabou = false;
     const lancados = new Set<number>();
     const lanca = (i: number) => {
-      if (acabou || lancados.has(i) || i >= MODELOS.length) return;
+      if (acabou || lancados.has(i) || i >= lista.length) return;
       lancados.add(i);
-      umModelo(chave, MODELOS[i], corpo as Record<string, unknown>).then(
-        (texto) => { if (!acabou) { acabou = true; console.log("assistente: venceu", MODELOS[i]); ok({ texto }); } },
+      umModelo(chave, lista[i], corpo as Record<string, unknown>).then(
+        (texto) => { if (!acabou) { acabou = true; console.log("assistente: venceu", lista[i]); ok({ texto }); } },
         (e) => {
           const st = (e && e.status) || 0;
-          console.error("assistente: falhou", MODELOS[i], st || String(e));
-          if (st !== 404) ultimo = st;      // 404 é nome de modelo errado, não congestionamento
+          console.error("assistente: falhou", lista[i], st || String(e));
+          if (st === 404) teve404 = true; else ultimo = st;
           falhas++;
-          lanca(i + 1);
-          if (falhas >= MODELOS.length && !acabou) {
-            acabou = true;
-            logarModelosDisponiveis(chave);
-            ok({ erroStatus: ultimo || 404 });
-          }
+          lanca(i + 1);                                   // falhou: chama o próximo já
+          if (falhas >= lista.length && !acabou) { acabou = true; ok({ erroStatus: ultimo || 404, teve404 }); }
         },
       );
     };
@@ -94,6 +103,21 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
     espera(2500).then(() => lanca(1));
     espera(5000).then(() => lanca(2));
   });
+}
+
+async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number }> {
+  const r = await corrida(chave, corpo, descobertos || MODELOS);
+  if ("texto" in r) return r;
+  // algum nome de modelo não existe mais: pergunta ao Google quais existem e tenta de novo
+  if (r.teve404 && !descobertos) {
+    const lista = await descobrirModelos(chave);
+    if (lista.length) {
+      const r2 = await corrida(chave, corpo, lista);
+      if ("texto" in r2) return r2;
+      return { erroStatus: r2.erroStatus };
+    }
+  }
+  return { erroStatus: r.erroStatus };
 }
 
 const ACOES = `
