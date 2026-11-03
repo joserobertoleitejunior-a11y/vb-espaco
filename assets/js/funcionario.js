@@ -309,9 +309,14 @@
     alvo.addEventListener('click', function (e) { var b = e.target.closest('.fn-atalho'); if (b) mandar(b.textContent); });
   }
 
+  // põe o começo da mensagem no alto da tela (um pouco abaixo da borda)
+  function verInicio(c, el) {
+    c.scrollTop += el.getBoundingClientRect().top - c.getBoundingClientRect().top - 12;
+  }
   // op: { restaurar, acao, desfazer, id, desfeito, semSalvar, aviso }
   function dizer(de, texto, extra, op) {
     op = op || {};
+    if (st.pararVer) st.pararVer(); // uma mensagem nova encerra o "manter no começo" da anterior
     st.hist.push({ de: de === 'eu' ? 'eu' : 'ele', texto: texto });
     var c = document.getElementById('fnConversa');
     var aberta = !!(st.caixa && st.caixa.classList.contains('aberta'));
@@ -332,12 +337,19 @@
     c.appendChild(el);
     var p = el.querySelector('p');
     if (op.restaurar) { p.textContent = texto; return el; }
-    c.scrollTop = c.scrollHeight;
-    // ao terminar de digitar, só desce se a pessoa já estava no pé da conversa.
-    if (de !== 'eu' && global.VBDigita && !op.semDigitar) global.VBDigita.em(p, texto, { vel: 140, aoFim: function () {
-      if (c.scrollHeight - c.scrollTop - c.clientHeight < 120) c.scrollTop = c.scrollHeight;
-    } });
-    else p.textContent = texto;
+    // resposta do bot: a tela para no COMEÇO dela (quem lê não precisa subir); a própria pessoa digitando continua indo pro pé
+    if (de === 'eu') c.scrollTop = c.scrollHeight; else verInicio(c, el);
+    if (de !== 'eu' && global.VBDigita && !op.semDigitar) {
+      // enquanto a resposta vai sendo digitada ela cresce: mantém o começo dela no alto, até a pessoa mexer na tela
+      if (st.pararVer) st.pararVer();
+      var mo = new MutationObserver(function () { verInicio(c, el); });
+      var parar = function () { mo.disconnect(); c.removeEventListener('touchstart', parar); c.removeEventListener('wheel', parar); if (st.pararVer === parar) st.pararVer = null; };
+      st.pararVer = parar;
+      mo.observe(p, { childList: true, characterData: true, subtree: true });
+      c.addEventListener('touchstart', parar, { passive: true }); c.addEventListener('wheel', parar, { passive: true });
+      setTimeout(parar, 90000);
+      global.VBDigita.em(p, texto, { vel: 140, aoFim: parar });
+    } else p.textContent = texto;
     if (!op.semSalvar) {
       Hist.salvar({ papel: de === 'eu' ? 'eu' : 'ele', texto: texto, acao: op.acao, desfazer: op.desfazer }).then(function (id) { el.setAttribute('data-id', id); });
     }
@@ -919,21 +931,39 @@
     }
     var mov = (Number(r.pedidos_periodo) || 0) + (Number(r.agendamentos_periodo) || 0);
     var melhor = serie.reduce(function (m, x) { return Number(x.total) > Number(m.total || 0) ? x : m; }, {});
-    var kpis = [['hoje', f(r.total_hoje || 0)], ['média/dia', f(d.dias ? total / d.dias : 0)]];
-    if (d.temPedidos) kpis.push(['pedidos', String(r.pedidos_periodo || 0)]);
-    if (d.temAgenda) kpis.push(['agendamentos', String(r.agendamentos_periodo || 0)]);
-    if (mov) kpis.push(['ticket médio', f(total / mov)]);
-    kpis.push(['clientes novos', String(r.clientes_novos_periodo || 0)]);
-    if (melhor.dia && Number(melhor.total) > 0) kpis.push(['melhor dia', esc(melhor.dia) + ' · ' + f(melhor.total)]);
+    var rot = rotuloDias(d.dias);
+    var periodoTxt = d.dias === 1 ? 'hoje' : d.dias === 30 ? 'nos últimos 30 dias' : 'nos últimos ' + d.dias + ' dias';
+    // cada número vem com uma frase curta dizendo o que ele é
+    var kpis = [['Hoje', f(r.total_hoje || 0), 'o que já entrou hoje']];
+    if (d.dias > 1) kpis.push(['Média por dia', f(total / d.dias), 'faturamento ÷ ' + d.dias + ' dias']);
+    if (d.temPedidos) kpis.push(['Pedidos', String(r.pedidos_periodo || 0), 'feitos ' + periodoTxt]);
+    if (d.temAgenda) kpis.push(['Agendamentos', String(r.agendamentos_periodo || 0), 'marcados ' + periodoTxt]);
+    if (mov) kpis.push(['Ticket médio', f(total / mov), 'quanto cada cliente gasta em média']);
+    kpis.push(['Clientes novos', String(r.clientes_novos_periodo || 0), 'vieram pela primeira vez']);
     var top = (r.top_servicos || []).slice(0, 3);
     var resumo = JSON.stringify({ periodo_dias: d.dias, faturado: total, periodo_anterior: d.anterior, faturado_hoje: r.total_hoje, pedidos: r.pedidos_periodo, agendamentos: r.agendamentos_periodo, clientes_novos: r.clientes_novos_periodo, ticket_medio: mov ? Math.round(total / mov * 100) / 100 : null, melhor_dia: melhor.dia || null, mais_vendidos: top.map(function (t) { return t.nome + ' (' + t.qtd + ')'; }) });
+    // a conclusão em português simples, logo no começo
+    var frases = [];
+    if (total > 0) frases.push('Você faturou <b>' + esc(f(total)) + '</b> ' + periodoTxt + '.');
+    else frases.push('Ainda não entrou venda ' + periodoTxt + '.');
+    if (d.anterior != null && d.dias > 0) {
+      if (d.anterior > 0 && total > 0) {
+        var pct = Math.round(((total - d.anterior) / d.anterior) * 100);
+        frases.push(pct > 0 ? 'Isso é <b class="sobe">' + pct + '% a mais</b> que no período anterior. Bom sinal.' : pct < 0 ? 'Isso é <b class="desce">' + Math.abs(pct) + '% a menos</b> que no período anterior.' : 'Igual ao período anterior.');
+      } else if (d.anterior <= 0 && total > 0) frases.push('No período anterior não houve vendas.');
+    }
+    if (melhor.dia && Number(melhor.total) > 0 && d.dias > 1) frases.push('O melhor dia foi <b>' + esc(melhor.dia) + '</b> (' + esc(f(melhor.total)) + ').');
+    var temGraf = global.VBGrafico && serie.some(function (x) { return Number(x.total) > 0; });
     return '<div class="fn-dash">' +
-      '<div class="fn-dash-topo"><span>DASHBOARD</span><span>' + esc(rotuloDias(d.dias)) + '</span></div>' +
-      '<div class="fn-dash-big"><small>FATURADO</small><b>' + esc(f(total)) + '</b>' + delta + '</div>' +
-      '<div class="fn-dash-kpis">' + kpis.map(function (k) { return '<div><span>' + esc(k[0]) + '</span><b>' + k[1] + '</b></div>'; }).join('') + '</div>' +
-      (global.VBGrafico && serie.some(function (x) { return Number(x.total) > 0; }) ? global.VBGrafico.barras(serie, { tema: 'terminal', formatar: f }) : '<p class="fn-dash-vazio">Sem vendas neste período.</p>') +
-      (top.length ? '<ol class="fn-dash-top">' + top.map(function (t) { return '<li><span>' + esc(t.nome) + '</span><b>' + esc(f(t.total)) + '</b></li>'; }).join('') + '</ol>' : '') +
-      '<div class="fn-dash-per">' + [1, 3, 5, 7, 15, 30].map(function (n) { return '<button type="button" class="' + (n === d.dias ? 'on' : '') + '" data-fn-dias="' + n + '">' + (n === 30 ? 'mensal' : n + 'd') + '</button>'; }).join('') + '</div>' +
+      '<div class="fn-dash-topo"><span>DASHBOARD · COMO ESTÁ SEU NEGÓCIO</span><span>' + esc(rot) + '</span></div>' +
+      '<p class="fn-dash-resumo">' + frases.join(' ') + '</p>' +
+      '<div class="fn-dash-passo"><i>1</i>Os números do período</div>' +
+      '<div class="fn-dash-kpis">' + kpis.map(function (k) { return '<div><span>' + esc(k[0]) + '</span><b>' + k[1] + '</b><small>' + esc(k[2]) + '</small></div>'; }).join('') + '</div>' +
+      '<div class="fn-dash-passo"><i>2</i>Dia a dia <em>· cada barra é um dia, quanto mais alta mais você vendeu</em></div>' +
+      (temGraf ? global.VBGrafico.barras(serie, { tema: 'terminal', formatar: f }) : '<p class="fn-dash-vazio">Sem vendas neste período, por isso não há gráfico.</p>') +
+      (top.length ? '<div class="fn-dash-passo"><i>3</i>O que mais vendeu</div><ol class="fn-dash-top">' + top.map(function (t) { return '<li><span>' + esc(t.nome) + ' <em>' + (Number(t.qtd) || 0) + 'x</em></span><b>' + esc(f(t.total)) + '</b></li>'; }).join('') + '</ol>' : '') +
+      '<div class="fn-dash-passo"><i>' + (top.length ? 4 : 3) + '</i>Ver outro período</div>' +
+      '<div class="fn-dash-per">' + [1, 3, 5, 7, 15, 30].map(function (n) { return '<button type="button" class="' + (n === d.dias ? 'on' : '') + '" data-fn-dias="' + n + '">' + (n === 1 ? 'hoje' : n === 30 ? 'mensal' : n + ' dias') + '</button>'; }).join('') + '</div>' +
       '<div class="fn-dash-acoes"><button type="button" data-fn-explicar="' + esc(resumo) + '">✦ Me explica esses números</button><button type="button" data-fn-abrir-ganhos>Abrir Ganhos</button></div>' +
       '</div>';
   }

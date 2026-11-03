@@ -354,3 +354,21 @@ html.fn-travado, html.fn-travado body { overflow: hidden; }
 .fn-az:disabled { opacity: 0.3; cursor: default; }
 .fn-az-mais { color: var(--ouro) !important; }
 .fn-term .fn-topo { gap: 0.4rem; }
+
+/* dashboard em português simples: resumo, passos numerados e frases explicando cada número */
+.fn-dash-resumo { margin: 0 0 0.8rem; padding: 0.6rem 0.7rem; border-left: 3px solid var(--verde); background: rgba(125, 255, 160, 0.06); font-size: calc(0.84rem * var(--fn-z, 1)); line-height: 1.55; color: #fff; }
+.fn-dash-resumo b { color: #fff; }
+.fn-dash-resumo b.sobe { color: var(--verde); }
+.fn-dash-resumo b.desce { color: #ffb0a4; }
+.fn-dash-passo { display: flex; align-items: center; gap: 0.45rem; margin: 0.9rem 0 0.45rem; font-size: calc(0.74rem * var(--fn-z, 1)); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ouro); }
+.fn-dash-passo i { display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 50%; background: var(--ouro); color: #0b0b0c; font-style: normal; font-size: 0.9em; }
+.fn-dash-kpis small { display: block; margin-top: 0.1rem; font-size: calc(0.64rem * var(--fn-z, 1)); line-height: 1.3; color: var(--mudo); }
+.fn-dash-dica { margin: 0 0 0.3rem; font-size: calc(0.72rem * var(--fn-z, 1)); line-height: 1.4; color: var(--mudo); }
+.fn-dash-top li em { font-style: normal; color: var(--mudo); }
+.fn-dash-kpis span { font-size: calc(0.64rem * var(--fn-z, 1)) !important; }
+.fn-term .fn-dash p::before { content: none !important; }
+.fn-term .fn-dash p { font-size: inherit; }
+.fn-dash-resumo { font-size: calc(0.84rem * var(--fn-z, 1)) !important; }
+.fn-dash-passo em { font-style: normal; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--mudo); font-size: 0.85em; }
+.fn-dash-passo { flex-wrap: wrap; }
+.fn-term .fn-dash .vg-leitura { font-size: calc(0.76rem * var(--fn-z, 1)); }
