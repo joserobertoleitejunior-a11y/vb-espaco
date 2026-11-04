@@ -55,34 +55,45 @@ async function descobrirModelos(chave: string): Promise<string[]> {
   }
 }
 
-async function umModelo(chave: string, modelo: string, corpo: Record<string, unknown>, semPensar = true): Promise<string> {
-  const gc = { ...(corpo.generationConfig as Record<string, unknown>) };
-  if (!semPensar) delete gc.thinkingConfig;
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
-    body: JSON.stringify({ ...corpo, generationConfig: gc }),
-    signal: AbortSignal.timeout(12000),
-  });
-  if (!r.ok) {
-    const txt = (await r.text().catch(() => "")).slice(0, 200);
-    console.error("gemini", modelo, r.status, txt);
-    // o modelo não aceitou desligar o "pensamento": repete uma vez sem essa opção
-    if (r.status === 400 && semPensar && gc.thinkingConfig) return await umModelo(chave, modelo, corpo, false);
-    throw { status: r.status };
+// Como pedir "pouco pensamento": os modelos 3.x usam thinkingLevel; os 2.x, thinkingBudget.
+// Se o modelo recusar (400), tentamos a próxima opção e, por último, sem a opção nenhuma.
+function opcoesPensar(modelo: string): (Record<string, unknown> | null)[] {
+  if (/gemini-3/.test(modelo)) return [{ thinkingLevel: "minimal" }, { thinkingLevel: "low" }, null];
+  return [{ thinkingBudget: 0 }, null];
+}
+
+async function umModelo(chave: string, modelo: string, corpo: Record<string, unknown>): Promise<string> {
+  let ultimo: { status: number; quota?: boolean } = { status: 0 };
+  for (const pensar of opcoesPensar(modelo)) {
+    const gc = { ...(corpo.generationConfig as Record<string, unknown>) };
+    delete gc.thinkingConfig;
+    if (pensar) gc.thinkingConfig = pensar;
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
+      body: JSON.stringify({ ...corpo, generationConfig: gc }),
+      signal: AbortSignal.timeout(12000),
+    });
+    if (r.ok) {
+      const d = await r.json().catch(() => null);
+      const texto = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
+      if (!texto) throw { status: 502 };
+      return texto;
+    }
+    const txt = (await r.text().catch(() => "")).slice(0, 300);
+    console.error("gemini", modelo, r.status, txt.slice(0, 160));
+    ultimo = { status: r.status, quota: r.status === 429 && /quota/i.test(txt) };
+    if (r.status !== 400) break;   // só o 400 (opção recusada) pede outra tentativa neste modelo
   }
-  const d = await r.json().catch(() => null);
-  const texto = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
-  if (!texto) throw { status: 502 };
-  return texto;
+  throw ultimo;
 }
 
 // Corre vários modelos: o primeiro sai na hora, o segundo aos 2,5 s, o terceiro aos 5 s.
 // Vale a primeira resposta boa — um modelo lotado não segura o dono.
-function corrida(chave: string, corpo: unknown, lista: string[]): Promise<{ texto: string } | { erroStatus: number; teve404: boolean }> {
+function corrida(chave: string, corpo: unknown, lista: string[]): Promise<{ texto: string } | { erroStatus: number; teve404: boolean; quota: boolean }> {
   return new Promise((ok) => {
-    if (!lista.length) return ok({ erroStatus: 404, teve404: true });
-    let falhas = 0, ultimo = 0, teve404 = false, acabou = false;
+    if (!lista.length) return ok({ erroStatus: 404, teve404: true, quota: false });
+    let falhas = 0, ultimo = 0, teve404 = false, quota = false, acabou = false;
     const lancados = new Set<number>();
     const lanca = (i: number) => {
       if (acabou || lancados.has(i) || i >= lista.length) return;
@@ -92,10 +103,11 @@ function corrida(chave: string, corpo: unknown, lista: string[]): Promise<{ text
         (e) => {
           const st = (e && e.status) || 0;
           console.error("assistente: falhou", lista[i], st || String(e));
-          if (st === 404) teve404 = true; else ultimo = st;
+          if (st === 404) teve404 = true; else if (st) ultimo = st;   // estouro de tempo (st 0) não apaga um 429 já visto
+          if (e && e.quota) quota = true;
           falhas++;
           lanca(i + 1);                                   // falhou: chama o próximo já
-          if (falhas >= lista.length && !acabou) { acabou = true; ok({ erroStatus: ultimo || 404, teve404 }); }
+          if (falhas >= lista.length && !acabou) { acabou = true; ok({ erroStatus: ultimo || (teve404 ? 404 : 503), teve404, quota }); }
         },
       );
     };
@@ -105,7 +117,7 @@ function corrida(chave: string, corpo: unknown, lista: string[]): Promise<{ text
   });
 }
 
-async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number }> {
+async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number; quota?: boolean }> {
   const r = await corrida(chave, corpo, descobertos || MODELOS);
   if ("texto" in r) return r;
   // algum nome de modelo não existe mais: pergunta ao Google quais existem e tenta de novo
@@ -114,10 +126,10 @@ async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: st
     if (lista.length) {
       const r2 = await corrida(chave, corpo, lista);
       if ("texto" in r2) return r2;
-      return { erroStatus: r2.erroStatus };
+      return { erroStatus: r2.erroStatus, quota: r2.quota };
     }
   }
-  return { erroStatus: r.erroStatus };
+  return { erroStatus: r.erroStatus, quota: r.quota };
 }
 
 const ACOES = `
@@ -241,12 +253,13 @@ Deno.serve(async (req) => {
     // a variável é "texto": escrever só { text } procurava uma variável "text"
     // que não existe, e a chamada morria antes de sair
     contents: [...conversa, { role: "user", parts: [{ text: texto }] }],
-    generationConfig: { temperature: 0.2, maxOutputTokens: 900, responseMimeType: "application/json" , thinkingConfig: { thinkingBudget: 0 } },
+    generationConfig: { temperature: 0.2, maxOutputTokens: 900, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
   });
   console.log("assistente: gemini respondeu em", Date.now() - t0, "ms");
   if ("erroStatus" in resposta) {
     const s = resposta.erroStatus;
     // dizemos a verdade: a fila é do Google, não é defeito do app nem do dono
+    if ("quota" in resposta && resposta.quota) return erro("A cota gratuita da IA (Google) acabou por agora. Ela volta sozinha quando renovar. Enquanto isso os botões do painel funcionam normalmente.", 503);
     if (s === 429 || s === 503) return erro("A IA está congestionada neste momento. Espere uns segundos e peça de novo.", 503);
     if (s === 404) return erro("O funcionário precisa de um ajuste técnico (o modelo de IA mudou de nome). Avise o suporte.", 503);
     if (s === 400 || s === 401 || s === 403) return erro("O funcionário não está ligado direito neste app.", 503);
