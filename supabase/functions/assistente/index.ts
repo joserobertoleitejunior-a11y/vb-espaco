@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
     const { data: uso, error: eUso } = await db.rpc("assistente_consumir", { p_estabelecimento_id: corpo.estabId, p_tipo: "mensagem" });
     if (eUso) console.error("assistente: contagem de uso indisponível:", eUso.message);
     else if (uso && uso.ok === false) {
-      return erro(`Você já usou as ${uso.limite} mensagens de hoje. O limite volta amanhã — enquanto isso, os botões do painel continuam funcionando normalmente.`, 429);
+      return erro(String(uso.mensagem || "Seus créditos de IA acabaram por agora. Os botões do painel continuam funcionando."), 429);
     }
   }
 

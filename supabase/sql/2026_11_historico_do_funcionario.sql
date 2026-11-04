@@ -1,5 +1,6 @@
 -- Histórico da conversa do dono com o funcionário digital, por estabelecimento.
 -- Guarda o que foi dito e, nas ações que dá pra reverter, os passos para desfazer.
+-- Depois: créditos da IA por plano (renovam todo mês), com teto por dia e pacotes avulsos.
 create table if not exists public.assistente_historico (
   id uuid primary key default gen_random_uuid(),
   estabelecimento_id uuid not null references public.estabelecimentos(id) on delete cascade,
@@ -58,53 +59,157 @@ grant execute on function public.assistente_historico_listar(uuid, integer) to a
 grant execute on function public.assistente_historico_salvar(uuid, text, text, text, jsonb) to authenticated;
 grant execute on function public.assistente_historico_desfeito(uuid, uuid) to authenticated;
 
--- ===== Limite de uso do funcionário por estabelecimento (limite justo, por dia) =====
--- Mensagens de texto e fotos de cardápio contam separado (a foto gasta bem mais da IA).
+-- ===== Créditos da IA: planos, saldo que renova todo mês, teto por dia e pacotes avulsos =====
+-- 1 mensagem = peso_mensagem créditos; 1 foto de cardápio = peso_foto créditos (gasta ~8x mais).
+-- Tudo aqui é configuração: mudar preço, pacote ou peso é um UPDATE, sem mexer no código.
+create table if not exists public.assistente_planos (
+  plano text primary key,
+  nome text not null,
+  creditos_mes integer not null check (creditos_mes >= 0),
+  teto_dia integer not null check (teto_dia >= 0),
+  peso_mensagem integer not null default 1 check (peso_mensagem >= 1),
+  peso_foto integer not null default 8 check (peso_foto >= 1),
+  preco_mensal numeric(8,2) not null
+);
+alter table public.assistente_planos enable row level security;
+revoke all on public.assistente_planos from anon, authenticated;
+
+-- basico: o que já se paga hoje + um pacote pequeno só pra ver a IA funcionando
+-- ia:     R$ 14,90 a mais -> 400 créditos/mês (custo máximo ~R$ 5 => margem ~R$ 9 por cliente)
+insert into public.assistente_planos (plano, nome, creditos_mes, teto_dia, peso_mensagem, peso_foto, preco_mensal) values
+  ('basico', 'Matriz', 60, 20, 1, 8, 19.90),
+  ('ia', 'Matriz + IA', 400, 40, 1, 8, 34.90)
+on conflict (plano) do nothing;
+
+alter table public.estabelecimentos add column if not exists plano_ia text not null default 'basico' references public.assistente_planos(plano);
+
+-- uso por dia (creditos = total gasto no dia; do_pacote = quanto saiu de pacote avulso, que não conta na cota do mês)
 create table if not exists public.assistente_uso (
   estabelecimento_id uuid not null references public.estabelecimentos(id) on delete cascade,
   dia date not null,
   mensagens integer not null default 0,
   fotos integer not null default 0,
+  creditos integer not null default 0,
+  do_pacote integer not null default 0,
   primary key (estabelecimento_id, dia)
 );
 alter table public.assistente_uso enable row level security;
 revoke all on public.assistente_uso from anon, authenticated;
 
--- Consome 1 uso do tipo pedido ('mensagem' ou 'foto'). Devolve se pode, quanto usou e o limite.
+-- créditos avulsos comprados (não vencem; só são usados depois que a cota do mês acaba)
+create table if not exists public.assistente_saldo (
+  estabelecimento_id uuid primary key references public.estabelecimentos(id) on delete cascade,
+  extras integer not null default 0 check (extras >= 0)
+);
+alter table public.assistente_saldo enable row level security;
+revoke all on public.assistente_saldo from anon, authenticated;
+
+-- Situação atual de um estabelecimento (usado por consumir e pelo contador do terminal)
+create or replace function public.assistente_situacao(p_estabelecimento_id uuid)
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  v_hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+  v_mes date := date_trunc('month', (now() at time zone 'America/Sao_Paulo'))::date;
+  p public.assistente_planos%rowtype;
+  v_mes_usado integer; v_dia_usado integer; v_msg integer := 0; v_foto integer := 0; v_extras integer := 0;
+begin
+  select pl.* into p from public.assistente_planos pl
+    join public.estabelecimentos e on e.plano_ia = pl.plano where e.id = p_estabelecimento_id;
+  if not found then select * into p from public.assistente_planos where plano = 'basico'; end if;
+  select coalesce(sum(creditos - do_pacote), 0) into v_mes_usado from public.assistente_uso
+    where estabelecimento_id = p_estabelecimento_id and dia >= v_mes;
+  select coalesce(creditos, 0), coalesce(mensagens, 0), coalesce(fotos, 0) into v_dia_usado, v_msg, v_foto from public.assistente_uso
+    where estabelecimento_id = p_estabelecimento_id and dia = v_hoje;
+  select coalesce(extras, 0) into v_extras from public.assistente_saldo where estabelecimento_id = p_estabelecimento_id;
+  return jsonb_build_object(
+    'plano', p.plano, 'plano_nome', p.nome,
+    'creditos_mes', p.creditos_mes, 'usados_mes', v_mes_usado,
+    'restante_mes', greatest(p.creditos_mes - v_mes_usado, 0),
+    'extras', coalesce(v_extras, 0),
+    'restantes', greatest(p.creditos_mes - v_mes_usado, 0) + coalesce(v_extras, 0),
+    'teto_dia', p.teto_dia, 'usados_dia', coalesce(v_dia_usado, 0),
+    'peso_mensagem', p.peso_mensagem, 'peso_foto', p.peso_foto,
+    'mensagens', coalesce(v_msg, 0), 'fotos', coalesce(v_foto, 0),
+    'renova_em', (v_mes + interval '1 month')::date
+  );
+end $$;
+
+-- Gasta créditos de 1 mensagem ou 1 foto. ok=false traz o motivo e um texto pronto pra mostrar.
 create or replace function public.assistente_consumir(p_estabelecimento_id uuid, p_tipo text default 'mensagem')
 returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   v_hoje date := (now() at time zone 'America/Sao_Paulo')::date;
-  v_lim_msg constant integer := 80;
-  v_lim_foto constant integer := 12;
-  v_msg integer; v_foto integer;
+  s jsonb; v_peso integer; v_do_pacote integer := 0; v_restante_mes integer; v_extras integer;
 begin
   perform public.vibe_exigir_dono(p_estabelecimento_id);
+  insert into public.assistente_saldo (estabelecimento_id) values (p_estabelecimento_id) on conflict do nothing;
   insert into public.assistente_uso (estabelecimento_id, dia) values (p_estabelecimento_id, v_hoje) on conflict do nothing;
-  select mensagens, fotos into v_msg, v_foto from public.assistente_uso where estabelecimento_id = p_estabelecimento_id and dia = v_hoje for update;
-  if p_tipo = 'foto' then
-    if v_foto >= v_lim_foto then return jsonb_build_object('ok', false, 'tipo', 'foto', 'usados', v_foto, 'limite', v_lim_foto); end if;
-    update public.assistente_uso set fotos = fotos + 1 where estabelecimento_id = p_estabelecimento_id and dia = v_hoje;
-    return jsonb_build_object('ok', true, 'tipo', 'foto', 'usados', v_foto + 1, 'limite', v_lim_foto);
+  -- trava a linha do dia pra duas chamadas juntas não furarem o limite
+  perform 1 from public.assistente_uso where estabelecimento_id = p_estabelecimento_id and dia = v_hoje for update;
+  s := public.assistente_situacao(p_estabelecimento_id);
+  v_peso := case when p_tipo = 'foto' then (s->>'peso_foto')::int else (s->>'peso_mensagem')::int end;
+  v_restante_mes := (s->>'restante_mes')::int; v_extras := (s->>'extras')::int;
+
+  if (s->>'usados_dia')::int + v_peso > (s->>'teto_dia')::int then
+    return s || jsonb_build_object('ok', false, 'motivo', 'dia', 'limite', (s->>'teto_dia')::int,
+      'mensagem', 'Você chegou no limite de hoje (' || (s->>'teto_dia') || ' créditos). Ele volta amanhã — os botões do painel continuam funcionando normalmente.');
   end if;
-  if v_msg >= v_lim_msg then return jsonb_build_object('ok', false, 'tipo', 'mensagem', 'usados', v_msg, 'limite', v_lim_msg); end if;
-  update public.assistente_uso set mensagens = mensagens + 1 where estabelecimento_id = p_estabelecimento_id and dia = v_hoje;
-  return jsonb_build_object('ok', true, 'tipo', 'mensagem', 'usados', v_msg + 1, 'limite', v_lim_msg);
+  if v_peso > v_restante_mes + v_extras then
+    return s || jsonb_build_object('ok', false, 'motivo', 'mes', 'limite', (s->>'creditos_mes')::int,
+      'mensagem', 'Seus créditos de IA acabaram. Eles renovam em ' || to_char((s->>'renova_em')::date, 'DD/MM') || ' — ou peça mais créditos. Os botões do painel continuam funcionando.');
+  end if;
+  -- gasta primeiro a cota do mês; só depois os créditos avulsos
+  if v_peso > v_restante_mes then
+    v_do_pacote := v_peso - v_restante_mes;
+    update public.assistente_saldo set extras = extras - v_do_pacote where estabelecimento_id = p_estabelecimento_id;
+  end if;
+  update public.assistente_uso set
+    mensagens = mensagens + case when p_tipo = 'foto' then 0 else 1 end,
+    fotos = fotos + case when p_tipo = 'foto' then 1 else 0 end,
+    creditos = creditos + v_peso, do_pacote = do_pacote + v_do_pacote
+  where estabelecimento_id = p_estabelecimento_id and dia = v_hoje;
+  return public.assistente_situacao(p_estabelecimento_id) || jsonb_build_object('ok', true, 'tipo', p_tipo, 'gasto', v_peso);
 end $$;
 
--- Quanto já usou hoje (pra mostrar no chat sem gastar nada)
+-- O contador do terminal (não gasta nada)
 create or replace function public.assistente_uso_hoje(p_estabelecimento_id uuid)
 returns jsonb
 language plpgsql stable security definer set search_path = public as $$
-declare v_hoje date := (now() at time zone 'America/Sao_Paulo')::date; v_msg integer := 0; v_foto integer := 0;
 begin
   perform public.vibe_exigir_dono(p_estabelecimento_id);
-  select mensagens, fotos into v_msg, v_foto from public.assistente_uso where estabelecimento_id = p_estabelecimento_id and dia = v_hoje;
-  return jsonb_build_object('mensagens', coalesce(v_msg, 0), 'fotos', coalesce(v_foto, 0), 'limite_mensagens', 80, 'limite_fotos', 12);
+  return public.assistente_situacao(p_estabelecimento_id);
 end $$;
 
+-- Só quem é admin da plataforma muda plano e soma créditos (cobrança/atendimento)
+create or replace function public.assistente_definir_plano(p_estabelecimento_id uuid, p_plano text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not exists (select 1 from public.vb_plataforma_admins where user_id = auth.uid()) then raise exception 'Só o admin da plataforma pode fazer isso.'; end if;
+  if not exists (select 1 from public.assistente_planos where plano = p_plano) then raise exception 'Plano não existe.'; end if;
+  update public.estabelecimentos set plano_ia = p_plano where id = p_estabelecimento_id;
+end $$;
+
+create or replace function public.assistente_somar_creditos(p_estabelecimento_id uuid, p_creditos integer)
+returns integer
+language plpgsql security definer set search_path = public as $$
+declare v integer;
+begin
+  if not exists (select 1 from public.vb_plataforma_admins where user_id = auth.uid()) then raise exception 'Só o admin da plataforma pode fazer isso.'; end if;
+  insert into public.assistente_saldo (estabelecimento_id, extras) values (p_estabelecimento_id, greatest(p_creditos, 0))
+    on conflict (estabelecimento_id) do update set extras = public.assistente_saldo.extras + greatest(p_creditos, 0)
+    returning extras into v;
+  return v;
+end $$;
+
+revoke all on function public.assistente_situacao(uuid) from public, anon, authenticated;
 revoke all on function public.assistente_consumir(uuid, text) from public, anon;
 revoke all on function public.assistente_uso_hoje(uuid) from public, anon;
+revoke all on function public.assistente_definir_plano(uuid, text) from public, anon;
+revoke all on function public.assistente_somar_creditos(uuid, integer) from public, anon;
 grant execute on function public.assistente_consumir(uuid, text) to authenticated;
 grant execute on function public.assistente_uso_hoje(uuid) to authenticated;
+grant execute on function public.assistente_definir_plano(uuid, text) to authenticated;
+grant execute on function public.assistente_somar_creditos(uuid, integer) to authenticated;

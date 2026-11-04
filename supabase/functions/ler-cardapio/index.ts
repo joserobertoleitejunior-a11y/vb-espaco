@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
   if (corpo.estabId && /^[0-9a-f-]{36}$/i.test(corpo.estabId)) {
     const { data: uso, error: eUso } = await db.rpc("assistente_consumir", { p_estabelecimento_id: corpo.estabId, p_tipo: "foto" });
     if (eUso) console.error("ler-cardapio: contagem de uso indisponível:", eUso.message);
-    else if (uso && uso.ok === false) return erro(`Você já leu as ${uso.limite} fotos de hoje. O limite volta amanhã — enquanto isso dá pra cadastrar os itens pelo painel.`, 429);
+    else if (uso && uso.ok === false) return erro(String(uso.mensagem || "Seus créditos de IA acabaram por agora. Dá pra cadastrar os itens pelo painel."), 429);
   }
 
   const m = /^data:(image\/(?:jpeg|png|webp|heic|heif));base64,([A-Za-z0-9+/=]+)$/.exec(img);

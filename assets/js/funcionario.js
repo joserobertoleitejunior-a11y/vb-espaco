@@ -116,10 +116,27 @@
     var el = document.getElementById('fnUso');
     if (!el) return;
     if (!st.usos) { el.textContent = ''; return; }
-    var m = Number(st.usos.mensagens) || 0, lim = Number(st.usos.limite_mensagens) || 0;
+    var u = st.usos;
+    if (u.creditos_mes != null) {
+      // créditos do mês: o que ainda dá pra usar (cota do mês + pacotes avulsos)
+      var rest = Number(u.restantes) || 0, tot = (Number(u.creditos_mes) || 0) + (Number(u.extras) || 0);
+      el.textContent = rest + ' créditos';
+      el.classList.toggle('fn-uso-alto', tot > 0 && rest / tot <= 0.15);
+      el.title = (u.plano_nome || 'Plano') + ' · ' + rest + ' créditos restantes · renova em ' + dataCurta(u.renova_em) + ' · hoje ' + (u.usados_dia || 0) + ' de ' + (u.teto_dia || 0);
+      return;
+    }
+    var m = Number(u.mensagens) || 0, lim = Number(u.limite_mensagens) || 0;
     el.textContent = lim ? m + '/' + lim : '';
     el.classList.toggle('fn-uso-alto', lim > 0 && m / lim >= 0.85);
-    el.title = 'Mensagens de hoje: ' + m + ' de ' + lim + ' · Fotos: ' + (st.usos.fotos || 0) + ' de ' + (st.usos.limite_fotos || 0);
+    el.title = 'Mensagens de hoje: ' + m + ' de ' + lim + ' · Fotos: ' + (u.fotos || 0) + ' de ' + (u.limite_fotos || 0);
+  }
+  function dataCurta(iso) { var d = new Date(String(iso || '').slice(0, 10) + 'T12:00:00'); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); }
+  // gasta créditos aqui na tela (o servidor é quem manda de verdade; isso só mantém o contador em dia sem pedir de novo)
+  function gastarLocal(qtd) {
+    var u = st.usos; if (!u) return;
+    if (u.creditos_mes != null) { u.restantes = Math.max(0, (Number(u.restantes) || 0) - qtd); u.usados_dia = (Number(u.usados_dia) || 0) + qtd; }
+    else u.mensagens = (Number(u.mensagens) || 0) + 1;
+    mostrarUso();
   }
   function norm(t) { return String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
 
@@ -498,7 +515,7 @@
       });
     }, Promise.resolve()).then(function () {
       pensando(false);
-      if (st.usos) { st.usos.fotos = (Number(st.usos.fotos) || 0) + validos.length - falhas; }
+      if (st.usos) { var lidas = validos.length - falhas; st.usos.fotos = (Number(st.usos.fotos) || 0) + lidas; if (lidas > 0) gastarLocal((st.usos.peso_foto ? Number(st.usos.peso_foto) : 1) * lidas); }
       var total = juntos.categorias.reduce(function (n, c) { return n + c.itens.length; }, 0);
       if (!total && !juntos.promocoes.length) { if (!falhas) dizer('ele', juntos.aviso || 'Não achei nenhum item nessas fotos. Tente com mais luz, mais perto ou sem cortar as bordas.', null, { sistema: true }); return; }
       mostrarLido(juntos, servico);
@@ -724,6 +741,7 @@
       usoHoje().then(function (u) {
         mostrarUso();
         if (!u) dizer('ele', 'O contador de uso ainda não está ligado neste app.', null, { semSalvar: true });
+        else if (u.creditos_mes != null) dizer('ele', 'Plano ' + (u.plano_nome || '') + ': ' + (u.restantes || 0) + ' créditos restantes (cota do mês: ' + (u.restante_mes || 0) + (u.extras ? ' + ' + u.extras + ' avulsos' : '') + '). Renova em ' + dataCurta(u.renova_em) + '. Hoje: ' + (u.usados_dia || 0) + ' de ' + (u.teto_dia || 0) + '. Uma mensagem gasta ' + (u.peso_mensagem || 1) + ' crédito e uma foto de cardápio ' + (u.peso_foto || 8) + '.', null, { semSalvar: true });
         else dizer('ele', 'Hoje você usou ' + (u.mensagens || 0) + ' de ' + u.limite_mensagens + ' mensagens e ' + (u.fotos || 0) + ' de ' + u.limite_fotos + ' fotos. O limite zera à meia-noite.', null, { semSalvar: true });
       });
       return true;
@@ -774,7 +792,7 @@
         return;
       }
       var d = r.data || {};
-      if (st.usos) { st.usos.mensagens = (Number(st.usos.mensagens) || 0) + 1; mostrarUso(); }
+      gastarLocal(st.usos && st.usos.peso_mensagem ? Number(st.usos.peso_mensagem) : 1);
       if (d.fala) dizer('ele', d.fala);
       if (d.acao) executar(d.acao.nome, d.acao.args || {});
     }, function () { pensando(false); dizer('ele', 'Sem conexão agora. Tente de novo em instantes.', null, { sistema: true }); });
