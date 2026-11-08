@@ -24,6 +24,17 @@
   .cr table { width: 100%; border-collapse: collapse; font-size: .9rem; }
   .cr td { padding: .45rem 0; border-top: 1px solid #e9e9ee; }
   .cr td:last-child { text-align: right; font-weight: 800; }
+  .cr-sec { background: #fff !important; color: #1f2024 !important; border: 1.5px solid #e9e9ee !important; min-height: 2.6rem; }
+  .cr-mini { min-height: 2.2rem !important; padding: .3rem .8rem !important; background: #f6f6f8 !important; color: #1f2024 !important; font-size: .82rem; }
+  .cr select, .cr textarea { width: 100%; box-sizing: border-box; margin: .3rem 0; padding: .6rem .8rem; border: 1.5px solid #e9e9ee; border-radius: 12px; font: inherit; font-size: 16px; background: #fff; }
+  .cp-linha { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
+  .cp-abas { display: flex; gap: .35rem; overflow-x: auto; margin-bottom: .5rem; }
+  .cp-aba { min-height: 2.4rem !important; padding: .3rem .9rem !important; background: #f6f6f8 !important; color: #1f2024 !important; font-size: .85rem; }
+  .cp-aba.on { background: #1f2024 !important; color: #fff !important; }
+  .cp-saida { margin-top: .7rem; } .cp-saida pre { white-space: pre-wrap; word-break: break-word; font: inherit; font-size: .92rem; line-height: 1.5; background: #f6f6f8; border-radius: 12px; padding: .8rem; margin: 0 0 .5rem; }
+  .cp-chk { display: flex; gap: .5rem; align-items: flex-start; font-size: .88rem; margin: .3rem 0; } .cp-chk input { width: 1.1rem; height: 1.1rem; margin-top: .15rem; }
+  .cp-rot { margin: .6rem 0 .1rem; font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #6b6d75; }
+  .cp-cred { margin: .6rem 0 0; font-size: .8rem; color: #6b6d75; }
   .cr-msg { min-height: 1.2rem; font-size: .88rem; color: #b3261e; }
 </style>
 </head>
@@ -54,6 +65,7 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/supabase-client.js?v=9780c58f"></script>
+<script src="assets/js/criador-painel.js?v=61529d29"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -83,6 +95,7 @@
       var b = this;
       (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = 'Copiado!'; }, function () { b.textContent = 'Copie o texto acima'; });
     };
+    if (window.VBCriadorPainel) { var extra = document.createElement('div'); extra.id = 'crFerramentas'; $('crConteudo').appendChild(extra); VBCriadorPainel.montar(extra, c); }
     db.rpc('criador_meus_indicados').then(function (r) {
       var l = r.data || [];
       $('crInd').innerHTML = l.length

@@ -106,3 +106,9 @@ A fase 1 e a 2 não mexem com dinheiro, então saem rápido e já testam se tem 
 - **Plano do criador: R$ 14,90/mês com 400 créditos de IA** (substitui "R$ 4,90 + IA à parte"). Com ~5 negócios pagando (comissão média ~R$ 3,29), as comissões cobrem o plano.
 - Banco: `alter table criadores alter column mensalidade set default 14.90; update criadores set mensalidade = 14.90;` (a cobrança do plano do criador ainda não foi ligada).
 - Ideias de IA para criadores e viabilidade de editor de vídeo: ver a resposta de novembro (fases 1 a 4): roteiros/legendas/propostas primeiro; editor no navegador com ffmpeg.wasm depois; vídeo gerado por IA só como pacote à parte.
+
+### Construído (novembro): catálogo e IA do criador
+- `criadores.html` + `assets/js/criador-painel.js`: **catálogo** (nome, preço fixo / a partir de / sob orçamento, prazo, direito de uso) e **IA do criador** com 4 ferramentas: roteiro (2 créditos), legenda, proposta (usa os serviços do catálogo) e sugestão de preço (1 crédito cada).
+- Edge function `criador-ia` (Claude Sonnet, reserva Haiku; secret `CLAUDE_MODELO_CRIADOR` opcional). Cobra do plano do criador (400 créditos/mês, teto 80/dia) e **devolve os créditos se a IA falhar**.
+- SQL: `supabase/sql/2026_11_criador_ia_catalogo.sql`.
+- Próximo: editor de vídeo no navegador (ffmpeg.wasm), perfil público do criador com o catálogo, contratação pelo estabelecimento.
