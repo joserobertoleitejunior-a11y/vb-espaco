@@ -75,7 +75,7 @@
   }
 
   function mostrarNaoEncontrado() {
-    document.documentElement.classList.remove('site-carregando');
+    if (window.vbRevelarSite) window.vbRevelarSite({ rapido: true }); else document.documentElement.classList.remove('site-carregando');
     carregando.classList.add('oculto');
     naoEncontrado.classList.remove('oculto');
   }
@@ -454,7 +454,7 @@
     window.VibeTemplates.fundoDaFoto(window.VibeTemplates.segueFoto(linha.template) ? linha.foto_hero_url : null);
     // guarda o visual pra próxima visita abrir já no estilo certo e libera a tela
     if (window.VibeTemplates.lembrar) window.VibeTemplates.lembrar(templateAtualParaCor);
-    window.VibeTemplates.quandoPronto().then(function () { document.documentElement.classList.remove('site-carregando'); });
+    if (window.vbRevelarSite) window.vbRevelarSite(); else window.VibeTemplates.quandoPronto().then(function () { document.documentElement.classList.remove('site-carregando'); });
     var adminCorInput = document.getElementById('adminCorInput');
     if (adminCorInput) adminCorInput.value = linha.cor_destaque || '#C9A227';
     var adminCorSecundariaInput = document.getElementById('adminCorSecundariaInput');

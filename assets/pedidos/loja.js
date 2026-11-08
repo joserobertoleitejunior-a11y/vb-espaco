@@ -57,8 +57,8 @@
     var mapa = { estadoCarregando: 'carregando', estadoNaoEncontrado: 'naoEncontrado', estadoPronto: 'tplClassico' };
     Object.keys(mapa).forEach(function (k) { $(mapa[k]).classList.toggle('oculto', k !== nome); });
     if (nome !== 'estadoCarregando') {
-      var liberar = function () { document.documentElement.classList.remove('site-carregando'); };
-      if (window.VibeTemplates && window.VibeTemplates.quandoPronto) window.VibeTemplates.quandoPronto().then(liberar); else liberar();
+      if (window.vbRevelarSite) window.vbRevelarSite({ rapido: nome === 'estadoNaoEncontrado' });
+      else document.documentElement.classList.remove('site-carregando');
     }
   }
 

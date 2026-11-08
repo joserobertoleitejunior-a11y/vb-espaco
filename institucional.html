@@ -15,21 +15,8 @@
 <script src="/assets/js/templates.js?v=4"></script>
 <link rel="stylesheet" href="/assets/tpl-classico/css/base.css?v=5" id="tplBase">
 <link rel="stylesheet" href="/assets/tpl-classico/css/feminino.css?v=1" id="tplFeminino" disabled>
-<script>
-  /* estilo do negócio já na primeira pintura (se este aparelho já abriu o
-     site); senão, fundo neutro até o estilo chegar — nada de piscar */
-  (function () {
-    var ok = false;
-    try { ok = window.VibeTemplates && VibeTemplates.restaurar(); } catch (e) {}
-    if (!ok) document.documentElement.classList.add('site-carregando');
-    setTimeout(function () { document.documentElement.classList.remove('site-carregando'); }, 4000);
-  })();
-</script>
-<style>
-  html.site-carregando, html.site-carregando body { background: #f5f5f6 !important; }
-  html.site-carregando body > :not(#carregando):not(script) { visibility: hidden; }
-  body { transition: background-color 0.25s ease; }
-</style>
+<link rel="stylesheet" href="/assets/css/revelar-site.css?v=1">
+<script src="/assets/js/revelar-site.js?v=2"></script>
 <link rel="stylesheet" href="/assets/css/botoes.css?v=3">
 </head>
 <body>
@@ -148,7 +135,7 @@
   <script src="/assets/js/faixa-voltar.js?v=3"></script>
   <script src="/assets/js/vb-dialogo.js?v=1"></script>
   <script src="/assets/js/vb-salvo.js?v=1"></script>
-  <script src="/assets/js/institucional.js?v=15"></script>
+  <script src="/assets/js/institucional.js?v=16"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {

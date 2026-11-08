@@ -1,0 +1,25 @@
+/* Abertura do site público (assets/js/revelar-site.js): uma versão só, já pronta. */
+
+/* primeira visita: fundo neutro até o estilo do negócio chegar */
+html.site-carregando, html.site-carregando body { background: #f5f5f6 !important; }
+
+/* enquanto não está pronto, só o esqueleto de "carregando" aparece */
+html.site-carregando body > :not(#carregando):not(script),
+html.site-esperando body > :not(#carregando):not(script) { visibility: hidden; }
+
+/* véu: cobre a tela enquanto carrega e, ao abrir, desbota por cima do site já pronto.
+   Assim a troca "cinza → site" é um único desbotar, sem passar por cores no meio. */
+html::before {
+  content: ''; position: fixed; inset: 0; z-index: 2147483000; pointer-events: none;
+  background: #f5f5f6; opacity: 0; transition: opacity 0.5s ease;
+}
+html.site-carregando::before { opacity: 1; transition: none; }
+
+/* o conteúdo entra com um desbotar curto (só opacidade: não mexe em nenhum posicionamento) */
+html.site-entrando body > :not(#carregando):not(script) { animation: vbSiteEntra 0.5s ease both; }
+@keyframes vbSiteEntra { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  html::before { transition: none; }
+  html.site-entrando body > :not(#carregando):not(script) { animation: none; }
+}
