@@ -95,3 +95,9 @@ A fase 1 e a 2 não mexem com dinheiro, então saem rápido e já testam se tem 
 - **Plano do criador: R$ 4,90/mês** (suposição a confirmar). Com 4 negócios pagando, a comissão já cobre o plano. A cobrança do plano do criador ainda não foi ligada.
 - **Locais de anúncio à venda** (tabela `anuncio_locais`, preço por semana): topo da busca, página da cidade, áreas Agendar/Pedir/Chamar, vídeo no perfil de outro negócio. Pedido = `anuncio_reservas` (status `pedido`); pagamento e publicação ainda manuais.
 - SQL: `supabase/sql/2026_11_criadores_indicacao_anuncios.sql` (não aplicado). Página: `criadores.html`.
+
+### Decisões fechadas (pagamento)
+- **Comissão de 15% sobre o valor BRUTO** de cada pagamento aprovado (antes da taxa do meio de pagamento).
+- **Upgrade conta:** a comissão é calculada em cada pagamento pelo valor pago naquele mês; se o negócio sobe de plano, o criador ganha sobre o valor novo, automaticamente.
+- **Plano do criador: R$ 4,90/mês; a IA do criador é cobrada à parte** (mesma tabela: 400 créditos = R$ 34,90). A cobrança do plano e da IA do criador ainda não foi ligada.
+- **Repasse:** a definir o dia. Dinheiro de comissão é dívida da Matriz com o criador (não é custódia); o valor retido até o repasse pode ficar na conta da Matriz, rendendo.
