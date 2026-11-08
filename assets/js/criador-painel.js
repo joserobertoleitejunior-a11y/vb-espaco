@@ -60,9 +60,9 @@
 
     /* ---------- IA ---------- */
     var ABAS = {
-      roteiro: { nome: 'Roteiro', campos: [['negocio', 'Nome do negócio'], ['tipo_negocio', 'Tipo (pizzaria, barbearia…)'], ['formato', 'Formato (Reels 30 s, TikTok…)'], ['objetivo', 'Objetivo (mais pedidos, divulgar promoção…)'], ['tom', 'Tom (descontraído, elegante…)'], ['detalhes', 'Detalhes: produtos, promoção, diferenciais', 1]] },
-      legenda: { nome: 'Legenda', campos: [['negocio', 'Nome do negócio'], ['rede', 'Rede (Instagram, TikTok…)'], ['sobre', 'Sobre o que é o vídeo', 1], ['tom', 'Tom'], ['cidade', 'Cidade']] },
-      proposta: { nome: 'Proposta', campos: [['cliente', 'Nome do negócio (cliente)'], ['observacoes', 'Observações (briefing, datas, pedidos do cliente)', 1]], servicos: true },
+      roteiro: { nome: 'Roteiro', campos: [['link', 'Cole o link do site do negócio na Matriz (a IA lê as informações dele)'], ['negocio', 'Nome do negócio'], ['tipo_negocio', 'Tipo (pizzaria, barbearia…)'], ['formato', 'Formato (Reels 30 s, TikTok…)'], ['objetivo', 'Objetivo (mais pedidos, divulgar promoção…)'], ['tom', 'Tom (descontraído, elegante…)'], ['detalhes', 'Detalhes: produtos, promoção, diferenciais', 1]] },
+      legenda: { nome: 'Legenda', campos: [['link', 'Cole o link do site do negócio na Matriz (a IA lê as informações dele)'], ['negocio', 'Nome do negócio'], ['rede', 'Rede (Instagram, TikTok…)'], ['sobre', 'Sobre o que é o vídeo', 1], ['tom', 'Tom'], ['cidade', 'Cidade']] },
+      proposta: { nome: 'Proposta', campos: [['link', 'Cole o link do site do negócio na Matriz (a IA lê as informações dele)'], ['cliente', 'Nome do negócio (cliente)'], ['observacoes', 'Observações (briefing, datas, pedidos do cliente)', 1]], servicos: true },
       preco: { nome: 'Preço', campos: [['entrega', 'Serviço (ex.: Reels de 30 s)'], ['nicho', 'Nicho (comida, beleza…)'], ['seguidores', 'Seus seguidores (opcional)'], ['cidade', 'Cidade'], ['uso', 'Direito de uso (orgânico, anúncio…)'], ['observacoes', 'Observações', 1]] }
     };
     var atual = 'roteiro';
@@ -72,6 +72,7 @@
       $('cpCampos').innerHTML = ABAS[k].campos.map(function (c) {
         return c[2] ? '<textarea id="d_' + c[0] + '" rows="3" placeholder="' + esc(c[1]) + '" maxlength="600"></textarea>' : '<input id="d_' + c[0] + '" placeholder="' + esc(c[1]) + '" maxlength="160">';
       }).join('') + (ABAS[k].servicos ? '<div id="cpServ"></div>' : '');
+      if (ABAS[k].campos[0][0] === 'link') { var dica = document.createElement('p'); dica.className = 'cp-dica'; dica.textContent = 'Com o link, o roteiro já sai com o nome, os produtos, os preços e o jeito do negócio. Sem link, preencha os campos abaixo.'; $('cpCampos').insertBefore(dica, $('d_link').nextSibling); }
       if (k === 'proposta') desenharProposta();
       $('cpSaida').hidden = true; $('cpMsg').textContent = '';
     }
@@ -103,7 +104,7 @@
         if (d && d.texto) {
           $('cpMsg').textContent = '';
           $('cpSaida').hidden = false;
-          $('cpSaida').innerHTML = '<pre>' + esc(d.texto) + '</pre><button type="button" class="cr-sec" id="cpCopiar">Copiar texto</button>';
+          $('cpSaida').innerHTML = (d.negocio ? '<p class="cp-rot">Feito com os dados de ' + esc(d.negocio) + '</p>' : '') + '<pre>' + esc(d.texto) + '</pre><button type="button" class="cr-sec" id="cpCopiar">Copiar texto</button>';
           $('cpCopiar').onclick = function () { var b = this; (navigator.clipboard ? navigator.clipboard.writeText(d.texto) : Promise.reject()).then(function () { b.textContent = 'Copiado!'; }, function () { b.textContent = 'Selecione e copie acima'; }); };
           creditos(d.uso);
           return;
