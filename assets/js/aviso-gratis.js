@@ -2,8 +2,9 @@
    nome (letra monoespaçada, dourado, motion de "decodificar").
 
    Enquanto o app está em finalização, tudo é grátis. É por tempo
-   limitado: quando a mensalidade começar, vai ser MENSALIDADE por mês
-   (≈ POR_DIA por dia) — praticamente de graça. Pra quem agenda, pede ou
+   limitado: quando a mensalidade começar, ela depende de como o negócio usa o app
+   (Chamar R$ 10,00 · Agenda R$ 19,90 · Delivery com Caixa R$ 28,99) — a partir de
+   POR_DIA por dia, praticamente de graça. Pra quem agenda, pede ou
    chama, continua sempre grátis.
 
    Marca um elemento com data-aviso-gratis:
@@ -17,9 +18,11 @@
    tela, uma vez. Com "reduzir movimento", o texto já aparece pronto. */
 (function (global) {
   'use strict';
-  var MENSALIDADE = 'R$ 19,90';
-  var POR_DIA = 'R$ 0,66';
-  global.VB_AVISO_GRATIS = { mensalidade: MENSALIDADE, porDia: POR_DIA };
+  // preços por forma de uso (a cobrança de verdade lê isto do banco: assistente_planos)
+  var PRECOS = { chamar: 'R$ 10,00', agenda: 'R$ 19,90', delivery: 'R$ 28,99' };
+  var MENSALIDADE = 'a partir de R$ 10,00';
+  var POR_DIA = 'R$ 0,33';
+  global.VB_AVISO_GRATIS = { mensalidade: MENSALIDADE, porDia: POR_DIA, precos: PRECOS };
 
   // quem o app chama — um por tipo de negócio que existe na Matriz
   var PROFISSIONAIS = ['barbeiro', 'tatuador', 'manicure', 'cabeleireira', 'esteticista', 'pizzaiolo',
@@ -73,7 +76,7 @@
     if (tipo === 'curto') {
       return PONTO + '<span class="ag-linha"><span data-ag-decode>grátis por tempo limitado</span>' +
         '<span class="ag-sep" aria-hidden="true">·</span>' +
-        '<span class="ag-depois" data-ag-decode>depois, ' + POR_DIA + '/dia</span></span>';
+        '<span class="ag-depois" data-ag-decode>depois, a partir de ' + POR_DIA + '/dia</span></span>';
     }
     if (tipo === 'convite') {
       return '<span class="ag-convite-linha">Você é <span class="ag-giro" data-ag-giro>' + esc(PROFISSIONAIS[0]) + '</span><span class="ag-cursor" aria-hidden="true">_</span>?</span>' +
@@ -85,7 +88,8 @@
       '<p class="ag-rotulo">' + PONTO + '<span>fase de finalização</span></p>' +
       '<p class="ag-titulo">Entrada liberada. Por pouco tempo.</p>' +
       '<p class="ag-texto">Enquanto a Matriz termina os últimos ajustes, tudo é grátis — sem taxa e sem cartão. ' +
-      'Quando a mensalidade começar, vai ser <strong>' + MENSALIDADE + ' por mês</strong>: <strong>' + POR_DIA + ' por dia</strong>, menos que um cafezinho. ' +
+      'Quando a mensalidade começar, ela depende de como você usa: <strong>Chamar ' + PRECOS.chamar + '</strong> · <strong>Agenda ' + PRECOS.agenda + '</strong> · <strong>Delivery com Caixa ' + PRECOS.delivery + '</strong> por mês — ' +
+      'a partir de <strong>' + POR_DIA + ' por dia</strong>, menos que um cafezinho. ' +
       'E você é avisado antes de qualquer cobrança.</p>' +
       '<p class="ag-corre">Quem entra agora já sai na frente.</p></div>';
   }

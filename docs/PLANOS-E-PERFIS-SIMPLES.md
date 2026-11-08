@@ -1,5 +1,7 @@
 # Planos pagos e perfis rápidos (pedreiro, diarista, eletricista…)
 
+> **Os preços definitivos estão em `PRECIFICACAO.md`** (Chamar R$ 10,00 · Agenda R$ 19,90 · Delivery R$ 28,99). A tabela de planos abaixo foi a primeira ideia e está superada.
+
 Estudo para decidir. Nada aqui foi construído ainda. Os números de custo são estimativas
 (precisam ser conferidos nos painéis da Anthropic e do Mercado Pago nos primeiros dias de uso).
 

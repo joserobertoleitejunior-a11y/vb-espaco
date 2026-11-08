@@ -1,6 +1,6 @@
 -- Histórico da conversa do dono com o funcionário digital, por estabelecimento.
 -- Guarda o que foi dito e, nas ações que dá pra reverter, os passos para desfazer.
--- Depois: créditos da IA por plano (renovam todo mês), com teto por dia e pacotes avulsos.
+-- Depois: preço e créditos de IA por forma de uso (Chamar / Agenda / Delivery), renovam todo mês, com teto por dia e pacotes avulsos.
 create table if not exists public.assistente_historico (
   id uuid primary key default gen_random_uuid(),
   estabelecimento_id uuid not null references public.estabelecimentos(id) on delete cascade,
@@ -74,14 +74,47 @@ create table if not exists public.assistente_planos (
 alter table public.assistente_planos enable row level security;
 revoke all on public.assistente_planos from anon, authenticated;
 
--- basico: o que já se paga hoje + um pacote pequeno só pra ver a IA funcionando
--- ia:     R$ 14,90 a mais -> 400 créditos/mês (custo máximo ~R$ 5 => margem ~R$ 9 por cliente)
+-- O preço da mensalidade depende de COMO o negócio usa o app (as "áreas" ligadas):
+--   chamar     só "Chamar" (pedreiro, eletricista, chaveiro…)            R$ 10,00
+--   padrao     só Agenda, ou duas formas sem Delivery (ex.: Chamar+Agenda) R$ 19,90
+--   delivery   qualquer combinação com Delivery (cardápio com fotos + Caixa completo) R$ 28,99
+--   turbo      extra opcional de IA: troca a cota por 400 créditos        + R$ 9,90
+-- Os créditos de IA já vêm no plano; o dono não paga mais por isso. Mudar preço/cota é um UPDATE.
 insert into public.assistente_planos (plano, nome, creditos_mes, teto_dia, peso_mensagem, peso_foto, preco_mensal) values
-  ('basico', 'Matriz', 60, 20, 1, 8, 19.90),
-  ('ia', 'Matriz + IA', 400, 40, 1, 8, 34.90)
-on conflict (plano) do nothing;
+  ('chamar',   'Chamar',            40, 15, 1, 8, 10.00),
+  ('padrao',   'Agenda / 2 formas', 80, 25, 1, 8, 19.90),
+  ('delivery', 'Delivery + Caixa', 150, 40, 1, 8, 28.99),
+  ('turbo',    'IA Turbo (extra)', 400, 40, 1, 8,  9.90)
+on conflict (plano) do update set nome = excluded.nome, creditos_mes = excluded.creditos_mes, teto_dia = excluded.teto_dia,
+  peso_mensagem = excluded.peso_mensagem, peso_foto = excluded.peso_foto, preco_mensal = excluded.preco_mensal;
 
-alter table public.estabelecimentos add column if not exists plano_ia text not null default 'basico' references public.assistente_planos(plano);
+-- qual plano o negócio tem, pelas áreas que usa
+create or replace function public.vibe_plano_base(p_areas text[])
+returns text language sql immutable set search_path = public as $$
+  select case
+    when 'delivery' = any(coalesce(p_areas, '{}'::text[])) then 'delivery'
+    when 'agenda' = any(coalesce(p_areas, '{}'::text[])) then 'padrao'
+    when (select count(distinct a) from unnest(coalesce(p_areas, '{}'::text[])) a where a in ('agenda', 'servicos')) >= 2 then 'padrao'
+    when 'servicos' = any(coalesce(p_areas, '{}'::text[])) then 'chamar'
+    else 'padrao'
+  end
+$$;
+
+alter table public.estabelecimentos add column if not exists ia_turbo boolean not null default false;
+
+-- a mensalidade acompanha as áreas: ligou o Delivery, passa a valer R$ 28,99; só Chamar, R$ 10,00
+create or replace function public.vibe_trg_mensalidade()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  new.mensalidade := (select preco_mensal from public.assistente_planos where plano = public.vibe_plano_base(new.areas))
+                   + case when new.ia_turbo then (select preco_mensal from public.assistente_planos where plano = 'turbo') else 0 end;
+  return new;
+end $$;
+drop trigger if exists estab_mensalidade_por_areas on public.estabelecimentos;
+create trigger estab_mensalidade_por_areas before insert or update of areas, ia_turbo on public.estabelecimentos
+  for each row execute function public.vibe_trg_mensalidade();
+-- quem já existe também passa a ter o valor certo
+update public.estabelecimentos set areas = areas;
 
 -- uso por dia (creditos = total gasto no dia; do_pacote = quanto saiu de pacote avulso, que não conta na cota do mês)
 create table if not exists public.assistente_uso (
@@ -115,8 +148,9 @@ declare
   v_mes_usado integer; v_dia_usado integer; v_msg integer := 0; v_foto integer := 0; v_extras integer := 0;
 begin
   select pl.* into p from public.assistente_planos pl
-    join public.estabelecimentos e on e.plano_ia = pl.plano where e.id = p_estabelecimento_id;
-  if not found then select * into p from public.assistente_planos where plano = 'basico'; end if;
+    join public.estabelecimentos e on pl.plano = case when e.ia_turbo then 'turbo' else public.vibe_plano_base(e.areas) end
+    where e.id = p_estabelecimento_id;
+  if not found then select * into p from public.assistente_planos where plano = 'padrao'; end if;
   select coalesce(sum(creditos - do_pacote), 0) into v_mes_usado from public.assistente_uso
     where estabelecimento_id = p_estabelecimento_id and dia >= v_mes;
   select coalesce(creditos, 0), coalesce(mensagens, 0), coalesce(fotos, 0) into v_dia_usado, v_msg, v_foto from public.assistente_uso
@@ -183,13 +217,12 @@ begin
 end $$;
 
 -- Só quem é admin da plataforma muda plano e soma créditos (cobrança/atendimento)
-create or replace function public.assistente_definir_plano(p_estabelecimento_id uuid, p_plano text)
+create or replace function public.assistente_definir_turbo(p_estabelecimento_id uuid, p_ligado boolean)
 returns void
 language plpgsql security definer set search_path = public as $$
 begin
   if not exists (select 1 from public.vb_plataforma_admins where user_id = auth.uid()) then raise exception 'Só o admin da plataforma pode fazer isso.'; end if;
-  if not exists (select 1 from public.assistente_planos where plano = p_plano) then raise exception 'Plano não existe.'; end if;
-  update public.estabelecimentos set plano_ia = p_plano where id = p_estabelecimento_id;
+  update public.estabelecimentos set ia_turbo = coalesce(p_ligado, false) where id = p_estabelecimento_id;
 end $$;
 
 create or replace function public.assistente_somar_creditos(p_estabelecimento_id uuid, p_creditos integer)
@@ -207,9 +240,9 @@ end $$;
 revoke all on function public.assistente_situacao(uuid) from public, anon, authenticated;
 revoke all on function public.assistente_consumir(uuid, text) from public, anon;
 revoke all on function public.assistente_uso_hoje(uuid) from public, anon;
-revoke all on function public.assistente_definir_plano(uuid, text) from public, anon;
+revoke all on function public.assistente_definir_turbo(uuid, boolean) from public, anon;
 revoke all on function public.assistente_somar_creditos(uuid, integer) from public, anon;
 grant execute on function public.assistente_consumir(uuid, text) to authenticated;
 grant execute on function public.assistente_uso_hoje(uuid) to authenticated;
-grant execute on function public.assistente_definir_plano(uuid, text) to authenticated;
+grant execute on function public.assistente_definir_turbo(uuid, boolean) to authenticated;
 grant execute on function public.assistente_somar_creditos(uuid, integer) to authenticated;
