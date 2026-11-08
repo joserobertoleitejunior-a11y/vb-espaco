@@ -81,10 +81,10 @@ revoke all on public.assistente_planos from anon, authenticated;
 --   turbo      extra opcional de IA: troca a cota por 400 créditos        + R$ 9,90
 -- Os créditos de IA já vêm no plano; o dono não paga mais por isso. Mudar preço/cota é um UPDATE.
 insert into public.assistente_planos (plano, nome, creditos_mes, teto_dia, peso_mensagem, peso_foto, preco_mensal) values
-  ('chamar',   'Chamar',            40, 15, 1, 8, 10.00),
-  ('padrao',   'Agenda / 2 formas', 80, 25, 1, 8, 19.90),
-  ('delivery', 'Delivery + Caixa', 150, 40, 1, 8, 28.99),
-  ('turbo',    'IA Turbo (extra)', 400, 40, 1, 8,  9.90)
+  ('chamar',   'Autônomo',          40, 15, 1, 8, 10.00),
+  ('padrao',   'Matriz',            80, 25, 1, 8, 19.90),
+  ('delivery', 'Matriz Delivery',  150, 40, 1, 8, 28.99),
+  ('turbo',    'Matriz+IA (extra)', 400, 40, 1, 8,  9.90)
 on conflict (plano) do update set nome = excluded.nome, creditos_mes = excluded.creditos_mes, teto_dia = excluded.teto_dia,
   peso_mensagem = excluded.peso_mensagem, peso_foto = excluded.peso_foto, preco_mensal = excluded.preco_mensal;
 
