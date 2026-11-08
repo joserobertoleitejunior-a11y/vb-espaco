@@ -108,5 +108,13 @@
   function exemplo(chave) { return POR_CHAVE[chave] ? POR_CHAVE[chave].exemplo : 'Nome do seu negócio'; }
   function daArea(chave, area) { return !!(POR_CHAVE[chave] && POR_CHAVE[chave].areas.indexOf(area) > -1); }
 
-  global.VibeSegmentos = { POR_CHAVE: POR_CHAVE, POR_AREA: POR_AREA, icone: icone, nome: nome, exemplo: exemplo, daArea: daArea, AREAS_PUBLICAS: AREAS_PUBLICAS };
+  // Autônomo: quem vai até o cliente e só usa o "Chamar" (pedreiro, eletricista…) tem o perfil rápido:
+  // 2 perguntas pra criar e só o essencial obrigatório no site (nome, serviços e como atende).
+  var AUTONOMOS = ['eletricista', 'encanador', 'pedreiro', 'montador', 'diarista', 'jardinagem', 'ar_condicionado', 'dedetizacao', 'chaveiro'];
+  function ehAutonomo(chave, areas) {
+    var a = areas || ['servicos'];
+    return AUTONOMOS.indexOf(chave) > -1 && a.length === 1 && a[0] === 'servicos';
+  }
+
+  global.VibeSegmentos = { ehAutonomo: ehAutonomo, AUTONOMOS: AUTONOMOS, POR_CHAVE: POR_CHAVE, POR_AREA: POR_AREA, icone: icone, nome: nome, exemplo: exemplo, daArea: daArea, AREAS_PUBLICAS: AREAS_PUBLICAS };
 })(window);

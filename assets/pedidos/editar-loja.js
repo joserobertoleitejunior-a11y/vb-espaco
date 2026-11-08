@@ -416,6 +416,11 @@
       { id: 'horario', capitulo: 'funciona', obrigatorio: true, aviso: 'Marque os dias e horários pra continuar.', titulo: 'Horário', pergunta: 'Que dias e horários você atende?', ajuda: 'Fora do horário o site mostra "Fechado".', completo: function () { var h = e().horarios; return !!(h && Object.keys(h).length); }, render: passoHorario },
       { id: 'endereco', capitulo: 'achar', obrigatorio: true, aviso: 'Escreva o endereço pra continuar.', titulo: 'Endereço e Instagram', pergunta: 'Onde te acham?', ajuda: 'Endereço e Instagram aparecem no site.', completo: function () { return !!(e().endereco || '').trim(); }, render: passoEndereco }
     ];
+    // Autônomo (só Chamar, vai até o cliente): só o essencial é obrigatório — nome/frase, serviços e atendimento.
+    // Foto, Pix, horário e endereço viram opcionais (aparecem como "pular por agora").
+    if (window.VibeSegmentos && window.VibeSegmentos.ehAutonomo && window.VibeSegmentos.ehAutonomo(e().segmento, e().areas)) {
+      base.forEach(function (p) { if (['foto', 'pagamento', 'horario', 'endereco'].indexOf(p.id) > -1) p.obrigatorio = false; });
+    }
     var sobre = window.VBPerguntas ? window.VBPerguntas.passosEditor(e().id, e().segmento, e().areas || [S ? 'servicos' : 'delivery'], respostas, function (r) { desenharBomSaberLoja(r); }) : [];
     return base.concat(sobre);
   }

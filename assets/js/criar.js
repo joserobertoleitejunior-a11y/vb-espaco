@@ -86,6 +86,8 @@
     return a.sort(function (x, y) { return x === 'agenda' ? -1 : y === 'agenda' ? 1 : 0; });
   }
   function tem(area) { return areasEscolhidas().indexOf(area) > -1; }
+  // perfil rápido do autônomo (só Chamar, vai até o cliente): pula "onde atende" e "visual"
+  function rapido() { return !!(SEG.ehAutonomo && SEG.ehAutonomo(estado.segmento, areasEscolhidas())); }
   function areaDePedidos() { return tem('delivery') ? 'delivery' : tem('servicos') ? 'servicos' : null; }
   function tingir() { if (window.VibeToggle) window.VibeToggle.tingir(estado.area); }
 
@@ -270,7 +272,7 @@
   function renderPassoDados(container) {
     var oQue = tem('agenda') ? 'os agendamentos' : tem('delivery') ? 'os pedidos' : 'os chamados';
     container.innerHTML =
-      '<p class="criar-passo-intro">Último passo antes de ver seu site pronto.</p>' +
+      '<p class="criar-passo-intro">' + (rapido() ? 'Só isso — o resto você faz depois, no seu ritmo.' : 'Último passo antes de ver seu site pronto.') + '</p>' +
       '<div class="field"><label for="criarNome">Nome do seu negócio</label>' +
       '<input type="text" id="criarNome" autocomplete="organization" placeholder="' + escapeHtml(SEG.exemplo(estado.segmento)) + '" value="' + escapeHtml(estado.nome) + '"></div>' +
       '<div class="field"><label for="criarCidade">Cidade</label><select id="criarCidade">' +
@@ -353,6 +355,8 @@
   function camposDaLoja() {
     var c = {};
     if (tem('delivery')) { c.aceita_entrega = estado.recebe !== 'retirada'; c.aceita_retirada = estado.recebe !== 'entrega'; }
+    // autônomo: já nasce atendendo no endereço do cliente (um passo a menos no site)
+    if (rapido()) { c.aceita_entrega = true; c.aceita_retirada = false; }
     return c;
   }
   function salvarNegocio() {
@@ -360,7 +364,7 @@
     msg.className = 'msg';
     msg.textContent = 'Criando seu negócio…';
     var areas = areasEscolhidas();
-    var onde = tem('servicos') ? estado.servico_onde : null;
+    var onde = tem('servicos') ? (rapido() ? 'cliente' : estado.servico_onde) : null;
     var fone = estado.telefone_whatsapp.replace(/\D/g, '') || null;
     var passo = !estabId
       ? db.rpc('criar_estabelecimento', {
@@ -397,9 +401,9 @@
     // veio de "Agendar", "Pedir" ou "Chamar"? a área já está escolhida
     if (!areaUrlValida) p.unshift({ chave: 'area', titulo: 'O que seu negócio faz?', render: renderPassoArea });
     if (perguntaGenero()) p.push({ chave: 'atendimento', titulo: 'Atendimento', render: renderPassoAtendimento });
-    if (tem('servicos')) p.push({ chave: 'onde', titulo: 'Onde você atende?', render: renderPassoOnde });
+    if (tem('servicos') && !rapido()) p.push({ chave: 'onde', titulo: 'Onde você atende?', render: renderPassoOnde });
     if (tem('delivery')) p.push({ chave: 'recebe', titulo: 'Entrega ou retirada?', render: renderPassoRecebe });
-    p.push({ chave: 'template', titulo: 'Escolha o visual', render: renderPassoTemplate });
+    if (!rapido()) p.push({ chave: 'template', titulo: 'Escolha o visual', render: renderPassoTemplate });
     p.push({ chave: 'dados', titulo: 'Seus dados', render: renderPassoDados, validar: validarDados, aoAvancar: salvarNegocio });
     return p;
   }
@@ -410,12 +414,13 @@
   // endereço). Serve só pra contagem do topo bater com a do editor.
   var PASSOS_NO_SITE = 4;
   var PASSOS_NO_SITE_LOJA = 7;
+  var PASSOS_NO_SITE_RAPIDO = 2; // autônomo: nome e frase, serviços
 
   function atualizarCabecalho() {
     var passos = obterPassos();
     var passo = passos[passoAtual];
     // a criação continua no próprio site (foto, serviços, equipe, endereço)
-    var total = passos.length + (tem('agenda') ? PASSOS_NO_SITE : PASSOS_NO_SITE_LOJA);
+    var total = passos.length + (tem('agenda') ? PASSOS_NO_SITE : rapido() ? PASSOS_NO_SITE_RAPIDO : PASSOS_NO_SITE_LOJA);
     document.getElementById('criarPassoLabel').textContent = (passoAtual + 1) + ' de ' + total;
     document.getElementById('criarProgressoFill').style.width = (((passoAtual + 1) / passos.length) * 100) + '%';
     document.getElementById('criarProximoBtn').textContent = passoAtual === passos.length - 1

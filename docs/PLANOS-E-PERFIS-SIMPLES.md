@@ -71,3 +71,11 @@ Observações:
 - Preço do Autônomo: R$ 14,90? Menos? Gratuito com limite?
 - Quais segmentos de autônomo entram primeiro (sugestão: pedreiro, pintor, eletricista, encanador, diarista).
 - Aceita lançar o Autônomo sem endereço (só região)? (muda o que o cliente vê no site.)
+
+## Implementado (novembro): perfil rápido do autônomo
+
+- Vale para quem usa só o **Chamar** e vai até o cliente: eletricista, encanador, pedreiro, montador, diarista, jardinagem, ar-condicionado, dedetização e chaveiro (`VibeSegmentos.AUTONOMOS`). Borracharia, guincho etc. seguem o fluxo normal (têm loja/endereço).
+- **Criar:** 2 perguntas (tipo de negócio → nome, cidade e WhatsApp). Pula "onde atende" (já nasce atendendo no cliente) e "escolha o visual" (padrão do segmento). Antes eram 4.
+- **No site:** só nome/frase, serviços e atendimento são obrigatórios; foto, Pix, horário e endereço viram opcionais (dá pra pular e fazer depois ou por comando no terminal).
+- Preço: cai no **Matriz Básico (R$ 14,90 · 80 créditos)**, pois usa uma forma só.
+- Ainda não feito: serviços sugeridos por segmento já preenchidos, "a partir de/por m²/sob orçamento", criar falando, selos de confiança.
