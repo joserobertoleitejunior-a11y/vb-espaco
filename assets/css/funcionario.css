@@ -372,3 +372,11 @@ html.fn-travado, html.fn-travado body { overflow: hidden; }
 .fn-dash-passo em { font-style: normal; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--mudo); font-size: 0.85em; }
 .fn-dash-passo { flex-wrap: wrap; }
 .fn-term .fn-dash .vg-leitura { font-size: calc(0.76rem * var(--fn-z, 1)); }
+
+/* endereço e redes sociais achados na foto: cada um com o botão "Usar" */
+.fn-contatos { display: grid; gap: 0.4rem; margin-top: 0.5rem; }
+.fn-contato { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem; border: 1px solid var(--ouro-suave); border-radius: 4px; background: rgba(201, 162, 39, 0.05); }
+.fn-contato span { flex: 1; min-width: 0; overflow-wrap: anywhere; color: #fff; line-height: 1.35; }
+.fn-contato small { display: block; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mudo); }
+.fn-btn-usar { flex: 0 0 auto; min-height: 2.4rem; padding: 0.4rem 0.9rem; border: 0; border-radius: 4px; background: var(--ouro); color: #0b0b0c; font: inherit; font-size: 0.78rem; font-weight: 800; cursor: pointer; }
+.fn-btn-usar:disabled { background: transparent; border: 1px solid var(--ouro-suave); color: var(--verde); cursor: default; }

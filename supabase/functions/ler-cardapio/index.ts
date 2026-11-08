@@ -73,7 +73,8 @@ function instrucao(tipo: string) {
 
 Regras:
 - Responda SÓ o JSON, sem texto em volta e sem blocos de código.
-- Formato: {"categorias":[{"nome":"...","itens":[{"nome":"...","descricao":"...","preco":0}]}],"extras":[],"promocoes":[{"nome":"...","descricao":"...","preco":0,"qtd_sabores":2}]}
+- Formato: {"categorias":[{"nome":"...","itens":[{"nome":"...","descricao":"...","preco":0}]}],"extras":[],"promocoes":[{"nome":"...","descricao":"...","preco":0,"qtd_sabores":2}],"contato":{"endereco":"","whatsapp":"","instagram":"","facebook":"","tiktok":""}}
+- "contato": só o que estiver IMPRESSO no material e for do próprio estabelecimento (endereço da loja, WhatsApp, redes sociais). Copie como está escrito: "endereco" com rua, número, bairro e cidade se aparecerem; "instagram"/"facebook"/"tiktok" com o @ ou o link. Deixe "" no que não aparecer. Nunca invente. Não confunda com propaganda de terceiros, área de entrega ou telefone de fornecedor.
 - "promocoes" são ofertas e combos (ex.: "2 pizzas grandes por R$ 79,90", "Terça: pizza + refri"). "preco" é o preço fechado da promoção; "qtd_sabores" é quantas pizzas/sabores o cliente escolhe (1 se não for de sabores). Coloque aí só o que é promoção, nunca repita no cardápio normal. Se não houver, use [].
 - Foto que é SÓ uma promoção: devolva "categorias":[] e a promoção em "promocoes".
 - "preco" é número em reais (ex.: 42.90). Se o preço não estiver legível, use 0.
@@ -86,7 +87,7 @@ Regras:
 - Bordas recheadas, adicionais e taxas NÃO entram como item: coloque-os em "extras": [{"nome":"Borda Catupiry","preco":8}].
 - Copie os nomes como estão escritos, só arrumando MAIÚSCULAS para a forma normal.
 - Não invente item nenhum: só o que dá pra ler na foto.
-- Se a foto não for um ${tipo === "servicos" ? "catálogo" : "cardápio"} nem tiver promoção, devolva {"categorias":[],"promocoes":[]}.`;
+- Se a foto não for um ${tipo === "servicos" ? "catálogo" : "cardápio"} nem tiver promoção, devolva {"categorias":[],"promocoes":[]} (e o "contato", se houver algum).`;
 }
 
 Deno.serve(async (req) => {
@@ -154,7 +155,7 @@ Deno.serve(async (req) => {
     return erro("Não consegui falar com o leitor de fotos agora.", 502);
   }
 
-  let lido: { categorias?: { nome?: string; itens?: { nome?: string; descricao?: string; preco?: unknown }[] }[]; promocoes?: { nome?: string; descricao?: string; preco?: unknown; qtd_sabores?: unknown }[]; extras?: { nome?: string; preco?: unknown }[] };
+  let lido: { contato?: Record<string, unknown>; categorias?: { nome?: string; itens?: { nome?: string; descricao?: string; preco?: unknown }[] }[]; promocoes?: { nome?: string; descricao?: string; preco?: unknown; qtd_sabores?: unknown }[]; extras?: { nome?: string; preco?: unknown }[] };
   try { lido = JSON.parse(resposta.texto.slice(resposta.texto.indexOf("{"), resposta.texto.lastIndexOf("}") + 1)); } catch {
     console.error("ler-cardapio: a IA não devolveu JSON", resposta.texto.slice(0, 200));
     return erro("Não consegui ler essa foto. Tente uma mais nítida.");
@@ -189,11 +190,21 @@ Deno.serve(async (req) => {
     return { nome: String(x.nome || "").trim().slice(0, 60), preco: Number.isFinite(preco) && preco > 0 && preco < 10000 ? Math.round(preco * 100) / 100 : 0 };
   }).filter((x) => x.nome);
 
+  // endereço e redes sociais impressos no material (só o que veio preenchido)
+  const lc = (lido as { contato?: Record<string, unknown> }).contato || {};
+  const limpa = (v: unknown, n: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+  const contato: Record<string, string> = {};
+  for (const [k, n] of [["endereco", 200], ["whatsapp", 30], ["instagram", 120], ["facebook", 120], ["tiktok", 120]] as [string, number][]) {
+    const v = limpa(lc[k], n);
+    if (v.length >= 3) contato[k] = v;
+  }
+
   const total = categorias.reduce((t, c) => t + c.itens.length, 0);
   return resp({
     categorias,
     promocoes,
     extras,
-    aviso: total + promocoes.length ? "Confira os preços antes de salvar — a leitura da foto pode errar." : "Não achei nenhum item nessa foto. Tente com mais luz, mais perto ou sem cortar as bordas.",
+    contato,
+    aviso: total + promocoes.length || Object.keys(contato).length ? "Confira os preços antes de salvar — a leitura da foto pode errar." : "Não achei nenhum item nessa foto. Tente com mais luz, mais perto ou sem cortar as bordas.",
   });
 });

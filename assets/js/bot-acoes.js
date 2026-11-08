@@ -427,6 +427,114 @@
       });
     };
 
+    /* ---------------- endereço no mapa e redes sociais ---------------- */
+    var REDES = {
+      instagram: { chave: 'instagram_url', nome: 'Instagram', base: 'https://instagram.com/' },
+      facebook: { chave: 'facebook_url', nome: 'Facebook', base: 'https://facebook.com/' },
+      tiktok: { chave: 'tiktok_url', nome: 'TikTok', base: 'https://tiktok.com/@' }
+    };
+    function qualRede(t) {
+      t = norm(t);
+      return /insta/.test(t) ? 'instagram' : /face|fb/.test(t) ? 'facebook' : /tik/.test(t) ? 'tiktok' : null;
+    }
+    // "@fulano", "fulano", "instagram.com/fulano/" ou o link inteiro → link completo e limpo
+    function linkDaRede(rede, v) {
+      v = String(v == null ? '' : v).trim();
+      if (!v) return '';
+      var m = /(?:https?:\/\/)?(?:www\.)?(?:instagram\.com|facebook\.com|fb\.com|tiktok\.com)\/(.+)$/i.exec(v);
+      var usuario = (m ? m[1] : v).split(/[?#]/)[0].replace(/\/+$/, '').replace(/^@/, '');
+      so(/^[A-Za-z0-9._\-\/]{2,100}$/.test(usuario), 'Não entendi esse ' + REDES[rede].nome + '. Mande o @ ou o link.');
+      return REDES[rede].base + usuario;
+    }
+    function negocioAtual() {
+      // dados do negócio na agenda (redes, endereço, cidade) — o site público devolve tudo
+      if (!cx.slug || !cx.cidade) return Promise.resolve({});
+      return db.rpc('buscar_estabelecimento', { p_slug: cx.slug, p_cidade: cx.cidade }).then(function (r) { var l = r.data; return (Array.isArray(l) ? l[0] : l) || {}; }, function () { return {}; });
+    }
+    function nomeCidade() { return String(cx.cidade || '').replace(/-/g, ' '); }
+
+    // Procura o endereço no mapa e põe o pino exato. Se o número não existe no mapa, avisa — não finge.
+    A.definir_endereco = function (a) {
+      so(temAgenda || temPedidos, 'Este negócio não tem endereço pra mexer.');
+      var texto = String(a.endereco || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+      so(texto.length >= 6, 'Qual o endereço? Rua, número e bairro.');
+      var cidadeTxt = nomeCidade();
+      var consulta = cidadeTxt && !norm(texto).includes(norm(cidadeTxt)) ? texto + ', ' + cidadeTxt : texto;
+      var busca = cx.acharEndereco ? cx.acharEndereco(consulta) : Promise.resolve([]);
+      var mapaFora = false;
+      return Promise.resolve(busca).then(function (l) { return l; }, function () { mapaFora = true; return []; }).then(function (lista) {
+        lista = lista || [];
+        var quer = (/\d+/.exec(texto) || [])[0];
+        // melhor resultado: o que tem o número pedido; senão o primeiro da cidade do negócio
+        var daCidade = lista.filter(function (x) { return !cidadeTxt || norm([x.endereco, x.sub].join(' ')).includes(norm(cidadeTxt)); });
+        var base = daCidade.length ? daCidade : lista;
+        var achado = base.filter(function (x) { return x.temNumero && quer && String(x.endereco).indexOf(quer) !== -1; })[0] || base[0] || null;
+        var exato = !!(achado && (!quer || (achado.temNumero && String(achado.endereco).indexOf(quer) !== -1)));
+        var lat = achado ? Number(achado.lat) : null, lng = achado ? Number(achado.lng) : null;
+        var gravar = texto;                                   // o que o cliente lê: o que o dono escreveu (ou o endereço do mapa, se bateu)
+        if (achado && exato && achado.endereco) gravar = achado.endereco;
+        var passos = [];
+        var feitoPedidos = !temPedidos ? Promise.resolve() : lojaAtual().then(function (l) {
+          return rpc('delivery_admin_atualizar_estabelecimento', { p_id: id, p_campos: { endereco: gravar, endereco_lat: lat, endereco_lng: lng } }).then(function () {
+            passos.push({ rpc: 'delivery_admin_atualizar_estabelecimento', args: { p_id: id, p_campos: { endereco: l.endereco || '', endereco_lat: l.endereco_lat == null ? null : l.endereco_lat, endereco_lng: l.endereco_lng == null ? null : l.endereco_lng } } });
+          });
+        });
+        return feitoPedidos.then(function () {
+          if (!temAgenda) return null;
+          return negocioAtual().then(function (n) {
+            return rpc('tenant_admin_atualizar_endereco', com({ p_endereco: gravar, p_lat: lat, p_lng: lng })).then(function () {
+              passos.push({ rpc: 'tenant_admin_atualizar_endereco', args: { p_estabelecimento_id: id, p_endereco: n.endereco || '', p_lat: n.endereco_lat == null ? null : n.endereco_lat, p_lng: n.endereco_lng == null ? null : n.endereco_lng } });
+            });
+          });
+        }).then(function () {
+          guardar('Voltar o endereço como estava', passos);
+          if (cx.recarregar) cx.recarregar(temPedidos ? 'pedidos' : 'agenda');
+          if (!achado && mapaFora) return 'Salvei o endereço "' + gravar + '", mas não consegui consultar o mapa agora — o pino não foi posto. Tente de novo em instantes.';
+          if (!achado) return 'Salvei o endereço "' + gravar + '", mas não achei esse lugar no mapa — o pino não foi posto. Me diga o bairro ou a cidade e eu tento de novo.';
+          if (!exato) return 'Salvei "' + gravar + '". Achei a rua no mapa, mas não o número ' + quer + ' — o pino ficou na rua. Confira no site.';
+          return 'Pronto! Endereço no site e pino no mapa em: ' + gravar + '.';
+        });
+      });
+    };
+
+    A.definir_rede_social = function (a) {
+      so(temAgenda || temPedidos, 'Este negócio não tem rede social pra mexer.');
+      var rede = qualRede(a.rede);
+      so(rede, 'Qual rede: Instagram, Facebook ou TikTok?');
+      var link = linkDaRede(rede, a.valor);
+      so(link, 'Qual o @ ou o link?');
+      return aplicarRede(rede, link);
+    };
+    A.remover_rede_social = function (a) {
+      var rede = qualRede(a.rede);
+      so(rede, 'Qual rede: Instagram, Facebook ou TikTok?');
+      return aplicarRede(rede, '');
+    };
+    function aplicarRede(rede, link) {
+      var passos = [], R = REDES[rede];
+      var pedidos = !temPedidos || rede !== 'instagram' ? Promise.resolve() : lojaAtual().then(function (l) {
+        return rpc('delivery_admin_atualizar_estabelecimento', { p_id: id, p_campos: { instagram_url: link } }).then(function () {
+          passos.push({ rpc: 'delivery_admin_atualizar_estabelecimento', args: { p_id: id, p_campos: { instagram_url: l.instagram_url || '' } } });
+        });
+      });
+      return pedidos.then(function () {
+        // a tabela da agenda guarda as 3 redes juntas: manda as outras duas como estão
+        return negocioAtual().then(function (n) {
+          var atual = { instagram_url: n.instagram_url || null, facebook_url: n.facebook_url || null, tiktok_url: n.tiktok_url || null };
+          var novo = Object.assign({}, atual); novo[R.chave] = link || null;
+          // sem ler as redes de hoje não dá pra regravar as três sem apagar as outras duas
+          if (!n.id) { if (rede === 'instagram' && temPedidos) return null; throw new Error('Não consegui ler suas redes agora. Tente de novo em instantes.'); }
+          return rpc('tenant_admin_atualizar_redes', com({ p_instagram_url: novo.instagram_url, p_facebook_url: novo.facebook_url, p_tiktok_url: novo.tiktok_url })).then(function () {
+            passos.push({ rpc: 'tenant_admin_atualizar_redes', args: { p_estabelecimento_id: id, p_instagram_url: atual.instagram_url, p_facebook_url: atual.facebook_url, p_tiktok_url: atual.tiktok_url } });
+          });
+        });
+      }).then(function () {
+        guardar(link ? 'Voltar o ' + R.nome + ' como estava' : 'Colocar o ' + R.nome + ' de volta', passos);
+        if (cx.recarregar) cx.recarregar(temPedidos ? 'pedidos' : 'agenda');
+        return link ? R.nome + ' no site: ' + link : 'Tirei o ' + R.nome + ' do site.';
+      });
+    }
+
     /* ---------------- promoções, recados, vendas ---------------- */
     A.publicar_promocao = function (a) {
       var t = String(a.titulo || '').trim();

@@ -31,6 +31,9 @@ function bancoFalso() {
     tenant_admin_criar_agendamento: (a) => { s.agend.push(a); },
     tenant_admin_salvar_horario: (a) => { s.horarios.push(a); },
     tenant_listar_horarios: () => (s.horariosBanco || []).slice(),
+    buscar_estabelecimento: () => [Object.assign({ id: 'e1', endereco: 'Rua Velha, 1', endereco_lat: -23.1, endereco_lng: -48.1, instagram_url: 'https://instagram.com/velho', facebook_url: null, tiktok_url: null }, s.negocio || {})],
+    tenant_admin_atualizar_endereco: (a) => { s.endAgenda = a; },
+    tenant_admin_atualizar_redes: (a) => { s.redes = a; },
     delivery_admin_meus_estabelecimentos: () => [Object.assign({ id: 'e1' }, s.loja)],
     tenant_admin_publicar_promocao: (a) => { s.promos.push({ id: nid(), titulo: a.p_titulo }); },
     tenant_admin_listar_vendas_hoje: () => s.vendas.slice(),
@@ -124,6 +127,41 @@ const erro = (p) => p.then(() => null, (e) => e.message);
     checa('horário (agenda): uma chamada por dia', sa.horarios.length === 2 && sa.horarios[0].p_dia_semana === 2 && sa.horarios[1].p_dia_semana === 4 && sa.horarios[1].p_abre === '10:00');
     checa('horário (agenda): desfazer devolve terça e deixa quinta fechada', volta[0].passos.length === 2 && volta[0].passos[0].args.p_abre === '09:00' && volta[0].passos[1].args.p_fechado === true);
     checa('horário (agenda): dois turnos não cabem', /um horário por dia/.test(await erro(Aa.horario_funcionamento({ dias: 'sexta', turnos: [['9', '12'], ['14', '18']] }))));
+  }
+  // endereço no mapa e redes sociais
+  { const consultas = [];
+    const mapa = (q) => { consultas.push(q); return [
+      { endereco: 'Rua das Flores, 120 — Centro, Itapetininga', sub: 'Centro · Itapetininga', temNumero: true, lat: -23.59, lng: -48.05 },
+      { endereco: 'Rua das Flores — Vila Nova, Sorocaba', sub: 'Sorocaba', temNumero: false, lat: -23.5, lng: -47.4 }]; };
+    const sd = bancoFalso(); const volta = [];
+    const Ad = montar(sd, { areas: ['delivery', 'agenda'], slug: 'pizza', cidade: 'itapetininga', acharEndereco: mapa, registrarDesfazer: (d) => volta.push(d) });
+    sd.loja = { endereco: 'Antigo', endereco_lat: 1, endereco_lng: 2 };
+    let tx = await Ad.definir_endereco({ endereco: 'rua das flores 120 centro' });
+    checa('endereço: procura no mapa com a cidade do negócio', /itapetininga/i.test(consultas[0]), consultas[0]);
+    checa('endereço: grava texto e pino exatos no delivery', sd.loja.endereco === 'Rua das Flores, 120 — Centro, Itapetininga' && sd.loja.endereco_lat === -23.59 && sd.loja.endereco_lng === -48.05);
+    checa('endereço: grava também na agenda', sd.endAgenda && sd.endAgenda.p_lat === -23.59 && sd.endAgenda.p_endereco.includes('120'));
+    checa('endereço: guarda o antigo pro Desfazer', volta[0].passos.length === 2 && volta[0].passos[0].args.p_campos.endereco === 'Antigo' && volta[0].passos[1].args.p_endereco === 'Rua Velha, 1');
+    checa('endereço: avisa que pôs o pino', /pino no mapa/.test(tx), tx);
+    const so1 = montar(bancoFalso(), { areas: ['delivery'], slug: 'pizza', cidade: 'itapetininga', acharEndereco: () => [{ endereco: 'Rua das Flores — Centro, Itapetininga', sub: 'Itapetininga', temNumero: false, lat: -23.6, lng: -48 }] });
+    tx = await so1.definir_endereco({ endereco: 'Rua das Flores, 999, Centro' });
+    checa('endereço: sem o número no mapa, diz a verdade', /não o número 999/.test(tx), tx);
+    const so2 = montar(bancoFalso(), { areas: ['delivery'], slug: 'pizza', cidade: 'itapetininga', acharEndereco: () => [] });
+    tx = await so2.definir_endereco({ endereco: 'Travessa Inexistente, 5' });
+    checa('endereço: lugar que não existe no mapa não põe pino', /não achei esse lugar no mapa/.test(tx), tx);
+    checa('endereço: curto demais pergunta', /Qual o endereço/.test(await erro(Ad.definir_endereco({ endereco: 'rua' }))));
+
+    const sr = bancoFalso(); const vr = [];
+    const Ar = montar(sr, { areas: ['delivery', 'agenda'], slug: 'pizza', cidade: 'itapetininga', registrarDesfazer: (d) => vr.push(d) });
+    tx = await Ar.definir_rede_social({ rede: 'Instagram', valor: '@pizzariadomrafa' });
+    checa('rede: @ vira link do Instagram', sr.loja.instagram_url === 'https://instagram.com/pizzariadomrafa' && /instagram.com\/pizzariadomrafa/.test(tx), tx);
+    checa('rede: mantém as outras redes como estavam', sr.redes && sr.redes.p_facebook_url === null && sr.redes.p_instagram_url === 'https://instagram.com/pizzariadomrafa');
+    await Ar.definir_rede_social({ rede: 'tiktok', valor: 'https://www.tiktok.com/@pizza.rafa/?lang=pt' });
+    checa('rede: link do TikTok é limpo', sr.redes.p_tiktok_url === 'https://tiktok.com/@pizza.rafa' && sr.redes.p_instagram_url === 'https://instagram.com/velho');
+    checa('rede: guarda o anterior pro Desfazer', vr[0].passos.some((x) => x.rpc === 'tenant_admin_atualizar_redes' && x.args.p_instagram_url === 'https://instagram.com/velho'));
+    await Ar.remover_rede_social({ rede: 'instagram' });
+    checa('rede: remover limpa só o Instagram', sr.redes.p_instagram_url === null && sr.loja.instagram_url === '');
+    checa('rede: nome estranho pergunta', /Qual rede/.test(await erro(Ar.definir_rede_social({ rede: 'orkut', valor: 'x' }))));
+    checa('rede: @ inválido é recusado', /Não entendi esse Instagram/.test(await erro(Ar.definir_rede_social({ rede: 'instagram', valor: '@@ !!' }))));
   }
   checa('negócio sem agenda não agenda', /não tem agenda/.test(await erro(montar(bancoFalso(), { areas: ['delivery'] }).criar_agendamento({ cliente: 'X', dia: 'hoje', horario: '10:00' }))));
 

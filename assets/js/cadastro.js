@@ -821,6 +821,8 @@
     // tudo o que o painel faz, o bot também faz: as ações novas moram em bot-acoes.js
     var extras = window.VBBotAcoes ? window.VBBotAcoes.criar({
       db: db, estabId: estabId, areas: areasDe(estabId), segmento: (meusEstabs[estabId] || {}).segmento, preco: formatarPreco, registrarDesfazer: registrarDesfazer,
+      slug: (meusEstabs[estabId] || {}).slug, cidade: (meusEstabs[estabId] || {}).cidade,
+      acharEndereco: window.VBLocal && window.VBLocal.buscar ? function (q) { return window.VBLocal.buscar(q); } : null,
       recarregar: function (onde) {
         if (onde === 'cardapio') { prepararPedidos(estabId, 'cardapio'); mostrarAbaDashboard('cardapio'); }
         else if (onde === 'pedidos') { prepararPedidos(estabId, 'pedidos'); mostrarAbaDashboard('pedidos'); }

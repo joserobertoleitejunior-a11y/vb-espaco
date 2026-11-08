@@ -71,7 +71,7 @@
   ];
   var COMANDOS_AJUDA = [
     ['/dashboard 7', 'gráfico e números do período (1, 3, 5, 7, 15 ou 30 dias)'],
-    ['/foto', 'mandar fotos do cardápio ou de uma promoção'],
+    ['/foto', 'mandar fotos do cardápio, de promoção ou do material (leio também endereço e redes sociais)'],
     ['/cardapio', 'abrir o cardápio'],
     ['/desfazer', 'desfaz a última coisa que eu fiz'],
     ['/uso', 'quanto você já usou hoje'],
@@ -246,6 +246,12 @@
       if (ab && st.cfg.acoes && st.cfg.acoes.abrir_aba) { fechar(); st.cfg.acoes.abrir_aba({ aba: 'ganhos' }); return; }
       var rep = e.target.closest('[data-fn-repetir]');
       if (rep) { var tx = rep.getAttribute('data-fn-repetir'); rep.closest('.fn-msg').remove(); mandar(tx); return; }
+      var usar = e.target.closest('[data-fn-acao]');
+      if (usar && !usar.disabled) {
+        var ac = null; try { ac = JSON.parse(usar.getAttribute('data-fn-acao')); } catch (x) {}
+        if (ac && ac.nome) { usar.disabled = true; usar.textContent = 'Feito'; executar(ac.nome, ac.args || {}); }
+        return;
+      }
       var des = e.target.closest('[data-fn-desfazer]');
       if (des && !des.disabled) desfazerDaMensagem(des);
     });
@@ -488,7 +494,7 @@
     var validos = arquivos.filter(function (a) { return /^image\//.test(a.type); });
     if (!validos.length) { dizer('ele', 'Isso não parece uma foto. Mande uma imagem do cardápio.'); return; }
     var servico = (st.cfg.areas || []).indexOf('servicos') !== -1 && (st.cfg.areas || []).indexOf('delivery') === -1;
-    var juntos = { categorias: [], promocoes: [], extras: [], aviso: '' }, falhas = 0;
+    var juntos = { categorias: [], promocoes: [], extras: [], aviso: '', contato: {} }, falhas = 0;
     // junta o que cada foto trouxe: categoria com o mesmo nome vira uma só
     var juntar = function (d) {
       (d.categorias || []).forEach(function (cat) {
@@ -498,6 +504,8 @@
       juntos.promocoes = juntos.promocoes.concat(d.promocoes || []);
       juntos.extras = juntos.extras.concat(d.extras || []);
       if (d.aviso) juntos.aviso = d.aviso;
+      // endereço e redes sociais impressos no material: fica o primeiro que aparecer de cada um
+      Object.keys(d.contato || {}).forEach(function (k) { if (d.contato[k] && !juntos.contato[k]) juntos.contato[k] = d.contato[k]; });
     };
     pensando(true);
     // uma por vez: é mais leve pro servidor e a ordem das fotos é a ordem do cardápio
@@ -517,11 +525,34 @@
       pensando(false);
       if (st.usos) { var lidas = validos.length - falhas; st.usos.fotos = (Number(st.usos.fotos) || 0) + lidas; if (lidas > 0) gastarLocal((st.usos.peso_foto ? Number(st.usos.peso_foto) : 1) * lidas); }
       var total = juntos.categorias.reduce(function (n, c) { return n + c.itens.length; }, 0);
-      if (!total && !juntos.promocoes.length) { if (!falhas) dizer('ele', juntos.aviso || 'Não achei nenhum item nessas fotos. Tente com mais luz, mais perto ou sem cortar as bordas.', null, { sistema: true }); return; }
+      var temContato = Object.keys(juntos.contato).length > 0;
+      if (!total && !juntos.promocoes.length) {
+        if (temContato) { mostrarContato(juntos.contato); return; }
+        if (!falhas) dizer('ele', juntos.aviso || 'Não achei nenhum item nessas fotos. Tente com mais luz, mais perto ou sem cortar as bordas.', null, { sistema: true });
+        return;
+      }
       mostrarLido(juntos, servico);
+      if (temContato) mostrarContato(juntos.contato);
       // bordas e adicionais não viram item: só avisa onde cadastrar
       if (juntos.extras.length) dizer('ele', 'Vi também: ' + juntos.extras.slice(0, 6).map(function (x) { return x.nome + (x.preco ? ' (+R$ ' + Number(x.preco).toFixed(2).replace('.', ',') + ')' : ''); }).join(', ') + '. Isso você cadastra em Cardápio → Bordas — ou peça aqui: "adiciona a borda catupiry por 8".', null, { semSalvar: true, sistema: true });
     });
+  }
+
+  /* Endereço e redes sociais que estavam impressos no material: cada um vira um botão "usar".
+     Nada entra sozinho — o dono confere e toca. O mesmo vale por comando ("meu instagram é @…"). */
+  function mostrarContato(c) {
+    var linhas = [];
+    var botao = function (rotulo, valor, nome, args) {
+      return '<div class="fn-contato"><span><small>' + esc(rotulo) + '</small>' + esc(valor) + '</span>' +
+        '<button type="button" class="fn-btn-usar" data-fn-acao="' + esc(JSON.stringify({ nome: nome, args: args })) + '">Usar</button></div>';
+    };
+    if (c.endereco) linhas.push(botao('Endereço', c.endereco, 'definir_endereco', { endereco: c.endereco }));
+    [['instagram', 'Instagram'], ['facebook', 'Facebook'], ['tiktok', 'TikTok']].forEach(function (r) {
+      if (c[r[0]]) linhas.push(botao(r[1], c[r[0]], 'definir_rede_social', { rede: r[0], valor: c[r[0]] }));
+    });
+    if (!linhas.length) return;
+    dizer('ele', 'Achei também estes dados no material. Toque em "Usar" nos que estiverem certos e eu ponho no seu site' + (c.endereco ? ' (o endereço já vai pro mapa)' : '') + ':',
+      '<div class="fn-contatos">' + linhas.join('') + '</div>', { semSalvar: true, semDigitar: true });
   }
 
   /* Antes, qualquer tropeço virava "Não consegui ler essa foto" — e aí não

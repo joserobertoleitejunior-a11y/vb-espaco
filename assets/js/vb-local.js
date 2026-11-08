@@ -374,5 +374,5 @@
     };
   }
 
-  global.VBLocal = { montar: montar };
+  global.VBLocal = { montar: montar, buscar: buscarLugares };
 })(window);
