@@ -26,9 +26,8 @@ Deno.serve(async (req) => {
   // fase de finalização: nenhuma cobrança é criada. Pra voltar a cobrar
   // (quando o app for finalizado, de R$ 14,90 a R$ 34,90/mês conforme o uso; valor vem de estabelecimentos.mensalidade), cadastra o secret
   // COBRANCA_ATIVA=sim no Supabase.
-  if (Deno.env.get("COBRANCA_ATIVA") !== "sim") {
-    return resposta({ erro: "A Matriz está em fase de finalização: tudo grátis, nenhuma taxa é cobrada agora." }, 403);
-  }
+  // liga de duas formas: secret COBRANCA_ATIVA=sim OU plataforma_config('cobranca_ativa') = 'sim' (checado abaixo)
+  const cobrancaPorSecret = Deno.env.get("COBRANCA_ATIVA") === "sim";
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -60,6 +59,12 @@ Deno.serve(async (req) => {
 
   // service role: ignora RLS pra confirmar que é dono de verdade e ler a mensalidade
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+  if (!cobrancaPorSecret) {
+    const { data: cfg } = await admin.from("plataforma_config").select("valor").eq("chave", "cobranca_ativa").maybeSingle();
+    if (cfg?.valor !== "sim") {
+      return resposta({ erro: "A Matriz está em fase de finalização: tudo grátis, nenhuma taxa é cobrada agora." }, 403);
+    }
+  }
   const { data: estab, error: estabErro } = await admin
     .from("estabelecimentos")
     .select("id, nome, mensalidade, dono_user_id")

@@ -347,3 +347,19 @@ html.dash-aberto, html.dash-aberto body { overflow: hidden; overscroll-behavior:
   #dashboardOverlay.ca-modo-pedidos .ca-pedidos { max-width: 760px; margin: 0 auto; }
 }
 .cxw-busca { margin-bottom: 0.9rem; }
+
+/* Meu plano (assets/js/meu-plano.js) */
+.mp-plano { border: 1.5px solid #e9e9ee; border-radius: 18px; padding: 1rem; background: #fff; color: #1f2024; display: flex; flex-direction: column; gap: .55rem; }
+.mp-plano-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; }
+.mp-plano-topo small { display: block; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: #6b6d75; font-weight: 800; }
+.mp-plano-topo strong { font-size: 1.1rem; }
+.mp-plano-topo b { font-size: 1.35rem; white-space: nowrap; }
+.mp-plano-topo em { font-size: .75rem; font-style: normal; color: #6b6d75; font-weight: 600; }
+.mp-status { margin: 0; font-weight: 800; font-size: .88rem; }
+.mp-ok { color: #17784b; } .mp-atraso { color: #b3261e; }
+.mp-ia { margin: 0; font-size: .84rem; color: #55575f; }
+.mp-turbo { display: flex; gap: .55rem; align-items: flex-start; font-size: .86rem; cursor: pointer; }
+.mp-turbo input { width: 1.2rem; height: 1.2rem; margin-top: .1rem; }
+.mp-pagar { min-height: 3rem; border: 0; border-radius: 999px; background: #1f2024; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.mp-pagar:disabled { opacity: .6; }
+.mp-msg { margin: 0; min-height: 1.1rem; font-size: .82rem; color: #b3261e; }

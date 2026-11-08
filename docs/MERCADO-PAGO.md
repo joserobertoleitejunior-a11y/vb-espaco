@@ -72,3 +72,9 @@ Me avisa (só que "configurei", não precisa mandar o token) que eu:
   agendamento/pedido, não só o dono.
 - **Fase C**: split automático de 5% — marketplace do Mercado Pago, cada
   dono conecta a própria conta via OAuth.
+
+## Atualização (novembro): plano por forma de uso, "Meu plano" e repasse
+- O valor cobrado é `estabelecimentos.mensalidade` (calculado pelo banco: R$ 14,90 / 21,90 / 34,90). O botão **Pagar** fica no cartão "Meu plano" do painel (`assets/js/meu-plano.js`).
+- **Chave de liga/desliga no banco:** `plataforma_config.cobranca_ativa` ('nao' / 'sim'). Enquanto 'nao', o painel mostra o aviso de grátis e a função recusa a cobrança. Ligar: `update plataforma_config set valor='sim' where chave='cobranca_ativa';` (o secret `COBRANCA_ATIVA=sim` continua funcionando).
+- **Comissão do criador:** 15% do valor bruto de cada pagamento aprovado (webhook → `criador_comissao_registrar`). **Repasse:** `repasses.html` (só admin): lista comissões de meses fechados, mínimo R$ 20 (`plataforma_config.repasse_minimo`), paga no dia `repasse_dia` (10) do mês seguinte e marca como pago.
+- SQL: `supabase/sql/2026_11_pagamento_plano_repasse.sql`.
