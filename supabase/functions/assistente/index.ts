@@ -190,7 +190,6 @@ Deno.serve(async (req) => {
     system: instrucao(corpo.contexto || {}),
     messages: montarConversa(corpo.historico, texto),
     max_tokens: 700,
-    temperature: 0.2,
   });
   console.log("assistente: IA respondeu em", Date.now() - t0, "ms");
   if ("erroStatus" in resposta) {

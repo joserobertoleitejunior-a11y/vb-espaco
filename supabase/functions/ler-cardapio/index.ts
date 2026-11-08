@@ -144,7 +144,6 @@ Deno.serve(async (req) => {
       { type: "text", text: "Leia esta foto e responda só com o JSON." },
     ] }],
     max_tokens: 8192,
-    temperature: 0,
   });
   if ("erroStatus" in resposta) {
     const s = resposta.erroStatus;
