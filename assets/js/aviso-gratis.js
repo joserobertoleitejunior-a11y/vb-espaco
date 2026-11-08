@@ -3,7 +3,7 @@
 
    Enquanto o app está em finalização, tudo é grátis. É por tempo
    limitado: quando a mensalidade começar, ela depende de como o negócio usa o app
-   (Chamar R$ 10,00 · Agenda R$ 19,90 · Delivery com Caixa R$ 28,99) — a partir de
+   (1 forma R$ 14,90 · 2 formas ou Delivery R$ 21,90 · Completo R$ 34,90) — a partir de
    POR_DIA por dia, praticamente de graça. Pra quem agenda, pede ou
    chama, continua sempre grátis.
 
@@ -19,9 +19,9 @@
 (function (global) {
   'use strict';
   // preços por forma de uso (a cobrança de verdade lê isto do banco: assistente_planos)
-  var PRECOS = { chamar: 'R$ 10,00', agenda: 'R$ 19,90', delivery: 'R$ 28,99' };
-  var MENSALIDADE = 'a partir de R$ 10,00';
-  var POR_DIA = 'R$ 0,33';
+  var PRECOS = { basico: 'R$ 14,90', padrao: 'R$ 21,90', completo: 'R$ 34,90' };
+  var MENSALIDADE = 'a partir de R$ 14,90';
+  var POR_DIA = 'R$ 0,50';
   global.VB_AVISO_GRATIS = { mensalidade: MENSALIDADE, porDia: POR_DIA, precos: PRECOS };
 
   // quem o app chama — um por tipo de negócio que existe na Matriz
@@ -88,7 +88,7 @@
       '<p class="ag-rotulo">' + PONTO + '<span>fase de finalização</span></p>' +
       '<p class="ag-titulo">Entrada liberada. Por pouco tempo.</p>' +
       '<p class="ag-texto">Enquanto a Matriz termina os últimos ajustes, tudo é grátis — sem taxa e sem cartão. ' +
-      'Quando a mensalidade começar, ela depende de como você usa: <strong>Chamar ' + PRECOS.chamar + '</strong> · <strong>Agenda ' + PRECOS.agenda + '</strong> · <strong>Delivery com Caixa ' + PRECOS.delivery + '</strong> por mês — ' +
+      'Quando a mensalidade começar, ela depende de como você usa: <strong>1 forma ' + PRECOS.basico + '</strong> · <strong>2 formas ou Delivery ' + PRECOS.padrao + '</strong> · <strong>Completo ' + PRECOS.completo + '</strong> por mês — ' +
       'a partir de <strong>' + POR_DIA + ' por dia</strong>, menos que um cafezinho. ' +
       'E você é avisado antes de qualquer cobrança.</p>' +
       '<p class="ag-corre">Quem entra agora já sai na frente.</p></div>';

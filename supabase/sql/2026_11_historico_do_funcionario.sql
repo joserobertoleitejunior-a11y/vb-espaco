@@ -74,47 +74,47 @@ create table if not exists public.assistente_planos (
 alter table public.assistente_planos enable row level security;
 revoke all on public.assistente_planos from anon, authenticated;
 
--- O preço da mensalidade depende de COMO o negócio usa o app (as "áreas" ligadas):
---   chamar     só "Chamar" (pedreiro, eletricista, chaveiro…)            R$ 10,00
---   padrao     só Agenda, ou duas formas sem Delivery (ex.: Chamar+Agenda) R$ 19,90
---   delivery   qualquer combinação com Delivery (cardápio com fotos + Caixa completo) R$ 28,99
---   turbo      extra opcional de IA: troca a cota por 400 créditos        + R$ 9,90
--- Os créditos de IA já vêm no plano; o dono não paga mais por isso. Mudar preço/cota é um UPDATE.
+-- O preço da mensalidade (3 degraus, cada um com sua cota de IA que renova todo mês):
+--   basico     UMA forma: só Chamar ou só Agenda                                   R$ 14,90 · 80 créditos
+--   padrao     duas formas sem Delivery (Chamar + Agenda) ou Delivery sozinho       R$ 21,90 · 150 créditos
+--   completo   Delivery + outra forma, ou quem liga a "IA completa" (ia_turbo)      R$ 34,90 · 400 créditos
+-- Mudar preço/cota é um UPDATE em assistente_planos.
 insert into public.assistente_planos (plano, nome, creditos_mes, teto_dia, peso_mensagem, peso_foto, preco_mensal) values
-  ('chamar',   'Autônomo',          40, 15, 1, 8, 10.00),
-  ('padrao',   'Matriz',            80, 25, 1, 8, 19.90),
-  ('delivery', 'Matriz Delivery',  150, 40, 1, 8, 28.99),
-  ('turbo',    'Matriz+IA (extra)', 400, 40, 1, 8,  9.90)
+  ('basico',   'Matriz Básico',    80, 25, 1, 8, 14.90),
+  ('padrao',   'Matriz',          150, 40, 1, 8, 21.90),
+  ('completo', 'Matriz Completo', 400, 80, 1, 8, 34.90)
 on conflict (plano) do update set nome = excluded.nome, creditos_mes = excluded.creditos_mes, teto_dia = excluded.teto_dia,
   peso_mensagem = excluded.peso_mensagem, peso_foto = excluded.peso_foto, preco_mensal = excluded.preco_mensal;
 
--- qual plano o negócio tem, pelas áreas que usa
+-- qual degrau o negócio tem, pelas áreas que usa
 create or replace function public.vibe_plano_base(p_areas text[])
 returns text language sql immutable set search_path = public as $$
   select case
-    when 'delivery' = any(coalesce(p_areas, '{}'::text[])) then 'delivery'
-    when 'agenda' = any(coalesce(p_areas, '{}'::text[])) then 'padrao'
+    when (select count(distinct a) from unnest(coalesce(p_areas, '{}'::text[])) a where a in ('agenda', 'servicos', 'delivery')) >= 2
+         and 'delivery' = any(coalesce(p_areas, '{}'::text[])) then 'completo'
+    when 'delivery' = any(coalesce(p_areas, '{}'::text[])) then 'padrao'
     when (select count(distinct a) from unnest(coalesce(p_areas, '{}'::text[])) a where a in ('agenda', 'servicos')) >= 2 then 'padrao'
-    when 'servicos' = any(coalesce(p_areas, '{}'::text[])) then 'chamar'
-    else 'padrao'
+    else 'basico'
   end
 $$;
 
+-- ia_turbo = "IA completa": qualquer negócio pode subir para o Matriz Completo (R$ 34,90 · 400 créditos)
 alter table public.estabelecimentos add column if not exists ia_turbo boolean not null default false;
 
--- a mensalidade acompanha as áreas: ligou o Delivery, passa a valer R$ 28,99; só Chamar, R$ 10,00
+create or replace function public.vibe_plano_do_negocio(p_areas text[], p_turbo boolean)
+returns text language sql immutable set search_path = public as $$
+  select case when coalesce(p_turbo, false) then 'completo' else public.vibe_plano_base(p_areas) end
+$$;
+
 create or replace function public.vibe_trg_mensalidade()
 returns trigger language plpgsql set search_path = public as $$
 begin
-  new.mensalidade := (select preco_mensal from public.assistente_planos where plano = public.vibe_plano_base(new.areas))
-                   + case when new.ia_turbo then (select preco_mensal from public.assistente_planos where plano = 'turbo') else 0 end;
+  new.mensalidade := (select preco_mensal from public.assistente_planos where plano = public.vibe_plano_do_negocio(new.areas, new.ia_turbo));
   return new;
 end $$;
 drop trigger if exists estab_mensalidade_por_areas on public.estabelecimentos;
 create trigger estab_mensalidade_por_areas before insert or update of areas, ia_turbo on public.estabelecimentos
   for each row execute function public.vibe_trg_mensalidade();
--- quem já existe também passa a ter o valor certo
-update public.estabelecimentos set areas = areas;
 
 -- uso por dia (creditos = total gasto no dia; do_pacote = quanto saiu de pacote avulso, que não conta na cota do mês)
 create table if not exists public.assistente_uso (
@@ -148,9 +148,9 @@ declare
   v_mes_usado integer; v_dia_usado integer; v_msg integer := 0; v_foto integer := 0; v_extras integer := 0;
 begin
   select pl.* into p from public.assistente_planos pl
-    join public.estabelecimentos e on pl.plano = case when e.ia_turbo then 'turbo' else public.vibe_plano_base(e.areas) end
+    join public.estabelecimentos e on pl.plano = public.vibe_plano_do_negocio(e.areas, e.ia_turbo)
     where e.id = p_estabelecimento_id;
-  if not found then select * into p from public.assistente_planos where plano = 'padrao'; end if;
+  if not found then select * into p from public.assistente_planos where plano = 'basico'; end if;
   select coalesce(sum(creditos - do_pacote), 0) into v_mes_usado from public.assistente_uso
     where estabelecimento_id = p_estabelecimento_id and dia >= v_mes;
   select coalesce(creditos, 0), coalesce(mensagens, 0), coalesce(fotos, 0) into v_dia_usado, v_msg, v_foto from public.assistente_uso

@@ -1,3 +1,5 @@
+> **Atualização:** a tabela vigente é 14,90 (1 forma, 80 créditos) · 21,90 (2 formas ou Delivery, 150) · 34,90 (Completo: Delivery + outra forma, ou "IA completa", 400). Os valores abaixo são da versão anterior (10 / 19,90 / 28,99).
+
 # Precificação — regras fechadas e conta de margem
 
 Regras definidas pelo dono (a cobrança ainda está desligada: o app segue grátis na fase de finalização).

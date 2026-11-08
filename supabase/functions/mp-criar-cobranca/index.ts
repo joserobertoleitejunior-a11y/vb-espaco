@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return resposta({ erro: "método não permitido" }, 405);
 
   // fase de finalização: nenhuma cobrança é criada. Pra voltar a cobrar
-  // (quando o app for finalizado, de R$ 10,00 a R$ 28,99/mês conforme o uso; valor vem de estabelecimentos.mensalidade), cadastra o secret
+  // (quando o app for finalizado, de R$ 14,90 a R$ 34,90/mês conforme o uso; valor vem de estabelecimentos.mensalidade), cadastra o secret
   // COBRANCA_ATIVA=sim no Supabase.
   if (Deno.env.get("COBRANCA_ATIVA") !== "sim") {
     return resposta({ erro: "A Matriz está em fase de finalização: tudo grátis, nenhuma taxa é cobrada agora." }, 403);
