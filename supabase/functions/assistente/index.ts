@@ -1,12 +1,12 @@
 // O "funcionário" do estabelecimento: o dono fala (ou escreve) o que quer e a IA
-// responde com UMA ação pra o app executar. Quem decide a ação é o Gemini; quem
+// responde com UMA ação pra o app executar. Quem decide a ação é o Claude; quem
 // executa é sempre o navegador do dono, com as RPCs que ele já tem permissão de
 // chamar. Esta função NÃO toca no banco: ela só entende o pedido.
 //
 // POST { texto, contexto: { nome_assistente, negocio, areas, resumo… } }
 //   → { fala, acao: { nome, args } | null }
 //
-// A chave do Gemini é secret do projeto (GEMINI_API_KEY) e nunca sai daqui.
+// A chave do Claude é secret do projeto (ANTHROPIC_API_KEY) e nunca sai daqui.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const CORS = {
@@ -17,119 +17,64 @@ const CORS = {
 const resp = (c: unknown, s = 200) => new Response(JSON.stringify(c), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 const erro = (m: string, s = 400) => resp({ erro: m }, s);
 
-// Os modelos 2.5 foram aposentados para contas novas (o Google responde 404 e indica os
-// substitutos). Corremos três ao mesmo tempo: o primeiro sai na hora, o segundo aos 2,5 s e o
-// terceiro aos 5 s — vale a primeira resposta boa. Assim um modelo lotado (503) não segura o dono.
-const MODELOS = [
-  Deno.env.get("GEMINI_MODELO") || "gemini-3.5-flash-lite",
-  "gemini-3.8-flash",
-  "gemini-flash-latest",
-];
-const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+// IA: Claude (Anthropic). A chave é o secret ANTHROPIC_API_KEY do projeto e nunca sai daqui.
+// Tenta o modelo rápido; se ele falhar por sobrecarga ou tempo, cai no reserva.
+const MODELO_CHAT = Deno.env.get("CLAUDE_MODELO") || "claude-haiku-5-5";
+const MODELO_RESERVA = "claude-sonnet-5-5";
+const URL_API = "https://api.anthropic.com/v1/messages";
 
-// O Google aposenta modelos de tempos em tempos (responde 404). Em vez de o app quebrar
-// esperando alguém trocar o nome na mão, ele pergunta ao próprio Google quais modelos esta
-// chave pode usar e passa a usar esses. A lista fica guardada enquanto a função está de pé.
-let descobertos: string[] | null = null;
-async function descobrirModelos(chave: string): Promise<string[]> {
-  if (descobertos) return descobertos;
-  try {
-    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", {
-      headers: { "x-goog-api-key": chave },
-      signal: AbortSignal.timeout(8000),
-    });
-    const d = await r.json().catch(() => null);
-    const nomes: string[] = (d?.models || [])
-      .filter((m: { supportedGenerationMethods?: string[] }) => (m.supportedGenerationMethods || []).includes("generateContent"))
-      .map((m: { name?: string }) => String(m.name || "").replace("models/", ""))
-      // fora o que não serve pra conversar: imagem, áudio, embeddings, experimentais
-      .filter((n: string) => /flash|pro/.test(n) && !/image|audio|tts|embedding|live|vision|exp|thinking/.test(n));
-    // os "lite" primeiro (respondem mais rápido), depois os flash comuns
-    nomes.sort((a, b) => (b.includes("lite") ? 1 : 0) - (a.includes("lite") ? 1 : 0));
-    console.log("assistente: modelos desta chave:", nomes.join(", ") || "(nenhum)");
-    descobertos = nomes.slice(0, 3);
-    return descobertos;
-  } catch (e) {
-    console.error("assistente: não consegui listar os modelos:", String(e));
-    return [];
-  }
-}
+type ErroIA = { status: number; motivo?: string };
 
-// Como pedir "pouco pensamento": os modelos 3.x usam thinkingLevel; os 2.x, thinkingBudget.
-// Se o modelo recusar (400), tentamos a próxima opção e, por último, sem a opção nenhuma.
-function opcoesPensar(modelo: string): (Record<string, unknown> | null)[] {
-  if (/gemini-3/.test(modelo)) return [{ thinkingLevel: "minimal" }, { thinkingLevel: "low" }, null];
-  return [{ thinkingBudget: 0 }, null];
-}
-
-async function umModelo(chave: string, modelo: string, corpo: Record<string, unknown>): Promise<string> {
-  let ultimo: { status: number; quota?: boolean } = { status: 0 };
-  for (const pensar of opcoesPensar(modelo)) {
-    const gc = { ...(corpo.generationConfig as Record<string, unknown>) };
-    delete gc.thinkingConfig;
-    if (pensar) gc.thinkingConfig = pensar;
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
-      body: JSON.stringify({ ...corpo, generationConfig: gc }),
-      signal: AbortSignal.timeout(12000),
-    });
-    if (r.ok) {
-      const d = await r.json().catch(() => null);
-      const texto = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
-      if (!texto) throw { status: 502 };
-      return texto;
-    }
-    const txt = (await r.text().catch(() => "")).slice(0, 300);
-    console.error("gemini", modelo, r.status, txt.slice(0, 160));
-    ultimo = { status: r.status, quota: r.status === 429 && /quota/i.test(txt) };
-    if (r.status !== 400) break;   // só o 400 (opção recusada) pede outra tentativa neste modelo
-  }
-  throw ultimo;
-}
-
-// Corre vários modelos: o primeiro sai na hora, o segundo aos 2,5 s, o terceiro aos 5 s.
-// Vale a primeira resposta boa — um modelo lotado não segura o dono.
-function corrida(chave: string, corpo: unknown, lista: string[]): Promise<{ texto: string } | { erroStatus: number; teve404: boolean; quota: boolean }> {
-  return new Promise((ok) => {
-    if (!lista.length) return ok({ erroStatus: 404, teve404: true, quota: false });
-    let falhas = 0, ultimo = 0, teve404 = false, quota = false, acabou = false;
-    const lancados = new Set<number>();
-    const lanca = (i: number) => {
-      if (acabou || lancados.has(i) || i >= lista.length) return;
-      lancados.add(i);
-      umModelo(chave, lista[i], corpo as Record<string, unknown>).then(
-        (texto) => { if (!acabou) { acabou = true; console.log("assistente: venceu", lista[i]); ok({ texto }); } },
-        (e) => {
-          const st = (e && e.status) || 0;
-          console.error("assistente: falhou", lista[i], st || String(e));
-          if (st === 404) teve404 = true; else if (st) ultimo = st;   // estouro de tempo (st 0) não apaga um 429 já visto
-          if (e && e.quota) quota = true;
-          falhas++;
-          lanca(i + 1);                                   // falhou: chama o próximo já
-          if (falhas >= lista.length && !acabou) { acabou = true; ok({ erroStatus: ultimo || (teve404 ? 404 : 503), teve404, quota }); }
-        },
-      );
-    };
-    lanca(0);
-    espera(2500).then(() => lanca(1));
-    espera(5000).then(() => lanca(2));
+async function chamar(chave: string, modelo: string, corpo: Record<string, unknown>): Promise<string> {
+  const r = await fetch(URL_API, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": chave, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ ...corpo, model: modelo }),
+    signal: AbortSignal.timeout(20000),
   });
+  if (r.ok) {
+    const d = await r.json().catch(() => null);
+    const t = (d?.content || []).filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("");
+    if (!t) throw { status: 502 };
+    return t;
+  }
+  const txt = (await r.text().catch(() => "")).slice(0, 300);
+  console.error("claude", modelo, r.status, txt.slice(0, 200));
+  throw { status: r.status, motivo: /credit balance|billing/i.test(txt) ? "saldo" : undefined };
 }
 
-async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number; quota?: boolean }> {
-  const r = await corrida(chave, corpo, descobertos || MODELOS);
-  if ("texto" in r) return r;
-  // algum nome de modelo não existe mais: pergunta ao Google quais existem e tenta de novo
-  if (r.teve404 && !descobertos) {
-    const lista = await descobrirModelos(chave);
-    if (lista.length) {
-      const r2 = await corrida(chave, corpo, lista);
-      if ("texto" in r2) return r2;
-      return { erroStatus: r2.erroStatus, quota: r2.quota };
+async function pedirAoClaude(chave: string, corpo: Record<string, unknown>): Promise<{ texto: string } | { erroStatus: number; motivo?: string }> {
+  let ultimo: ErroIA = { status: 0 };
+  for (const modelo of [MODELO_CHAT, MODELO_RESERVA]) {
+    try {
+      const texto = await chamar(chave, modelo, corpo);
+      console.log("assistente: respondeu", modelo);
+      return { texto };
+    } catch (e) {
+      ultimo = (e && typeof (e as ErroIA).status === "number") ? (e as ErroIA) : { status: 0 };
+      console.error("assistente: falhou", modelo, ultimo.status || String(e));
+      // erro nosso (chave, saldo, pedido inválido): trocar de modelo não ajuda
+      if ([400, 401, 402, 403].includes(ultimo.status)) break;
     }
   }
-  return { erroStatus: r.erroStatus, quota: r.quota };
+  return { erroStatus: ultimo.status || 503, motivo: ultimo.motivo };
+}
+
+// A API exige que a conversa comece pelo usuário e alterne os papéis.
+function montarConversa(hist: { de: string; texto: string }[] | undefined, texto: string): { role: string; content: string }[] {
+  const out: { role: string; content: string }[] = [];
+  for (const m of (hist || []).slice(-6)) {
+    const role = m.de === "eu" ? "user" : "assistant";
+    const content = String(m.texto || "").slice(0, 500).trim();
+    if (!content) continue;
+    if (!out.length && role === "assistant") continue;
+    if (out.length && out[out.length - 1].role === role) out[out.length - 1].content += "\n" + content;
+    else out.push({ role, content });
+  }
+  const ultimo = out[out.length - 1];
+  if (ultimo && ultimo.role === "user") { if (!ultimo.content.endsWith(texto)) ultimo.content += "\n" + texto; }
+  else out.push({ role: "user", content: texto });
+  return out;
 }
 
 const ACOES = `
@@ -177,35 +122,33 @@ nada                {}                     — só conversa, sem ação
 function instrucao(ctx: Record<string, unknown>) {
   const hoje = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
   const diaSemana = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long" }).format(new Date());
-  return `Você é ${ctx.nome_assistente || "o funcionário"}, o funcionário digital do estabelecimento "${ctx.negocio || ""}" no app Matriz. Fala com o DONO do negócio, em português do Brasil, do jeito mais simples possível — como um colega de trabalho, nunca como um robô.
+  const fixa = `Você é o funcionário digital de um estabelecimento no app Matriz. Fala com o DONO do negócio, em português do Brasil, do jeito mais simples possível — como um colega de trabalho, nunca como um robô.
 
-Responda SEMPRE em JSON: {"fala":"...","acao":{"nome":"...","args":{}}}
+Responda SEMPRE só com JSON puro, sem texto em volta e sem blocos de código: {"fala":"...","acao":{"nome":"...","args":{}}}
 - "fala": uma ou duas frases curtas, no máximo 220 caracteres. Sem emoji.
 - "acao": uma das ações abaixo, ou null quando for só conversa.
 
 Ações que você pode pedir:${ACOES}
 
-Hoje é ${hoje} (${diaSemana}). Use isso pra entender \"hoje\", \"amanhã\", \"sexta\" e mande a data em YYYY-MM-DD.
-
 Regras:
-- VOCÊ CONSEGUE FAZER TUDO o que o app faz: cada coisa tem uma ação na lista. Nunca diga que não consegue nem mande o dono fazer à mão se existe uma ação pra isso. Pra \"apagar tudo do cardápio\" use limpar_cardapio; pra apagar um item, remover_item; pra mudar preço, mudar_preco_item; pra marcar esgotado, disponibilidade_item.
-- Ações que apagam ou mexem em dinheiro: o app pede o \"sim\" do dono sozinho, então só mande a ação — sem perguntar de novo na fala.
-- Se faltar um dado (nome do item, preço, dia, hora), pergunte só o que falta e mande \"acao\": null.
+- VOCÊ CONSEGUE FAZER TUDO o que o app faz: cada coisa tem uma ação na lista. Nunca diga que não consegue nem mande o dono fazer à mão se existe uma ação pra isso. Pra "apagar tudo do cardápio" use limpar_cardapio; pra apagar um item, remover_item; pra mudar preço, mudar_preco_item; pra marcar esgotado, disponibilidade_item.
+- Ações que apagam ou mexem em dinheiro: o app pede o "sim" do dono sozinho, então só mande a ação — sem perguntar de novo na fala.
+- Se faltar um dado (nome do item, preço, dia, hora), pergunte só o que falta e mande "acao": null.
 - Nunca invente número de venda, preço ou nome de cliente. Se faltar informação, pergunte na "fala" e mande "acao": null.
 - Se o dono pedir algo que não está na lista, explique na "fala" o que dá pra fazer e mande "acao": null.
 - Para consultar qualquer número, use a ação "consultar": o app mostra os dados de verdade.
 - Nunca fale de chave, API, banco de dados nem de como o app funciona por dentro.
 - Se o dono quiser te dar outro nome, use "mudar_nome_funcionario".
-- Cardápio: se ele falar em montar, preencher, atualizar ou "editar o cardápio"
-  (ou a tabela de serviços), NÃO mande ele pra outra tela. Use
-  "pedir_foto_cardapio" e diga, na "fala", que ele pode mandar a foto do
-  cardápio pelo botão da câmera aqui do chat, que você lê e preenche.
-  Se ele quiser mexer num item específico, use mudar_preco_item, mudar_nome_item ou disponibilidade_item.
+- Cardápio: se ele falar em montar, preencher, atualizar ou "editar o cardápio" (ou a tabela de serviços), NÃO mande ele pra outra tela. Use "pedir_foto_cardapio" e diga, na "fala", que ele pode mandar a foto do cardápio pelo botão da câmera aqui do chat, que você lê e preenche. Se ele quiser mexer num item específico, use mudar_preco_item, mudar_nome_item ou disponibilidade_item.
 - VOCÊ NÃO EDITA O SITE (fotos, textos, estilo, cores, galeria, endereço do site): isso o dono faz na aba "Meu site", pelo editor. Se pedirem, explique isso em uma frase e mande "acao": null.
-- Gráficos e números: pra mostrar faturamento, semana, mês ou dashboard use "mostrar_dashboard" (o gráfico aparece no chat). Escolha o período mais próximo do que ele pediu.
+- Gráficos e números: pra mostrar faturamento, semana, mês ou dashboard use "mostrar_dashboard" (o gráfico aparece no chat). Escolha o período mais próximo do que ele pediu.`;
+  const variavel = `Seu nome é ${ctx.nome_assistente || "o funcionário"} e você trabalha no estabelecimento "${ctx.negocio || ""}".
+Hoje é ${hoje} (${diaSemana}). Use isso pra entender "hoje", "amanhã", "sexta" e mande a data em YYYY-MM-DD.
 
 O que está na tela agora (use para entender o pedido):
 ${JSON.stringify(ctx).slice(0, 3000)}`;
+  // o bloco fixo é igual pra todo mundo: a API guarda em cache e cobra bem menos nas próximas mensagens
+  return [{ type: "text", text: fixa, cache_control: { type: "ephemeral" } }, { type: "text", text: variavel }];
 }
 
 Deno.serve(async (req) => {
@@ -214,9 +157,9 @@ Deno.serve(async (req) => {
 
   // A chave vem de um campo que aceita várias linhas: um Enter ou um espaço
   // sem querer no fim entrava no endereço e a chamada estourava antes de sair.
-  // Tiramos tudo o que não é a chave, e ela vai no cabeçalho x-goog-api-key em
+  // Tiramos tudo o que não é a chave, e ela vai no cabeçalho x-api-key em
   // vez da URL — assim ela não aparece em log nenhum.
-  const chave = (Deno.env.get("GEMINI_API_KEY") || "").replace(/\s+/g, "");
+  const chave = (Deno.env.get("ANTHROPIC_API_KEY") || "").replace(/\s+/g, "");
   if (!chave) return erro("O funcionário ainda não foi ligado neste app.", 503);
 
   const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
@@ -242,32 +185,24 @@ Deno.serve(async (req) => {
     }
   }
 
-  const conversa = (corpo.historico || []).slice(-6).map((m) => ({
-    role: m.de === "eu" ? "user" : "model",
-    parts: [{ text: String(m.texto || "").slice(0, 500) }],
-  }));
-
   const t0 = Date.now();
-  const resposta = await pedirAoGemini(chave, {
-    systemInstruction: { parts: [{ text: instrucao(corpo.contexto || {}) }] },
-    // a variável é "texto": escrever só { text } procurava uma variável "text"
-    // que não existe, e a chamada morria antes de sair
-    contents: [...conversa, { role: "user", parts: [{ text: texto }] }],
-    generationConfig: { temperature: 0.2, maxOutputTokens: 900, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } },
+  const resposta = await pedirAoClaude(chave, {
+    system: instrucao(corpo.contexto || {}),
+    messages: montarConversa(corpo.historico, texto),
+    max_tokens: 700,
+    temperature: 0.2,
   });
-  console.log("assistente: gemini respondeu em", Date.now() - t0, "ms");
+  console.log("assistente: IA respondeu em", Date.now() - t0, "ms");
   if ("erroStatus" in resposta) {
     const s = resposta.erroStatus;
-    // dizemos a verdade: a fila é do Google, não é defeito do app nem do dono
-    if ("quota" in resposta && resposta.quota) return erro("A cota gratuita da IA (Google) acabou por agora. Ela volta sozinha quando renovar. Enquanto isso os botões do painel funcionam normalmente.", 503);
-    if (s === 429 || s === 503) return erro("A IA está congestionada neste momento. Espere uns segundos e peça de novo.", 503);
-    if (s === 404) return erro("O funcionário precisa de um ajuste técnico (o modelo de IA mudou de nome). Avise o suporte.", 503);
-    if (s === 400 || s === 401 || s === 403) return erro("O funcionário não está ligado direito neste app.", 503);
+    if (resposta.motivo === "saldo") return erro("O saldo da IA acabou. Avise o suporte para recarregar. Enquanto isso os botões do painel funcionam normalmente.", 503);
+    if (s === 401 || s === 403) return erro("O funcionário não está ligado direito neste app (chave da IA inválida). Avise o suporte.", 503);
+    if (s === 429 || s === 529 || s === 503 || s === 0) return erro("A IA está congestionada neste momento. Espere uns segundos e peça de novo.", 503);
     return erro("Não consegui falar com o funcionário agora.", 502);
   }
 
   let saida: { fala?: string; acao?: { nome?: string; args?: Record<string, unknown> } | null };
-  try { saida = JSON.parse(resposta.texto.replace(/^```(?:json)?|```$/g, "").trim()); } catch {
+  try { saida = JSON.parse(resposta.texto.slice(resposta.texto.indexOf("{"), resposta.texto.lastIndexOf("}") + 1)); } catch {
     return resp({ fala: "Não entendi direito. Pode falar de outro jeito?", acao: null });
   }
   const nome = saida.acao?.nome && /^[a-z_]{3,30}$/.test(saida.acao.nome) ? saida.acao.nome : null;

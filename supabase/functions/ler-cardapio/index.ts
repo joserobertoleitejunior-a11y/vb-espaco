@@ -1,7 +1,7 @@
 // Lê o cardápio (ou a lista de serviços) de uma FOTO e devolve os itens já
 // separados por categoria, com nome, descrição e preço — pro dono só conferir
-// e salvar. Quem lê a imagem é o Gemini; a chave fica aqui no servidor
-// (secret GEMINI_API_KEY), nunca no navegador.
+// e salvar. Quem lê a imagem é o Claude; a chave fica aqui no servidor
+// (secret ANTHROPIC_API_KEY), nunca no navegador.
 //
 // POST { imagem: "data:image/jpeg;base64,...", tipo?: "cardapio" | "servicos" }
 //   → { categorias: [{ nome, itens: [{ nome, descricao, preco }] }], promocoes: [{ nome, descricao, preco, qtd_sabores }], aviso? }
@@ -23,47 +23,48 @@ const erro = (msg: string, status = 400) => resp({ erro: msg }, status);
 // leve. Erro que não é congestionamento não melhora repetindo, então volta
 // na hora. Os nomes "latest" são apelidos do Google e não quebram quando
 // uma versão do modelo é aposentada.
-// Ler foto é trabalho pesado: aqui vamos em fila mesmo (um por vez), mas com
-// limite de tempo, pra um modelo lotado não deixar o dono esperando à toa.
-const MODELOS = [Deno.env.get("GEMINI_MODELO") || "gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5-flash-lite"];
-const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
-const LIMITE_BYTES = 6 * 1024 * 1024; // ~6 MB de imagem já é foto grande demais
+// IA: Claude (Anthropic), que lê imagem. A chave é o secret ANTHROPIC_API_KEY e nunca sai daqui.
+// Ler foto de cardápio é trabalho mais difícil que escolher uma ação: usa o modelo mais capaz;
+// se ele falhar por sobrecarga ou tempo, cai no modelo rápido.
+const MODELO_FOTO = Deno.env.get("CLAUDE_MODELO_FOTO") || "claude-sonnet-5-5";
+const MODELO_RESERVA = "claude-haiku-5-5";
+const URL_API = "https://api.anthropic.com/v1/messages";
+const LIMITE_BYTES = 4.5 * 1024 * 1024; // a API aceita até ~5 MB por imagem
 
-async function pedirAoGemini(chave: string, corpo: unknown): Promise<{ texto: string } | { erroStatus: number }> {
-  let status = 0;
-  for (const modelo of MODELOS) {
-    for (let n = 0; n < 2; n++) {
-      let r: Response;
-      try {
-        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": chave },
-          body: JSON.stringify(corpo),
-          signal: AbortSignal.timeout(50000), // ler foto demora, mas não pode ser pra sempre
-        });
-      } catch (e) {
-        console.error("fetch gemini falhou", modelo, String(e));
-        status = 0;
-        break; // estourou o tempo: vai pro próximo modelo
-      }
-      if (r.ok) {
-        const d = await r.json().catch(() => null);
-        return { texto: d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "" };
-      }
-      status = r.status;
-      console.error("gemini", modelo, r.status, (await r.text().catch(() => "")).slice(0, 300));
-      // o modelo não aceitou desligar o "pensamento": repete sem essa opção, em vez de falhar
-      if (status === 400 && (corpo as { generationConfig?: { thinkingConfig?: unknown } }).generationConfig?.thinkingConfig) {
-        delete (corpo as { generationConfig: { thinkingConfig?: unknown } }).generationConfig.thinkingConfig;
-        n--; continue;
-      }
-      if (status === 404) break;   // modelo aposentado: tenta o próximo nome, não insiste neste
-      if (status !== 429 && status !== 503 && status < 500) return { erroStatus: status };
-      if (status === 503 || status === 429) break; // lotado: troca de modelo na hora
-      await espera(400 * (n + 1));
+type ErroIA = { status: number; motivo?: string };
+
+async function chamar(chave: string, modelo: string, corpo: Record<string, unknown>): Promise<string> {
+  const r = await fetch(URL_API, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": chave, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ ...corpo, model: modelo }),
+    signal: AbortSignal.timeout(55000),
+  });
+  if (r.ok) {
+    const d = await r.json().catch(() => null);
+    const t = (d?.content || []).filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("");
+    if (!t) throw { status: 502 };
+    return t;
+  }
+  const txt = (await r.text().catch(() => "")).slice(0, 300);
+  console.error("claude", modelo, r.status, txt.slice(0, 200));
+  throw { status: r.status, motivo: /credit balance|billing/i.test(txt) ? "saldo" : undefined };
+}
+
+async function pedirAoClaude(chave: string, corpo: Record<string, unknown>): Promise<{ texto: string } | { erroStatus: number; motivo?: string }> {
+  let ultimo: ErroIA = { status: 0 };
+  for (const modelo of [MODELO_FOTO, MODELO_RESERVA]) {
+    try {
+      const texto = await chamar(chave, modelo, corpo);
+      console.log("ler-cardapio: respondeu", modelo);
+      return { texto };
+    } catch (e) {
+      ultimo = (e && typeof (e as ErroIA).status === "number") ? (e as ErroIA) : { status: 0 };
+      console.error("ler-cardapio: falhou", modelo, ultimo.status || String(e));
+      if ([400, 401, 402, 403].includes(ultimo.status)) break; // erro nosso: trocar de modelo não ajuda
     }
   }
-  return { erroStatus: status };
+  return { erroStatus: ultimo.status || 503, motivo: ultimo.motivo };
 }
 
 function instrucao(tipo: string) {
@@ -96,8 +97,8 @@ Deno.serve(async (req) => {
   // sem querer no fim entrava no endereço e a chamada estourava antes de sair.
   // Tiramos tudo o que não é a chave, e ela vai no cabeçalho x-goog-api-key em
   // vez da URL — assim ela não aparece em log nenhum.
-  const chave = (Deno.env.get("GEMINI_API_KEY") || "").replace(/\s+/g, "");
-  if (!chave) { console.error("ler-cardapio: sem GEMINI_API_KEY"); return erro("A leitura por foto ainda não foi ligada neste app.", 503); }
+  const chave = (Deno.env.get("ANTHROPIC_API_KEY") || "").replace(/\s+/g, "");
+  if (!chave) { console.error("ler-cardapio: sem ANTHROPIC_API_KEY"); return erro("A leitura por foto ainda não foi ligada neste app.", 503); }
 
   // só dono logado usa (a chamada gasta cota)
   const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
     else if (uso && uso.ok === false) return erro(String(uso.mensagem || "Seus créditos de IA acabaram por agora. Dá pra cadastrar os itens pelo painel."), 429);
   }
 
-  const m = /^data:(image\/(?:jpeg|png|webp|heic|heif));base64,([A-Za-z0-9+/=]+)$/.exec(img);
+  const m = /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/.exec(img);
   if (!m) {
     console.error("ler-cardapio: formato recusado", img.slice(0, 48));
     return erro("Mande uma foto (JPG, PNG ou WebP).");
@@ -136,20 +137,26 @@ Deno.serve(async (req) => {
     return erro("Foto muito pesada — tire de mais perto ou mande em partes.");
   }
 
-  const resposta = await pedirAoGemini(chave, {
-    contents: [{ parts: [{ text: instrucao(corpo.tipo || "cardapio") }, { inline_data: { mime_type: m[1], data: m[2] } }] }],
-    // foto de cardápio é difícil (letra pequena, colunas): um pouco de "pensamento" melhora a leitura
-    generationConfig: { temperature: 0, maxOutputTokens: 8192, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 512 } },
+  const resposta = await pedirAoClaude(chave, {
+    system: instrucao(corpo.tipo || "cardapio"),
+    messages: [{ role: "user", content: [
+      { type: "image", source: { type: "base64", media_type: m[1], data: m[2] } },
+      { type: "text", text: "Leia esta foto e responda só com o JSON." },
+    ] }],
+    max_tokens: 8192,
+    temperature: 0,
   });
   if ("erroStatus" in resposta) {
     const s = resposta.erroStatus;
-    if (s === 429 || s === 503) return erro("A IA está congestionada neste momento. Espere uns segundos e mande a foto de novo.", 503);
-    if (s === 400 || s === 401 || s === 403) return erro("A leitura por foto não está ligada direito neste app.", 503);
+    if (resposta.motivo === "saldo") return erro("O saldo da IA acabou. Avise o suporte para recarregar. Enquanto isso dá pra cadastrar os itens pelo painel.", 503);
+    if (s === 401 || s === 403) return erro("A leitura por foto não está ligada direito neste app (chave da IA inválida). Avise o suporte.", 503);
+    if (s === 429 || s === 529 || s === 503 || s === 0) return erro("A IA está congestionada neste momento. Espere uns segundos e mande a foto de novo.", 503);
+    if (s === 400) return erro("Não consegui abrir essa foto. Tente tirar outra, em JPG ou PNG.");
     return erro("Não consegui falar com o leitor de fotos agora.", 502);
   }
 
   let lido: { categorias?: { nome?: string; itens?: { nome?: string; descricao?: string; preco?: unknown }[] }[]; promocoes?: { nome?: string; descricao?: string; preco?: unknown; qtd_sabores?: unknown }[]; extras?: { nome?: string; preco?: unknown }[] };
-  try { lido = JSON.parse(resposta.texto.replace(/^```(?:json)?|```$/g, "").trim()); } catch {
+  try { lido = JSON.parse(resposta.texto.slice(resposta.texto.indexOf("{"), resposta.texto.lastIndexOf("}") + 1)); } catch {
     console.error("ler-cardapio: a IA não devolveu JSON", resposta.texto.slice(0, 200));
     return erro("Não consegui ler essa foto. Tente uma mais nítida.");
   }
