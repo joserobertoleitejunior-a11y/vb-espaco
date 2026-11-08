@@ -329,16 +329,102 @@
         return rpc('tenant_admin_remover_staff', com({ p_id: c.um.id })).then(function () { cx.recarregar('agenda'); return c.um.nome + ' saiu da equipe.'; });
       });
     };
+    /* ---- horário de funcionamento: vários dias de uma vez, turnos, agenda e delivery ---- */
+    var ORDEM_DIAS = [1, 2, 3, 4, 5, 6, 0];
+    var SIGLA_DIA = { dom: 0, seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6 };
+    var NOME_DIA_BOT = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    var CURTO_DIA_BOT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+    // "segunda a sexta", "terça e quinta", "fim de semana", "todos os dias", ["sexta","sábado"] → [1,2,3,4,5] …
+    function diasDe(t) {
+      if (Array.isArray(t)) t = t.join(' e ');
+      t = norm(t).replace(/-feira/g, '').replace(/feiras?/g, '');
+      if (!t) return [];
+      if (/todo|diari|sempre|toda a semana/.test(t)) return ORDEM_DIAS.slice();
+      if (/fim de semana|final de semana|fds/.test(t)) return [6, 0];
+      if (/dias? uteis/.test(t)) return [1, 2, 3, 4, 5];
+      var re = /(dom|seg|ter|qua|qui|sex|sab)[a-z]*/g, m, achados = [];
+      while ((m = re.exec(t))) achados.push({ d: SIGLA_DIA[m[1]], ini: m.index, fim: m.index + m[0].length });
+      var out = {};
+      achados.forEach(function (x, k) {
+        out[x.d] = true;
+        var prox = achados[k + 1];
+        // "segunda A sexta" / "segunda ATE sexta": vale o intervalo inteiro (a semana vai de segunda a domingo)
+        if (prox && /(^|\s)(a|as|ate)(\s|$)/.test(t.slice(x.fim, prox.ini))) {
+          var a0 = ORDEM_DIAS.indexOf(x.d), b0 = ORDEM_DIAS.indexOf(prox.d);
+          for (var n = a0; ; n = (n + 1) % 7) { out[ORDEM_DIAS[n]] = true; if (n === b0) break; }
+        }
+      });
+      return ORDEM_DIAS.filter(function (d) { return out[d]; });
+    }
+    // aceita {abre, fecha} ou {turnos: [["11:00","14:00"], ["18:00","23:00"]]}
+    function turnosDe(a) {
+      var l = [], ab, fe;
+      if (Array.isArray(a.turnos)) {
+        a.turnos.slice(0, 3).forEach(function (t) {
+          var x = Array.isArray(t) ? t : [t && t.abre, t && t.fecha]; ab = hora(x[0]); fe = hora(x[1]);
+          if (ab && fe) l.push([ab, fe]);
+        });
+      } else if (a.abre != null || a.fecha != null) { ab = hora(a.abre); fe = hora(a.fecha); if (ab && fe) l.push([ab, fe]); }
+      return l;
+    }
+    function horaBonita(h) { if (h === '00:00') return 'meia-noite'; var p = h.split(':'); return Number(p[0]) + 'h' + (p[1] === '00' ? '' : p[1]); }
+    function diasTexto(dias) {
+      if (dias.length === 7) return 'Todos os dias';
+      var runs = [], atual = null;
+      ORDEM_DIAS.forEach(function (d) {
+        if (dias.indexOf(d) === -1) { atual = null; return; }
+        if (atual) atual.push(d); else { atual = [d]; runs.push(atual); }
+      });
+      var partes = runs.map(function (r) {
+        var n = function (d) { return NOME_DIA_BOT[d]; };
+        return r.length === 1 ? n(r[0]) : r.length === 2 ? n(r[0]) + ' e ' + n(r[1]) : CURTO_DIA_BOT[r[0]] + ' a ' + CURTO_DIA_BOT[r[r.length - 1]];
+      });
+      var t = partes.length > 1 ? partes.slice(0, -1).join(', ') + ' e ' + partes[partes.length - 1] : partes[0];
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    }
     A.horario_funcionamento = function (a) {
-      so(temAgenda, 'Este negócio não tem agenda.');
-      var nomes = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-      var dia = nomes.indexOf(norm(a.dia).replace(/-feira$/, '').replace(/s$/, ''));
-      so(dia !== -1, 'Qual dia da semana?');
+      so(temAgenda || temPedidos, 'Este negócio não tem horário pra mexer.');
+      var dias = diasDe(a.dias != null ? a.dias : a.dia);
+      so(dias.length, 'Quais dias? Por exemplo: segunda a sexta, ou todos os dias.');
       var fechado = a.fechado === true || /^(true|sim|s|1)$/i.test(String(a.fechado));
-      var abre = fechado ? '09:00' : hora(a.abre), fecha = fechado ? '18:00' : hora(a.fecha);
-      so(fechado || (abre && fecha), 'Diga que horas abre e fecha. Por exemplo 09:00 às 18:00.');
-      return rpc('tenant_admin_salvar_horario', com({ p_dia_semana: dia, p_abre: abre, p_fecha: fecha, p_fechado: fechado }))
-        .then(function () { return fechado ? 'Fechado na ' + nomes[dia] + '.' : 'Na ' + nomes[dia] + ' agora abre às ' + abre + ' e fecha às ' + fecha + '.'; });
+      var turnos = fechado ? [] : turnosDe(a);
+      so(fechado || turnos.length, 'Diga que horas abre e fecha. Por exemplo: das 18h às 23h.');
+      so(!turnos.some(function (t) { return t[0] === t[1]; }), 'Abre e fecha na mesma hora? Me diga o horário certo.');
+      var texto = fechado ? diasTexto(dias) + ': fechado.' : diasTexto(dias) + ': ' + turnos.map(function (t) { return horaBonita(t[0]) + ' às ' + horaBonita(t[1]); }).join(' e ') + '.';
+      var passos = [];
+
+      // Agenda: um horário por dia (linhas de tenant_business_hours)
+      var agenda = !temAgenda ? Promise.resolve() : (function () {
+        so(turnos.length <= 1, 'A agenda aceita um horário por dia. Qual deles vale?');
+        return rpc('tenant_listar_horarios', E).then(function (linhas) {
+          var antes = {}; (linhas || []).forEach(function (l) { antes[l.dia_semana] = l; });
+          var volta = [];
+          return dias.reduce(function (pr, d) {
+            return pr.then(function () {
+              var o = antes[d], abre = fechado ? String((o && o.abre) || '09:00').slice(0, 5) : turnos[0][0], fecha = fechado ? String((o && o.fecha) || '18:00').slice(0, 5) : turnos[0][1];
+              volta.push({ rpc: 'tenant_admin_salvar_horario', args: { p_estabelecimento_id: id, p_dia_semana: d, p_abre: o ? String(o.abre).slice(0, 5) : '09:00', p_fecha: o ? String(o.fecha).slice(0, 5) : '18:00', p_fechado: o ? !!o.fechado : true } });
+              return rpc('tenant_admin_salvar_horario', com({ p_dia_semana: d, p_abre: abre, p_fecha: fecha, p_fechado: fechado }));
+            });
+          }, Promise.resolve()).then(function () { passos = passos.concat(volta); cx.recarregar('agenda'); });
+        });
+      })();
+
+      // Delivery: o horário da loja é um objeto "dia → faixas" (aceita vários turnos)
+      return agenda.then(function () {
+        if (!temPedidos) return null;
+        return lojaAtual().then(function (l) {
+          var h = JSON.parse(JSON.stringify(l.horarios || {}));
+          dias.forEach(function (d) { if (fechado) delete h[d]; else h[d] = turnos; });
+          so(Object.keys(h).length, 'Assim a loja ficaria sem nenhum dia aberto, e o site entenderia que abre sempre. Deixe pelo menos um dia aberto.');
+          return rpc('delivery_admin_atualizar_estabelecimento', { p_id: id, p_campos: { horarios: h } }).then(function () {
+            passos.push({ rpc: 'delivery_admin_atualizar_estabelecimento', args: { p_id: id, p_campos: { horarios: l.horarios || {} } } });
+            cx.recarregar('pedidos');
+          });
+        });
+      }).then(function () {
+        if (passos.length) guardar('Voltar os horários como estavam', passos);
+        return texto;
+      });
     };
 
     /* ---------------- promoções, recados, vendas ---------------- */

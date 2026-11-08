@@ -30,6 +30,8 @@ function bancoFalso() {
     tenant_admin_salvar_staff: (a) => { s.equipe.push({ id: nid(), nome: a.p_nome }); },
     tenant_admin_criar_agendamento: (a) => { s.agend.push(a); },
     tenant_admin_salvar_horario: (a) => { s.horarios.push(a); },
+    tenant_listar_horarios: () => (s.horariosBanco || []).slice(),
+    delivery_admin_meus_estabelecimentos: () => [Object.assign({ id: 'e1' }, s.loja)],
     tenant_admin_publicar_promocao: (a) => { s.promos.push({ id: nid(), titulo: a.p_titulo }); },
     tenant_admin_listar_vendas_hoje: () => s.vendas.slice(),
     tenant_admin_remover_venda: (a) => { s.vendas = s.vendas.filter(v => v.id !== a.p_id); },
@@ -99,6 +101,30 @@ const erro = (p) => p.then(() => null, (e) => e.message);
   checa('horario_funcionamento: sábado = dia 6', s.horarios[0].p_dia_semana === 6 && s.horarios[0].p_abre === '09:00' && s.horarios[0].p_fecha === '14:00');
   await A.horario_funcionamento({ dia: 'domingo', fechado: true });
   checa('horario_funcionamento: domingo fechado', s.horarios[1].p_dia_semana === 0 && s.horarios[1].p_fechado === true);
+  // horário em lote: intervalos de dias, turnos, delivery e agenda
+  { const sd = bancoFalso(); const volta = []; const Ad = montar(sd, { areas: ['delivery'], registrarDesfazer: (d) => volta.push(d) });
+    sd.loja.horarios = { 0: [['13:00', '22:00']], 6: [['13:00', '22:00']] };
+    let tx = await Ad.horario_funcionamento({ dias: 'segunda a sexta', abre: '18h', fecha: '23:00' });
+    checa('horário: "segunda a sexta" grava os 5 dias do delivery', ['1', '2', '3', '4', '5'].every(d => JSON.stringify(sd.loja.horarios[d]) === '[["18:00","23:00"]]') && sd.loja.horarios[6] && !sd.agenda, tx);
+    checa('horário: o texto diz os dias em português', /^Seg a sex: 18h às 23h\.$/.test(tx), tx);
+    checa('horário: guarda como desfazer o que existia antes', volta.length === 1 && volta[0].passos[0].args.p_campos.horarios[0][0][0] === '13:00');
+    tx = await Ad.horario_funcionamento({ dias: 'fim de semana', fechado: true });
+    checa('horário: "fim de semana" fechado tira sábado e domingo', !('6' in sd.loja.horarios) && !('0' in sd.loja.horarios) && '1' in sd.loja.horarios, tx);
+    tx = await Ad.horario_funcionamento({ dias: 'todos os dias', turnos: [['11:00', '14:00'], ['18:00', '00:00']] });
+    checa('horário: dois turnos por dia (almoço e jantar)', Object.keys(sd.loja.horarios).length === 7 && sd.loja.horarios[3].length === 2 && sd.loja.horarios[3][1][1] === '00:00', tx);
+    checa('horário: meia-noite sai por extenso', /meia-noite/.test(tx), tx);
+    checa('horário: terça e quinta', (await Ad.horario_funcionamento({ dias: 'terça e quinta', abre: '10', fecha: '15' })) === 'Terça e quinta: 10h às 15h.');
+    checa('horário: abre = fecha é recusado', /mesma hora/.test(await erro(Ad.horario_funcionamento({ dias: 'sexta', abre: '10:00', fecha: '10:00' }))));
+    checa('horário: sem dia, pergunta qual', /Quais dias/.test(await erro(Ad.horario_funcionamento({ abre: '10', fecha: '12' }))));
+    checa('horário: não deixa a loja sem nenhum dia aberto', /nenhum dia aberto/.test(await erro(Ad.horario_funcionamento({ dias: 'todos os dias', fechado: true }))));
+  }
+  { const sa = bancoFalso(); sa.horariosBanco = [{ dia_semana: 2, abre: '09:00:00', fecha: '17:00:00', fechado: false }]; const volta = [];
+    const Aa = montar(sa, { areas: ['agenda'], registrarDesfazer: (d) => volta.push(d) });
+    await Aa.horario_funcionamento({ dias: 'terça e quinta', abre: '10', fecha: '19' });
+    checa('horário (agenda): uma chamada por dia', sa.horarios.length === 2 && sa.horarios[0].p_dia_semana === 2 && sa.horarios[1].p_dia_semana === 4 && sa.horarios[1].p_abre === '10:00');
+    checa('horário (agenda): desfazer devolve terça e deixa quinta fechada', volta[0].passos.length === 2 && volta[0].passos[0].args.p_abre === '09:00' && volta[0].passos[1].args.p_fechado === true);
+    checa('horário (agenda): dois turnos não cabem', /um horário por dia/.test(await erro(Aa.horario_funcionamento({ dias: 'sexta', turnos: [['9', '12'], ['14', '18']] }))));
+  }
   checa('negócio sem agenda não agenda', /não tem agenda/.test(await erro(montar(bancoFalso(), { areas: ['delivery'] }).criar_agendamento({ cliente: 'X', dia: 'hoje', horario: '10:00' }))));
 
   // promoção, venda, tour

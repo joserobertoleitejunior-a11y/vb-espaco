@@ -2348,41 +2348,29 @@
   // ---- passo "horário" (editor): cada dia com aberto/fechado e o horário;
   // salva sozinho a cada mudança ----
   function renderPassoEdicaoHorario(caixa, ctx) {
-    var porDia = {};
-    horariosCache.forEach(function (h) { porDia[h.dia_semana] = h; });
-    var ordem = [1, 2, 3, 4, 5, 6, 0];
-    caixa.innerHTML = '<div class="vbh-lista">' + ordem.map(function (d) {
-      var h = porDia[d] || { abre: '08:00', fecha: '18:00', fechado: d === 0 };
-      return '<div class="vbh-dia' + (h.fechado ? ' fechado' : '') + '" data-dia="' + d + '">' +
-        '<label class="vbh-chave"><input type="checkbox" data-aberto' + (h.fechado ? '' : ' checked') + '><span>' + NOMES_DIA[d] + '</span></label>' +
-        '<span class="vbh-horas"><input type="time" data-abre value="' + String(h.abre).slice(0, 5) + '"> – <input type="time" data-fecha value="' + String(h.fecha).slice(0, 5) + '"></span>' +
-        '<span class="vbh-fechado-txt">Fechado</span></div>';
-    }).join('') + '</div>' +
-      '<button type="button" class="vbh-copiar" data-copiar>Usar o horário de segunda em todos os dias abertos</button>';
-    function salvarDia(linha) {
-      var aberto = linha.querySelector('[data-aberto]').checked;
-      linha.classList.toggle('fechado', !aberto);
-      ctx.salvo('Salvando…');
-      return db.rpc('tenant_admin_salvar_horario', {
-        p_estabelecimento_id: estabId, p_dia_semana: Number(linha.getAttribute('data-dia')),
-        p_abre: linha.querySelector('[data-abre]').value || '08:00', p_fecha: linha.querySelector('[data-fecha]').value || '18:00', p_fechado: !aberto
-      }).then(function (res) {
-        if (res.error) { ctx.salvo(res.error.message, true); return; }
-        var d = Number(linha.getAttribute('data-dia'));
-        horariosCache = horariosCache.filter(function (h) { return h.dia_semana !== d; }).concat([{ dia_semana: d, abre: linha.querySelector('[data-abre]').value, fecha: linha.querySelector('[data-fecha]').value, fechado: !aberto }]);
-        ctx.salvo('Salvo');
-        carregarHorarioRodape();
-      }, function () { ctx.salvo('Sem conexão — tente de novo', true); });
-    }
-    caixa.querySelectorAll('.vbh-dia').forEach(function (linha) {
-      linha.querySelectorAll('input').forEach(function (inp) { inp.addEventListener('change', function () { salvarDia(linha); }); });
-    });
-    caixa.querySelector('[data-copiar]').addEventListener('click', function () {
-      var seg = caixa.querySelector('.vbh-dia[data-dia="1"]');
-      var a = seg.querySelector('[data-abre]').value, f = seg.querySelector('[data-fecha]').value;
-      var linhas = Array.prototype.filter.call(caixa.querySelectorAll('.vbh-dia'), function (l) { return l !== seg && l.querySelector('[data-aberto]').checked; });
-      linhas.forEach(function (l) { l.querySelector('[data-abre]').value = a; l.querySelector('[data-fecha]').value = f; });
-      linhas.reduce(function (pr, l) { return pr.then(function () { return salvarDia(l); }); }, Promise.resolve());
+    if (!window.VBHorarios) { caixa.textContent = 'Não consegui abrir o editor de horários. Recarregue a página.'; return; }
+    // a agenda guarda um horário por dia (linha em tenant_business_hours); o editor novo fala "dia → faixas"
+    var valor = {};
+    horariosCache.forEach(function (h) { if (!h.fechado) valor[h.dia_semana] = [[String(h.abre).slice(0, 5), String(h.fecha).slice(0, 5)]]; });
+    window.VBHorarios.montar(caixa, {
+      valor: valor, multiplos: false,
+      aoMudar: function (novo, dias) {
+        ctx.salvo('Salvando…');
+        dias.reduce(function (pr, d) {
+          return pr.then(function () {
+            var faixa = novo[d] && novo[d][0];
+            var antes = horariosCache.filter(function (h) { return h.dia_semana === d; })[0] || {};
+            var abre = faixa ? faixa[0] : String(antes.abre || '09:00').slice(0, 5), fecha = faixa ? faixa[1] : String(antes.fecha || '18:00').slice(0, 5);
+            return db.rpc('tenant_admin_salvar_horario', { p_estabelecimento_id: estabId, p_dia_semana: d, p_abre: abre, p_fecha: fecha, p_fechado: !faixa }).then(function (res) {
+              if (res.error) throw new Error(res.error.message);
+              horariosCache = horariosCache.filter(function (h) { return h.dia_semana !== d; }).concat([{ dia_semana: d, abre: abre, fecha: fecha, fechado: !faixa }]);
+            });
+          });
+        }, Promise.resolve()).then(function () {
+          ctx.salvo('Salvo');
+          carregarHorarioRodape();
+        }, function (e) { ctx.salvo((e && e.message) || 'Sem conexão — tente de novo', true); });
+      }
     });
   }
 

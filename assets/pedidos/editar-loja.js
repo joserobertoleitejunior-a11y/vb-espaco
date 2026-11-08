@@ -359,32 +359,11 @@
   }
 
   function passoHorario(caixa) {
-    var h = estab().horarios || {};
-    caixa.innerHTML = '<div class="vb-ed-horarios">' + DIAS.map(function (d) {
-      var faixa = (h[String(d)] || [])[0];
-      return '<div class="vb-ed-hor" data-dia="' + d + '">' +
-        '<label class="vb-ed-switch"><input type="checkbox" data-aberto' + (faixa ? ' checked' : '') + '><span>' + NOME_DIA[d] + '</span></label>' +
-        '<input type="time" data-abre value="' + (faixa ? faixa[0] : '08:00') + '"' + (faixa ? '' : ' disabled') + ' aria-label="Abre às">' +
-        '<input type="time" data-fecha value="' + (faixa ? faixa[1] : '18:00') + '"' + (faixa ? '' : ' disabled') + ' aria-label="Fecha às"></div>';
-    }).join('') + '</div><button type="button" class="btn btn-ghost vb-ed-sec" id="vbEdCopiarHor" style="width:100%; margin-top:0.6rem;">Usar o horário de segunda em todos</button>';
-    function ler() {
-      var r = {};
-      caixa.querySelectorAll('.vb-ed-hor').forEach(function (l) {
-        var on = l.querySelector('[data-aberto]').checked;
-        l.querySelectorAll('input[type="time"]').forEach(function (t) { t.disabled = !on; });
-        var a = l.querySelector('[data-abre]').value, f = l.querySelector('[data-fecha]').value;
-        if (on && a && f) r[l.getAttribute('data-dia')] = [[a, f]];
-      });
-      return r;
-    }
-    caixa.addEventListener('change', function (e) { if (e.target.closest('.vb-ed-hor')) salvarLoja({ horarios: ler() }); });
-    $('vbEdCopiarHor').addEventListener('click', function () {
-      var seg = caixa.querySelector('.vb-ed-hor[data-dia="1"]');
-      var on = seg.querySelector('[data-aberto]').checked, a = seg.querySelector('[data-abre]').value, f = seg.querySelector('[data-fecha]').value;
-      caixa.querySelectorAll('.vb-ed-hor').forEach(function (l) {
-        l.querySelector('[data-aberto]').checked = on; l.querySelector('[data-abre]').value = a; l.querySelector('[data-fecha]').value = f;
-      });
-      salvarLoja({ horarios: ler() });
+    if (!window.VBHorarios) { caixa.textContent = 'Não consegui abrir o editor de horários. Recarregue a página.'; return; }
+    window.VBHorarios.montar(caixa, {
+      valor: estab().horarios || {}, multiplos: true,
+      // salva sozinho a cada mudança (o próprio componente espera a pessoa parar de mexer)
+      aoMudar: function (valor) { salvarLoja({ horarios: valor }); }
     });
   }
 

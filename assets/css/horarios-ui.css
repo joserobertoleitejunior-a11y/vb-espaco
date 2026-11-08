@@ -1,0 +1,66 @@
+/* Editor de horários (assets/js/horarios-ui.js) */
+.vbh2 { --h-tinta: #1f2024; --h-suave: #6b6d75; --h-linha: #e9e9ee; --h-fundo: #f6f6f8; --h-ouro: #C9A227; --h-verde: #17784b; --h-vermelho: #b3261e; display: flex; flex-direction: column; gap: 0.8rem; color: var(--h-tinta); }
+
+/* resumo + situação: o dono vê, sem abrir nada, como o cliente vai ver */
+.vbh2-cab { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.8rem 0.9rem; border-radius: 16px; background: var(--h-fundo); border: 1px solid var(--h-linha); }
+.vbh2-ico { flex: 0 0 auto; display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #fff; color: var(--h-suave); box-shadow: inset 0 0 0 1px var(--h-linha); }
+.vbh2-cab.aberto .vbh2-ico { background: #e4f5ec; color: var(--h-verde); box-shadow: none; }
+.vbh2-cab.fechado .vbh2-ico { background: #fbeceb; color: var(--h-vermelho); box-shadow: none; }
+.vbh2-cab b { display: block; font-size: 0.95rem; letter-spacing: -0.01em; }
+.vbh2-cab.aberto b { color: var(--h-verde); }
+.vbh2-cab.fechado b { color: var(--h-vermelho); }
+.vbh2-cab p { margin: 0.15rem 0 0; font-size: 0.82rem; line-height: 1.4; color: var(--h-suave); }
+
+/* atalhos de dias */
+.vbh2-presets { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.vbh2-presets span { flex: 1 0 100%; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--h-suave); }
+.vbh2-presets button { flex: 0 0 auto; min-height: 2.4rem; padding: 0.4rem 0.85rem; border: 1.5px solid var(--h-linha); border-radius: 999px; background: #fff; color: var(--h-tinta); font: inherit; font-size: 0.84rem; font-weight: 700; cursor: pointer; }
+.vbh2-presets button:active { transform: scale(0.97); background: var(--h-fundo); }
+
+/* um cartão por dia */
+.vbh2-dias { display: flex; flex-direction: column; gap: 0.5rem; }
+.vbh2-dia { border: 1.5px solid var(--h-linha); border-radius: 16px; background: #fff; overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s; }
+.vbh2-dia.aberto { border-color: var(--h-tinta); box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.35); }
+.vbh2-dia.ruim { border-color: var(--h-vermelho); }
+.vbh2-topo { display: flex; align-items: center; gap: 0.7rem; padding: 0.55rem 0.7rem 0.55rem 0.8rem; min-height: 3.4rem; }
+.vbh2-nome { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0.05rem; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.vbh2-nome b { font-size: 0.98rem; letter-spacing: -0.01em; }
+.vbh2-nome span { font-size: 0.84rem; color: var(--h-suave); }
+.vbh2-dia.on .vbh2-nome span { color: var(--h-tinta); font-weight: 600; }
+.vbh2-dia:not(.on) .vbh2-nome { cursor: default; }
+.vbh2-dia:not(.on) .vbh2-nome b { color: var(--h-suave); }
+.vbh2-dia.ruim .vbh2-nome span { color: var(--h-vermelho); }
+.vbh2-seta { flex: 0 0 auto; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border: 0; border-radius: 50%; background: var(--h-fundo); color: var(--h-tinta); cursor: pointer; transition: transform 0.2s; }
+.vbh2-dia.aberto .vbh2-seta { transform: rotate(180deg); }
+
+/* chave liga/desliga */
+.vbh2-chave { position: relative; flex: 0 0 auto; width: 3rem; height: 1.8rem; cursor: pointer; }
+.vbh2-chave input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 2; }
+.vbh2-chave i { position: absolute; inset: 0; border-radius: 999px; background: #d4d5db; transition: background 0.2s; }
+.vbh2-chave i::after { content: ''; position: absolute; top: 3px; left: 3px; width: calc(1.8rem - 6px); height: calc(1.8rem - 6px); border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.2s; }
+.vbh2-chave input:checked + i { background: var(--h-tinta); }
+.vbh2-chave input:checked + i::after { transform: translateX(1.2rem); }
+.vbh2-chave input:focus-visible + i { outline: 2px solid var(--h-ouro); outline-offset: 2px; }
+
+/* editor do dia */
+.vbh2-corpo { padding: 0.2rem 0.8rem 0.8rem; border-top: 1px dashed var(--h-linha); }
+.vbh2-turno { padding-top: 0.7rem; }
+.vbh2-turno + .vbh2-turno { margin-top: 0.4rem; border-top: 1px solid var(--h-linha); }
+.vbh2-turno-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--h-suave); }
+.vbh2-x { padding: 0.2rem 0.5rem; border: 0; background: none; color: var(--h-vermelho); font: inherit; font-size: 0.82rem; font-weight: 700; text-transform: none; letter-spacing: 0; cursor: pointer; }
+.vbh2-par { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.vbh2-hora { min-width: 0; }
+.vbh2-rot { display: block; margin: 0 0 0.25rem 0.2rem; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--h-suave); }
+.vbh2-passo { display: flex; align-items: stretch; border: 1.5px solid var(--h-linha); border-radius: 14px; background: var(--h-fundo); overflow: hidden; }
+.vbh2-mm { flex: 0 0 2.6rem; min-height: 3rem; border: 0; background: none; color: var(--h-tinta); font: inherit; font-size: 1.4rem; font-weight: 500; cursor: pointer; }
+.vbh2-mm:active { background: #e9e9ee; }
+.vbh2-valor { position: relative; flex: 1; min-width: 0; display: grid; place-items: center; background: #fff; cursor: pointer; }
+.vbh2-valor span { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.vbh2-valor input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+.vbh2-nota { margin: 0.4rem 0 0 0.2rem; font-size: 0.8rem; color: var(--h-suave); }
+.vbh2-acoes { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; margin-top: 0.6rem; }
+.vbh2-link { padding: 0.45rem 0.1rem; border: 0; background: none; color: #8a6d10; font: inherit; font-size: 0.9rem; font-weight: 800; cursor: pointer; text-align: left; }
+.vbh2-link small { font-weight: 500; color: var(--h-suave); }
+.vbh2-dica { margin: 0; font-size: 0.8rem; color: var(--h-suave); text-align: center; }
+
+@media (prefers-reduced-motion: reduce) { .vbh2-chave i, .vbh2-chave i::after, .vbh2-seta, .vbh2-dia { transition: none; } }

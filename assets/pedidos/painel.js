@@ -1301,26 +1301,16 @@
   }
   document.addEventListener('input', function (e) { if (e.target && e.target.id === 'lPix') conferirChavePix(); });
 
+  // editor de horários novo (assets/js/horarios-ui.js): resumo, atalhos, turnos e botões − / +
+  var editorHorarios = null;
   function renderizarHorarios(h) {
-    $('gradeHorarios').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(function (d) {
-      var faixa = (h[String(d)] || [])[0];
-      return '<div class="hor-linha" data-dia="' + d + '"><span class="dia">' + U.DIAS[d] + '</span>' +
-        '<label class="switch"><input type="checkbox" data-hor-aberto ' + (faixa ? 'checked' : '') + ' aria-label="Abre na ' + U.DIAS[d] + '"><span class="trilho"></span></label>' +
-        '<input type="time" data-hor-abre value="' + (faixa ? faixa[0] : '18:00') + '" ' + (faixa ? '' : 'disabled') + ' aria-label="Abre às">' +
-        '<input type="time" data-hor-fecha value="' + (faixa ? faixa[1] : '23:00') + '" ' + (faixa ? '' : 'disabled') + ' aria-label="Fecha às"></div>';
-    }).join('');
-  }
-
-  function lerHorarios() {
-    var h = {};
-    document.querySelectorAll('.hor-linha').forEach(function (l) {
-      if (l.querySelector('[data-hor-aberto]').checked) {
-        var a = l.querySelector('[data-hor-abre]').value, f = l.querySelector('[data-hor-fecha]').value;
-        if (a && f) h[l.getAttribute('data-dia')] = [[a, f]];
-      }
+    if (!window.VBHorarios) { $('gradeHorarios').textContent = 'Não consegui abrir o editor de horários. Recarregue a página.'; return; }
+    editorHorarios = window.VBHorarios.montar($('gradeHorarios'), {
+      valor: h || {}, multiplos: true,
+      aoMudar: function (valor) { marcarRascunho('horarios', valor); }
     });
-    return h;
   }
+  function lerHorarios() { return editorHorarios ? editorHorarios.valor() : {}; }
 
   function marcarRascunho(campo, valor) {
     rascunho[campo] = valor;
@@ -1341,24 +1331,9 @@
         marcarRascunho(campo, v);
         // app 100% Pix: quem tem chave, aceita Pix — e só
         if (campo === 'chave_pix') marcarRascunho('formas_pagamento', String(v || '').trim() ? ['pix'] : []);
-      } else if (el.closest('.hor-linha')) {
-        var linha = el.closest('.hor-linha');
-        var on = linha.querySelector('[data-hor-aberto]').checked;
-        linha.querySelectorAll('input[type="time"]').forEach(function (t) { t.disabled = !on; });
-        marcarRascunho('horarios', lerHorarios());
       }
     });
     U.mascaraTelefone($('lWhats'));
-    $('copiarHorarioBtn').addEventListener('click', function () {
-      var seg = document.querySelector('.hor-linha[data-dia="1"]');
-      var on = seg.querySelector('[data-hor-aberto]').checked, a = seg.querySelector('[data-hor-abre]').value, f = seg.querySelector('[data-hor-fecha]').value;
-      document.querySelectorAll('.hor-linha').forEach(function (l) {
-        l.querySelector('[data-hor-aberto]').checked = on;
-        l.querySelector('[data-hor-abre]').value = a; l.querySelector('[data-hor-fecha]').value = f;
-        l.querySelectorAll('input[type="time"]').forEach(function (t) { t.disabled = !on; });
-      });
-      marcarRascunho('horarios', lerHorarios());
-    });
     $('descartarBtn').addEventListener('click', function () {
       rascunho = {};
       atualizarBarraSalvar();
