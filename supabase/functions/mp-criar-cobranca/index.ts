@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return resposta({ erro: "método não permitido" }, 405);
 
   // fase de finalização: nenhuma cobrança é criada. Pra voltar a cobrar
-  // (quando o app for finalizado, R$ 19,90/mês), cadastra o secret
+  // (quando o app for finalizado, de R$ 10,00 a R$ 28,99/mês conforme o uso; valor vem de estabelecimentos.mensalidade), cadastra o secret
   // COBRANCA_ATIVA=sim no Supabase.
   if (Deno.env.get("COBRANCA_ATIVA") !== "sim") {
     return resposta({ erro: "A Matriz está em fase de finalização: tudo grátis, nenhuma taxa é cobrada agora." }, 403);
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
   if (estabErro || !estab) return resposta({ erro: "Estabelecimento não encontrado." }, 404);
   if (estab.dono_user_id !== userData.user.id) return resposta({ erro: "Sem permissão pra este estabelecimento." }, 403);
 
-  const valor = Number(estab.mensalidade) || 19.9;
+  const valor = Number(estab.mensalidade) || 19.9; // só se a mensalidade ainda não foi calculada (trigger vibe_trg_mensalidade)
 
   const preferencia = {
     items: [

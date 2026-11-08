@@ -101,6 +101,17 @@ Deno.serve(async (req) => {
         pagamento_status: "em_dia",
         trial_termina_em: base.toISOString().slice(0, 10),
       }).eq("id", estabelecimentoId);
+      // 15% pro criador de conteúdo que indicou o negócio (se houver). Falha aqui não pode
+      // derrubar a confirmação do pagamento; e se o SQL ainda não foi aplicado, só ignora.
+      try {
+        await admin.rpc("criador_comissao_registrar", {
+          p_estabelecimento_id: estabelecimentoId,
+          p_payment_id: String(paymentId),
+          p_valor: Number(pagamento.transaction_amount) || 0,
+        });
+      } catch (e) { console.error("comissão do criador", e); }
+    } else if (status === "refunded" || status === "charged_back") {
+      try { await admin.rpc("criador_comissao_cancelar", { p_payment_id: String(paymentId) }); } catch (e) { console.error(e); }
     } else if (status === "rejected" || status === "cancelled") {
       // não mexe no pagamento_status aqui: só um novo pagamento aprovado
       // deve mudar o status de "atrasado"/"bloqueado" pra "em dia" — uma

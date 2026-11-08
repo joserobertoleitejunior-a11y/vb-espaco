@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Criadores de conteúdo — ganhe 15% todo mês | Matriz</title>
+<meta name="description" content="Indique negócios para a Matriz e ganhe 15% do pagamento mensal de cada um. Plano do criador a partir de R$ 4,90.">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="assets/css/styles.css?v=29267c62">
+<style>
+  .cr { max-width: 560px; margin: 0 auto; padding: 1.6rem 1rem 3rem; color: #1f2024; }
+  .cr h1 { font-size: 1.8rem; line-height: 1.2; margin: .4rem 0 .5rem; }
+  .cr p { color: #55575f; line-height: 1.5; }
+  .cr-num { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin: 1rem 0; }
+  .cr-num div { border: 1.5px solid #e9e9ee; border-radius: 16px; padding: .8rem; }
+  .cr-num b { display: block; font-size: 1.4rem; }
+  .cr-num span { font-size: .8rem; color: #6b6d75; }
+  .cr-cartao { border: 1.5px solid #e9e9ee; border-radius: 18px; padding: 1rem; margin: .9rem 0; background: #fff; }
+  .cr-cartao h2 { font-size: 1.05rem; margin: 0 0 .5rem; }
+  .cr input { width: 100%; box-sizing: border-box; min-height: 3rem; margin: .3rem 0; padding: .6rem .8rem; border: 1.5px solid #e9e9ee; border-radius: 12px; font: inherit; font-size: 16px; }
+  .cr button, .cr .cr-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: .6rem 1.1rem; border: 0; border-radius: 999px; background: #1f2024; color: #fff; font: inherit; font-weight: 800; cursor: pointer; text-decoration: none; }
+  .cr-link { display: flex; gap: .5rem; align-items: center; word-break: break-all; font-size: .9rem; background: #f6f6f8; border-radius: 12px; padding: .6rem .7rem; }
+  .cr ul { padding-left: 1.1rem; color: #55575f; line-height: 1.6; }
+  .cr table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .cr td { padding: .45rem 0; border-top: 1px solid #e9e9ee; }
+  .cr td:last-child { text-align: right; font-weight: 800; }
+  .cr-msg { min-height: 1.2rem; font-size: .88rem; color: #b3261e; }
+</style>
+</head>
+<body>
+<main class="cr">
+  <a href="index.html" style="font-size:.85rem;color:#6b6d75">← Matriz</a>
+  <h1>Chame negócios e ganhe <span style="color:#17784b">15%</span> todo mês</h1>
+  <p>Cada negócio que entrar pelo seu link e pagar a mensalidade rende 15% do valor a você — todo mês, enquanto ele continuar. Divulgue em qualquer lugar: Instagram, TikTok, YouTube, WhatsApp, panfleto.</p>
+
+  <section class="cr-cartao">
+    <h2>Quanto rende</h2>
+    <table>
+      <tr><td>1 negócio de Chamar (R$ 10,00)</td><td>R$ 1,50/mês</td></tr>
+      <tr><td>1 negócio de Agenda (R$ 19,90)</td><td>R$ 2,98/mês</td></tr>
+      <tr><td>1 Delivery com Caixa (R$ 28,99)</td><td>R$ 4,35/mês</td></tr>
+      <tr><td><b>20 negócios de Agenda</b></td><td>R$ 59,70/mês</td></tr>
+    </table>
+    <p style="font-size:.85rem">Plano do criador: <b>R$ 4,90/mês</b>. Com 4 negócios pagando, as comissões já cobrem o seu plano.</p>
+  </section>
+
+  <div id="crConteudo"><p>Carregando…</p></div>
+
+  <section class="cr-cartao">
+    <h2>Anúncios: venda e produza</h2>
+    <p style="margin-top:0">Negócios compram locais de anúncio no app. Você pode produzir o vídeo ou a arte deles e levar o código do seu link na compra.</p>
+    <div id="crLocais"></div>
+  </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js?v=9780c58f"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var reais = function (n) { return 'R$ ' + Number(n || 0).toFixed(2).replace('.', ','); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+
+  function locais() {
+    if (!window.db) return;
+    db.rpc('anuncio_locais_listar').then(function (r) {
+      var l = r.data || [];
+      $('crLocais').innerHTML = l.length
+        ? '<table>' + l.map(function (x) { return '<tr><td>' + esc(x.nome) + '<br><small style="color:#6b6d75">' + esc(x.descricao) + '</small></td><td>' + reais(x.preco_semana) + '<small>/sem</small></td></tr>'; }).join('') + '</table>'
+        : '<p>Em breve.</p>';
+    }, function () {});
+  }
+
+  function painel(c) {
+    var link = location.origin + '/criar.html?ref=' + c.codigo;
+    $('crConteudo').innerHTML =
+      '<section class="cr-cartao"><h2>Seu link de indicação</h2><div class="cr-link"><span id="crLink">' + esc(link) + '</span></div>' +
+      '<p style="margin:.6rem 0 0"><button id="crCopiar" type="button">Copiar link</button></p>' +
+      '<p style="font-size:.82rem">Código: <b>' + esc(c.codigo) + '</b> · vale 60 dias depois do primeiro clique.</p></section>' +
+      '<div class="cr-num"><div><b>' + c.indicados + '</b><span>negócios trazidos</span></div><div><b>' + reais(c.comissao_mes) + '</b><span>comissão do mês</span></div>' +
+      '<div><b>' + reais(c.a_receber) + '</b><span>a receber</span></div><div><b>' + reais(c.comissao_total) + '</b><span>total já gerado</span></div></div>' +
+      '<section class="cr-cartao"><h2>Seus negócios</h2><div id="crInd">Carregando…</div></section>';
+    $('crCopiar').onclick = function () {
+      var b = this;
+      (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { b.textContent = 'Copiado!'; }, function () { b.textContent = 'Copie o texto acima'; });
+    };
+    db.rpc('criador_meus_indicados').then(function (r) {
+      var l = r.data || [];
+      $('crInd').innerHTML = l.length
+        ? '<table>' + l.map(function (x) { return '<tr><td>' + esc(x.nome) + '<br><small style="color:#6b6d75">' + esc(x.cidade) + '</small></td><td>' + reais(x.comissao_total) + '</td></tr>'; }).join('') + '</table>'
+        : '<p style="margin:0">Ainda nenhum. Compartilhe o link — o primeiro negócio já aparece aqui.</p>';
+    });
+  }
+
+  function formulario() {
+    $('crConteudo').innerHTML =
+      '<section class="cr-cartao"><h2>Criar meu perfil de criador</h2>' +
+      '<input id="crNome" placeholder="Seu nome" autocomplete="name"><input id="crCidade" placeholder="Cidade">' +
+      '<input id="crIg" placeholder="Instagram (@ ou link)"><input id="crTt" placeholder="TikTok (opcional)"><input id="crYt" placeholder="YouTube (opcional)">' +
+      '<div class="cr-msg" id="crMsg"></div><button id="crCriar" type="button">Gerar meu link</button></section>';
+    $('crCriar').onclick = function () {
+      $('crMsg').textContent = '';
+      db.rpc('criador_criar', { p_nome: $('crNome').value, p_cidade: $('crCidade').value, p_instagram: $('crIg').value, p_tiktok: $('crTt').value, p_youtube: $('crYt').value }).then(function (r) {
+        if (r.error) { $('crMsg').textContent = r.error.message; return; }
+        carregar();
+      });
+    };
+  }
+
+  function carregar() {
+    db.rpc('criador_meu').then(function (r) {
+      if (r.error) { $('crConteudo').innerHTML = '<p>Esta área ainda está sendo ativada. Volte em breve.</p>'; return; }
+      r.data ? painel(r.data) : formulario();
+    });
+  }
+
+  locais();
+  if (!window.db) { $('crConteudo').innerHTML = '<p>Sem conexão. Tente de novo.</p>'; return; }
+  db.auth.getSession().then(function (s) {
+    if (s.data && s.data.session) carregar();
+    else $('crConteudo').innerHTML = '<section class="cr-cartao"><h2>Comece em 1 minuto</h2><p style="margin-top:0">Entre ou crie sua conta para receber o seu link.</p><a class="cr-btn" href="cadastro.html">Entrar / criar conta</a><p style="font-size:.82rem">Depois volte aqui: <b>criadores.html</b></p></section>';
+  });
+})();
+</script>
+</body>
+</html>

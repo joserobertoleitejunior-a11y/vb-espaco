@@ -373,6 +373,7 @@
             throw new Error(/duplicate|unique/.test(m) ? 'Já existe um negócio com esse link nessa cidade — muda o nome ou o link.' : m);
           }
           estabId = res.data.id;
+          if (window.VBIndicacao) window.VBIndicacao.enviar(db, estabId);
         })
       : db.rpc('tenant_admin_atualizar_identidade', {
           p_estabelecimento_id: estabId, p_nome: estado.nome.trim(), p_slug: estado.slug, p_cidade: estado.cidade.trim(),

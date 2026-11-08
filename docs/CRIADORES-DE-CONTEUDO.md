@@ -87,3 +87,11 @@ A fase 1 e a 2 não mexem com dinheiro, então saem rápido e já testam se tem 
 2. Taxa da plataforma: 10%, 15% ou outra? Comissão por conversão: quanto fica com a plataforma?
 3. O criador paga algo para estar na ala (assinatura) ou só a comissão? Sugestão: grátis no começo.
 4. Quem entra: só criadores com perfil verificado, ou aberto a qualquer um?
+
+## 11. Decisões de novembro (substituem as sugestões acima onde conflitam)
+
+- **Indicação vale de qualquer lugar:** link `…/criar.html?ref=CÓDIGO`; o código fica guardado 60 dias (`assets/js/indicacao.js`) e é gravado quando o negócio é criado (`indicacao_registrar`).
+- **Comissão: 15% de cada pagamento aprovado** do negócio indicado, todo mês, enquanto ele pagar. Calculada no webhook do Mercado Pago (`criador_comissao_registrar`); reembolso cancela a comissão (`criador_comissao_cancelar`). Repasse ao criador é manual no começo (status `a_pagar` → `paga`).
+- **Plano do criador: R$ 4,90/mês** (suposição a confirmar). Com 4 negócios pagando, a comissão já cobre o plano. A cobrança do plano do criador ainda não foi ligada.
+- **Locais de anúncio à venda** (tabela `anuncio_locais`, preço por semana): topo da busca, página da cidade, áreas Agendar/Pedir/Chamar, vídeo no perfil de outro negócio. Pedido = `anuncio_reservas` (status `pedido`); pagamento e publicação ainda manuais.
+- SQL: `supabase/sql/2026_11_criadores_indicacao_anuncios.sql` (não aplicado). Página: `criadores.html`.
