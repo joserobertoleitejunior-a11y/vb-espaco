@@ -101,3 +101,8 @@ A fase 1 e a 2 não mexem com dinheiro, então saem rápido e já testam se tem 
 - **Upgrade conta:** a comissão é calculada em cada pagamento pelo valor pago naquele mês; se o negócio sobe de plano, o criador ganha sobre o valor novo, automaticamente.
 - **Plano do criador: R$ 4,90/mês; a IA do criador é cobrada à parte** (mesma tabela: 400 créditos = R$ 34,90). A cobrança do plano e da IA do criador ainda não foi ligada.
 - **Repasse:** a definir o dia. Dinheiro de comissão é dívida da Matriz com o criador (não é custódia); o valor retido até o repasse pode ficar na conta da Matriz, rendendo.
+
+### Atualização: plano do criador
+- **Plano do criador: R$ 14,90/mês com 400 créditos de IA** (substitui "R$ 4,90 + IA à parte"). Com ~5 negócios pagando (comissão média ~R$ 3,29), as comissões cobrem o plano.
+- Banco: `alter table criadores alter column mensalidade set default 14.90; update criadores set mensalidade = 14.90;` (a cobrança do plano do criador ainda não foi ligada).
+- Ideias de IA para criadores e viabilidade de editor de vídeo: ver a resposta de novembro (fases 1 a 4): roteiros/legendas/propostas primeiro; editor no navegador com ffmpeg.wasm depois; vídeo gerado por IA só como pacote à parte.
